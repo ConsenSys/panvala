@@ -3,19 +3,14 @@ import Head from 'next/head';
 import styled from 'styled-components';
 import { ToastContainer, toast } from 'react-toastify';
 import { format } from 'date-fns';
+import { AxiosResponse } from 'axios';
 import Header from './Header';
 import { getAllProposals } from '../utils/api';
 import { slatesArray } from '../utils/data';
 // import { ipfsGetData } from '../utils/ipfs';
-import { IProposal, ISlate } from '../interfaces';
+import { IProposal, ISlate, IAppContext } from '../interfaces';
 
-export const AppContext = React.createContext({
-  proposals: [],
-  slates: [],
-  selectedSlate: '',
-  slateStakingDeadline: '',
-  proposalDeadline: '',
-});
+export const AppContext: any = React.createContext({});
 
 const LayoutWrapper = styled.div`
   font-family: 'Roboto';
@@ -26,19 +21,11 @@ const ContentWrapper = styled.div`
 `;
 
 type Props = {
-  title?: string;
+  title: string;
 };
 
-interface State {
-  slates: ISlate[];
-  proposals: IProposal[];
-  selectedSlate: string;
-  slateStakingDeadline: string | number;
-  proposalDeadline: string | number;
-}
-
 export default class Layout extends React.Component<Props> {
-  state: State = {
+  state: IAppContext = {
     slates: [],
     proposals: [],
     selectedSlate: '',
@@ -56,21 +43,23 @@ export default class Layout extends React.Component<Props> {
     // console.log('slatesFromIpfs:', slatesFromIpfs);
     // const slatesWithMHs = slates.map((s, i) => ({ ...s, hash: slateMultihashes[i] }));
     const slates: ISlate[] = slatesArray;
-    const proposals: any = await getAllProposals();
+    const proposals: IProposal[] | AxiosResponse = await getAllProposals();
 
-    // sort by createdAt
-    const sortedProposals = proposals.sort((a: IProposal, b: IProposal) => {
-      const timestampA = format(a.createdAt, 'x');
-      const timestampB = format(b.createdAt, 'x');
-      return parseInt(timestampA) - parseInt(timestampB);
-    });
+    if (Array.isArray(proposals)) {
+      // sort by createdAt
+      const sortedProposals = proposals.sort((a: IProposal, b: IProposal) => {
+        const timestampA = format(a.createdAt, 'x');
+        const timestampB = format(b.createdAt, 'x');
+        return parseInt(timestampA) - parseInt(timestampB);
+      });
 
-    this.setState({
-      slates,
-      proposals: sortedProposals,
-      slateStakingDeadline: 1539044131,
-      proposalDeadline: 1539044131,
-    });
+      this.setState({
+        slates,
+        proposals: sortedProposals,
+        slateStakingDeadline: 1539044131,
+        proposalDeadline: 1539044131,
+      });
+    }
   }
 
   handleNotify = (note: string, custom: string) => {
@@ -97,18 +86,18 @@ export default class Layout extends React.Component<Props> {
   render() {
     const { children, title } = this.props;
     const { slates, proposals, selectedSlate, slateStakingDeadline, proposalDeadline } = this.state;
+
     return (
       <LayoutWrapper>
         <Head>
           <title>{title}</title>
         </Head>
+
         <ContentWrapper>
           <Header />
+
           <AppContext.Provider
             value={{
-              // account: this.state.account,
-              // onSetAccount: this.handleSetAccount,
-              // provider,
               onHandleSelectSlate: this.handleSelectSlate,
               onNotify: this.handleNotify,
               onGetAllProposals: this.handleGetAllProposals,
@@ -122,6 +111,7 @@ export default class Layout extends React.Component<Props> {
             {children}
           </AppContext.Provider>
         </ContentWrapper>
+
         <ToastContainer
           position="top-right"
           autoClose={5000}

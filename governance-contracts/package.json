@@ -10,6 +10,7 @@
         "compile": "yarn sol-lint && truffle compile",
         "coverage": "solidity-coverage",
         "lint": "eslint",
+        "migrate": "truffle migrate",
         "sol-lint": "solhint ./contracts/**/*.sol",
         "fix": "eslint --fix ./",
         "test": "yarn lint ./ && truffle test"

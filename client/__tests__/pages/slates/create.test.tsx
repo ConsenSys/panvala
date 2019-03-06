@@ -1,18 +1,19 @@
 import * as React from 'react';
-import { render, cleanup } from 'react-testing-library';
+import { render } from 'react-testing-library';
 import 'jest-dom/extend-expect';
 
 import CreateSlate from '../../../pages/slates/create';
 import { AppContext } from '../../../components/Layout';
-import { slates } from '../../../__mocks__/slates';
-
-afterEach(cleanup);
+import { proposalsArray } from '../../../utils/data';
+import { EthereumContext } from '../../../components/EthereumProvider';
 
 describe('CreateSlate', () => {
   it('should render correctly pages/slates/create form component', () => {
     const { container, getByText } = render(
-      <AppContext.Provider value={{ slates }}>
-        <CreateSlate />
+      <AppContext.Provider value={{ proposals: proposalsArray }}>
+        <EthereumContext.Provider value={{ contracts: {} }}>
+          <CreateSlate />
+        </EthereumContext.Provider>
       </AppContext.Provider>
     );
     expect(container).toMatchSnapshot();

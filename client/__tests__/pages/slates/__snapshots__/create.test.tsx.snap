@@ -294,7 +294,140 @@ exports[`CreateSlate should render correctly pages/slates/create form component 
           </div>
           <div
             class="flex flex-wrap"
-          />
+          >
+            <div
+              class="Card__Wrapper-h3ymxi-0 gjicgu"
+              id="2"
+            >
+              <div
+                class="flex"
+              >
+                <div
+                  class="Tag__Wrapper-l3n6sk-1 ceKKQx"
+                >
+                  <div
+                    class="Tag__StyledTag-l3n6sk-0 cZzgaW"
+                  >
+                    GRANT PROPOSAL
+                  </div>
+                </div>
+              </div>
+              <div
+                class="Card__CardTitle-h3ymxi-1 bSTxPd"
+              >
+                K Semantics for Web Assembly
+              </div>
+              <div
+                class="Card__CardSubTitle-h3ymxi-2 kWUzrK"
+              >
+                200000
+              </div>
+              <div
+                class="Card__CardDescription-h3ymxi-3 iIGibR"
+              >
+                A proposal to make Ethereum safer by enabling developers to formally verify smart contracts that run on Web Assembly.
+              </div>
+            </div>
+            <div
+              class="Card__Wrapper-h3ymxi-0 gjicgu"
+              id="3"
+            >
+              <div
+                class="flex"
+              >
+                <div
+                  class="Tag__Wrapper-l3n6sk-1 ceKKQx"
+                >
+                  <div
+                    class="Tag__StyledTag-l3n6sk-0 cZzgaW"
+                  >
+                    GRANT PROPOSAL
+                  </div>
+                </div>
+              </div>
+              <div
+                class="Card__CardTitle-h3ymxi-1 bSTxPd"
+              >
+                Registry Builder Vote Weighting
+              </div>
+              <div
+                class="Card__CardSubTitle-h3ymxi-2 kWUzrK"
+              >
+                175000
+              </div>
+              <div
+                class="Card__CardDescription-h3ymxi-3 iIGibR"
+              >
+                A proposal to make Ethereum safer by improving a reusable library for token-curated registries.
+              </div>
+            </div>
+            <div
+              class="Card__Wrapper-h3ymxi-0 gjicgu"
+              id="4"
+            >
+              <div
+                class="flex"
+              >
+                <div
+                  class="Tag__Wrapper-l3n6sk-1 ceKKQx"
+                >
+                  <div
+                    class="Tag__StyledTag-l3n6sk-0 cZzgaW"
+                  >
+                    GRANT PROPOSAL
+                  </div>
+                </div>
+              </div>
+              <div
+                class="Card__CardTitle-h3ymxi-1 bSTxPd"
+              >
+                Tidbit Dynamic Oracles
+              </div>
+              <div
+                class="Card__CardSubTitle-h3ymxi-2 kWUzrK"
+              >
+                150000
+              </div>
+              <div
+                class="Card__CardDescription-h3ymxi-3 iIGibR"
+              >
+                A proposal to make Ethereum safer by improving a reusable library for oracles.
+              </div>
+            </div>
+            <div
+              class="Card__Wrapper-h3ymxi-0 gjicgu"
+              id="5"
+            >
+              <div
+                class="flex"
+              >
+                <div
+                  class="Tag__Wrapper-l3n6sk-1 ceKKQx"
+                >
+                  <div
+                    class="Tag__StyledTag-l3n6sk-0 cZzgaW"
+                  >
+                    GRANT PROPOSAL
+                  </div>
+                </div>
+              </div>
+              <div
+                class="Card__CardTitle-h3ymxi-1 bSTxPd"
+              >
+                Infrastructure Monitoring
+              </div>
+              <div
+                class="Card__CardSubTitle-h3ymxi-2 kWUzrK"
+              >
+                200000
+              </div>
+              <div
+                class="Card__CardDescription-h3ymxi-3 iIGibR"
+              >
+                A proposal to make Ethereum safer by monitoring high value systems and assets on Ethereum.
+              </div>
+            </div>
+          </div>
         </div>
         <div
           class="create__Separator-sc-1iis3wx-0 izxoit"
@@ -322,6 +455,7 @@ exports[`CreateSlate should render correctly pages/slates/create form component 
             </button>
           </div>
         </div>
+        <div />
       </form>
     </div>
   </div>

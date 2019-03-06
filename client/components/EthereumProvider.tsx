@@ -1,11 +1,18 @@
 import * as React from 'react';
-import { utils } from 'ethers';
+import { utils, providers } from 'ethers';
 import { connectProvider, connectContracts } from '../utils/provider';
+import { IContracts, IEthereumContext } from '../interfaces';
 
-export const EthereumContext = React.createContext({ account: '', ethProvider: {}, contracts: {} });
+export const EthereumContext: any = React.createContext({});
+
+declare global {
+  interface Window {
+    ethereum: any;
+  }
+}
 
 export default class EthereumProvider extends React.Component {
-  state = {
+  state: IEthereumContext = {
     account: '',
     ethProvider: {},
     contracts: {},
@@ -15,24 +22,29 @@ export default class EthereumProvider extends React.Component {
     console.log('unmounting..');
   }
 
+  // since componentDidMount will only run client-side,
+  // we'll be sure to have the window object here.
   async componentDidMount() {
     try {
-      if (typeof window !== 'undefined') {
-        const ethProvider = await connectProvider(window);
-        const addresses: any = await (window as any).ethereum.enable();
-        const { tcContract, gcContract } = connectContracts(ethProvider);
-        console.log('tcContract:', tcContract);
-        console.log('gcContract:', gcContract);
+      if (typeof window !== 'undefined' && window.hasOwnProperty('ethereum')) {
+        // this means metamask is installed. get the ethereum provider
+        const { ethereum }: Window = window;
+        // wrap it with ethers
+        const ethProvider: providers.Web3Provider = await connectProvider(ethereum);
+        // pop-up metamask to authorize panvala-app (account signature validation)
+        const addresses: string[] = await ethereum.enable();
+        // first account
+        const account: string = utils.getAddress(addresses[0]);
+        // contract abstractions (w/ metamask signer)
+        const contracts: IContracts = connectContracts(ethProvider);
+        // gatekeeper parameters
+        const gcParametersAddress: string = await contracts.gateKeeper.functions.parameters();
 
-        const params = await gcContract.functions.parameters();
-        console.log('params:', params);
-        const contracts = {
-          tcContract,
-          gcContract,
-        };
+        console.log('contracts:', contracts);
+        console.log('gatekeeper parameters address:', gcParametersAddress);
 
         this.setState({
-          account: utils.getAddress(addresses[0]),
+          account,
           ethProvider,
           contracts,
         });
@@ -43,11 +55,13 @@ export default class EthereumProvider extends React.Component {
   }
 
   render() {
-    const { account, ethProvider, contracts } = this.state;
+    const { account, ethProvider, contracts }: IEthereumContext = this.state;
     const { children } = this.props;
+
     return (
       <EthereumContext.Provider
         value={{
+          // onSetAccount: this.handleSetAccount,
           account,
           ethProvider,
           contracts,
@@ -58,35 +72,3 @@ export default class EthereumProvider extends React.Component {
     );
   }
 }
-
-// export default class Provider extends React.Component<Props> {
-//   state = {
-//     account: '',
-//     provider: {},
-//   };
-
-//   componentWillUnmount() {
-//     console.log('unmounting..');
-//   }
-
-//   async componentDidMount() {
-//     try {
-//       const provider: providers.Web3Provider = new providers.Web3Provider((window as any).ethereum);
-//       console.log('provider', provider);
-//       const addresses: any = await (window as any).ethereum.enable();
-//       this.setState({
-//         account: utils.getAddress(addresses[0]),
-//         provider,
-//       });
-//     } catch (error) {
-//       alert(`User denied account access... ${error.message}`);
-//     }
-//   }
-
-//   render() {
-//     const { account, provider } = this.state;
-//     return provider && account
-//       ? this.props.render({ account, provider })
-//       : this.props.renderLoading();
-//   }
-// }

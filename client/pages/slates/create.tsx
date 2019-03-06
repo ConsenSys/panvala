@@ -1,21 +1,24 @@
 import * as React from 'react';
 import styled from 'styled-components';
-import { Formik, Form } from 'formik';
+import { Formik, Form, FormikContext } from 'formik';
+import { TransactionResponse, TransactionReceipt } from 'ethers/providers';
+import { toast } from 'react-toastify';
 import * as yup from 'yup';
+
 import { COLORS } from '../../styles';
+import CenteredTitle from '../../components/CenteredTitle';
+import Checkbox from '../../components/Checkbox';
 import { AppContext } from '../../components/Layout';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
+import { EthereumContext } from '../../components/EthereumProvider';
+import FieldText, { ErrorMessage } from '../../components/FieldText';
+import FieldTextarea from '../../components/FieldTextarea';
 import { FormWrapper } from '../../components/Form';
 import Label from '../../components/Label';
 import SectionLabel from '../../components/SectionLabel';
-import { IProposal } from '../../interfaces';
-import CenteredTitle from '../../components/CenteredTitle';
-import FieldText, { ErrorMessage } from '../../components/FieldText';
-import FieldTextarea from '../../components/FieldTextarea';
-import Checkbox from '../../components/Checkbox';
+import { IEthereumContext, IAppContext, IProposal } from '../../interfaces';
 import { ipfsAddObject } from '../../utils/ipfs';
-// import { EthereumContext } from '../../components/EthereumProvider';
 
 const Separator = styled.div`
   border: 1px solid ${COLORS.grey5};
@@ -37,32 +40,90 @@ const FormSchema = yup.object().shape({
   recommendation: yup.string().required('Required'),
 });
 
-interface Context {
-  proposals: IProposal[];
+interface IProposalsObject {
+  [key: string]: boolean;
+}
+
+interface IFormValues {
+  email: string;
+  title: string;
+  description: string;
+  recommendation: string;
+  proposals: IProposalsObject;
+  selectedProposals: IProposal[];
 }
 
 const CreateSlate: React.FunctionComponent = () => {
-  const { proposals }: Context = React.useContext(AppContext);
-  // const { account, ethProvider, contracts }: any = React.useContext(EthereumContext);
-  // console.log('proposals:', proposals);
-  // console.log('account, ethProvider:', account, ethProvider);
-  // console.log('contracts:', contracts);
+  // get proposals and eth context
+  const { proposals }: IAppContext = React.useContext(AppContext);
+  const {
+    account,
+    ethProvider,
+    contracts: { tokenCapacitor },
+  }: IEthereumContext = React.useContext(EthereumContext);
 
-  // async function handleSubmit(formValues: any) {
-  //   console.log('create-slate-form-values:', formValues);
+  // add proposals to ipfs, get multihashes
+  // TODO: ammend multihashes to db
+  // send tx to token_capacitor: createManyProposals (with multihashes)
+  // get requestIDs from events
+  // add slate to IPFS with metadata
+  // send tx to gate_keeper: recommendSlate (with requestIDs & slate multihash)
+  // get slateID from event
+  // add slate to db: slateID, multihash
+  async function handleSubmitSlate(values: IFormValues, selectedProposals: IProposal[]) {
+    // save proposals to IPFS to be included in the slate metadata
+    const proposalMultihashes: Buffer[] = await Promise.all(
+      selectedProposals.map(async (proposal: IProposal) => {
+        try {
+          const multihash = await ipfsAddObject(proposal);
+          // we need a buffer of the multihash for the transaction
+          return Buffer.from(multihash);
+        } catch (error) {
+          return error;
+        }
+      })
+    );
 
-  //   // try {
-  //   //   // const response = await postProposal(formValues);
-  //   //   if (response.status === 200) {
-  //   //     // setOpenModal(true);
-  //   //     // await onGetAllProposals();
-  //   //     // TODO: redirect: /proposals
-  //   //     // or: move this logic to proposals/index and remove from componentDidMount in Layout
-  //   //   }
-  //   // } catch (error) {
-  //   //   onNotify(error.message, 'error');
-  //   // }
-  // }
+    // token distribution details
+    const beneficiaries: string[] = selectedProposals.map(p => p.awardAddress);
+    const tokenAmounts: number[] = selectedProposals.map(p => p.tokensRequested);
+
+    try {
+      // batch create proposals
+      const txResponse: TransactionResponse = await tokenCapacitor.functions.createManyProposals(
+        beneficiaries,
+        tokenAmounts,
+        proposalMultihashes
+      );
+
+      // successful tx
+      if (txResponse.hash) {
+        try {
+          // get tx receipt (w/ logs)
+          const receipt: TransactionReceipt = await ethProvider.getTransactionReceipt(
+            txResponse.hash
+          );
+
+          console.log('logs:', receipt.logs);
+          // NOTE:
+          // logs w/ odd indices are ProposalCreated events
+          // topics: [event_signature, proposer, requestID, to]
+
+          // TODO: slates api
+          // values.selectedProposals = selectedProposals;
+          // const response = await postSlate(values);
+          // if (response.status === 200) {
+          //   setOpenModal(true);
+          // }
+        } catch (error) {
+          toast.error('error while calling getTransactionReceipt:', error.message);
+        }
+      }
+    } catch (error) {
+      toast.error('error while sending tx createManyProposals:', error.message);
+    }
+  }
+
   return (
     <div>
       <CenteredTitle title="Create a Grant Slate" />
@@ -74,36 +135,34 @@ const CreateSlate: React.FunctionComponent = () => {
             description: '',
             recommendation: '',
             proposals: {},
+            selectedProposals: [],
           }}
-          validationSchema={FormSchema}
-          onSubmit={async (values: any, { setSubmitting, setFieldError }) => {
-            const selectedProposalIDs = Object.keys(values.proposals).filter(
+          // validationSchema={FormSchema}
+          onSubmit={async (values: IFormValues, { setSubmitting, setFieldError }: any) => {
+            // console.log('form values:', values);
+            const selectedProposalIDs: string[] = Object.keys(values.proposals).filter(
               p => values.proposals[p] === true
             );
 
+            // validate for at least 1 selected proposal
             if (selectedProposalIDs.length === 0) {
-              setFieldError('proposals', 'need at least 1 proposal.');
+              setFieldError('proposals', 'select at least 1 proposal.');
             } else {
-              // selected proposal objects
-              const selectedProposals = proposals.filter((p: any) =>
+              // filter for only the selected proposal objects
+              const selectedProposals: IProposal[] = proposals.filter((p: IProposal) =>
                 selectedProposalIDs.includes(p.id.toString())
               );
 
-              // save proposals to IPFS to be included in the slate metadata
-              const proposalMultihashes = await Promise.all(
-                selectedProposals.map(async proposal => ipfsAddObject(proposal))
-              );
-              console.log('proposalMultihashes:', proposalMultihashes);
-
-              values.proposals = selectedProposals;
-              // await handleSubmit(values);
+              // submit the associated proposals along with the slate form values
+              await handleSubmitSlate(values, selectedProposals);
             }
+
+            // re-enable submit button
             setSubmitting(false);
           }}
         >
-          {({ isSubmitting, setFieldValue, values }): any => (
+          {({ isSubmitting, setFieldValue, values }: FormikContext<IFormValues>) => (
             <Form>
-              {console.log('props.values:', values)}
               <div className="pa4">
                 <SectionLabel>{'ABOUT'}</SectionLabel>
 
@@ -172,8 +231,8 @@ const CreateSlate: React.FunctionComponent = () => {
                             setFieldValue(`proposals.${proposal.id}`, true);
                           }
                         }}
-                        proposals={values.proposals}
                         id={proposal.id}
+                        active={values.proposals[proposal.id]}
                       />
                     ))}
                 </div>
@@ -185,6 +244,7 @@ const CreateSlate: React.FunctionComponent = () => {
                   {'Create Slate'}
                 </Button>
               </div>
+              <div>{account}</div>
             </Form>
           )}
         </Formik>
