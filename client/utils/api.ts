@@ -7,7 +7,6 @@ import { proposalsArray } from './data';
 const { publicRuntimeConfig = {} } = getConfig() || {};
 
 const apiHost = publicRuntimeConfig.apiHost || 'http://localhost:5000';
-// const apiHost = 'http://localhost:5000';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': `${apiHost}`,
@@ -15,32 +14,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Origin, Content-Type',
 };
 
-/**
- * Calls a mock API which finds a user by ID from the list above.
- *
- * Throws an error if not found.
- */
-export async function findProposal(title: string) {
-  const selected = proposalsArray.find(data => data.title === title);
-
-  if (!selected) {
-    throw new Error('Cannot find proposal');
-  }
-
-  return selected;
-}
-
-/** Calls a mock API which returns the above array to simulate "get all". */
-export async function findAllProposals() {
-  // Throw an error, just for example.
-  if (!Array.isArray(proposalsArray)) {
-    throw new Error('Cannot find users');
-  }
-
-  return proposalsArray;
-}
-
-export async function getAllProposals(): Promise<AxiosResponse | IProposal[]> {
+export async function getAllProposals(): Promise<IProposal[] | AxiosResponse> {
   try {
     const response = await axios({
       method: 'get',
@@ -58,12 +32,13 @@ export async function getAllProposals(): Promise<AxiosResponse | IProposal[]> {
     return response;
   } catch (error) {
     console.log('error:', error);
+    console.log('returning dummy data');
     return proposalsArray;
     throw new Error(error);
   }
 }
 
-export async function postProposal(data: IProposal, cb?: any): Promise<AxiosResponse> {
+export async function postProposal(data: IProposal): Promise<AxiosResponse> {
   try {
     const response = await axios({
       method: 'post',
@@ -84,3 +59,28 @@ export async function postProposal(data: IProposal, cb?: any): Promise<AxiosResp
     throw new Error(error);
   }
 }
+
+/**
+ * Calls a mock API which finds a user by ID from the list above.
+ *
+ * Throws an error if not found.
+ */
+// export async function findProposal(title: string) {
+//   const selected = proposalsArray.find(data => data.title === title);
+
+//   if (!selected) {
+//     throw new Error('Cannot find proposal');
+//   }
+
+//   return selected;
+// }
+
+/** Calls a mock API which returns the above array to simulate "get all". */
+// export async function findAllProposals() {
+//   // Throw an error, just for example.
+//   if (!Array.isArray(proposalsArray)) {
+//     throw new Error('Cannot find users');
+//   }
+
+//   return proposalsArray;
+// }

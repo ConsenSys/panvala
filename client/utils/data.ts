@@ -2,22 +2,6 @@ import { IProposal, ISlate } from '../interfaces';
 
 export const proposalsArray: IProposal[] = [
   {
-    id: 1,
-    email: 'isaac.kang@protonmail.ch',
-    firstName: 'Isaac',
-    github: 'kangarang',
-    lastName: 'Kang',
-    website: 'website.com',
-    title: 'My amazing idea',
-    summary: 'summary',
-    projectPlan: 'plan',
-    projectTimeline: 'timeline',
-    teamBackgrounds: 'backgrounds',
-    tokensRequested: 12345,
-    totalBudget: '100 for this. 200 for that.',
-    otherFunding: 'nope!',
-  },
-  {
     id: 2,
     firstName: 'Alice',
     lastName: 'Doe',
@@ -29,6 +13,9 @@ export const proposalsArray: IProposal[] = [
     category: 'GRANT',
     totalBudget: '100 for this. 200 for that.',
     otherFunding: 'nope!',
+    projectPlan: 'plan',
+    projectTimeline: 'timeline',
+    teamBackgrounds: 'backgrounds',
   },
   {
     id: 3,
@@ -42,6 +29,9 @@ export const proposalsArray: IProposal[] = [
     category: 'GRANT',
     totalBudget: '100 for this. 200 for that.',
     otherFunding: 'nope!',
+    projectPlan: 'plan',
+    projectTimeline: 'timeline',
+    teamBackgrounds: 'backgrounds',
   },
   {
     id: 4,
@@ -54,6 +44,9 @@ export const proposalsArray: IProposal[] = [
     category: 'GRANT',
     totalBudget: '100 for this. 200 for that.',
     otherFunding: 'nope!',
+    projectPlan: 'plan',
+    projectTimeline: 'timeline',
+    teamBackgrounds: 'backgrounds',
   },
   {
     id: 5,
@@ -67,6 +60,9 @@ export const proposalsArray: IProposal[] = [
     category: 'GRANT',
     totalBudget: '100 for this. 200 for that.',
     otherFunding: 'nope!',
+    projectPlan: 'plan',
+    projectTimeline: 'timeline',
+    teamBackgrounds: 'backgrounds',
   },
 ];
 

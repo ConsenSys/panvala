@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 import styled from 'styled-components';
 import { COLORS } from '../styles';
 
@@ -30,7 +30,7 @@ interface Props {
   required?: boolean;
   onChange?: any;
   value?: any;
-};
+}
 
 const Input: React.FunctionComponent<Props> = props => {
   let input = <StyledInput {...props} />;

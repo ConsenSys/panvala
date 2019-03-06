@@ -6,7 +6,6 @@ import Tag from './Tag';
 import { splitAddressHumanReadable } from '../utils/format';
 import Button from './Button';
 import { Separator } from './Form';
-import { IButton } from '../interfaces';
 
 const Wrapper = styled.div`
   width: 300px;
@@ -66,7 +65,7 @@ type Props = {
   router?: any;
   id?: string;
   onClick?: any;
-  proposals?: any;
+  active?: boolean;
 };
 
 const ChoiceButton: any = styled(Button)`
@@ -97,7 +96,7 @@ const Card: React.FunctionComponent<Props> = props => {
     });
   }
   return (
-    <Wrapper proposals={props.proposals} id={props.id} onClick={props.onClick}>
+    <Wrapper id={props.id} onClick={props.onClick}>
       <div className="flex">
         <Tag status={''}>{props.category.toUpperCase()}</Tag>
         {props.status && <Tag status={props.status}>{props.status}</Tag>}

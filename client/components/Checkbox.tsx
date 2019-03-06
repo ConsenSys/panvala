@@ -25,12 +25,12 @@ const ToggleLabel = styled(Label)`
   color: ${COLORS.grey2};
 `;
 
-const Checkbox = props => {
+const Checkbox = (props: any) => {
   return (
     <>
       <Wrapper>
         <Field name={props.name} required>
-          {({ field, form }) => (
+          {({ field, form }: any) => (
             <Toggle
               name={props.name}
               defaultChecked={props.defaultChecked}

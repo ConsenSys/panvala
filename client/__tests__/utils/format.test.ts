@@ -1,11 +1,11 @@
 import { splitAddressHumanReadable } from '../../utils/format';
 
-describe.skip('Formatters', () => {
+describe('Formatters', () => {
   describe('splitAddressHumanReadable', () => {
     test('should split an address correctly', () => {
       const address = '0xd115bffabbdd893a6f7cea402e7338643ced44a6';
       const formatted = splitAddressHumanReadable(address);
-      const expected = '0x D115 BFFA bbdd 893A 6f7c eA40 2e73 3864 3Ced 44a6';
+      const expected = '0x D115 BFFA BBDD 893A 6F7C EA40 2E73 3864 3CED 44A6';
       expect(formatted).toBe(expected);
     });
 

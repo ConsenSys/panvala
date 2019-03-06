@@ -1,7 +1,7 @@
 import * as React from 'react';
 import Slates from './slates';
 
-const Root: React.FunctionComponent = () => {
+const Root: React.SFC = () => {
   return (
     <div>
       <Slates />

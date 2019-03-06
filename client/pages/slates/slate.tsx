@@ -1,5 +1,6 @@
 import * as React from 'react';
 import styled from 'styled-components';
+import Link from 'next/link';
 import { withRouter } from 'next/router';
 import { COLORS } from '../../styles';
 import { AppContext } from '../../components/Layout';
@@ -7,12 +8,11 @@ import Button from '../../components/Button';
 import RouteTitle from '../../components/RouteTitle';
 import SectionLabel from '../../components/SectionLabel';
 import Tag from '../../components/Tag';
-import { IProposal, ISlate } from '../../interfaces';
-import { splitAddressHumanReadable } from '../../utils/format';
 import Card, { CardAddress } from '../../components/Card';
 import Deadline from '../../components/Deadline';
+import { IProposal, ISlate } from '../../interfaces';
+import { splitAddressHumanReadable } from '../../utils/format';
 import { tsToDeadline } from '../../utils/datetime';
-import Link from 'next/link';
 import { statuses } from '../../utils/data';
 
 const Incumbent = styled.div`

@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 import styled from 'styled-components';
 import { COLORS } from '../styles';
 
@@ -9,8 +9,7 @@ const StyledSectionLabel = styled.div`
   color: ${COLORS.grey3};
 `;
 
-type Props = {
-};
+type Props = {};
 
 const SectionLabel: React.FunctionComponent<Props> = props => {
   return <StyledSectionLabel {...props} />;

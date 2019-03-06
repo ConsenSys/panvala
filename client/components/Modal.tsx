@@ -32,8 +32,7 @@ const ModalOverlay = styled.div`
 `;
 
 interface Props {
-  isOpen?: boolean;
-  children: React.ReactNode;
+  isOpen: boolean;
   handleClose?(): void;
   handleClick?(): any;
 }

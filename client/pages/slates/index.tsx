@@ -26,7 +26,7 @@ const VisibilityFilterContainer = styled.div`
 `;
 
 const Slates: React.FunctionComponent<Props> = ({ router }) => {
-  const { slates, onHandleSelectSlate, slateStakingDeadline }: any = React.useContext(AppContext);
+  const { slates, slateStakingDeadline }: any = React.useContext(AppContext);
   const [visibilityFilter, setVisibilityFilter] = React.useState('all');
 
   function handleClickSlate(slate: ISlate) {

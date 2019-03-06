@@ -8,7 +8,7 @@ describe('Datetime', () => {
   });
 
   test('should return with error message when given an invalid timestamp', () => {
-    const ts = 'not a valid timestamp';
+    const ts = 75892317423891472389;
     const deadline = tsToDeadline(ts, 'America/New_York');
     expect(deadline).toBe('Invalid date');
   });

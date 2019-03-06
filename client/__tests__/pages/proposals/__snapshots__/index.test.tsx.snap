@@ -69,38 +69,6 @@ Object {
             <div
               class="Card__CardTitle-h3ymxi-1 bSTxPd"
             >
-              My amazing idea
-            </div>
-            <div
-              class="Card__CardSubTitle-h3ymxi-2 kWUzrK"
-            >
-              12345 Tokens Requested
-            </div>
-            <div
-              class="Card__CardDescription-h3ymxi-3 iIGibR"
-            >
-              summary
-            </div>
-          </div>
-          <div
-            class="Card__Wrapper-h3ymxi-0 gjicgu"
-          >
-            <div
-              class="flex"
-            >
-              <div
-                class="Tag__Wrapper-l3n6sk-1 ceKKQx"
-              >
-                <div
-                  class="Tag__StyledTag-l3n6sk-0 cZzgaW"
-                >
-                  GRANT PROPOSAL
-                </div>
-              </div>
-            </div>
-            <div
-              class="Card__CardTitle-h3ymxi-1 bSTxPd"
-            >
               K Semantics for Web Assembly
             </div>
             <div
@@ -260,38 +228,6 @@ Object {
       <div
         class="proposals__CardsWrapper-sc-125pbjx-0 cOJbkJ"
       >
-        <div
-          class="Card__Wrapper-h3ymxi-0 gjicgu"
-        >
-          <div
-            class="flex"
-          >
-            <div
-              class="Tag__Wrapper-l3n6sk-1 ceKKQx"
-            >
-              <div
-                class="Tag__StyledTag-l3n6sk-0 cZzgaW"
-              >
-                GRANT PROPOSAL
-              </div>
-            </div>
-          </div>
-          <div
-            class="Card__CardTitle-h3ymxi-1 bSTxPd"
-          >
-            My amazing idea
-          </div>
-          <div
-            class="Card__CardSubTitle-h3ymxi-2 kWUzrK"
-          >
-            12345 Tokens Requested
-          </div>
-          <div
-            class="Card__CardDescription-h3ymxi-3 iIGibR"
-          >
-            summary
-          </div>
-        </div>
         <div
           class="Card__Wrapper-h3ymxi-0 gjicgu"
         >

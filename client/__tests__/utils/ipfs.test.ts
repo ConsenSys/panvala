@@ -35,11 +35,3 @@ describe.skip('IPFS', () => {
     });
   });
 });
-
-// const dataa = {
-//   category: 'GRANT',
-//   title: 'K Semantics for Web Assembly',
-//   subtitle: '200,000 Tokens Requested',
-//   description:
-//     'A proposal to make Ethereum safer by enabling developers to formally verify smart contracts that run on Web Assembly.',
-// };
