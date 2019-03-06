@@ -17,8 +17,16 @@ import FieldTextarea from '../../components/FieldTextarea';
 import { FormWrapper } from '../../components/Form';
 import Label from '../../components/Label';
 import SectionLabel from '../../components/SectionLabel';
-import { IEthereumContext, IAppContext, IProposal } from '../../interfaces';
+import {
+  IEthereumContext,
+  IAppContext,
+  IProposal,
+  IProposalMetadata,
+  ISlateMetadata,
+} from '../../interfaces';
 import { ipfsAddObject } from '../../utils/ipfs';
+import { proposalsArray } from '../../utils/data';
+import { ethers } from 'ethers';
 
 const Separator = styled.div`
   border: 1px solid ${COLORS.grey5};
@@ -47,10 +55,18 @@ interface IProposalsObject {
 interface IFormValues {
   email: string;
   title: string;
+  firstName?: string;
+  lastName?: string;
+  organizationName?: string;
   description: string;
   recommendation: string;
   proposals: IProposalsObject;
   selectedProposals: IProposal[];
+}
+
+interface IProposalInfo {
+    metadata: IProposalMetadata[],
+    multihashes: Buffer[],
 }
 
 const CreateSlate: React.FunctionComponent = () => {
@@ -59,23 +75,133 @@ const CreateSlate: React.FunctionComponent = () => {
   const {
     account,
     ethProvider,
-    contracts: { tokenCapacitor },
+    contracts: { tokenCapacitor, gateKeeper },
   }: IEthereumContext = React.useContext(EthereumContext);
 
-  // add proposals to ipfs, get multihashes
-  // TODO: ammend multihashes to db
-  // send tx to token_capacitor: createManyProposals (with multihashes)
-  // get requestIDs from events
-  // add slate to IPFS with metadata
-  // send tx to gate_keeper: recommendSlate (with requestIDs & slate multihash)
-  // get slateID from event
-  // add slate to db: slateID, multihash
+  /**
+   * Generate the proposal and slate information necessary for recommending a slate
+   * @param txHash
+   * @param values
+   * @param proposalInfo
+   */
+  async function generateSlateSubmissionInfo(
+    txHash: string,
+    values: IFormValues,
+    proposalInfo: any
+  ) {
+    const { multihashes: proposalMultihashes, metadata: proposalMetadata } = proposalInfo;
+
+    const receipt: TransactionReceipt = await tokenCapacitor.provider.waitForTransaction(txHash);
+    if (receipt.logs) {
+      // console.log('Transaction Mined: ' + receipt);
+      // console.log('logs:', receipt.logs);
+
+      // Get the ProposalCreated logs from the receipt
+      const decoded = receipt.logs
+        .map(log => {
+          return tokenCapacitor.interface.parseLog(log);
+        })
+        .filter(d => d !== null)
+        .filter(d => d.name == 'ProposalCreated');
+
+      // Extract the requestIDs
+      const requestIDs = decoded.map(d => d.values.requestID);
+      // console.log('requestIDs', requestIDs);
+
+      // prepare the slate metadata
+      const slateMetadata: ISlateMetadata = {
+        firstName: values.firstName,
+        lastName: values.lastName,
+        organization: values.organizationName,
+        title: values.title,
+        description: values.description,
+        proposalMultihashes,
+        proposals: proposalMetadata,
+      };
+      // console.log(slateMetadata);
+
+      return { slateMetadata, requestIDs };
+    }
+  }
+
+  /**
+   * Submit requestIDs and metadataHash to the Gatekeeper. 
+   * @param requestIDs 
+   * @param metadataHash 
+   */
+  async function submitGrantSlate(requestIDs: any[], metadataHash: string) {
+    // these are placeholders for now
+    const epochNumber = 1;
+    const category = 0; // Grant
+
+    const txResponse: TransactionResponse = await gateKeeper.functions.recommendSlate(
+      epochNumber,
+      category,
+      requestIDs,
+      Buffer.from(metadataHash),
+    );
+
+    if (txResponse.hash) {
+      const receipt = await gateKeeper.provider.waitForTransaction(txResponse.hash);
+      if (receipt.logs) {
+        // console.log('Transaction Mined: ' + receipt);
+        // console.log('logs:', receipt.logs);
+
+        // Get the SlateCreated logs from the receipt
+        const decoded = receipt.logs
+          .map(log => {
+            return gateKeeper.interface.parseLog(log);
+          })
+          .filter(d => d !== null)
+          .filter(d => d.name == 'SlateCreated');
+
+        // Extract the slateID
+        const slateID = decoded[0].values.slateID;
+        const slate = { slateID, metadataHash };
+        // console.log('Created slate', slate);
+        return slate;
+      }
+    }
+  }
+
+  /**
+   * Submit slate information to the Gatekeeper, saving metadata in IPFS
+   *
+   * add proposals to ipfs, get multihashes
+   * send tx to token_capacitor: createManyProposals (with multihashes)
+   * get requestIDs from events
+   * add slate to IPFS with metadata
+   * send tx to gate_keeper: recommendSlate (with requestIDs & slate multihash)
+   * get slateID from event
+   * add slate to db: slateID, multihash
+   * @param values Form values
+   * @param selectedProposals
+   */
   async function handleSubmitSlate(values: IFormValues, selectedProposals: IProposal[]) {
-    // save proposals to IPFS to be included in the slate metadata
+    // save proposal metadata to IPFS to be included in the slate metadata
+    console.log('preparing proposals...');
+    const extractMetadata = (proposal: IProposal) => ({
+      firstName: proposal.firstName,
+      lastName: proposal.lastName,
+      title: proposal.title,
+      summary: proposal.summary,
+      tokensRequested: proposal.tokensRequested,
+      github: proposal.github,
+      id: proposal.id,
+      website: proposal.website,
+      organization: proposal.organization,
+      recommendation: proposal.recommendation,
+      projectPlan: proposal.projectPlan,
+      projectTimeline: proposal.projectTimeline,
+      teamBackgrounds: proposal.teamBackgrounds,
+      otherFunding: proposal.otherFunding,
+      awardAddress: proposal.awardAddress,
+    });
+
     const proposalMultihashes: Buffer[] = await Promise.all(
-      selectedProposals.map(async (proposal: IProposal) => {
+      selectedProposals.map(async (metadata: IProposalMetadata) => {
         try {
-          const multihash = await ipfsAddObject(proposal);
+          const multihash = await ipfsAddObject(metadata);
           // we need a buffer of the multihash for the transaction
           return Buffer.from(multihash);
         } catch (error) {
@@ -83,13 +209,18 @@ const CreateSlate: React.FunctionComponent = () => {
         }
       })
     );
+    // TODO: add proposal multihashes to db
+
+    // Only use the metadata from here forward - do not expose private information
+    const proposalMetadata = selectedProposals.map(extractMetadata);
 
     // token distribution details
-    const beneficiaries: string[] = selectedProposals.map(p => p.awardAddress);
-    const tokenAmounts: number[] = selectedProposals.map(p => p.tokensRequested);
+    const beneficiaries: string[] = proposalMetadata.map(p => p.awardAddress);
+    const tokenAmounts: number[] = proposalMetadata.map(p => p.tokensRequested);
 
     try {
       // batch create proposals
+      // console.log('creating proposals...');
       const txResponse: TransactionResponse = await tokenCapacitor.functions.createManyProposals(
         beneficiaries,
         tokenAmounts,
@@ -99,25 +230,45 @@ const CreateSlate: React.FunctionComponent = () => {
       // successful tx
       if (txResponse.hash) {
         try {
-          // get tx receipt (w/ logs)
-          const receipt: TransactionReceipt = await ethProvider.getTransactionReceipt(
-            txResponse.hash
+          const proposalInfo: IProposalInfo = {
+            metadata: proposalMetadata,
+            multihashes: proposalMultihashes,
+          };
+          const { slateMetadata, requestIDs } = await generateSlateSubmissionInfo(
+            txResponse.hash,
+            values,
+            proposalInfo
           );
 
-          console.log('logs:', receipt.logs);
-          // NOTE:
-          // logs w/ odd indices are ProposalCreated events
-          // topics: [event_signature, proposer, requestID, to]
+          // console.log(slateMetadata);
 
-          // TODO: slates api
-          // values.selectedProposals = selectedProposals;
-          // const response = await postSlate(values);
-          // if (response.status === 200) {
-          //   setOpenModal(true);
-          // }
+          try {
+            console.log('saving slate metadata...');
+            const slateMetadataHash: string = await ipfsAddObject(slateMetadata);
+
+            // Submit the slate info to the contract
+            try {
+              const slate = await submitGrantSlate(requestIDs, slateMetadataHash);
+              console.log('Submitted slate', slate);
+            } catch (error) {
+              toast.error('error submitting slate', error.message);
+            }
+
+            // TODO: add slate to db: slateID, multihash
+            // TODO: slates api??
+            // values.selectedProposals = selectedProposals;
+            // const response = await postSlate(values);
+            // if (response.status === 200) {
+            //   setOpenModal(true);
+            // }
+          } catch (error) {
+            toast.error('error saving slate metadata:', error.message);
+          }
         } catch (error) {
-          toast.error('error while calling getTransactionReceipt:', error.message);
+          toast.error('error getting transaction receipt:', error.message);
         }
+
+        // TODO: Should take us to all slates view after submission
       }
     } catch (error) {
       toast.error('error while sending tx createManyProposals:', error.message);

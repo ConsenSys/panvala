@@ -1,4 +1,5 @@
 import { providers, Contract } from 'ethers';
+import { DeployDescription } from 'ethers/utils';
 
 export interface IProposal {
   firstName: string;
@@ -23,6 +24,27 @@ export interface IProposal {
   awardAddress: string;
 }
 
+/**
+ * Public proposal metadata that gets saved to IPFS
+ */
+export interface IProposalMetadata {
+  firstName: string;
+  lastName: string;
+  title: string;
+  summary: string;
+  tokensRequested: number;
+  github?: string;
+  id: number;
+  website?: string;
+  organization?: string;
+  recommendation?: string;
+  projectPlan?: string;
+  projectTimeline?: string;
+  teamBackgrounds?: string;
+  otherFunding?: string;
+  awardAddress: string;
+}
+
 export interface ISlate {
   id: string;
   category: string;
@@ -36,6 +58,20 @@ export interface ISlate {
   incumbent?: boolean;
   proposals: IProposal[];
   requiredStake: string;
+}
+
+/**
+ * Public slate metadata that gets saved to IPFS
+ */
+export interface ISlateMetadata {
+    firstName: string;
+    lastName?: string;
+    organization?: string;
+    // do not include email
+    title: string;
+    description: string;
+    proposalMultihashes: string[],
+    proposals: IProposalMetadata[],
 }
 
 export interface IContracts {
