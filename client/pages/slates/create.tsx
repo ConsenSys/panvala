@@ -25,8 +25,6 @@ import {
   ISlateMetadata,
 } from '../../interfaces';
 import { ipfsAddObject } from '../../utils/ipfs';
-import { proposalsArray } from '../../utils/data';
-import { ethers } from 'ethers';
 
 const Separator = styled.div`
   border: 1px solid ${COLORS.grey5};
@@ -91,7 +89,7 @@ const CreateSlate: React.FunctionComponent = () => {
   ) {
     const { multihashes: proposalMultihashes, metadata: proposalMetadata } = proposalInfo;
 
-    const receipt: TransactionReceipt = await tokenCapacitor.provider.waitForTransaction(txHash);
+    const receipt: TransactionReceipt = await ethProvider.waitForTransaction(txHash);
     if (receipt.logs) {
       // console.log('Transaction Mined: ' + receipt);
       // console.log('logs:', receipt.logs);
@@ -125,9 +123,9 @@ const CreateSlate: React.FunctionComponent = () => {
   }
 
   /**
-   * Submit requestIDs and metadataHash to the Gatekeeper. 
-   * @param requestIDs 
-   * @param metadataHash 
+   * Submit requestIDs and metadataHash to the Gatekeeper.
+   * @param requestIDs
+   * @param metadataHash
    */
   async function submitGrantSlate(requestIDs: any[], metadataHash: string) {
     // these are placeholders for now
@@ -142,7 +140,7 @@ const CreateSlate: React.FunctionComponent = () => {
     );
 
     if (txResponse.hash) {
-      const receipt = await gateKeeper.provider.waitForTransaction(txResponse.hash);
+      const receipt = await ethProvider.waitForTransaction(txResponse.hash);
       if (receipt.logs) {
         // console.log('Transaction Mined: ' + receipt);
         // console.log('logs:', receipt.logs);
@@ -268,7 +266,7 @@ const CreateSlate: React.FunctionComponent = () => {
           toast.error('error getting transaction receipt:', error.message);
         }
 
-        // TODO: Should take us to all slates view after submission
+        // TODO: Should take us to all slates view after successful submission
       }
     } catch (error) {
       toast.error('error while sending tx createManyProposals:', error.message);
@@ -288,7 +286,7 @@ const CreateSlate: React.FunctionComponent = () => {
             proposals: {},
             selectedProposals: [],
           }}
-          // validationSchema={FormSchema}
+          validationSchema={FormSchema}
           onSubmit={async (values: IFormValues, { setSubmitting, setFieldError }: any) => {
             // console.log('form values:', values);
             const selectedProposalIDs: string[] = Object.keys(values.proposals).filter(

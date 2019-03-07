@@ -1,5 +1,4 @@
 import { providers, Contract } from 'ethers';
-import { DeployDescription } from 'ethers/utils';
 
 export interface IProposal {
   firstName: string;
