@@ -28,6 +28,15 @@ NODE_ENV=docker
 # Must match settings in postgres.env
 DB_PASSWORD=password
 DB_NAME=panvala_api
+
+# Ethereum
+RPC_ENDPOINT=http://localhost:7545  # Or whereever your chain is
+GATEKEEPER_ADDRESS={your-deployed-gatekeeper}
+TOKEN_CAPACITOR_ADDRESS={your-deployed-capacitor}
+
+# IPFS
+IPFS_HOST=ipfs.infura.io
+IPFS_PORT=5001
 ```
 
 ### Start up the containers

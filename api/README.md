@@ -1,5 +1,16 @@
 # Panvala API
 
+Make sure the following environment variables are set:
+
+- RPC_ENDPOINT
+- GATEKEEPER_ADDRESS
+- TOKEN_CAPACITOR_ADDRESS
+
+Optional variables:
+
+- IPFS_HOST
+- IPFS_PORT
+
 ```shell
 yarn start
 # optionally start with a different port

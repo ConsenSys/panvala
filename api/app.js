@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { Proposal } = require('./models');
 const { checkSchema, validationResult } = require('express-validator/check');
+const { getAllSlates } = require('./utils/slates');
 
 const app = express();
 
@@ -242,6 +243,20 @@ app.post('/api/proposals', checkSchema(proposalSchema), (req, res) => {
     })
     .catch(err => {
       res.status(400).send(`Improper proposal format: ${err}`);
+    });
+});
+
+app.get('/api/slates', async (req, res) => {
+  getAllSlates()
+    .then(slates => {
+      // console.log('DATA', slates);
+      res.send(slates);
+    })
+    .catch(err => {
+      console.log('ERROR', err);
+      res.status(500).json({
+        err: err.message,
+      });
     });
 });
 
