@@ -64,7 +64,7 @@ interface IFormValues {
 
 interface IProposalInfo {
     metadata: IProposalMetadata[],
-    multihashes: Buffer[],
+    multihashes: string[],
 }
 
 const CreateSlate: React.FunctionComponent = () => {
@@ -230,7 +230,7 @@ const CreateSlate: React.FunctionComponent = () => {
         try {
           const proposalInfo: IProposalInfo = {
             metadata: proposalMetadata,
-            multihashes: proposalMultihashes,
+            multihashes: proposalMultihashes.map(toString),
           };
           const { slateMetadata, requestIDs } = await generateSlateSubmissionInfo(
             txResponse.hash,
