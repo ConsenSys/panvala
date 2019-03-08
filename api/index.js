@@ -16,4 +16,8 @@ app.use(express.json());
 setupRoutes(app);
 
 // Start server:
-app.listen(port, () => console.log(`Starting server on port ${port}...`));
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(port, () => console.log(`Starting server on port ${port}...`));
+}
+
+module.exports = app;

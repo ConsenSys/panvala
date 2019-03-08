@@ -1,6 +1,6 @@
 const request = require('supertest');
 
-const app = require('../app');
+const app = require('../index');
 const { Proposal } = require('../models');
 
 // Don't touch the database
