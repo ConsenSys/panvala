@@ -5,7 +5,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import { format } from 'date-fns';
 import { AxiosResponse } from 'axios';
 import Header from './Header';
-import { getAllProposals } from '../utils/api';
+import { getAllProposals, getAllSlates } from '../utils/api';
 import { slatesArray } from '../utils/data';
 // import { ipfsGetData } from '../utils/ipfs';
 import { IProposal, ISlate, IAppContext } from '../interfaces';
@@ -42,9 +42,11 @@ export default class Layout extends React.Component<Props> {
     // const slatesFromIpfs: any[] = await Promise.all(slateMultihashes.map(mh => ipfsGetData(mh)));
     // console.log('slatesFromIpfs:', slatesFromIpfs);
     // const slatesWithMHs = slates.map((s, i) => ({ ...s, hash: slateMultihashes[i] }));
-    const slates: ISlate[] = slatesArray;
+    // const slates: ISlate[] = slatesArray;
+    const slates: ISlate[] | AxiosResponse = await getAllSlates();
     const proposals: IProposal[] | AxiosResponse = await getAllProposals();
 
+    let proposalData;
     if (Array.isArray(proposals)) {
       // sort by createdAt
       const sortedProposals = proposals.sort((a: IProposal, b: IProposal) => {
@@ -52,14 +54,20 @@ export default class Layout extends React.Component<Props> {
         const timestampB = format(b.createdAt, 'x');
         return parseInt(timestampA) - parseInt(timestampB);
       });
-
-      this.setState({
-        slates,
-        proposals: sortedProposals,
-        slateStakingDeadline: 1539044131,
-        proposalDeadline: 1539044131,
-      });
+      proposalData = sortedProposals;
     }
+
+    let slateData;
+    if (Array.isArray(slates)) {
+      slateData = slates;
+    }
+
+    this.setState({
+      slates: slateData,
+      proposals: proposalData,
+      slateStakingDeadline: 1539044131,
+      proposalDeadline: 1539044131,
+    });
   }
 
   handleNotify = (note: string, custom: string) => {

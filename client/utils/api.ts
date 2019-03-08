@@ -1,5 +1,5 @@
 import getConfig from 'next/config';
-import { IProposal } from '../interfaces';
+import { IProposal, ISlate } from '../interfaces';
 import axios, { AxiosResponse } from 'axios';
 import { proposalsArray } from './data';
 
@@ -84,3 +84,26 @@ export async function postProposal(data: IProposal): Promise<AxiosResponse> {
 
 //   return proposalsArray;
 // }
+
+export async function getAllSlates(): Promise<ISlate[] | AxiosResponse> {
+  try {
+    const response = await axios({
+      method: 'get',
+      url: `${apiHost}/api/slates`,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        ...corsHeaders,
+      },
+    });
+    if (response.status === 200) {
+      return response.data;
+    }
+    // TODO: handle response status
+    return response;
+  } catch (error) {
+    console.log('error:', error);
+    // console.log('returning dummy data');
+    throw new Error(error);
+  }
+}

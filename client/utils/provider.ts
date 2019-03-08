@@ -5,6 +5,7 @@ const Gatekeeper = require('./abis/Gatekeeper.json');
 
 // contract abstractions for gate_keeper and token_capacitor
 export function connectContracts(provider: providers.Web3Provider): IContracts {
+  // TODO: read addresses from environment
   const tcAddress: string = '0xAabC1fE9c4A43CaFF0D70206B7C7D18E9A279894';
   const gcAddress: string = '0x8A3f7Ad6b368A6043D0D60Fda425c90DE6126005';
   const tcAbi: any[] = TokenCapacitor.abi;
