@@ -102,7 +102,7 @@ export async function getAllSlates(): Promise<ISlate[] | AxiosResponse> {
     // TODO: handle response status
     return response;
   } catch (error) {
-    console.log('error:', error);
+    console.log('error while getting slates:', error);
     // console.log('returning dummy data');
     throw new Error(error);
   }

@@ -53,9 +53,9 @@ interface IProposalsObject {
 interface IFormValues {
   email: string;
   title: string;
-  firstName?: string;
+  firstName: string;
   lastName?: string;
-  organizationName?: string;
+  organization?: string;
   description: string;
   recommendation: string;
   proposals: IProposalsObject;
@@ -63,8 +63,8 @@ interface IFormValues {
 }
 
 interface IProposalInfo {
-    metadata: IProposalMetadata[],
-    multihashes: string[],
+  metadata: IProposalMetadata[];
+  multihashes: string[];
 }
 
 const CreateSlate: React.FunctionComponent = () => {
@@ -136,7 +136,7 @@ const CreateSlate: React.FunctionComponent = () => {
       epochNumber,
       category,
       requestIDs,
-      Buffer.from(metadataHash),
+      Buffer.from(metadataHash)
     );
 
     if (txResponse.hash) {
@@ -280,6 +280,9 @@ const CreateSlate: React.FunctionComponent = () => {
         <Formik
           initialValues={{
             email: '',
+            firstName: '',
+            lastName: '',
+            organization: '',
             title: '',
             description: '',
             recommendation: '',

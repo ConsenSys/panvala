@@ -1,5 +1,8 @@
 import { providers, Contract } from 'ethers';
 
+/**
+ * Proposal fields that gets loaded/rendered in the frontend
+ */
 export interface IProposal {
   firstName: string;
   lastName: string;
@@ -44,6 +47,9 @@ export interface IProposalMetadata {
   awardAddress: string;
 }
 
+/**
+ * Slate fields that gets loaded/rendered in the frontend
+ */
 export interface ISlate {
   id: string;
   category: string;
@@ -63,14 +69,14 @@ export interface ISlate {
  * Public slate metadata that gets saved to IPFS
  */
 export interface ISlateMetadata {
-    firstName: string;
-    lastName?: string;
-    organization?: string;
-    // do not include email
-    title: string;
-    description: string;
-    proposalMultihashes: string[],
-    proposals: IProposalMetadata[],
+  firstName: string;
+  lastName?: string;
+  organization?: string;
+  // do not include email
+  title: string;
+  description: string;
+  proposalMultihashes: string[];
+  proposals: IProposalMetadata[];
 }
 
 export interface IContracts {

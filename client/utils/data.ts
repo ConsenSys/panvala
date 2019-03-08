@@ -16,6 +16,7 @@ export const proposalsArray: IProposal[] = [
     projectPlan: 'plan',
     projectTimeline: 'timeline',
     teamBackgrounds: 'backgrounds',
+    awardAddress: '0xd09cc3bc67e4294c4a446d8e4a2934a921410ed7',
   },
   {
     id: 3,
@@ -32,6 +33,7 @@ export const proposalsArray: IProposal[] = [
     projectPlan: 'plan',
     projectTimeline: 'timeline',
     teamBackgrounds: 'backgrounds',
+    awardAddress: '0xd09cc3bc67e4294c4a446d8e4a2934a921410ed7',
   },
   {
     id: 4,
@@ -47,6 +49,7 @@ export const proposalsArray: IProposal[] = [
     projectPlan: 'plan',
     projectTimeline: 'timeline',
     teamBackgrounds: 'backgrounds',
+    awardAddress: '0xd09cc3bc67e4294c4a446d8e4a2934a921410ed7',
   },
   {
     id: 5,
@@ -63,6 +66,7 @@ export const proposalsArray: IProposal[] = [
     projectPlan: 'plan',
     projectTimeline: 'timeline',
     teamBackgrounds: 'backgrounds',
+    awardAddress: '0xd09cc3bc67e4294c4a446d8e4a2934a921410ed7',
   },
 ];
 
