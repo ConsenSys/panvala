@@ -1,5 +1,10 @@
 # panvala-client
 
+Make sure the following environment variables are set:
+- API_HOST
+- GATEKEEPER_ADDRESS
+- TOKEN_CAPACITOR_ADDRESS
+
 Install
 
     yarn

@@ -5,6 +5,8 @@ module.exports = withTypescript(
   withCSS({
     publicRuntimeConfig: {
       apiHost: process.env.API_HOST,
+      gatekeeperAddress: process.env.GATEKEEPER_ADDRESS,
+      tokenCapacitorAddress: process.env.TOKEN_CAPACITOR_ADDRESS,
     },
     // cssModules: true,
     // cssLoaderOptions: {

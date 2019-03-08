@@ -1,7 +1,18 @@
 import { ethers, providers, Signer, Contract } from 'ethers';
 import { IContracts } from '../interfaces';
+import getConfig from 'next/config';
+
 const TokenCapacitor = require('./abis/TokenCapacitor.json');
 const Gatekeeper = require('./abis/Gatekeeper.json');
+
+// Defaults are a workaround for https://github.com/zeit/next.js/issues/4024
+const { publicRuntimeConfig = {} } = getConfig() || {};
+
+const gcAddress: string = publicRuntimeConfig.gatekeeperAddress ||
+  '0xcc20cbD0F5534f85F0042eC99Fd1C4f4608a31B9';
+const tcAddress = publicRuntimeConfig.gatekeeperAddress ||
+  '0x6BAD8c9caDFC59f0f5df904765ebA360A91a59b9';
+
 
 // contract abstractions for gate_keeper and token_capacitor
 export function connectContracts(provider: providers.Web3Provider): IContracts {
