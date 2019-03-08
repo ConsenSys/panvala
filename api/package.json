@@ -4,6 +4,7 @@
   "description": "Panvala API service",
   "main": "index.js",
   "scripts": {
+    "dev": "PORT=5001 yarn start",
     "start": "node index.js",
     "migrate": "sequelize db:migrate",
     "test": "jest --passWithNoTests"
