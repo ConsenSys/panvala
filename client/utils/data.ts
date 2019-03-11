@@ -10,7 +10,7 @@ export const proposalsArray: IProposal[] = [
     title: 'K Semantics for Web Assembly',
     summary:
       'A proposal to make Ethereum safer by enabling developers to formally verify smart contracts that run on Web Assembly.',
-    tokensRequested: 200000,
+    tokensRequested: '200000',
     category: 'GRANT',
     totalBudget: '100 for this. 200 for that.',
     otherFunding: 'nope!',
@@ -27,7 +27,7 @@ export const proposalsArray: IProposal[] = [
     title: 'Registry Builder Vote Weighting',
     summary:
       'A proposal to make Ethereum safer by improving a reusable library for token-curated registries.',
-    tokensRequested: 175000,
+    tokensRequested: '175000',
     category: 'GRANT',
     totalBudget: '100 for this. 200 for that.',
     otherFunding: 'nope!',
@@ -43,7 +43,7 @@ export const proposalsArray: IProposal[] = [
     email: 'cat@email.com',
     title: 'Tidbit Dynamic Oracles',
     summary: 'A proposal to make Ethereum safer by improving a reusable library for oracles.',
-    tokensRequested: 150000,
+    tokensRequested: '150000',
     category: 'GRANT',
     totalBudget: '100 for this. 200 for that.',
     otherFunding: 'nope!',
@@ -60,7 +60,7 @@ export const proposalsArray: IProposal[] = [
     title: 'Infrastructure Monitoring',
     summary:
       'A proposal to make Ethereum safer by monitoring high value systems and assets on Ethereum.',
-    tokensRequested: 200000,
+    tokensRequested: '200000',
     category: 'GRANT',
     totalBudget: '100 for this. 200 for that.',
     otherFunding: 'nope!',

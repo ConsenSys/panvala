@@ -56,6 +56,7 @@ const Slate: React.FunctionComponent = ({ router }: any) => {
   const { slates, proposals }: any = React.useContext(AppContext);
   console.log('proposals:', proposals);
   const slate = slates.find((slate: ISlate) => slate.id === router.query.id);
+  console.log('slate:', slate);
 
   return (
     <div className="flex flex-column">
@@ -115,9 +116,9 @@ const Slate: React.FunctionComponent = ({ router }: any) => {
           <SectionLabel>{'DESCRIPTION'}</SectionLabel>
           <div>{slate.description}</div>
           <SectionLabel>{'GRANTS'}</SectionLabel>
-          {proposals.length === 0 ? (
+          {slate.proposals.length !== 0 ? (
             <SlateProposals proposals={proposals}>
-              {proposals.map((proposal: IProposal, index: number) => (
+              {slate.proposals.map((proposal: IProposal, index: number) => (
                 <Card
                   key={proposal.title + index}
                   title={proposal.title}

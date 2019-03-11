@@ -1,6 +1,9 @@
 const { getAllSlates } = require('../utils/slates');
 
 module.exports = {
+  /**
+   * Get the list of slates
+   */
   async getAll(req, res) {
     getAllSlates()
       .then(slates => {

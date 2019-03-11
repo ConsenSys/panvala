@@ -11,6 +11,7 @@ import { toast } from 'react-toastify';
 import FieldText from './FieldText';
 import FieldTextarea from './FieldTextarea';
 import config from '../config';
+import { utils } from 'ethers';
 
 const FormSchema = yup.object().shape({
   firstName: yup
@@ -35,9 +36,8 @@ const FormSchema = yup.object().shape({
     .max(4000, 'Too Long!')
     .required('Required'),
   tokensRequested: yup
-    .number()
-    .min(1, 'Not enough tokens')
-    .max(config.totalUpcomingDispatch, `Too many tokens (${config.totalUpcomingDispatch} max)`)
+    .string()
+    // .max(config.totalUpcomingDispatch, `Too many tokens (${config.totalUpcomingDispatch} max)`)
     .required('Required'),
   totalBudget: yup.string().required('Required'),
   otherFunding: yup.string().required('Required'),
@@ -88,7 +88,7 @@ const ProposalForm: React.SFC<Props> = ({ onHandleSubmit }) => {
         validationSchema={FormSchema}
         onSubmit={async (values, { setSubmitting }) => {
           console.log('proposal-form-values:', values);
-          // values.tokensRequested = utils.parseUnits(values.tokensRequested.toString(), 18).toString();
+          values.tokensRequested = utils.parseUnits(values.tokensRequested, 18).toString();
           await onHandleSubmit(values);
           setSubmitting(false);
         }}
@@ -178,13 +178,9 @@ const ProposalForm: React.SFC<Props> = ({ onHandleSubmit }) => {
                 placeholder="Enter the total budget of your project"
               />
 
-              <Label htmlFor="tokensRequested" required>
-                {'How many tokens are you requesting?'}
-              </Label>
-              <ErrorMessage name="tokensRequested" component="span" />
-              <Field
-                maxLength={80}
-                type="number"
+              <FieldText
+                required
+                label={'How many tokens are you requesting?'}
                 name="tokensRequested"
                 placeholder="Enter the amount of tokens you would like"
               />

@@ -9,7 +9,7 @@ export interface IProposal {
   email: string;
   title: string;
   summary: string;
-  tokensRequested: number;
+  tokensRequested: string;
   github?: string;
   referral?: string;
   category?: string;
@@ -34,7 +34,7 @@ export interface IProposalMetadata {
   lastName: string;
   title: string;
   summary: string;
-  tokensRequested: number;
+  tokensRequested: string;
   github?: string;
   id: number;
   website?: string;
