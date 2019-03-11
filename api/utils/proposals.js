@@ -27,11 +27,14 @@ module.exports = {
     tokensRequested: {
       in: ['body'],
       exists: true,
-      isDecimal: {
+      trim: true,
+      isEmpty: false,
+      isLength: {
         options: {
-          decimal_digits: '0,18',
+          min: 1,
         },
       },
+      isNull: false,
     },
     firstName: {
       in: ['body'],

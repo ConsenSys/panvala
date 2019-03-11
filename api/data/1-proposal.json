@@ -1,7 +1,7 @@
 {
     "title": "An amazing proposal",
     "summary": "All sorts of amazing things",
-    "tokensRequested": 200000,
+    "tokensRequested": "200000",
     "firstName": "John",
     "lastName": "Crypto",
     "email": "jc@eth.io",

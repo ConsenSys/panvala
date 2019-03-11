@@ -11,7 +11,7 @@ module.exports = (Sequelize, DataTypes) => {
       length: 5000,
     },
     tokensRequested: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING,
       allowNull: false,
     },
     // user's personal info
