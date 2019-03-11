@@ -11,9 +11,9 @@ import Tag from '../../components/Tag';
 import Card, { CardAddress } from '../../components/Card';
 import Deadline from '../../components/Deadline';
 import { IProposal, ISlate } from '../../interfaces';
-import { splitAddressHumanReadable } from '../../utils/format';
+import { splitAddressHumanReadable, formatPanvalaUnits } from '../../utils/format';
 import { tsToDeadline } from '../../utils/datetime';
-import { statuses } from '../../utils/data';
+import { statuses, isPendingTokens, isPendingVote } from '../../utils/status';
 
 const Incumbent = styled.div`
   color: ${COLORS.primary};
@@ -62,7 +62,7 @@ const Slate: React.FunctionComponent = ({ router }: any) => {
       <div className="flex justify-between">
         <div className="flex">
           <Tag status={''}>{slate.category.toUpperCase()}</Tag>
-          {slate.status && <Tag status={slate.status}>{slate.status}</Tag>}
+          <Tag status={slate.status}>{slate.status}</Tag>
         </div>
         {slate.deadline && (
           <Deadline status={slate.status}>{`${tsToDeadline(slate.deadline)}`}</Deadline>
@@ -74,12 +74,12 @@ const Slate: React.FunctionComponent = ({ router }: any) => {
 
       <SlateContainer>
         <SlateMeta>
-          {slate.status === statuses.PENDING_TOKENS ? (
+          {isPendingTokens(slate.status) ? (
             <Button large type="default">
               {'Stake Tokens'}
             </Button>
           ) : (
-            slate.status === 'PENDING VOTE' && (
+            isPendingVote(slate.status) && (
               <Link href="/ballots">
                 <a className="link">
                   <Button large type="default">
@@ -90,10 +90,10 @@ const Slate: React.FunctionComponent = ({ router }: any) => {
             )
           )}
           <SlateStaking>
-            {slate.status === statuses.PENDING_TOKENS && (
+            {isPendingTokens(slate.status) && (
               <div>
                 <SectionLabel>{'STAKING REQUIREMENT'}</SectionLabel>
-                <StakingRequirement>{slate.requiredStake + ' PAN'}</StakingRequirement>
+                <StakingRequirement>{formatPanvalaUnits(slate.requiredStake)}</StakingRequirement>
               </div>
             )}
             <div className="f6 lh-copy">

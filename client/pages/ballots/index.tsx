@@ -5,7 +5,7 @@ import { COLORS } from '../../styles';
 import Button from '../../components/Button';
 import SectionLabel from '../../components/SectionLabel';
 import CenteredTitle from '../../components/CenteredTitle';
-import { statuses } from '../../utils/data';
+import { statuses } from '../../utils/status';
 import Deadline from '../../components/Deadline';
 import { tsToDeadline } from '../../utils/datetime';
 import config from '../../config';

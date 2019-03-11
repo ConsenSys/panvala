@@ -5,7 +5,7 @@ import { AppContext } from '../../components/Layout';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
 import RouteTitle from '../../components/RouteTitle';
-import { statuses } from '../../utils/data';
+import { statuses } from '../../utils/status';
 import Deadline from '../../components/Deadline';
 import { tsToDeadline } from '../../utils/datetime';
 

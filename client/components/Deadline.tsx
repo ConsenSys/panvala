@@ -3,13 +3,13 @@ import styled from 'styled-components';
 import { ITag } from '../interfaces';
 import { COLORS } from '../styles';
 import Tag from './Tag';
-import { statuses } from '../utils/data';
+import { statuses, isPendingTokens, isPendingVote, isProposalDeadline } from '../utils/status';
 
 const StyledDeadline = styled(Tag)`
   background-color: ${({ status }: any) =>
-    status === statuses.PENDING_TOKENS || status === statuses.PROPOSAL_DEADLINE
+    isPendingTokens(status) || isProposalDeadline(status)
       ? COLORS.grey5
-      : status === statuses.PENDING_VOTE
+      : isPendingVote(status)
       ? COLORS.yellow1
       : 'rgba(89, 182, 230, 0.2)'};
   color: ${COLORS.text};
@@ -17,13 +17,13 @@ const StyledDeadline = styled(Tag)`
   height: 2rem;
 `;
 
-const Deadline: React.FunctionComponent<ITag> = props => {
+const Deadline: React.FunctionComponent<ITag> = (props: any) => {
   return (
     <Wrapper>
       <StyledDeadline {...props}>{`${
-        props.status === statuses.PENDING_TOKENS
+        isPendingTokens(props.status)
           ? 'SLATE STAKING DEADLINE'
-          : props.status === statuses.PROPOSAL_DEADLINE
+          : isProposalDeadline(props.status)
           ? 'PROPOSAL DEADLINE'
           : 'VOTE UNTIL'
       } ${Children.toArray(props.children)} EST`}</StyledDeadline>

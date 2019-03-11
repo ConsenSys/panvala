@@ -110,7 +110,7 @@ const CreateSlate: React.FunctionComponent = () => {
       const slateMetadata: ISlateMetadata = {
         firstName: values.firstName,
         lastName: values.lastName,
-        organization: values.organizationName,
+        organization: values.organization,
         title: values.title,
         description: values.description,
         proposalMultihashes,

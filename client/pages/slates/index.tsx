@@ -10,7 +10,7 @@ import { ISlate } from '../../interfaces';
 import { toast } from 'react-toastify';
 import Deadline from '../../components/Deadline';
 import { tsToDeadline } from '../../utils/datetime';
-import { statuses } from '../../utils/data';
+import { statuses } from '../../utils/status';
 
 type Props = {
   errors?: string;
@@ -27,6 +27,7 @@ const VisibilityFilterContainer = styled.div`
 
 const Slates: React.FunctionComponent<Props> = ({ router }) => {
   const { slates, slateStakingDeadline }: any = React.useContext(AppContext);
+  // console.log("slates:", slates);
   const [visibilityFilter, setVisibilityFilter] = React.useState('all');
 
   function handleClickSlate(slate: ISlate) {
@@ -78,6 +79,7 @@ const Slates: React.FunctionComponent<Props> = ({ router }) => {
                 subtitle={slate.subtitle}
                 description={slate.description}
                 category={slate.category}
+                // TODO: translate status to enum value
                 status={slate.status}
                 address={slate.ownerAddress}
                 recommender={slate.owner}

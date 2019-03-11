@@ -1,4 +1,5 @@
 import { utils } from 'ethers';
+import { BigNumber } from 'ethers/utils';
 
 export function splitAddressHumanReadable(address: string): string {
   // 0xd115bffabbdd893a6f7cea402e7338643ced44a6
@@ -14,4 +15,18 @@ export function splitAddressHumanReadable(address: string): string {
   const joined = [prefix].concat(fourChars).join(' ');
   // 0x D115 BFFA bbdd 893A 6f7c eA40 2e73 3864 3Ced 44a6
   return joined;
+}
+
+export function convertedToBaseUnits(converted: string, decimals: number): string {
+  return utils.parseUnits(converted, decimals).toString();
+}
+
+export function baseToConvertedUnits(base: BigNumber, decimals: number): string {
+  return utils.formatUnits(base, decimals).toString();
+}
+
+export function formatPanvalaUnits(base: BigNumber) {
+  const converted: string = baseToConvertedUnits(base, 18);
+
+  return converted + ' PAN';
 }

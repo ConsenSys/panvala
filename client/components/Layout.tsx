@@ -4,11 +4,11 @@ import styled from 'styled-components';
 import { ToastContainer, toast } from 'react-toastify';
 import { format } from 'date-fns';
 import { AxiosResponse } from 'axios';
+
 import Header from './Header';
-import { getAllProposals, getAllSlates } from '../utils/api';
-import { slatesArray } from '../utils/data';
-// import { ipfsGetData } from '../utils/ipfs';
 import { IProposal, ISlate, IAppContext } from '../interfaces';
+import { getAllProposals, getAllSlates } from '../utils/api';
+import { convertEVMStatus } from '../utils/status';
 
 export const AppContext: any = React.createContext({});
 
@@ -35,14 +35,8 @@ export default class Layout extends React.Component<Props> {
 
   // runs once, onload
   async componentDidMount() {
-    const slateMultihashes = [
-      'QmSQWr3N1KK1wPEX66UY4uY8m5GTFgKk3E6ARHL57SU61N',
-      'QmdhaZrQS38rm4sYcQ4b1KMk8RRr7sFcGPwwuTVBrkW5DC',
-    ];
     // const slatesFromIpfs: any[] = await Promise.all(slateMultihashes.map(mh => ipfsGetData(mh)));
-    // console.log('slatesFromIpfs:', slatesFromIpfs);
     // const slatesWithMHs = slates.map((s, i) => ({ ...s, hash: slateMultihashes[i] }));
-    // const slates: ISlate[] = slatesArray;
     const slates: ISlate[] | AxiosResponse = await getAllSlates();
     const proposals: IProposal[] | AxiosResponse = await getAllProposals();
 
@@ -59,7 +53,11 @@ export default class Layout extends React.Component<Props> {
 
     let slateData;
     if (Array.isArray(slates)) {
-      slateData = slates;
+      slateData = slates.map((s: any) => {
+        // convert from number to string
+        s.status = convertEVMStatus(s.status);
+        return s;
+      });
     }
 
     this.setState({

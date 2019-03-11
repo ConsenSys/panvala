@@ -1,4 +1,5 @@
 import { IProposal, ISlate } from '../interfaces';
+import { statuses } from './status';
 
 export const proposalsArray: IProposal[] = [
   {
@@ -69,12 +70,6 @@ export const proposalsArray: IProposal[] = [
     awardAddress: '0xd09cc3bc67e4294c4a446d8e4a2934a921410ed7',
   },
 ];
-
-export const statuses = {
-  PENDING_TOKENS: 'PENDING TOKENS',
-  PENDING_VOTE: 'PENDING VOTE',
-  PROPOSAL_DEADLINE: 'PROPOSAL DEADLINE',
-};
 
 export const slatesArray: ISlate[] = [
   {
