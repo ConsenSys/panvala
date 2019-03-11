@@ -3,6 +3,7 @@ const ipfs = require('./ipfs');
 
 const Gatekeeper = require('../contracts/Gatekeeper.json');
 const Slate = require('../contracts/Slate.json');
+const ParameterStore = require('../contracts/ParameterStore.json');
 
 const { toUtf8String } = ethers.utils;
 
@@ -17,6 +18,12 @@ async function getAllSlates() {
   // Get an interface to the Gatekeeper contract
   const provider = new ethers.providers.JsonRpcProvider(rpcEndpoint);
   const gatekeeper = new ethers.Contract(gatekeeperAddress, Gatekeeper.abi, provider);
+
+  // Get an interface to the ParameterStore contract
+  const parameters = await gatekeeper.parameters();
+  const parameterStore = new ethers.Contract(parameters, ParameterStore.abi, provider);
+  // Get the slate staking requirement
+  const requiredStake = await parameterStore.get('slateStakeAmount');
 
   // Get the number of available slates
   const slateCount = await gatekeeper.slateCount();
@@ -46,7 +53,7 @@ async function getAllSlates() {
         return decoded;
       })
       .then(metadataHash => {
-        return getSlateMetadata(slate, metadataHash);
+        return getSlateMetadata(slate, metadataHash, requiredStake);
       });
   });
 
@@ -58,16 +65,14 @@ async function getAllSlates() {
  * @param {ethers.Contract} slate
  * @param {String} metadataHash
  */
-async function getSlateMetadata(slate, metadataHash) {
+async function getSlateMetadata(slate, metadataHash, requiredStake) {
   // TODO: get real data
   const deadline = 1539044131;
 
   const metadata = await ipfs.get(metadataHash);
 
-  // TODO: get from contract
+  // get the slate's current status & the account that recommended this slate:
   const status = await slate.status();
-  const requiredStake = '500';
-
   const ownerAddress = await slate.recommender();
 
   // get from database
