@@ -263,6 +263,20 @@ describe('POST /api/proposals', () => {
       expect(result.status).toBe(400);
     });
 
+    // FIX: this fails
+    // checkSchema(proposalSchema) allows strings that are valid integers, which is why ^that test passes (invalid string -> integer conversion)
+    test.skip('it should return a 400 if `tokensRequested` is a string that could be parsed as a number', async () => {
+      data.tokensRequested = '1000000';
+
+      const result = await request(app)
+        .post('/api/proposals')
+        .send(data);
+
+      // the test db is allowing strings to be added to the db (see: attached screenshot)
+      console.log(Proposal.findAll());
+      expect(result.status).toBe(400);
+    });
+
     test('it should return a 400 if the email is invalid', async () => {
       data.email = '@abc.com';
 
