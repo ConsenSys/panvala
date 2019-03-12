@@ -3,6 +3,9 @@ const ethUtils = require('ethereumjs-util');
 const bs58 = require('bs58');
 
 const Gatekeeper = artifacts.require('Gatekeeper');
+const BasicToken = artifacts.require('BasicToken');
+
+const { BN } = ethUtils;
 
 /**
  * Check that the error is an EVM `revert`
@@ -28,14 +31,51 @@ function createMultihash(data) {
   return multihash.toString();
 }
 
+function calculateSupply(initialTokens, decimals) {
+  // calculate the initial supply:
+  const tokens = new BN(initialTokens);
+  const ten = new BN(10);
+  const exponent = new BN(decimals);
+
+  // const factor = ten.pow(exponent);
+  const initialSupply = tokens.mul(ten.pow(exponent));
+  return initialSupply;
+}
+
+/**
+ * Convenience function for creating a token
+ * @param {Object} params : { decimals, initialTokens, ...txParams }
+ */
+async function newToken(params) {
+  const tokenParams = params || {};
+  const decimals = tokenParams.decimals || '18';
+  const initialTokens = tokenParams.initialTokens || 100000;
+
+  const supply = calculateSupply(initialTokens, decimals);
+  return BasicToken.new('Testcoin', 'TEST', decimals.toString(), supply, {
+    from: params.from,
+  });
+}
+
 async function newGatekeeper(options) {
-  const creator = options.from;
+  const { from: creator } = options;
+  let { tokenAddress } = options;
+
+  // Deploy a token if the address of one isn't passed in
+  if (typeof tokenAddress === 'undefined') {
+    const token = await newToken({ from: creator });
+    tokenAddress = token.address;
+  }
+
+  // console.log('using token at address', tokenAddress);
+
   const startTime = '6000';
   const stakeAmount = '5000';
-  const gatekeeper = await Gatekeeper.new(startTime, stakeAmount, { from: creator });
+  const gatekeeper = await Gatekeeper.new(tokenAddress, startTime, stakeAmount, { from: creator });
 
   return gatekeeper;
 }
+
 
 function asBytes(string) {
   return ethUtils.toBuffer(string);
@@ -64,6 +104,7 @@ function bytesAsString(bytes) {
   return decoded.toString();
 }
 
+
 const utils = {
   expectRevert,
   zeroAddress: ethUtils.zeroAddress,
@@ -73,6 +114,7 @@ const utils = {
   asBytes,
   stripHexPrefix,
   bytesAsString,
+  newToken,
 };
 
 module.exports = utils;

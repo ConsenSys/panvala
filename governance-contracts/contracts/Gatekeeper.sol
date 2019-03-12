@@ -4,12 +4,14 @@ pragma experimental ABIEncoderV2;
 import "./ParameterStore.sol";
 import "./Slate.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
 
 contract Gatekeeper {
     // EVENTS
     event PermissionRequested(uint requestID, bytes metadataHash);
     event SlateCreated(uint slateID, address indexed recommender, bytes metadataHash);
+    event VotingTokensDeposited(address indexed voter, uint numTokens);
 
     // STATE
     using SafeMath for uint256;
@@ -23,6 +25,10 @@ contract Gatekeeper {
     // Parameters
     ParameterStore public parameters;
 
+    // Token
+    IERC20 public token;
+
+    // Requests
     struct Request {
         bytes metadataHash;
         bool approved;
@@ -34,20 +40,28 @@ contract Gatekeeper {
     // The total number of requests created
     uint public requestCount;
 
+    // Voting
     // The slates created by the Gatekeeper. Maps slateID -> Slate.
     mapping(uint => Slate) public slates;
 
     // The total number of slates created
     uint public slateCount;
 
+    // The number of tokens each account has available for voting
+    mapping(address => uint) public voteTokenBalance;
+
     // IMPLEMENTATION
     /**
      @dev Initialize a Gatekeeper contract.
+     @param _token The associated ERC20 token
      @param _startTime The start time of the first batch
      @param _slateStakeAmount The number of tokens required to stake on a slate
     */
-    constructor(uint _startTime, uint _slateStakeAmount) public {
+    constructor(IERC20 _token, uint _startTime, uint _slateStakeAmount) public {
+        require(address(_token) != address(0), "Token address cannot be zero");
+
         startTime = _startTime;
+        token = _token;
 
         uint length = 1;
         string[] memory names = new string[](length);
@@ -108,6 +122,28 @@ contract Gatekeeper {
 
         emit SlateCreated(slateID, msg.sender, metadataHash);
         return slateID;
+    }
+
+    /**
+     * @dev Deposit `numToken` tokens into the Gatekeeper to use in voting
+     * Assumes that `msg.sender` has approved the Gatekeeper to spend on their behalf
+     * @param numTokens The number of tokens to devote to voting
+     */
+    function depositVoteTokens(uint numTokens) public returns(bool) {
+        address voter = msg.sender;
+
+        // Voter must have enough tokens
+        require(token.balanceOf(msg.sender) >= numTokens, "Insufficient token balance");
+
+        // Transfer tokens to increase the voter's balance by `numTokens`
+        uint originalBalance = voteTokenBalance[voter];
+        voteTokenBalance[voter] = originalBalance.add(numTokens);
+
+        // Must successfully transfer tokens from voter to this contract
+        require(token.transferFrom(voter, address(this), numTokens), "Failed to transfer tokens");
+
+        emit VotingTokensDeposited(voter, numTokens);
+        return true;
     }
 
     // ACCESS CONTROL

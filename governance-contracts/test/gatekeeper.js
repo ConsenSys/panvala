@@ -7,7 +7,7 @@ const Gatekeeper = artifacts.require('Gatekeeper');
 const ParameterStore = artifacts.require('ParameterStore');
 const Slate = artifacts.require('Slate');
 
-const { expectRevert } = utils;
+const { expectRevert, newToken } = utils;
 
 
 contract('Gatekeeper', (accounts) => {
@@ -17,9 +17,18 @@ contract('Gatekeeper', (accounts) => {
     it('should correctly initialize the gatekeeper', async () => {
       const startTime = '6000';
       const stakeAmount = '5000';
-      const gatekeeper = await Gatekeeper.new(startTime, stakeAmount, { from: creator });
+      const token = await newToken({ from: creator });
+      const gatekeeper = await Gatekeeper.new(
+        token.address,
+        startTime, stakeAmount, {
+          from: creator,
+        },
+      );
 
       // Check initial values
+      const actualToken = await gatekeeper.token({ from: creator });
+      assert.strictEqual(actualToken.toString(), token.address);
+
       // start time
       const actualStartTime = await gatekeeper.startTime({ from: creator });
       assert.strictEqual(actualStartTime.toString(), startTime.toString());
@@ -36,6 +45,40 @@ contract('Gatekeeper', (accounts) => {
       // stake amount
       const actualStakeAmount = await parameters.get('slateStakeAmount');
       assert.strictEqual(actualStakeAmount.toString(), stakeAmount.toString());
+    });
+
+    it('should fail if the token address is zero', async () => {
+      const tokenAddress = utils.zeroAddress();
+
+      const startTime = '6000';
+      const stakeAmount = '5000';
+
+      try {
+        await Gatekeeper.new(
+          tokenAddress,
+          startTime, stakeAmount, {
+            from: creator,
+          },
+        );
+      } catch (error) {
+        expectRevert(error);
+        return;
+      }
+      assert.fail('Created Gatekeeper with a zero token address');
+    });
+  });
+
+  // Test the helper for creating gatekeepers
+  describe('newGatekeeper helper', () => {
+    const [creator] = accounts;
+
+    it('should create a gatekeeper', async () => {
+      const initialTokens = '10000000';
+      const token = await utils.newToken({ initialTokens, from: creator });
+      const gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+
+      const t = await gatekeeper.token();
+      assert.strictEqual(t, token.address);
     });
   });
 
@@ -138,6 +181,85 @@ contract('Gatekeeper', (accounts) => {
         return;
       }
       assert.fail('allowed creation of a request with an empty metadataHash');
+    });
+  });
+
+  describe('depositVoteTokens', () => {
+    const [creator, voter] = accounts;
+    let gatekeeper;
+    let token;
+    const initialTokens = '20000000';
+
+    beforeEach(async () => {
+      token = await utils.newToken({ initialTokens, from: creator });
+      gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+    });
+
+    it('should increase the user\'s voting balance', async () => {
+      const allocatedTokens = '1000';
+
+      // Make sure the voter has available tokens
+      await token.transfer(voter, allocatedTokens, { from: creator });
+      const tokenBalance = await token.balanceOf(voter);
+      assert.strictEqual(tokenBalance.toString(), allocatedTokens, 'Voter did not get the tokens');
+
+      // Give the Gatekeeper an allowance to spend
+      await token.approve(gatekeeper.address, allocatedTokens, { from: voter });
+      const allowance = await token.allowance(voter, gatekeeper.address);
+      assert.strictEqual(allowance.toString(), allocatedTokens, 'Allowance is wrong');
+
+      // Voter initially has no voting tokens
+      const initialVotingBalance = await gatekeeper.voteTokenBalance(voter);
+      assert.strictEqual(initialVotingBalance.toString(), '0');
+
+      // Request
+      const receipt = await gatekeeper.depositVoteTokens(allocatedTokens, { from: voter });
+
+      // Emit event with correct values
+      const { voter: emittedVoter, numTokens: emittedTokens } = receipt.logs[0].args;
+      assert.strictEqual(emittedVoter, voter, 'Wrong voter address was emitted');
+      assert.strictEqual(emittedTokens.toString(), allocatedTokens, 'Wrong token amount was emitted');
+
+      // Vote token balance should have increased
+      const finalVotingBalance = await gatekeeper.voteTokenBalance(voter);
+      assert.strictEqual(finalVotingBalance.toString(), allocatedTokens);
+    });
+
+    it('should fail if the voter does not have enough tokens', async () => {
+      const allocatedTokens = '1000';
+      const requestedTokens = '1001';
+
+      // Make sure the voter has available tokens and the gatekeeper is approved to spend them
+      await token.transfer(voter, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: voter });
+
+      // Request
+      try {
+        await gatekeeper.depositVoteTokens(requestedTokens, { from: voter });
+      } catch (error) {
+        expectRevert(error);
+        return;
+      }
+      assert.fail('allowed voter to request rights for more tokens than they have');
+    });
+
+    it('should fail if the token transfer to the contract fails', async () => {
+      const allocatedTokens = '1000';
+      // use an allowance that is too small
+      const allowance = '999';
+
+      // Make sure the voter has available tokens and the gatekeeper is approved to spend them
+      await token.transfer(voter, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allowance, { from: voter });
+
+      // Request
+      try {
+        await gatekeeper.depositVoteTokens(allocatedTokens, { from: voter });
+      } catch (error) {
+        expectRevert(error);
+        return;
+      }
+      assert.fail('allowed voter to request rights even though the token transfer failed');
     });
   });
 });
