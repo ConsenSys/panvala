@@ -68,13 +68,6 @@ module.exports = {
       network_id: '*', // Any network (default: none)
     },
 
-    // Solidity coverage
-    coverage: {
-      host: '127.0.0.1',
-      port: 8555, // match the port in .solcover.js -- 8555 is default
-      network_id: '*', // match any network ID
-    },
-
     // Ganache GUI
     ganache: {
       host: '127.0.0.1',
