@@ -1,8 +1,6 @@
 import * as React from 'react';
-import styled from 'styled-components';
 import * as yup from 'yup';
-import { Formik, Form, Field as FormikField, ErrorMessage as FormikError } from 'formik';
-import { COLORS } from '../styles';
+import { Formik, Form } from 'formik';
 import { Separator } from '../components/Form';
 import Label from './Label';
 import SectionLabel from './SectionLabel';
@@ -11,7 +9,7 @@ import { toast } from 'react-toastify';
 import FieldText from './FieldText';
 import FieldTextarea from './FieldTextarea';
 import config from '../config';
-import { utils } from 'ethers';
+import { convertedToBaseUnits } from '../utils/format';
 
 const FormSchema = yup.object().shape({
   firstName: yup
@@ -44,27 +42,11 @@ const FormSchema = yup.object().shape({
   awardAddress: yup.string().required('Required'),
 });
 
-const Field = styled(FormikField)`
-  background-color: ${COLORS.grey6};
-  border: 1px solid ${COLORS.greyBorder};
-  border-radius: 2px;
-  width: 100%;
-  padding: 0.8em;
-  font-size: 0.8em;
-  margin: 1em 0;
-`;
-
-const ErrorMessage: any = styled(FormikError)`
-  font-weight: bold;
-  margin-left: 0.5em;
-  color: red;
-`;
-
-interface Props {
+interface IProps {
   onHandleSubmit: any;
 }
 
-const ProposalForm: React.SFC<Props> = ({ onHandleSubmit }) => {
+const ProposalForm: React.SFC<IProps> = ({ onHandleSubmit }) => {
   return (
     <div>
       <Formik
@@ -87,9 +69,12 @@ const ProposalForm: React.SFC<Props> = ({ onHandleSubmit }) => {
         }}
         validationSchema={FormSchema}
         onSubmit={async (values, { setSubmitting }) => {
-          console.log('proposal-form-values:', values);
-          values.tokensRequested = utils.parseUnits(values.tokensRequested, 18).toString();
-          await onHandleSubmit(values);
+          const baseUnitsValues = {
+            ...values,
+            // throws on underflow (x.1234567890123456789)
+            tokensRequested: convertedToBaseUnits(values.tokensRequested, 18),
+          };
+          await onHandleSubmit(baseUnitsValues);
           setSubmitting(false);
         }}
       >

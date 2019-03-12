@@ -31,18 +31,18 @@ const ModalDescription = styled.div`
 `;
 
 const CreateProposal: React.FunctionComponent<Props> = () => {
-  const { onNotify, onGetAllProposals }: any = React.useContext(AppContext);
+  const { onNotify, onRefreshProposals }: any = React.useContext(AppContext);
 
   const [isOpen, setOpenModal] = React.useState(false);
 
   async function handleSubmit(formValues: IProposal) {
-    console.log('form-values:', formValues);
+    console.log('proposal-form-values:', formValues);
 
     try {
       const response = await postProposal(formValues);
       if (response.status === 200) {
         setOpenModal(true);
-        await onGetAllProposals();
+        await onRefreshProposals();
         // TODO: redirect: /proposals
         // or: move this logic to proposals/index and remove from componentDidMount in Layout
       }

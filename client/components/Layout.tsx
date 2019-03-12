@@ -9,6 +9,7 @@ import Header from './Header';
 import { IProposal, ISlate, IAppContext } from '../interfaces';
 import { getAllProposals, getAllSlates } from '../utils/api';
 import { convertEVMSlateStatus } from '../utils/status';
+import { baseToConvertedUnits } from '../utils/format';
 
 export const AppContext: any = React.createContext({});
 
@@ -20,11 +21,11 @@ const ContentWrapper = styled.div`
   margin: 2em 12em;
 `;
 
-type Props = {
+type IProps = {
   title: string;
 };
 
-export default class Layout extends React.Component<Props> {
+export default class Layout extends React.Component<IProps> {
   state: IAppContext = {
     slates: [],
     proposals: [],
@@ -38,11 +39,11 @@ export default class Layout extends React.Component<Props> {
     // const slatesFromIpfs: any[] = await Promise.all(slateMultihashes.map(mh => ipfsGetData(mh)));
     // const slatesWithMHs = slates.map((s, i) => ({ ...s, hash: slateMultihashes[i] }));
     const slates: ISlate[] | AxiosResponse = await getAllSlates();
-    const proposals: IProposal[] | AxiosResponse = await getAllProposals();
+    const proposals: IProposal[] | AxiosResponse = await this.handleGetAllProposals();
 
     let proposalData;
+    // sort proposals by createdAt
     if (Array.isArray(proposals)) {
-      // sort by createdAt
       const sortedProposals = proposals.sort((a: IProposal, b: IProposal) => {
         const timestampA = format(a.createdAt, 'x');
         const timestampB = format(b.createdAt, 'x');
@@ -52,6 +53,7 @@ export default class Layout extends React.Component<Props> {
     }
 
     let slateData;
+    // convert statuses: number -> string (via enum)
     if (Array.isArray(slates)) {
       slateData = slates.map((s: any) => {
         // convert from number to string
@@ -76,7 +78,7 @@ export default class Layout extends React.Component<Props> {
     }
   };
 
-  handleSelectSlate = async (slateId: string) => {
+  handleSelectSlate = (slateId: string) => {
     const selectedSlate: ISlate | undefined = this.state.slates.find(
       slate => slate.title === slateId
     );
@@ -85,7 +87,21 @@ export default class Layout extends React.Component<Props> {
   };
 
   handleGetAllProposals = async () => {
-    const proposals = await getAllProposals();
+    let proposals = await getAllProposals();
+
+    // convert tokensRequested: base -> human
+    if (Array.isArray(proposals)) {
+      proposals = proposals.map((p: any) => {
+        p.tokensRequested = baseToConvertedUnits(p.tokensRequested, 18);
+        return p;
+      });
+    }
+
+    return proposals;
+  };
+
+  handleRefreshProposals = async () => {
+    const proposals = await this.handleGetAllProposals();
     return this.setState({ proposals });
   };
 
@@ -106,7 +122,7 @@ export default class Layout extends React.Component<Props> {
             value={{
               onHandleSelectSlate: this.handleSelectSlate,
               onNotify: this.handleNotify,
-              onGetAllProposals: this.handleGetAllProposals,
+              onRefreshProposals: this.handleRefreshProposals,
               slates,
               proposals,
               selectedSlate,

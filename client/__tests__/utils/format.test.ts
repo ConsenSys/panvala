@@ -1,4 +1,4 @@
-import { splitAddressHumanReadable } from '../../utils/format';
+import { splitAddressHumanReadable, convertedToBaseUnits } from '../../utils/format';
 
 describe('Formatters', () => {
   describe('splitAddressHumanReadable', () => {
@@ -31,6 +31,47 @@ describe('Formatters', () => {
         return;
       }
       fail('should have failed when given an invalid hex address');
+    });
+  });
+
+  describe('convertedToBaseUnits', () => {
+    test('should convert integers correctly', () => {
+      const base1 = convertedToBaseUnits('100', 18);
+      expect(base1).toBe('100000000000000000000');
+
+      const base2 = convertedToBaseUnits('9534782954988543', 18);
+      expect(base2).toBe('9534782954988543000000000000000000');
+    });
+
+    test('should convert decimals correctly', () => {
+      const base1 = convertedToBaseUnits('100.0', 18);
+      expect(base1).toBe('100000000000000000000');
+
+      const base2 = convertedToBaseUnits('9534782954988543.1', 18);
+      expect(base2).toBe('9534782954988543100000000000000000');
+
+      const base3 = convertedToBaseUnits('12345.87459321', 18);
+      expect(base3).toBe('12345874593210000000000');
+    });
+
+    test('should throw if given an invalid string value', () => {
+      try {
+        convertedToBaseUnits('invalid number string', 18);
+      } catch (error) {
+        expect(error.message).toContain('invalid decimal value');
+        return;
+      }
+      fail('should have throw if given invalid value');
+    });
+
+    test('should throw if given a value with more than 18 decimals', () => {
+      try {
+        convertedToBaseUnits('100.1234567890123456789', 18);
+      } catch (error) {
+        expect(error.message).toContain('underflow occurred');
+        return;
+      }
+      fail('should have throw if given value with more than 18 decimals');
     });
   });
 });

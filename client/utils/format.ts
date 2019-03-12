@@ -18,10 +18,12 @@ export function splitAddressHumanReadable(address: string): string {
 }
 
 export function convertedToBaseUnits(converted: string, decimals: number): string {
+  // expects converted: string, throws on failure to convert
   return utils.parseUnits(converted, decimals).toString();
 }
 
 export function baseToConvertedUnits(base: BigNumber, decimals: number): string {
+  // expects base: BigNumberish, throws on failure to convert
   return utils.formatUnits(base, decimals).toString();
 }
 
