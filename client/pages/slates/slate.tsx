@@ -10,10 +10,10 @@ import SectionLabel from '../../components/SectionLabel';
 import Tag from '../../components/Tag';
 import Card, { CardAddress } from '../../components/Card';
 import Deadline from '../../components/Deadline';
-import { IProposal, ISlate } from '../../interfaces';
+import { IProposal, ISlate, IAppContext } from '../../interfaces';
 import { splitAddressHumanReadable, formatPanvalaUnits } from '../../utils/format';
 import { tsToDeadline } from '../../utils/datetime';
-import { statuses, isPendingTokens, isPendingVote } from '../../utils/status';
+import { isPendingTokens, isPendingVote } from '../../utils/status';
 
 const Incumbent = styled.div`
   color: ${COLORS.primary};
@@ -46,17 +46,22 @@ const SlateMain = styled.div`
   width: 70%;
   padding: 1rem;
 `;
-const SlateProposals: any = styled.div`
+const SlateProposals = styled.div`
   display: flex;
   flex-flow: row wrap;
 `;
 
 const Slate: React.FunctionComponent = ({ router }: any) => {
   console.log('router:', router);
-  const { slates, proposals }: any = React.useContext(AppContext);
-  console.log('proposals:', proposals);
-  const slate = slates.find((slate: ISlate) => slate.id === router.query.id);
+  const { slates }: IAppContext = React.useContext(AppContext);
+  const slate: ISlate | undefined = (slates as ISlate[]).find(
+    (slate: ISlate) => slate.id === router.query.id
+  );
   console.log('slate:', slate);
+
+  if (!slate) {
+    return <div>No slate!</div>;
+  }
 
   return (
     <div className="flex flex-column">
@@ -116,8 +121,8 @@ const Slate: React.FunctionComponent = ({ router }: any) => {
           <SectionLabel>{'DESCRIPTION'}</SectionLabel>
           <div>{slate.description}</div>
           <SectionLabel>{'GRANTS'}</SectionLabel>
-          {slate.proposals.length !== 0 ? (
-            <SlateProposals proposals={proposals}>
+          {slate.proposals.length ? (
+            <SlateProposals>
               {slate.proposals.map((proposal: IProposal, index: number) => (
                 <Card
                   key={proposal.title + index}
@@ -129,7 +134,7 @@ const Slate: React.FunctionComponent = ({ router }: any) => {
               ))}
             </SlateProposals>
           ) : (
-            <div>Blank</div>
+            <div>Blank slate</div>
           )}
         </SlateMain>
       </SlateContainer>

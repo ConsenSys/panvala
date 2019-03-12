@@ -9,9 +9,7 @@ const StyledSectionLabel = styled.div`
   color: ${COLORS.grey3};
 `;
 
-type Props = {};
-
-const SectionLabel: React.FunctionComponent<Props> = props => {
+const SectionLabel: React.FunctionComponent<any> = props => {
   return <StyledSectionLabel {...props} />;
 };
 

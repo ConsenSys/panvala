@@ -8,10 +8,11 @@ import Image from '../../components/Image';
 import Modal from '../../components/Modal';
 import ProposalForm from '../../components/ProposalForm';
 import { postProposal } from '../../utils/api';
-import { IProposal } from '../../interfaces';
+import { IProposal, IAppContext } from '../../interfaces';
 import CenteredTitle from '../../components/CenteredTitle';
+import { AxiosResponse } from 'axios';
 
-type Props = {
+type IProps = {
   account: string;
   provider: any;
 };
@@ -30,8 +31,8 @@ const ModalDescription = styled.div`
   text-align: center;
 `;
 
-const CreateProposal: React.FunctionComponent<Props> = () => {
-  const { onNotify, onRefreshProposals }: any = React.useContext(AppContext);
+const CreateProposal: React.FunctionComponent<IProps> = () => {
+  const { onNotify, onRefreshProposals }: IAppContext = React.useContext(AppContext);
 
   const [isOpen, setOpenModal] = React.useState(false);
 
@@ -39,7 +40,7 @@ const CreateProposal: React.FunctionComponent<Props> = () => {
     console.log('proposal-form-values:', formValues);
 
     try {
-      const response = await postProposal(formValues);
+      const response: AxiosResponse = await postProposal(formValues);
       if (response.status === 200) {
         setOpenModal(true);
         await onRefreshProposals();

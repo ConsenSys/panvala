@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { withRouter } from 'next/router';
+import { withRouter, SingletonRouter } from 'next/router';
 import styled from 'styled-components';
 import { COLORS } from '../../styles';
 import Button from '../../components/Button';
@@ -10,8 +10,8 @@ import Deadline from '../../components/Deadline';
 import { tsToDeadline } from '../../utils/datetime';
 import config from '../../config';
 
-type Props = {
-  router: any;
+type IProps = {
+  router: SingletonRouter;
 };
 
 const BallotWrapper = styled.div`
@@ -26,7 +26,7 @@ const Separator = styled.div`
   border: 1px solid ${COLORS.grey5};
 `;
 
-const Ballots: React.FunctionComponent<Props> = ({ router }) => {
+const Ballots: React.FunctionComponent<IProps> = ({ router }) => {
   function handleClick() {
     router.push('/ballots/vote');
   }

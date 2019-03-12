@@ -1,10 +1,12 @@
 import * as React from 'react';
+import { toast } from 'react-toastify';
 import App, { Container } from 'next/app';
 import { SingletonRouter } from 'next/router';
 import ErrorPage from 'next/error';
+// required: import css at top-level
 import 'react-toastify/dist/ReactToastify.css';
 import '../components/Toggle.css';
-import { toast } from 'react-toastify';
+
 import EthereumProvider from '../components/EthereumProvider';
 import Layout from '../components/Layout';
 
@@ -15,6 +17,7 @@ type IProps = {
   account?: string;
   provider?: any;
   query?: any;
+  pageProps: any;
 };
 
 interface IState {
@@ -23,7 +26,7 @@ interface IState {
   errorCode?: number;
 }
 
-export default class MyApp extends App<IProps> {
+export default class MyApp extends App<IProps, IState> {
   state: IState = {
     hasError: false,
   };
@@ -32,7 +35,7 @@ export default class MyApp extends App<IProps> {
   // getInitialProps will only be executed on the client when navigating to a
   // different route via the Link component or using the routing APIs.
   // https://github.com/zeit/next.js#fetching-data-and-component-lifecycle
-  static async getInitialProps({ Component, router, ctx }: IProps) {
+  static async getInitialProps({ Component, ctx }: IProps) {
     let pageProps = {};
 
     if (Component.getInitialProps) {
@@ -66,8 +69,8 @@ export default class MyApp extends App<IProps> {
   }
 
   render() {
-    const { Component, pageProps, query } = this.props;
-    const { hasError, errorCode } = this.state;
+    const { Component, pageProps, query }: IProps = this.props;
+    const { hasError, errorCode }: IState = this.state;
 
     return (
       <Container>

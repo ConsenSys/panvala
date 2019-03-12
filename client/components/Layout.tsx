@@ -11,7 +11,10 @@ import { getAllProposals, getAllSlates } from '../utils/api';
 import { convertEVMSlateStatus } from '../utils/status';
 import { baseToConvertedUnits } from '../utils/format';
 
-export const AppContext: any = React.createContext({});
+export const AppContext: React.Context<IAppContext> = React.createContext<IAppContext>({
+  slates: [],
+  proposals: [],
+});
 
 const LayoutWrapper = styled.div`
   font-family: 'Roboto';
@@ -23,16 +26,20 @@ const ContentWrapper = styled.div`
 
 type IProps = {
   title: string;
+  children?: any;
 };
 
-export default class Layout extends React.Component<IProps> {
-  state: IAppContext = {
+export default class Layout extends React.Component<IProps, IAppContext> {
+  readonly state: IAppContext = {
     slates: [],
     proposals: [],
-    selectedSlate: '',
-    slateStakingDeadline: '',
-    proposalDeadline: '',
   };
+
+  constructor(props: IProps) {
+    super(props);
+    this.handleNotify = this.handleNotify.bind(this);
+    this.handleRefreshProposals = this.handleRefreshProposals.bind(this);
+  }
 
   // runs once, onload
   async componentDidMount() {
@@ -41,7 +48,7 @@ export default class Layout extends React.Component<IProps> {
     const slates: ISlate[] | AxiosResponse = await getAllSlates();
     const proposals: IProposal[] | AxiosResponse = await this.handleGetAllProposals();
 
-    let proposalData;
+    let proposalData: IProposal[] = [];
     // sort proposals by createdAt
     if (Array.isArray(proposals)) {
       const sortedProposals = proposals.sort((a: IProposal, b: IProposal) => {
@@ -52,7 +59,7 @@ export default class Layout extends React.Component<IProps> {
       proposalData = sortedProposals;
     }
 
-    let slateData;
+    let slateData: ISlate[] = [];
     // convert statuses: number -> string (via enum)
     if (Array.isArray(slates)) {
       slateData = slates.map((s: any) => {
@@ -70,24 +77,16 @@ export default class Layout extends React.Component<IProps> {
     });
   }
 
-  handleNotify = (note: string, custom: string) => {
+  handleNotify(note: string, custom: string) {
     if (custom) {
       (toast as any)[custom](note);
     } else {
       toast(note);
     }
-  };
+  }
 
-  handleSelectSlate = (slateId: string) => {
-    const selectedSlate: ISlate | undefined = this.state.slates.find(
-      slate => slate.title === slateId
-    );
-    console.log('this.state:', this.state);
-    return this.setState({ selectedSlate });
-  };
-
-  handleGetAllProposals = async () => {
-    let proposals = await getAllProposals();
+  async handleGetAllProposals() {
+    let proposals: IProposal[] | AxiosResponse = await getAllProposals();
 
     // convert tokensRequested: base -> human
     if (Array.isArray(proposals)) {
@@ -95,19 +94,21 @@ export default class Layout extends React.Component<IProps> {
         p.tokensRequested = baseToConvertedUnits(p.tokensRequested, 18);
         return p;
       });
+    } else {
+      throw new Error('invalid proposals type -- AxiosResponse');
     }
 
     return proposals;
-  };
+  }
 
-  handleRefreshProposals = async () => {
-    const proposals = await this.handleGetAllProposals();
+  async handleRefreshProposals() {
+    const proposals: IProposal[] = await this.handleGetAllProposals();
     return this.setState({ proposals });
-  };
+  }
 
   render() {
-    const { children, title } = this.props;
-    const { slates, proposals, selectedSlate, slateStakingDeadline, proposalDeadline } = this.state;
+    const { children, title }: IProps = this.props;
+    const { slates, proposals, slateStakingDeadline, proposalDeadline }: IAppContext = this.state;
 
     return (
       <LayoutWrapper>
@@ -120,12 +121,10 @@ export default class Layout extends React.Component<IProps> {
 
           <AppContext.Provider
             value={{
-              onHandleSelectSlate: this.handleSelectSlate,
               onNotify: this.handleNotify,
               onRefreshProposals: this.handleRefreshProposals,
               slates,
               proposals,
-              selectedSlate,
               slateStakingDeadline,
               proposalDeadline,
             }}

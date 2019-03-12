@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { withRouter } from 'next/router';
 import styled from 'styled-components';
 import { COLORS, BUTTON_COLORS } from '../styles';
 import Tag from './Tag';
@@ -7,16 +6,13 @@ import { splitAddressHumanReadable } from '../utils/format';
 import Button from './Button';
 import { Separator } from './Form';
 
-const Wrapper = styled.div`
+const Wrapper = styled.div<{ isActive?: boolean }>`
   width: 300px;
   display: flex;
   flex-direction: column;
   padding: 1rem;
   overflow: hidden;
-  border: ${(props: any) =>
-    props.proposals && props.proposals[props.id]
-      ? '3px solid #59B6E6'
-      : '2px solid ' + COLORS.grey5};
+  border: ${({ isActive }) => (isActive ? '3px solid #59B6E6' : '2px solid ' + COLORS.grey5)};
   /* border: 2px solid ${COLORS.grey5}; */
   box-shadow: 0px 5px 5px ${COLORS.grey5};
   margin-bottom: 1rem;
@@ -52,7 +48,7 @@ const ChoiceOptions = styled.div`
   margin-top: 0.5rem;
 `;
 
-type Props = {
+type IProps = {
   category: string;
   title: string;
   subtitle: string;
@@ -60,12 +56,15 @@ type Props = {
   address?: string;
   recommender?: string;
   status?: string;
+  // /ballots/vote
   choices?: any;
   onSetChoice?: any;
-  router?: any;
-  id?: string;
+  slateID?: string;
+  // /slates
   onClick?: any;
-  active?: boolean;
+  // /slates/create
+  isActive?: boolean;
+  onHandleViewSlateDetails?: any;
 };
 
 const ChoiceButton: any = styled(Button)`
@@ -85,19 +84,11 @@ const ChoiceButton: any = styled(Button)`
     firstChoice || secondChoice ? '2px solid transparent' : '2px solid ' + COLORS.grey5};
 `;
 
-const Card: React.FunctionComponent<Props> = props => {
-  function handleViewSlateDetails() {
-    props.router.push({
-      pathname: '/slates/slate',
-      // asPath: `/slates/${slate.ownerAddress}`,
-      query: {
-        id: props.id,
-      },
-    });
-  }
+const Card: React.FunctionComponent<IProps> = props => {
   return (
-    <Wrapper id={props.id} onClick={props.onClick}>
+    <Wrapper onClick={props.onClick} isActive={props.isActive}>
       <div className="flex">
+        {/* GRANT | PENDING TOKENS */}
         <Tag status={''}>{props.category.toUpperCase()}</Tag>
         {props.status && <Tag status={props.status}>{props.status}</Tag>}
       </div>
@@ -106,29 +97,29 @@ const Card: React.FunctionComponent<Props> = props => {
       <CardSubTitle>{props.subtitle}</CardSubTitle>
       <CardDescription>{props.description}</CardDescription>
 
-      {props.address && (
+      {props.address && ( // 0x D09C C3BC 67E4 294C 4A44 6D8E 4A29 34A9 2141 0ED7
         <CardUser>
           <div>{props.recommender}</div>
           <CardAddress>{splitAddressHumanReadable(props.address)}</CardAddress>
         </CardUser>
       )}
 
-      {props.choices && (
+      {props.choices && ( // renders in /ballots/vote
         <>
-          <div onClick={handleViewSlateDetails}>View slate details</div>
+          <div onClick={props.onHandleViewSlateDetails}>View slate details</div>
           <Separator />
           <CardDescription>{'Select an option'}</CardDescription>
           <ChoiceOptions>
             <ChoiceButton
-              onClick={() => props.onSetChoice('first', props.id)}
-              firstChoice={props.choices.first === props.id}
+              onClick={() => props.onSetChoice('first', props.slateID)}
+              firstChoice={props.choices.first === props.slateID}
               data-testid="first-choice"
             >
               {'1st Choice'}
             </ChoiceButton>
             <ChoiceButton
-              onClick={() => props.onSetChoice('second', props.id)}
-              secondChoice={props.choices.second === props.id}
+              onClick={() => props.onSetChoice('second', props.slateID)}
+              secondChoice={props.choices.second === props.slateID}
               data-testid="second-choice"
             >
               {'2nd Choice'}
@@ -140,4 +131,4 @@ const Card: React.FunctionComponent<Props> = props => {
   );
 };
 
-export default withRouter(Card);
+export default Card;

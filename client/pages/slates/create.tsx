@@ -17,14 +17,9 @@ import FieldTextarea from '../../components/FieldTextarea';
 import { FormWrapper } from '../../components/Form';
 import Label from '../../components/Label';
 import SectionLabel from '../../components/SectionLabel';
-import {
-  IEthereumContext,
-  IAppContext,
-  IProposal,
-  IProposalMetadata,
-  ISlateMetadata,
-} from '../../interfaces';
+import { IAppContext, IProposal, IProposalMetadata, ISlateMetadata } from '../../interfaces';
 import { ipfsAddObject } from '../../utils/ipfs';
+import { LogDescription } from 'ethers/utils';
 
 const Separator = styled.div`
   border: 1px solid ${COLORS.grey5};
@@ -70,11 +65,7 @@ interface IProposalInfo {
 const CreateSlate: React.FunctionComponent = () => {
   // get proposals and eth context
   const { proposals }: IAppContext = React.useContext(AppContext);
-  const {
-    account,
-    ethProvider,
-    contracts: { tokenCapacitor, gateKeeper },
-  }: IEthereumContext = React.useContext(EthereumContext);
+  const { account, ethProvider, contracts }: any = React.useContext(EthereumContext);
 
   /**
    * Generate the proposal and slate information necessary for recommending a slate
@@ -87,17 +78,17 @@ const CreateSlate: React.FunctionComponent = () => {
     values: IFormValues,
     proposalInfo: any
   ) {
-    const { multihashes: proposalMultihashes, metadata: proposalMetadata } = proposalInfo;
+    const { multihashes: proposalMultihashes, metadata: proposalMetadatas } = proposalInfo;
 
     const receipt: TransactionReceipt = await ethProvider.waitForTransaction(txHash);
-    if (receipt.logs) {
+    if (receipt.logs && contracts && contracts.tokenCapacitor) {
       // console.log('Transaction Mined: ' + receipt);
       // console.log('logs:', receipt.logs);
 
       // Get the ProposalCreated logs from the receipt
       const decoded = receipt.logs
         .map(log => {
-          return tokenCapacitor.interface.parseLog(log);
+          return contracts.tokenCapacitor.interface.parseLog(log);
         })
         .filter(d => d !== null)
         .filter(d => d.name == 'ProposalCreated');
@@ -114,7 +105,7 @@ const CreateSlate: React.FunctionComponent = () => {
         title: values.title,
         description: values.description,
         proposalMultihashes,
-        proposals: proposalMetadata,
+        proposals: proposalMetadatas,
       };
       // console.log(slateMetadata);
 
@@ -127,12 +118,12 @@ const CreateSlate: React.FunctionComponent = () => {
    * @param requestIDs
    * @param metadataHash
    */
-  async function submitGrantSlate(requestIDs: any[], metadataHash: string) {
+  async function submitGrantSlate(requestIDs: any[], metadataHash: string): Promise<any> {
     // these are placeholders for now
     const epochNumber = 1;
     const category = 0; // Grant
 
-    const txResponse: TransactionResponse = await gateKeeper.functions.recommendSlate(
+    const txResponse: TransactionResponse = await contracts.gateKeeper.functions.recommendSlate(
       epochNumber,
       category,
       requestIDs,
@@ -140,22 +131,22 @@ const CreateSlate: React.FunctionComponent = () => {
     );
 
     if (txResponse.hash) {
-      const receipt = await ethProvider.waitForTransaction(txResponse.hash);
+      const receipt: TransactionReceipt = await ethProvider.waitForTransaction(txResponse.hash);
       if (receipt.logs) {
         // console.log('Transaction Mined: ' + receipt);
         // console.log('logs:', receipt.logs);
 
         // Get the SlateCreated logs from the receipt
-        const decoded = receipt.logs
+        const decoded: LogDescription[] = receipt.logs
           .map(log => {
-            return gateKeeper.interface.parseLog(log);
+            return contracts.gateKeeper.interface.parseLog(log);
           })
           .filter(d => d !== null)
           .filter(d => d.name == 'SlateCreated');
 
         // Extract the slateID
-        const slateID = decoded[0].values.slateID;
-        const slate = { slateID, metadataHash };
+        const slateID: string = decoded[0].values.slateID;
+        const slate: any = { slateID, metadataHash };
         // console.log('Created slate', slate);
         return slate;
       }
@@ -199,7 +190,7 @@ const CreateSlate: React.FunctionComponent = () => {
     const proposalMultihashes: Buffer[] = await Promise.all(
       selectedProposals.map(async (metadata: IProposalMetadata) => {
         try {
-          const multihash = await ipfsAddObject(metadata);
+          const multihash: string = await ipfsAddObject(metadata);
           // we need a buffer of the multihash for the transaction
           return Buffer.from(multihash);
         } catch (error) {
@@ -210,29 +201,29 @@ const CreateSlate: React.FunctionComponent = () => {
     // TODO: add proposal multihashes to db
 
     // Only use the metadata from here forward - do not expose private information
-    const proposalMetadata = selectedProposals.map(extractMetadata);
+    const proposalMetadatas: IProposalMetadata[] = selectedProposals.map(extractMetadata);
 
     // token distribution details
-    const beneficiaries: string[] = proposalMetadata.map(p => p.awardAddress);
-    const tokenAmounts: number[] = proposalMetadata.map(p => p.tokensRequested);
+    const beneficiaries: string[] = proposalMetadatas.map(p => p.awardAddress);
+    const tokenAmounts: string[] = proposalMetadatas.map(p => p.tokensRequested);
 
     try {
       // batch create proposals
       // console.log('creating proposals...');
-      const txResponse: TransactionResponse = await tokenCapacitor.functions.createManyProposals(
+      const txResponse: TransactionResponse = await contracts.tokenCapacitor.functions.createManyProposals(
         beneficiaries,
         tokenAmounts,
         proposalMultihashes
       );
 
       // successful tx
-      if (txResponse.hash) {
+      if (txResponse.hash && contracts && contracts.gateKeeper) {
         try {
           const proposalInfo: IProposalInfo = {
-            metadata: proposalMetadata,
+            metadata: proposalMetadatas,
             multihashes: proposalMultihashes.map(toString),
           };
-          const { slateMetadata, requestIDs } = await generateSlateSubmissionInfo(
+          const { slateMetadata, requestIDs }: any = await generateSlateSubmissionInfo(
             txResponse.hash,
             values,
             proposalInfo
@@ -246,7 +237,7 @@ const CreateSlate: React.FunctionComponent = () => {
 
             // Submit the slate info to the contract
             try {
-              const slate = await submitGrantSlate(requestIDs, slateMetadataHash);
+              const slate: any = await submitGrantSlate(requestIDs, slateMetadataHash);
               console.log('Submitted slate', slate);
             } catch (error) {
               toast.error('error submitting slate', error.message);
@@ -293,13 +284,13 @@ const CreateSlate: React.FunctionComponent = () => {
           onSubmit={async (values: IFormValues, { setSubmitting, setFieldError }: any) => {
             // console.log('form values:', values);
             const selectedProposalIDs: string[] = Object.keys(values.proposals).filter(
-              p => values.proposals[p] === true
+              (p: string) => values.proposals[p] === true
             );
 
             // validate for at least 1 selected proposal
             if (selectedProposalIDs.length === 0) {
               setFieldError('proposals', 'select at least 1 proposal.');
-            } else {
+            } else if (proposals && proposals.length) {
               // filter for only the selected proposal objects
               const selectedProposals: IProposal[] = proposals.filter((p: IProposal) =>
                 selectedProposalIDs.includes(p.id.toString())
@@ -366,12 +357,12 @@ const CreateSlate: React.FunctionComponent = () => {
                 </div>
                 <div className="flex flex-wrap">
                   {proposals &&
-                    proposals.map((proposal: any) => (
+                    proposals.map((proposal: IProposal) => (
                       <Card
                         key={proposal.id}
                         category={proposal.category + ' PROPOSAL'}
                         title={proposal.title}
-                        subtitle={proposal.tokensRequested}
+                        subtitle={proposal.tokensRequested.toString()}
                         description={proposal.summary}
                         onClick={() => {
                           if (values.proposals.hasOwnProperty(proposal.id)) {
@@ -383,8 +374,7 @@ const CreateSlate: React.FunctionComponent = () => {
                             setFieldValue(`proposals.${proposal.id}`, true);
                           }
                         }}
-                        id={proposal.id}
-                        active={values.proposals[proposal.id]}
+                        isActive={values.proposals[proposal.id]}
                       />
                     ))}
                 </div>

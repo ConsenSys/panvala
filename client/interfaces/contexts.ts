@@ -85,15 +85,16 @@ export interface IContracts {
 }
 
 export interface IAppContext {
-  slates: ISlate[];
-  proposals: IProposal[];
-  selectedSlate: string;
-  slateStakingDeadline: string | number;
-  proposalDeadline: string | number;
+  slates?: ISlate[];
+  proposals?: IProposal[];
+  slateStakingDeadline?: number;
+  proposalDeadline?: number;
+  onNotify?: any;
+  onRefreshProposals?: any;
 }
 
 export interface IEthereumContext {
   account: string;
-  ethProvider: providers.Web3Provider;
-  contracts: IContracts;
+  ethProvider?: providers.Web3Provider;
+  contracts?: IContracts;
 }

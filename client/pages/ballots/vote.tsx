@@ -1,5 +1,6 @@
 import * as React from 'react';
 import styled from 'styled-components';
+import { withRouter, SingletonRouter } from 'next/router';
 import { COLORS } from '../../styles';
 import { AppContext } from '../../components/Layout';
 import Button from '../../components/Button';
@@ -11,11 +12,12 @@ import Deadline from '../../components/Deadline';
 import { tsToDeadline } from '../../utils/datetime';
 import config from '../../config';
 import { statuses } from '../../utils/status';
-// import { Formik, Form } from 'formik';
+import { ISlate, IAppContext } from '../../interfaces';
 
-type Props = {
+type IProps = {
   account?: string;
   provider?: any;
+  router: SingletonRouter;
 };
 
 const BallotWrapper = styled.div`
@@ -30,26 +32,34 @@ const Separator = styled.div`
   border: 1px solid ${COLORS.grey5};
 `;
 
-interface Context {
-  slates?: any[];
-}
-
-const Vote: React.FunctionComponent<Props> = () => {
-  const context: Context = React.useContext(AppContext);
+const Vote: React.FunctionComponent<IProps> = ({ router }) => {
+  const { slates }: IAppContext = React.useContext(AppContext);
   const [choices, setChoice]: any = React.useState({ first: '', second: '' });
 
-  function handleSetChoice(number: string, choice: string) {
+  function handleSetChoice(rank: string, slateID: string) {
     if (
-      (number === 'first' && choices.second === choice) ||
-      (number === 'second' && choices.first === choice)
+      (rank === 'first' && choices.second === slateID) ||
+      (rank === 'second' && choices.first === slateID)
     ) {
-      setChoice({ [number]: choice });
+      // user chose a different rank for a slate
+      setChoice({ [rank]: slateID });
     } else {
+      // user chose a unique rank for a slate
       setChoice({
         ...choices,
-        [number]: choice,
+        [rank]: slateID,
       });
     }
+  }
+
+  function handleViewSlateDetails(slate: ISlate) {
+    router.push({
+      pathname: '/slates/slate',
+      // asPath: `/slates/${slate.ownerAddress}`,
+      query: {
+        id: slate.id,
+      },
+    });
   }
 
   return (
@@ -61,35 +71,24 @@ const Vote: React.FunctionComponent<Props> = () => {
       </div>
       <CenteredTitle title="Submit Vote" />
       <BallotWrapper>
-        {/* <Formik
-          initialValues={{
-            firstChoice: '',
-            secondChoice: '',
-          }}
-          onSubmit={async (values, { setSubmitting }) => {
-            console.log('proposal-form-values:', values);
-            // await props.onSubmit(values);
-            setSubmitting(false);
-          }}
-        >
-          {({ isSubmitting }) => (
-            <Form> */}
         <div className="pa4">
           <SectionLabel>{'GRANTS'}</SectionLabel>
           <Label required>{'Select your first and second choice slate'}</Label>
           <div className="flex flex-wrap mt3">
-            {context.slates &&
-              context.slates.map((slate: any, index: number) => (
+            {slates &&
+              slates.length &&
+              slates.map((slate: ISlate) => (
                 <Card
-                  key={slate.title + index}
+                  key={slate.id}
                   title={slate.title}
-                  subtitle={slate.subtitle}
+                  subtitle={slate.proposals.length + ' Grants Included'}
                   description={slate.description}
                   category={slate.category}
                   status={slate.status}
                   choices={choices}
                   onSetChoice={handleSetChoice}
-                  id={slate.id}
+                  slateID={slate.id}
+                  onHandleViewSlateDetails={() => handleViewSlateDetails(slate)}
                 />
               ))}
           </div>
@@ -108,12 +107,9 @@ const Vote: React.FunctionComponent<Props> = () => {
             {'This will redirect to a seperate MetaMask window to confirm your transaction.'}
           </div>
         </div>
-        {/* </Form>
-          )}
-        </Formik> */}
       </BallotWrapper>
     </div>
   );
 };
 
-export default Vote;
+export default withRouter(Vote);

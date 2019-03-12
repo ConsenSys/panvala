@@ -8,6 +8,7 @@ import RouteTitle from '../../components/RouteTitle';
 import { statuses } from '../../utils/status';
 import Deadline from '../../components/Deadline';
 import { tsToDeadline } from '../../utils/datetime';
+import { IAppContext } from '../../interfaces';
 
 type Props = {
   errors?: string;
@@ -17,7 +18,7 @@ type Props = {
 };
 
 const Proposals: React.FunctionComponent<Props> = () => {
-  const { proposals, proposalDeadline }: any = React.useContext(AppContext);
+  const { proposals, proposalDeadline }: IAppContext = React.useContext(AppContext);
 
   return (
     <div>
@@ -31,13 +32,16 @@ const Proposals: React.FunctionComponent<Props> = () => {
             </a>
           </Link>
         </div>
-        <Deadline status={statuses.PROPOSAL_DEADLINE}>{`${tsToDeadline(
-          proposalDeadline
-        )}`}</Deadline>
+        {proposalDeadline && (
+          <Deadline status={statuses.PROPOSAL_DEADLINE}>{`${tsToDeadline(
+            proposalDeadline
+          )}`}</Deadline>
+        )}
       </div>
 
       <CardsWrapper>
         {proposals &&
+          proposals.length &&
           proposals.map((proposal: any, index: number) => (
             <Card
               key={proposal.title + index}

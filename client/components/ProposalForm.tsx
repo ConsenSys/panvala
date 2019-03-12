@@ -8,7 +8,6 @@ import Button from './Button';
 import { toast } from 'react-toastify';
 import FieldText from './FieldText';
 import FieldTextarea from './FieldTextarea';
-import config from '../config';
 import { convertedToBaseUnits } from '../utils/format';
 
 const FormSchema = yup.object().shape({

@@ -33,19 +33,6 @@ Object {
               </div>
             </a>
           </div>
-          <div
-            class="Deadline__Wrapper-sc-1a3aqlz-1 gtXKcM"
-          >
-            <div
-              class="Tag__Wrapper-l3n6sk-1 ceKKQx"
-            >
-              <div
-                class="Deadline__StyledDeadline-sc-1a3aqlz-0 jpSHwD Tag__StyledTag-l3n6sk-0 cZzgaW"
-              >
-                PROPOSAL DEADLINE Invalid date EST
-              </div>
-            </div>
-          </div>
         </div>
         <div
           class="proposals__CardsWrapper-sc-125pbjx-0 cOJbkJ"
@@ -210,19 +197,6 @@ Object {
               </button>
             </div>
           </a>
-        </div>
-        <div
-          class="Deadline__Wrapper-sc-1a3aqlz-1 gtXKcM"
-        >
-          <div
-            class="Tag__Wrapper-l3n6sk-1 ceKKQx"
-          >
-            <div
-              class="Deadline__StyledDeadline-sc-1a3aqlz-0 jpSHwD Tag__StyledTag-l3n6sk-0 cZzgaW"
-            >
-              PROPOSAL DEADLINE Invalid date EST
-            </div>
-          </div>
         </div>
       </div>
       <div

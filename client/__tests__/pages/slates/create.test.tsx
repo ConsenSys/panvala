@@ -11,7 +11,7 @@ describe('CreateSlate', () => {
   it('should render correctly pages/slates/create form component', () => {
     const { container, getByText } = render(
       <AppContext.Provider value={{ proposals: proposalsArray }}>
-        <EthereumContext.Provider value={{ contracts: {} }}>
+        <EthereumContext.Provider value={{ account: '' }}>
           <CreateSlate />
         </EthereumContext.Provider>
       </AppContext.Provider>

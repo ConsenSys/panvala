@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { ITag } from '../interfaces';
 import { COLORS } from '../styles';
 import Tag from './Tag';
-import { statuses, isPendingTokens, isPendingVote, isProposalDeadline } from '../utils/status';
+import { isPendingTokens, isPendingVote, isProposalDeadline } from '../utils/status';
 
 const StyledDeadline = styled(Tag)`
   background-color: ${({ status }: any) =>

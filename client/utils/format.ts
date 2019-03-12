@@ -1,5 +1,5 @@
 import { utils } from 'ethers';
-import { BigNumber } from 'ethers/utils';
+import { BigNumberish } from 'ethers/utils';
 
 export function splitAddressHumanReadable(address: string): string {
   // 0xd115bffabbdd893a6f7cea402e7338643ced44a6
@@ -22,12 +22,12 @@ export function convertedToBaseUnits(converted: string, decimals: number): strin
   return utils.parseUnits(converted, decimals).toString();
 }
 
-export function baseToConvertedUnits(base: BigNumber, decimals: number): string {
+export function baseToConvertedUnits(base: BigNumberish, decimals: number): string {
   // expects base: BigNumberish, throws on failure to convert
   return utils.formatUnits(base, decimals).toString();
 }
 
-export function formatPanvalaUnits(base: BigNumber) {
+export function formatPanvalaUnits(base: BigNumberish) {
   const converted: string = baseToConvertedUnits(base, 18);
 
   return converted + ' PAN';
