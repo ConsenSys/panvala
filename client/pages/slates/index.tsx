@@ -40,8 +40,8 @@ const Slates: React.FunctionComponent<Props> = ({ router }) => {
     });
   };
 
-  function handleSelectVisibilityFilter() {
-    toast.error('Demo Error');
+  function handleSelectVisibilityFilter(type: string) {
+    (toast as any)[type](`Demo: ${type}`);
   }
 
   return (
@@ -65,8 +65,16 @@ const Slates: React.FunctionComponent<Props> = ({ router }) => {
 
       <VisibilityFilterContainer>
         <Button active={visibilityFilter === 'all'}>{'All'}</Button>
-        <Button active={visibilityFilter === 'current'}>{'Current'}</Button>
-        <Button onClick={handleSelectVisibilityFilter} active={visibilityFilter === 'past'}>
+        <Button
+          onClick={() => handleSelectVisibilityFilter('info')}
+          active={visibilityFilter === 'current'}
+        >
+          {'Current'}
+        </Button>
+        <Button
+          onClick={() => handleSelectVisibilityFilter('error')}
+          active={visibilityFilter === 'past'}
+        >
           {'Past'}
         </Button>
       </VisibilityFilterContainer>

@@ -2,6 +2,7 @@ import * as React from 'react';
 import { utils, providers } from 'ethers';
 import { connectProvider, connectContracts } from '../utils/provider';
 import { IContracts, IEthereumContext } from '../interfaces';
+import { toast } from 'react-toastify';
 
 export const EthereumContext: React.Context<IEthereumContext> = React.createContext<any>({});
 
@@ -36,6 +37,9 @@ export default class EthereumProvider extends React.Component<any, IEthereumCont
         const addresses: string[] = await ethereum.enable();
         // first account
         const account: string = utils.getAddress(addresses[0]);
+        if (account) {
+          toast.success('MetaMask successfully connected!');
+        }
         // contract abstractions (w/ metamask signer)
         const contracts: IContracts = connectContracts(ethProvider);
         // gatekeeper parameters

@@ -135,8 +135,8 @@ export default class Layout extends React.Component<IProps, IAppContext> {
 
         <ToastContainer
           position="top-right"
-          autoClose={5000}
-          hideProgressBar={false}
+          autoClose={8000}
+          hideProgressBar={true}
           newestOnTop={false}
           rtl={false}
           draggable={false}
