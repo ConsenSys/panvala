@@ -104,6 +104,13 @@ function bytesAsString(bytes) {
   return decoded.toString();
 }
 
+/**
+ * zeroHash
+ * @dev Return a 32-byte value of all zeros
+ */
+function zeroHash() {
+  return ethUtils.zeros(32);
+}
 
 const utils = {
   expectRevert,
@@ -115,6 +122,8 @@ const utils = {
   stripHexPrefix,
   bytesAsString,
   newToken,
+  keccak: ethUtils.keccak,
+  zeroHash,
 };
 
 module.exports = utils;

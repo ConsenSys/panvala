@@ -12,6 +12,7 @@ contract Gatekeeper {
     event PermissionRequested(uint requestID, bytes metadataHash);
     event SlateCreated(uint slateID, address indexed recommender, bytes metadataHash);
     event VotingTokensDeposited(address indexed voter, uint numTokens);
+    event BallotCommitted(uint ballotID, address indexed voter, uint numTokens, bytes32 commitHash);
 
     // STATE
     using SafeMath for uint256;
@@ -49,6 +50,43 @@ contract Gatekeeper {
 
     // The number of tokens each account has available for voting
     mapping(address => uint) public voteTokenBalance;
+
+    // The data committed when voting
+    struct VoteCommitment {
+        bytes32 commitHash;
+        bool committed;
+    }
+
+    // An option in a contest
+    struct VoteOption {
+        uint firstChoiceVotes;
+        uint secondChoiceVotes;
+        bool included;
+    }
+
+    struct Contest {
+        // slateIDs
+        uint[] slates;
+
+        // slateID -> tally
+        mapping(uint => VoteOption) options;
+    }
+
+    // A group of Contests in an epoch
+    struct Ballot {
+        // status: Unopened, Open, Closed
+        uint contestCount;
+        mapping(uint => Contest) contests;
+        bool created;
+
+        // commitments for each voter
+        mapping(address => VoteCommitment) commitments;
+    }
+
+    // All the ballots created so far
+    // epoch number -> Ballot
+    mapping(uint => Ballot) public ballots;
+
 
     // IMPLEMENTATION
     /**
@@ -125,9 +163,9 @@ contract Gatekeeper {
     }
 
     /**
-     * @dev Deposit `numToken` tokens into the Gatekeeper to use in voting
-     * Assumes that `msg.sender` has approved the Gatekeeper to spend on their behalf
-     * @param numTokens The number of tokens to devote to voting
+     @dev Deposit `numToken` tokens into the Gatekeeper to use in voting
+     Assumes that `msg.sender` has approved the Gatekeeper to spend on their behalf
+     @param numTokens The number of tokens to devote to voting
      */
     function depositVoteTokens(uint numTokens) public returns(bool) {
         address voter = msg.sender;
@@ -144,6 +182,64 @@ contract Gatekeeper {
 
         emit VotingTokensDeposited(voter, numTokens);
         return true;
+    }
+
+    /**
+     @dev Submit a commitment for the current ballot
+     @param commitHash The hash representing the voter's vote choices
+     @param numTokens The number of vote tokens to use
+     */
+    function commitBallot(bytes32 commitHash, uint numTokens) public {
+        address voter = msg.sender;
+
+        // TODO: calculate the current epoch
+        uint currentEpoch = 0;
+        uint ballotID = currentEpoch;
+
+        // NOTE: commit period must be active for the given epoch
+        require(didCommit(ballotID, voter) == false, "Voter has already committed for this ballot");
+        require(commitHash != 0, "Cannot commit zero hash");
+
+        // If the voter doesn't have enough tokens for voting, deposit more
+        if (voteTokenBalance[voter] < numTokens) {
+            uint remainder = numTokens.sub(voteTokenBalance[voter]);
+            depositVoteTokens(remainder);
+        }
+        assert(voteTokenBalance[voter] >= numTokens);
+
+        // TODO: If the ballot has not been created yet, create it
+        Ballot storage ballot = ballots[ballotID];
+
+        // Set the voter's commitment for the current ballot
+        VoteCommitment memory commitment = VoteCommitment({
+            commitHash: commitHash,
+            committed: true
+        });
+
+        ballot.commitments[voter] = commitment;
+
+        emit BallotCommitted(ballotID, voter, numTokens, commitHash);
+    }
+
+    /**
+     @dev Return true if the voter has committed for the given ballot
+     @param ballotID The ballot to check
+     @param voter The voter's address
+     */
+    function didCommit(uint ballotID, address voter) public view returns(bool) {
+        return ballots[ballotID].commitments[voter].committed;
+    }
+
+    /**
+     @dev Get the commit hash for a given voter and ballot. Revert if voter has not committed yet.
+     @param ballotID The ballot to check
+     @param voter The voter's address
+     */
+    function getCommitHash(uint ballotID, address voter) public view returns(bytes32) {
+        VoteCommitment memory v = ballots[ballotID].commitments[voter];
+        require(v.committed, "Voter has not committed for this ballot");
+
+        return v.commitHash;
     }
 
     // ACCESS CONTROL
