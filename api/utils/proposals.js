@@ -1,3 +1,5 @@
+const { utils } = require('ethers');
+
 module.exports = {
   proposalSchema: {
     title: {
@@ -35,6 +37,24 @@ module.exports = {
         },
       },
       isNull: false,
+      custom: {
+        options: value => {
+          // validate type: string
+          if (typeof value !== 'string') {
+            throw new Error('value should be a string')
+          }
+
+          // minimum: 1,000,000,000,000,000,000 (1 token)
+          const minBase = utils.parseUnits('1', 18);
+          // convert into BigNumber to compare, throws if conversion fails
+          const bnBase = utils.bigNumberify(value);
+          if (bnBase.lt(minBase)) {
+            throw new Error('value should be minimum 1 token');
+          }
+
+          return value;
+        },
+      },
     },
     firstName: {
       in: ['body'],

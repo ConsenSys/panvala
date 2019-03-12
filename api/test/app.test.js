@@ -27,7 +27,7 @@ function initProposals() {
     {
       title: 'An amazing proposal',
       summary: 'All sorts of amazing things',
-      tokensRequested: '200000',
+      tokensRequested: '200000000000000000000000',
       firstName: 'John',
       lastName: 'Crypto',
       email: 'jc@eth.io',
@@ -43,7 +43,7 @@ function initProposals() {
     {
       title: 'Another amazing proposal',
       summary: "You won't even believe it",
-      tokensRequested: '300000',
+      tokensRequested: '300000000000000000000000',
       firstName: 'Sarah',
       lastName: 'Ethers',
       email: 'sarah@eth.io',
@@ -107,7 +107,7 @@ describe('POST /api/proposals', () => {
     data = {
       title: 'An ok proposal',
       summary: "I guess it's fine",
-      tokensRequested: '1000000',
+      tokensRequested: '1000000000000000000000000',
       firstName: 'Mary',
       lastName: 'Jones',
       email: 'mj@eth.io',
@@ -254,10 +254,7 @@ describe('POST /api/proposals', () => {
     test.todo('it should return a 4000 if lastName is too long');
 
     // formats
-    // FIX: this fails
-    // TODO: write custom validator:
-    // convert tokensRequested into BigNumber with no more than 18 decimal places, return string
-    test.skip('it should return a 400 if `tokensRequested` is not a valid number', async () => {
+    test('it should return a 400 if `tokensRequested` is not a valid string (number)', async () => {
       data.tokensRequested = 'a million';
 
       const result = await request(app)
@@ -266,25 +263,14 @@ describe('POST /api/proposals', () => {
       expect(result.status).toBe(400);
     });
 
-    // FIX: this fails -- checkSchema(proposalSchema) allows numbers to be added to the db.
-    // TODO: check datatypes correctly
-    test.skip('it should return a 400 if `tokensRequested` is a number', async () => {
-      data.tokensRequested = 1000000000;
+    test('it should return a 400 if `tokensRequested` is a number', async () => {
+      data.tokensRequested = 1000000000000000000000000000;
 
       const result = await request(app)
         .post('/api/proposals')
         .send(data);
 
       expect(result.status).toBe(400);
-    });
-
-    test('it should return a 200 if `tokensRequested` is a valid number', async () => {
-      data.tokensRequested = '1000000000';
-
-      const result = await request(app)
-        .post('/api/proposals')
-        .send(data);
-      expect(result.status).toBe(200);
     });
 
     test('it should return a 400 if the email is invalid', async () => {
@@ -295,6 +281,9 @@ describe('POST /api/proposals', () => {
         .send(data);
       expect(result.status).toBe(400);
     });
+
+    // TODO: checkSchema(proposalSchema) allows numbers to be added to the db.
+    test.todo('should not allow test db to add incorrect datatypes');
 
     // Stateful
     test('all proposals should have the correct datatype for tokensRequested', async () => {
