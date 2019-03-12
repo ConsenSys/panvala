@@ -8,7 +8,7 @@ import { AxiosResponse } from 'axios';
 import Header from './Header';
 import { IProposal, ISlate, IAppContext } from '../interfaces';
 import { getAllProposals, getAllSlates } from '../utils/api';
-import { convertEVMStatus } from '../utils/status';
+import { convertEVMSlateStatus } from '../utils/status';
 
 export const AppContext: any = React.createContext({});
 
@@ -55,7 +55,7 @@ export default class Layout extends React.Component<Props> {
     if (Array.isArray(slates)) {
       slateData = slates.map((s: any) => {
         // convert from number to string
-        s.status = convertEVMStatus(s.status);
+        s.status = convertEVMSlateStatus(s.status);
         return s;
       });
     }

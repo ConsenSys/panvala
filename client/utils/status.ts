@@ -4,8 +4,7 @@ export const statuses = {
   PROPOSAL_DEADLINE: 'PROPOSAL DEADLINE',
 };
 
-export function convertEVMStatus(status: number) {
-  console.log('status:', status);
+export function convertEVMSlateStatus(status: number) {
   if (status === 0) {
     return statuses.PENDING_TOKENS;
   }
