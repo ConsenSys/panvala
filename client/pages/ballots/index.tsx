@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { withRouter, SingletonRouter } from 'next/router';
 import styled from 'styled-components';
 import { COLORS } from '../../styles';
 import Button from '../../components/Button';
@@ -9,10 +8,7 @@ import { statuses } from '../../utils/status';
 import Deadline from '../../components/Deadline';
 import { tsToDeadline } from '../../utils/datetime';
 import config from '../../config';
-
-type IProps = {
-  router: SingletonRouter;
-};
+import RouterLink from '../../components/RouterLink';
 
 const BallotWrapper = styled.div`
   display: flex;
@@ -26,10 +22,7 @@ const Separator = styled.div`
   border: 1px solid ${COLORS.grey5};
 `;
 
-const Ballots: React.FunctionComponent<IProps> = ({ router }) => {
-  function handleClick() {
-    router.push('/ballots/vote');
-  }
+const Ballots: React.FunctionComponent<any> = () => {
   return (
     <div>
       <div className="flex justify-end">
@@ -65,9 +58,11 @@ const Ballots: React.FunctionComponent<IProps> = ({ router }) => {
         <div className="flex flex-column pv4 ph4 items-end">
           <div className="flex">
             <Button large>{'Back'}</Button>
-            <Button large type="default" onClick={handleClick}>
-              {'Continue'}
-            </Button>
+            <RouterLink href="/ballots/vote" as="/ballots/vote">
+              <Button large type="default">
+                {'Continue'}
+              </Button>
+            </RouterLink>
           </div>
         </div>
       </BallotWrapper>
@@ -75,4 +70,4 @@ const Ballots: React.FunctionComponent<IProps> = ({ router }) => {
   );
 };
 
-export default withRouter(Ballots);
+export default Ballots;

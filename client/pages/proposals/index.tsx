@@ -1,5 +1,4 @@
 import * as React from 'react';
-import Link from 'next/link';
 import styled from 'styled-components';
 import { AppContext } from '../../components/Layout';
 import Button from '../../components/Button';
@@ -9,16 +8,19 @@ import { statuses } from '../../utils/status';
 import Deadline from '../../components/Deadline';
 import { tsToDeadline } from '../../utils/datetime';
 import { IAppContext } from '../../interfaces';
+import RouterLink from '../../components/RouterLink';
 
-type Props = {
+interface IProps {
   errors?: string;
   account?: string;
   provider?: any;
   userAgent?: any;
-};
+}
 
-const Proposals: React.FunctionComponent<Props> = () => {
+const Proposals: React.SFC<IProps> = props => {
+  console.log('props:', props);
   const { proposals, proposalDeadline }: IAppContext = React.useContext(AppContext);
+  console.log('proposals:', proposals);
 
   return (
     <div>
@@ -26,11 +28,13 @@ const Proposals: React.FunctionComponent<Props> = () => {
         <div className="flex">
           {/* TODO: componentize */}
           <RouteTitle className="mr3">{'Proposals'}</RouteTitle>
-          <Link passHref href="/proposals/create" as="/proposals/create">
-            <a className="link flex items-center">
-              <Button type="default">{'Add Proposal'}</Button>
-            </a>
-          </Link>
+          <RouterLink
+            href="/proposals/create"
+            as="/proposals/create"
+            classNames="flex items-center"
+          >
+            <Button type="default">{'Add Proposal'}</Button>
+          </RouterLink>
         </div>
         {proposalDeadline && (
           <Deadline status={statuses.PROPOSAL_DEADLINE}>{`${tsToDeadline(
@@ -42,19 +46,23 @@ const Proposals: React.FunctionComponent<Props> = () => {
       <CardsWrapper>
         {proposals &&
           proposals.length &&
-          proposals.map((proposal: any, index: number) => (
-            <Card
-              key={proposal.title + index}
-              title={proposal.title}
-              subtitle={proposal.tokensRequested + ' Tokens Requested'}
-              description={proposal.summary}
-              category={'GRANT PROPOSAL'}
-            />
+          proposals.map((proposal: any) => (
+            <div key={proposal.id}>
+              <RouterLink href={`/DetailedView?id=${proposal.id}`} as={`/proposals/${proposal.id}`}>
+                <Card
+                  title={proposal.title}
+                  subtitle={proposal.tokensRequested + ' Tokens Requested'}
+                  description={proposal.summary}
+                  category={'GRANT PROPOSAL'}
+                />
+              </RouterLink>
+            </div>
           ))}
       </CardsWrapper>
     </div>
   );
 };
+
 const CardsWrapper = styled.div`
   display: flex;
   flex-flow: row wrap;

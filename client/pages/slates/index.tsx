@@ -1,6 +1,4 @@
 import * as React from 'react';
-import Link from 'next/link';
-import { withRouter, SingletonRouter } from 'next/router';
 import styled from 'styled-components';
 import { toast } from 'react-toastify';
 
@@ -12,13 +10,13 @@ import RouteTitle from '../../components/RouteTitle';
 import { tsToDeadline } from '../../utils/datetime';
 import { statuses } from '../../utils/status';
 import { ISlate, IAppContext } from '../../interfaces';
+import RouterLink from '../../components/RouterLink';
 
 type Props = {
   errors?: string;
   account?: string;
   provider?: any;
   userAgent?: any;
-  router: SingletonRouter;
 };
 
 const VisibilityFilterContainer = styled.div`
@@ -26,19 +24,9 @@ const VisibilityFilterContainer = styled.div`
   margin-bottom: 1rem;
 `;
 
-const Slates: React.FunctionComponent<Props> = ({ router }) => {
+const Slates: React.FunctionComponent<Props> = () => {
   const { slates, slateStakingDeadline }: IAppContext = React.useContext(AppContext);
   const [visibilityFilter] = React.useState('all');
-
-  const handleClickSlate = (slate: ISlate) => {
-    router.push({
-      pathname: '/slates/slate',
-      // asPath: `/slates/${slate.id}`,
-      query: {
-        id: slate.id,
-      },
-    });
-  };
 
   function handleSelectVisibilityFilter(type: string) {
     (toast as any)[type](`Demo: ${type}`);
@@ -50,11 +38,9 @@ const Slates: React.FunctionComponent<Props> = ({ router }) => {
         {/* TODO: componentize */}
         <div className="flex">
           <RouteTitle className="mr3">{'Slates'}</RouteTitle>
-          <Link passHref href="/slates/create" as="/slates/create">
-            <a className="link flex items-center">
-              <Button type="default">{'Add Slate'}</Button>
-            </a>
-          </Link>
+          <RouterLink href="/slates/create" as="/slates/create" classNames="flex items-center">
+            <Button type="default">{'Add Slate'}</Button>
+          </RouterLink>
         </div>
         {slateStakingDeadline && (
           <Deadline status={statuses.PENDING_TOKENS}>{`${tsToDeadline(
@@ -83,17 +69,21 @@ const Slates: React.FunctionComponent<Props> = ({ router }) => {
         {slates &&
           slates.length &&
           slates.map((slate: ISlate) => (
-            <Card
-              key={slate.id}
-              title={slate.title}
-              subtitle={slate.proposals.length + ' Grants Included'}
-              description={slate.description}
-              category={slate.category}
-              status={slate.status}
-              address={slate.ownerAddress}
-              recommender={slate.owner}
-              onClick={() => handleClickSlate(slate)}
-            />
+            <div key={slate.id}>
+              <RouterLink href={`/DetailedView/?id=${slate.id}`} as={`/slates/?id=${slate.id}`}>
+                <Card
+                  key={slate.id}
+                  title={slate.title}
+                  subtitle={slate.proposals.length + ' Grants Included'}
+                  description={slate.description}
+                  category={slate.category}
+                  status={slate.status}
+                  address={slate.ownerAddress}
+                  recommender={slate.owner}
+                  // onClick={() => handleClickSlate(slate)}
+                />
+              </RouterLink>
+            </div>
           ))}
       </CardsWrapper>
     </div>
@@ -112,4 +102,4 @@ const CardsWrapper = styled.div`
 //   max-height: 50vh;
 // `;
 
-export default withRouter(Slates);
+export default Slates;

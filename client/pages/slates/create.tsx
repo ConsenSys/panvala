@@ -20,6 +20,7 @@ import SectionLabel from '../../components/SectionLabel';
 import { IAppContext, IProposal, IProposalMetadata, ISlateMetadata } from '../../interfaces';
 import { ipfsAddObject } from '../../utils/ipfs';
 import { LogDescription } from 'ethers/utils';
+import { convertedToBaseUnits } from '../../utils/format';
 
 const Separator = styled.div`
   border: 1px solid ${COLORS.grey5};
@@ -205,7 +206,10 @@ const CreateSlate: React.FunctionComponent = () => {
 
     // token distribution details
     const beneficiaries: string[] = proposalMetadatas.map(p => p.awardAddress);
-    const tokenAmounts: string[] = proposalMetadatas.map(p => p.tokensRequested);
+    const tokenAmounts: string[] = proposalMetadatas.map(p =>
+      convertedToBaseUnits(p.tokensRequested, 18)
+    );
+    console.log('tokenAmounts:', tokenAmounts);
 
     try {
       // batch create proposals
