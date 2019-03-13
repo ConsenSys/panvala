@@ -1,6 +1,5 @@
 import * as React from 'react';
 import styled from 'styled-components';
-import Link from 'next/link';
 import { COLORS } from '../styles';
 import { AppContext } from '../components/Layout';
 import Button from '../components/Button';
@@ -22,6 +21,9 @@ const Incumbent = styled.div`
   font-size: 0.8rem;
   margin-top: 1rem;
 `;
+const Separator = styled.div`
+  border: 1px solid ${COLORS.grey5};
+`;
 
 const Container = styled.div`
   display: flex;
@@ -29,12 +31,15 @@ const Container = styled.div`
 `;
 const MetaColumn = styled.div`
   width: 30%;
-  padding: 2rem 1.5rem;
+  padding: 1.5rem 0;
   border-right: 2px solid ${COLORS.grey5};
 `;
-const TokensSection = styled.div`
+const TokensBorder = styled.div`
+  margin: 0 1em;
   border: 2px solid ${COLORS.grey5};
-  padding: 0 1rem 1rem;
+`;
+const TokensSection = styled.div`
+  padding: 0 1.25rem 1rem;
   color: ${COLORS.grey3};
   margin-top: 1em;
 `;
@@ -42,14 +47,17 @@ const StakingRequirement = styled.div`
   font-size: 1.6rem;
   color: ${COLORS.grey1};
 `;
+const DarkText = styled.div`
+  color: ${COLORS.grey1};
+`;
 
 const MainColumn = styled.div`
   width: 70%;
-  padding: 1rem;
+  padding: 1.2rem;
 `;
 const SlateProposals = styled.div`
   display: flex;
-  flex-flow: row wrap;
+  flex-flow: column wrap;
 `;
 
 const DetailedView: StatelessPage<any> = ({ query, pathname, asPath }: any) => {
@@ -62,6 +70,13 @@ const DetailedView: StatelessPage<any> = ({ query, pathname, asPath }: any) => {
   const proposal: IProposal | undefined = (proposals as IProposal[]).find(
     (proposal: IProposal) => proposal.id.toString() === query.id
   );
+  let includedInSlates;
+  if (proposal && slates) {
+    includedInSlates = slates.filter(
+      slate => slate.proposals.filter(p => p.id === proposal.id).length > 0
+    );
+  }
+  console.log('includedInSlates:', includedInSlates);
   console.log('slate:', slate);
   console.log('proposal:', proposal);
 
@@ -80,8 +95,21 @@ const DetailedView: StatelessPage<any> = ({ query, pathname, asPath }: any) => {
               <Deadline status={slate.status}>{`${tsToDeadline(slate.deadline)}`}</Deadline>
             )}
           </>
+        ) : proposal && includedInSlates && includedInSlates.length === 1 ? (
+          <>
+            <div className="flex">
+              <Tag status={''}>{includedInSlates[0].category.toUpperCase()}</Tag>
+              {/* this should be proposal.status */}
+              <Tag status={includedInSlates[0].status}>{includedInSlates[0].status}</Tag>
+            </div>
+            {includedInSlates[0].deadline && (
+              <Deadline status={includedInSlates[0].status}>{`${tsToDeadline(
+                includedInSlates[0].deadline
+              )}`}</Deadline>
+            )}
+          </>
         ) : (
-          <Tag status={''}>{'GRANT PROPOSAL'}</Tag>
+          <div>Unknown Status</div>
         )}
       </div>
 
@@ -96,68 +124,106 @@ const DetailedView: StatelessPage<any> = ({ query, pathname, asPath }: any) => {
             </Button>
           ) : (
             (slate && isPendingVote(slate.status)) ||
-            (proposal && (
+            (proposal && isPendingTokens('1') ? (
               <RouterLink href="/ballots" as="/ballots">
                 <Button large type="default">
                   {'View Ballot'}
                 </Button>
               </RouterLink>
+            ) : (
+              <RouterLink href="/slates" as="/slates">
+                <Button large type="default">
+                  {'Add to Slate'}
+                </Button>
+              </RouterLink>
             ))
           )}
-          <TokensSection>
-            <div>
-              {slate && isPendingTokens(slate.status) ? (
-                <>
-                  <SectionLabel>{'STAKING REQUIREMENT'}</SectionLabel>
-                  <StakingRequirement>{formatPanvalaUnits(slate.requiredStake)}</StakingRequirement>
-                </>
-              ) : (
-                <>
-                  <SectionLabel>{'TOKENS REQUESTED'}</SectionLabel>
-                  <StakingRequirement>{slateOrProposal.tokensRequested}</StakingRequirement>
-                </>
-              )}
-            </div>
-            {slate && (
-              <div className="f6 lh-copy">
-                If you want the Panvala Awards Committee to keep making recommendations and approve
-                of the work they have done, you should stake tokens on this slate.
-              </div>
-            )}
-          </TokensSection>
-          <TokensSection>
-            <SectionLabel>{'CREATED BY'}</SectionLabel>
-            <div>{slateOrProposal.title}</div>
-            <CardAddress>
-              {splitAddressHumanReadable(
-                slateOrProposal.ownerAddress || slateOrProposal.awardAddress
-              )}
-            </CardAddress>
 
-            <SectionLabel>{'ORGANIZATION'}</SectionLabel>
-            <div>{slateOrProposal.organization}</div>
-          </TokensSection>
+          <TokensBorder>
+            <TokensSection>
+              <div>
+                {slate && isPendingTokens(slate.status) ? (
+                  <>
+                    <SectionLabel>{'STAKING REQUIREMENT'}</SectionLabel>
+                    <StakingRequirement>
+                      {formatPanvalaUnits(slate.requiredStake)}
+                    </StakingRequirement>
+                  </>
+                ) : (
+                  <>
+                    <SectionLabel lessMargin>{'TOKENS REQUESTED'}</SectionLabel>
+                    <DarkText>{slateOrProposal.tokensRequested}</DarkText>
+                  </>
+                )}
+              </div>
+              {slate && (
+                <div className="f6 lh-copy">
+                  If you want the Panvala Awards Committee to keep making recommendations and
+                  approve of the work they have done, you should stake tokens on this slate.
+                </div>
+              )}
+            </TokensSection>
+
+            <Separator />
+
+            <TokensSection>
+              <SectionLabel lessMargin>{'CREATED BY'}</SectionLabel>
+              <DarkText>{proposal && proposal.firstName + ' ' + proposal.lastName}</DarkText>
+              <SectionLabel lessMargin>{'EMAIL ADDRESS'}</SectionLabel>
+              <DarkText>{proposal && proposal.email}</DarkText>
+              <CardAddress>{slate && splitAddressHumanReadable(slate.ownerAddress)}</CardAddress>
+
+              <SectionLabel>{'ORGANIZATION'}</SectionLabel>
+              <DarkText>{slateOrProposal.organization}</DarkText>
+
+              {includedInSlates && (
+                <>
+                  <SectionLabel lessMargin>{'INCLUDED IN SLATES'}</SectionLabel>
+                  {includedInSlates.map(includedInSlate => (
+                    <RouterLink
+                      href={`/DetailedView?id=${includedInSlate.id}`}
+                      as={`/slates/${includedInSlate.id}`}
+                    >
+                      <DarkText>{includedInSlate.title}</DarkText>
+                    </RouterLink>
+                  ))}
+                </>
+              )}
+            </TokensSection>
+          </TokensBorder>
         </MetaColumn>
 
         <MainColumn>
-          <SectionLabel>{'DESCRIPTION'}</SectionLabel>
-          <div>{slateOrProposal.description || slateOrProposal.summary}</div>
-          <SectionLabel>{'GRANTS'}</SectionLabel>
+          <SectionLabel>{slate ? 'DESCRIPTION' : 'PROJECT SUMMARY'}</SectionLabel>
+          <DarkText>{slateOrProposal.description || slateOrProposal.summary}</DarkText>
           {slate && slate.proposals.length ? (
             <SlateProposals>
+              <SectionLabel>{'GRANTS'}</SectionLabel>
               {slate.proposals.map((proposal: IProposal, index: number) => (
-                <Card
-                  key={proposal.title + index}
-                  title={proposal.title}
-                  subtitle={proposal.tokensRequested + ' Tokens Requested'}
-                  description={proposal.summary}
-                  category={'GRANT PROPOSAL'}
-                />
+                <div key={slate.id}>
+                  <RouterLink
+                    href={`/DetailedView?id=${proposal.id}`}
+                    as={`/proposals/${proposal.id}`}
+                  >
+                    <Card
+                      key={proposal.title + index}
+                      title={proposal.title}
+                      subtitle={proposal.tokensRequested + ' Tokens Requested'}
+                      description={proposal.summary}
+                      category={'GRANT PROPOSAL'}
+                    />
+                  </RouterLink>
+                </div>
               ))}
             </SlateProposals>
-          ) : (
-            <div>Blank slate</div>
-          )}
+          ) : proposal ? (
+            <>
+              <SectionLabel>{'PROJECT TIMELINE'}</SectionLabel>
+              <DarkText>{proposal.projectTimeline}</DarkText>
+              <SectionLabel>{'PROJECT TEAM'}</SectionLabel>
+              <DarkText>{proposal.teamBackgrounds}</DarkText>
+            </>
+          ) : null}
         </MainColumn>
       </Container>
     </div>

@@ -66,25 +66,24 @@ const Slates: React.FunctionComponent<Props> = () => {
       </VisibilityFilterContainer>
 
       <CardsWrapper>
-        {slates &&
-          slates.length &&
-          slates.map((slate: ISlate) => (
-            <div key={slate.id}>
-              <RouterLink href={`/DetailedView/?id=${slate.id}`} as={`/slates/?id=${slate.id}`}>
-                <Card
-                  key={slate.id}
-                  title={slate.title}
-                  subtitle={slate.proposals.length + ' Grants Included'}
-                  description={slate.description}
-                  category={slate.category}
-                  status={slate.status}
-                  address={slate.ownerAddress}
-                  recommender={slate.owner}
-                  // onClick={() => handleClickSlate(slate)}
-                />
-              </RouterLink>
-            </div>
-          ))}
+        {slates && slates.length
+          ? slates.map((slate: ISlate) => (
+              <div key={slate.id}>
+                <RouterLink href={`/DetailedView?id=${slate.id}`} as={`/slates/${slate.id}`}>
+                  <Card
+                    key={slate.id}
+                    title={slate.title}
+                    subtitle={slate.proposals.length + ' Grants Included'}
+                    description={slate.description}
+                    category={slate.category}
+                    status={slate.status}
+                    address={slate.ownerAddress}
+                    recommender={slate.owner}
+                  />
+                </RouterLink>
+              </div>
+            ))
+          : null}
       </CardsWrapper>
     </div>
   );

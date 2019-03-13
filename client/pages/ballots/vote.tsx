@@ -53,13 +53,7 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
   }
 
   function handleViewSlateDetails(slate: ISlate) {
-    router.push({
-      pathname: '/slates/slate',
-      // asPath: `/slates/${slate.ownerAddress}`,
-      query: {
-        id: slate.id,
-      },
-    });
+    router.push(`/DetailedView?id=${slate.id}`, `/slates/${slate.id}`);
   }
 
   return (

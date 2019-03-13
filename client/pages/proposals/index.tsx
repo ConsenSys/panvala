@@ -44,20 +44,23 @@ const Proposals: React.SFC<IProps> = props => {
       </div>
 
       <CardsWrapper>
-        {proposals &&
-          proposals.length &&
-          proposals.map((proposal: any) => (
-            <div key={proposal.id}>
-              <RouterLink href={`/DetailedView?id=${proposal.id}`} as={`/proposals/${proposal.id}`}>
-                <Card
-                  title={proposal.title}
-                  subtitle={proposal.tokensRequested + ' Tokens Requested'}
-                  description={proposal.summary}
-                  category={'GRANT PROPOSAL'}
-                />
-              </RouterLink>
-            </div>
-          ))}
+        {proposals && proposals.length
+          ? proposals.map((proposal: any) => (
+              <div key={proposal.id}>
+                <RouterLink
+                  href={`/DetailedView?id=${proposal.id}`}
+                  as={`/proposals/${proposal.id}`}
+                >
+                  <Card
+                    title={proposal.title}
+                    subtitle={proposal.tokensRequested + ' Tokens Requested'}
+                    description={proposal.summary}
+                    category={'GRANT PROPOSAL'}
+                  />
+                </RouterLink>
+              </div>
+            ))
+          : null}
       </CardsWrapper>
     </div>
   );
