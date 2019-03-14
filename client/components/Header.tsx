@@ -16,15 +16,15 @@ const Header: React.FunctionComponent = ({ router }: any) => {
           </div>
           <div className="flex justify-end">
             <RouterLink href="/">
-              <Button active={router && router.pathname === '/'}>{'Slates'}</Button>
+              <Button active={router && router.asPath === '/' || router.asPath.startsWith('/slates')}>{'Slates'}</Button>
             </RouterLink>
             <RouterLink href="/proposals">
-              <Button active={router && router.pathname.startsWith('/proposals')}>
+              <Button active={router && router.asPath.startsWith('/proposals')}>
                 {'Proposals'}
               </Button>
             </RouterLink>
             <RouterLink href="/ballots">
-              <Button active={router && router.pathname.startsWith('/ballots')}>{'Ballots'}</Button>
+              <Button active={router && router.asPath.startsWith('/ballots')}>{'Ballots'}</Button>
             </RouterLink>
           </div>
         </div>

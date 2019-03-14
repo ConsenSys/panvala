@@ -183,6 +183,7 @@ const DetailedView: StatelessPage<any> = ({ query, pathname, asPath }: any) => {
                     <RouterLink
                       href={`/DetailedView?id=${includedInSlate.id}`}
                       as={`/slates/${includedInSlate.id}`}
+                      key={includedInSlate.id}
                     >
                       <DarkText>{includedInSlate.title}</DarkText>
                     </RouterLink>
@@ -200,7 +201,7 @@ const DetailedView: StatelessPage<any> = ({ query, pathname, asPath }: any) => {
             <SlateProposals>
               <SectionLabel>{'GRANTS'}</SectionLabel>
               {slate.proposals.map((proposal: IProposal, index: number) => (
-                <div key={slate.id}>
+                <div key={proposal.id}>
                   <RouterLink
                     href={`/DetailedView?id=${proposal.id}`}
                     as={`/proposals/${proposal.id}`}
