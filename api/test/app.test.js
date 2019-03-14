@@ -1,10 +1,19 @@
 const request = require('supertest');
 
 const app = require('../index');
-const { Proposal } = require('../models');
+const { sequelize, Proposal } = require('../models');
+const { migrate } = require('../migrate');
 
-// Don't touch the database
-jest.mock('../models');
+// run migrations
+beforeAll(() => {
+  sequelize.options.logging = false;
+  return migrate();
+});
+
+// Shut down the database
+afterAll(() => {
+  return sequelize.close();
+});
 
 describe('GET /', () => {
   test('it should hit the root', async () => {
@@ -13,7 +22,7 @@ describe('GET /', () => {
   });
 });
 
-async function initProposals() {
+function initProposals() {
   const proposals = [
     {
       title: 'An amazing proposal',
@@ -49,12 +58,25 @@ async function initProposals() {
     },
   ];
 
-  await Promise.all(proposals.map(data => Proposal.create(data)));
+  // Automatically added fields
+  const ipAddress = '1.2.3.4';
+
+  return Promise.all(
+    proposals.map(data => {
+      const proposal = {
+        ipAddress,
+        ...data,
+      };
+      return Proposal.create(proposal).catch(error => {
+        console.log(error);
+      });
+    })
+  );
 }
 
 describe('GET /api/proposals', () => {
   beforeEach(() => {
-    Proposal.truncate();
+    return Proposal.truncate();
   });
 
   test('it should get the list of proposals', async () => {
@@ -106,7 +128,6 @@ describe('POST /api/proposals', () => {
       .send(data);
 
     expect(result.status).toEqual(200);
-    expect(Proposal.create).toHaveBeenCalled();
 
     const created = result.body;
     expect(created).toHaveProperty('createdAt');
@@ -123,7 +144,7 @@ describe('POST /api/proposals', () => {
     expect(result.status).toEqual(400);
   });
 
-  describe('missing required fields', async () => {
+  describe('missing required fields', () => {
     const requiredFields = [
       'title',
       'summary',
@@ -170,7 +191,7 @@ describe('POST /api/proposals', () => {
     });
   });
 
-  describe('missing optional fields', async () => {
+  describe('missing optional fields', () => {
     const optionalFields = [
       'lastName',
       'github',

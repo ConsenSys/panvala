@@ -24,7 +24,8 @@ module.exports = {
     operatorsAliases: Sequelize.Op,
   },
   test: {
-    // Stub so `models` will load properly
+    dialect: 'sqlite',
+    storage: ':memory:',
   },
   production: {
     username: process.env.PRODUCTION_USERNAME,
