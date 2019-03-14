@@ -254,7 +254,7 @@ describe('POST /api/proposals', () => {
     test.todo('it should return a 4000 if lastName is too long');
 
     // formats
-    test('it should return a 400 if `tokensRequested` is not a valid string (number)', async () => {
+    test('it should return a 400 if `tokensRequested` is a string that cannot be parsed as a number', async () => {
       data.tokensRequested = 'a million';
 
       const result = await request(app)
@@ -273,6 +273,16 @@ describe('POST /api/proposals', () => {
       expect(result.status).toBe(400);
     });
 
+    test('it should return a 400 if `tokensRequested` a number smaller than base unit', async () => {
+      data.tokensRequested = '100000000000000000';
+
+      const result = await request(app)
+        .post('/api/proposals')
+        .send(data);
+
+      expect(result.status).toBe(400);
+    });
+
     test('it should return a 400 if the email is invalid', async () => {
       data.email = '@abc.com';
 
@@ -281,9 +291,6 @@ describe('POST /api/proposals', () => {
         .send(data);
       expect(result.status).toBe(400);
     });
-
-    // TODO: checkSchema(proposalSchema) allows numbers to be added to the db.
-    test.todo('should not allow test db to add incorrect datatypes');
 
     // Stateful
     test('all proposals should have the correct datatype for tokensRequested', async () => {

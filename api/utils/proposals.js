@@ -31,11 +31,6 @@ module.exports = {
       exists: true,
       trim: true,
       isEmpty: false,
-      isLength: {
-        options: {
-          min: 1,
-        },
-      },
       isNull: false,
       custom: {
         options: value => {
