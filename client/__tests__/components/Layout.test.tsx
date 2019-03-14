@@ -1,8 +1,6 @@
 import * as React from 'react';
-import { render, cleanup } from 'react-testing-library';
+import { render } from 'react-testing-library';
 import Layout from '../../components/Layout';
-
-afterEach(cleanup);
 
 describe('Layout component', () => {
   test('should render correctly', () => {

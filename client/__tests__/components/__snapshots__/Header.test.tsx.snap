@@ -13,8 +13,7 @@ exports[`Header component should render correctly 1`] = `
           class="flex"
         >
           <a
-            class="link"
-            href="/"
+            class="link undefined RouterLink__A-hkpnw2-0 hTfQYN"
           >
             <div
               class="Image__Container-sc-7c9yjn-0 hbTfHQ"
@@ -35,8 +34,7 @@ exports[`Header component should render correctly 1`] = `
           class="flex justify-end"
         >
           <a
-            class="link"
-            href="/"
+            class="link undefined RouterLink__A-hkpnw2-0 hTfQYN"
           >
             <div
               class="Button__Wrapper-sc-1vedn6s-2 jHiEij"
@@ -49,8 +47,7 @@ exports[`Header component should render correctly 1`] = `
             </div>
           </a>
           <a
-            class="link"
-            href="/proposals"
+            class="link undefined RouterLink__A-hkpnw2-0 hTfQYN"
           >
             <div
               class="Button__Wrapper-sc-1vedn6s-2 jHiEij"
@@ -63,8 +60,7 @@ exports[`Header component should render correctly 1`] = `
             </div>
           </a>
           <a
-            class="link"
-            href="/ballots"
+            class="link undefined RouterLink__A-hkpnw2-0 hTfQYN"
           >
             <div
               class="Button__Wrapper-sc-1vedn6s-2 jHiEij"

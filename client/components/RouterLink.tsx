@@ -15,7 +15,7 @@ interface IProps {
 
 const RouterLink: React.SFC<IProps> = ({ children, href, as, classNames }) => {
   return (
-    <Link prefetch href={href} as={as}>
+    <Link prefetch={process.env.NODE_ENV !== 'test'} href={href} as={as}>
       <A className={`link ${classNames}`}>{children}</A>
     </Link>
   );
