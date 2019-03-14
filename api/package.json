@@ -7,6 +7,8 @@
     "dev": "PORT=5001 yarn start",
     "start": "node index.js",
     "migrate": "sequelize db:migrate",
+    "migrate:undo": "sequelize db:migrate:undo",
+    "create-migration": "sequelize migration:generate --name",
     "test": "jest --passWithNoTests"
   },
   "author": "",

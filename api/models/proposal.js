@@ -42,15 +42,15 @@ module.exports = (Sequelize, DataTypes) => {
       allowNull: true,
     },
     projectPlan: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     projectTimeline: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     teamBackgrounds: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     totalBudget: {
