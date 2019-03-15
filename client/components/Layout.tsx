@@ -14,6 +14,12 @@ import { baseToConvertedUnits } from '../utils/format';
 export const AppContext: React.Context<IAppContext> = React.createContext<IAppContext>({
   slates: [],
   proposals: [],
+  currentBallot: {
+    startDate: 0,
+    votingOpenDate: 0,
+    votingCloseDate: 0,
+    finalityDate: 0,
+  },
 });
 
 const LayoutWrapper = styled.div`
@@ -26,13 +32,19 @@ const ContentWrapper = styled.div`
 
 type IProps = {
   title: string;
-  children?: any;
+  children: any;
 };
 
 export default class Layout extends React.Component<IProps, IAppContext> {
   readonly state: IAppContext = {
     slates: [],
     proposals: [],
+    currentBallot: {
+      startDate: 0,
+      votingOpenDate: 0,
+      votingCloseDate: 0,
+      finalityDate: 0,
+    },
   };
 
   constructor(props: IProps) {
@@ -69,11 +81,27 @@ export default class Layout extends React.Component<IProps, IAppContext> {
       });
     }
 
+    const oneWeekSeconds = 604800;
+    // Epoch 3
+    // beginning of week 1 (2/1)
+    const epochStartDate = 1549040401; // gateKeeper.functions.currentBatchStart()
+    // end of week 11 (4/19)
+    const week11EndDate = epochStartDate + oneWeekSeconds * 11; // 1555689601
+    // end of week 12 (4/26)
+    const week12EndDate = week11EndDate + oneWeekSeconds;
+    // end of week 13 (5/3)
+    const week13EndDate = week12EndDate + oneWeekSeconds;
+
+    // prettier-ignore
     this.setState({
       slates: slateData,
       proposals: proposalData,
-      slateStakingDeadline: 1539044131,
-      proposalDeadline: 1539044131,
+      currentBallot: {
+        startDate: epochStartDate,
+        votingOpenDate: week11EndDate,
+        votingCloseDate: week12EndDate,
+        finalityDate: week13EndDate,
+      },
     });
   }
 
@@ -108,7 +136,8 @@ export default class Layout extends React.Component<IProps, IAppContext> {
 
   render() {
     const { children, title }: IProps = this.props;
-    const { slates, proposals, slateStakingDeadline, proposalDeadline }: IAppContext = this.state;
+    const { slates, proposals, currentBallot }: IAppContext = this.state;
+    console.log('this.state:', this.state);
 
     return (
       <LayoutWrapper>
@@ -125,8 +154,7 @@ export default class Layout extends React.Component<IProps, IAppContext> {
               onRefreshProposals: this.handleRefreshProposals,
               slates,
               proposals,
-              slateStakingDeadline,
-              proposalDeadline,
+              currentBallot,
             }}
           >
             {children}

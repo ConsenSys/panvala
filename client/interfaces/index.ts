@@ -1,4 +1,5 @@
 import { IButton, ITag } from './ui';
+import { StatelessPage } from './components';
 import {
   ISlate,
   IProposal,
@@ -7,6 +8,9 @@ import {
   IEthereumContext,
   IProposalMetadata,
   ISlateMetadata,
+  IChoices,
+  ISubmitBallot,
+  IBallotDates,
 } from './contexts';
 
 export {
@@ -15,8 +19,12 @@ export {
   IAppContext,
   IButton,
   ITag,
+  StatelessPage,
   IEthereumContext,
   IContracts,
   IProposalMetadata,
   ISlateMetadata,
+  IChoices,
+  ISubmitBallot,
+  IBallotDates,
 };

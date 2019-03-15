@@ -1,4 +1,4 @@
-import { providers, Contract } from 'ethers';
+import { providers, Contract, utils } from 'ethers';
 
 /**
  * Proposal fields that gets loaded/rendered in the frontend
@@ -79,22 +79,45 @@ export interface ISlateMetadata {
   proposals: IProposalMetadata[];
 }
 
+export interface IChoices {
+  firstChoice: string;
+  secondChoice: string;
+}
+
+export interface ISubmitBallot {
+  choices: {
+    [key: string]: IChoices;
+  };
+  salt: string;
+  voterAddress: string;
+}
+
+export interface IBallotDates {
+  startDate: number;
+  votingOpenDate: number;
+  votingCloseDate: number;
+  finalityDate: number;
+}
+
 export interface IContracts {
   tokenCapacitor: Contract;
   gateKeeper: Contract;
+  token?: Contract;
+  parameterStore?: Contract;
 }
 
 export interface IAppContext {
   slates?: ISlate[];
   proposals?: IProposal[];
-  slateStakingDeadline?: number;
-  proposalDeadline?: number;
+  currentBallot: IBallotDates;
   onNotify?: any;
   onRefreshProposals?: any;
 }
 
 export interface IEthereumContext {
-  account: string;
+  account?: string;
   ethProvider?: providers.Web3Provider;
   contracts?: IContracts;
+  panBalance: utils.BigNumber;
+  gkAllowance: utils.BigNumber;
 }

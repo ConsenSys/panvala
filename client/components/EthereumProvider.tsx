@@ -17,7 +17,8 @@ export default class EthereumProvider extends React.Component<any, IEthereumCont
   state: any = {
     account: '',
     ethProvider: {},
-    contracts: {},
+    panBalance: utils.bigNumberify('0'),
+    gkAllowance: utils.bigNumberify('0'),
   };
 
   componentWillUnmount() {
@@ -31,36 +32,54 @@ export default class EthereumProvider extends React.Component<any, IEthereumCont
       if (typeof window !== 'undefined' && window.hasOwnProperty('ethereum')) {
         // this means metamask is installed. get the ethereum provider
         const { ethereum }: Window = window;
+        let panBalance: utils.BigNumber = this.state.panBalance;
+        let gkAllowance: utils.BigNumber = this.state.gkAllowance;
         // wrap it with ethers
         const ethProvider: providers.Web3Provider = await connectProvider(ethereum);
+
+        // contract abstractions (w/ metamask signer)
+        const contracts: IContracts = await connectContracts(ethProvider);
+        console.log('contracts:', contracts);
+
         // pop-up metamask to authorize panvala-app (account signature validation)
         const addresses: string[] = await ethereum.enable();
         // first account
         const account: string = utils.getAddress(addresses[0]);
+
         if (account) {
           toast.success('MetaMask successfully connected!');
+          if (contracts.token) {
+            // get the token balance and gate_keeper allowance
+            // panBalance = await contracts.token.functions.balanceOf(account);
+            // gkAllowance = await contracts.token.functions.allowance(
+            //   account,
+            //   contracts.gateKeeper.address
+            // );
+          }
         }
-        // contract abstractions (w/ metamask signer)
-        const contracts: IContracts = connectContracts(ethProvider);
-        // gatekeeper parameters
-        const gcParametersAddress: string = await contracts.gateKeeper.functions.parameters();
-
-        console.log('contracts:', contracts);
-        console.log('gatekeeper parameters address:', gcParametersAddress);
 
         this.setState({
           account,
           ethProvider,
           contracts,
+          panBalance,
+          gkAllowance,
         });
       }
     } catch (error) {
-      alert(`Error while attempting to connect to the Ethereum network... ${error.message}`);
+      console.log(error);
+      // alert(`Error while attempting to connect to the Ethereum network... ${error.message}`);
     }
   }
 
   render() {
-    const { account, ethProvider, contracts }: IEthereumContext = this.state;
+    const {
+      account,
+      ethProvider,
+      contracts,
+      panBalance,
+      gkAllowance,
+    }: IEthereumContext = this.state;
     const { children }: any = this.props;
 
     return (
@@ -69,6 +88,8 @@ export default class EthereumProvider extends React.Component<any, IEthereumCont
           account,
           ethProvider,
           contracts,
+          panBalance,
+          gkAllowance,
         }}
       >
         {children}
