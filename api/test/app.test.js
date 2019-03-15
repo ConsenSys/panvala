@@ -1,7 +1,7 @@
 const request = require('supertest');
 
 const app = require('../index');
-const { sequelize, Proposal } = require('../models');
+const { sequelize, Proposal, SubmittedBallot } = require('../models');
 const { migrate } = require('../migrate');
 
 // run migrations
@@ -12,8 +12,11 @@ beforeAll(() => {
 
 // Shut down the database
 afterAll(() => {
-  return sequelize.close();
+  const q = sequelize.getQueryInterface();
+  return q.dropAllTables().then(() => sequelize.close());
 });
+
+// TODO: split this up into multiple files
 
 describe('GET /', () => {
   test('it should hit the root', async () => {
@@ -303,5 +306,153 @@ describe('POST /api/proposals', () => {
         expect(typeof tokensRequested).toBe('string');
       });
     });
+  });
+});
+
+describe('POST /api/ballots', () => {
+  let data;
+
+  beforeEach(async () => {
+    // Set up the ballot data
+    data = {
+      ballot: {
+        epochNumber: '0',
+        choices: {
+          0: {
+            firstChoice: '0',
+            secondChoice: '1',
+          },
+          1: {
+            firstChoice: '1',
+            secondChoice: '2',
+          },
+        },
+        salt: '2010',
+        voterAddress: '0xD09cc3Bc67E4294c4A446d8e4a2934a921410eD7',
+      },
+      signature: 'sig',
+    };
+  });
+
+  test('it should create a new ballot', async () => {
+    const result = await request(app)
+      .post('/api/ballots')
+      .send(data);
+
+    // console.log('RESULT', result.body);
+    expect(result.status).toEqual(200);
+
+    const created = result.body;
+    expect(created).toHaveProperty('createdAt');
+    expect(created).toHaveProperty('updatedAt');
+
+    ['epochNumber', 'salt', 'signature'].forEach(property => {
+      expect(created).toHaveProperty(property);
+    });
+  });
+
+  test('it should return a 400 if no ballot data was provided', async () => {
+    const result = await request(app).post('/api/ballots');
+
+    expect(result.status).toEqual(400);
+  });
+
+  describe('missing required fields', () => {
+    const requiredFields = ['ballot', 'signature'];
+
+    test.each(requiredFields)('it should return a 400 if `%s` is null', async field => {
+      data[field] = null;
+      const result = await request(app)
+        .post('/api/ballots')
+        .send(data);
+      expect(result.status).toBe(400);
+    });
+
+    test.each(requiredFields)('it should return a 400 if `%s` is missing', async field => {
+      data[field] = undefined;
+      const result = await request(app)
+        .post('/api/ballots')
+        .send(data);
+      expect(result.status).toBe(400);
+    });
+
+    // cannot be empty strings
+    test.each(requiredFields)('it should return a 400 if `%s` is an empty string', async field => {
+      data[field] = '';
+      const result = await request(app)
+        .post('/api/ballots')
+        .send(data);
+      expect(result.status).toBe(400);
+    });
+
+    // whitespace strings
+    test.each(requiredFields)('it should return a 400 if `%s` is all whitespace', async field => {
+      data[field] = '             ';
+      const result = await request(app)
+        .post('/api/ballots')
+        .send(data);
+      expect(result.status).toBe(400);
+    });
+
+    // `ballot` keys
+    describe('ballot', () => {
+      const ballotRequiredFields = ['epochNumber', 'salt', 'voterAddress', 'choices'];
+      const ballotStringFields = ['epochNumber', 'salt', 'voterAddress'];
+
+      test.each(ballotRequiredFields)('it should return a 400 if `%s` is null', async field => {
+        data.ballot[field] = null;
+        const result = await request(app)
+          .post('/api/ballots')
+          .send(data);
+        // console.log(result);
+        expect(result.status).toBe(400);
+      });
+
+      test.each(ballotRequiredFields)('it should return a 400 if `%s` is missing', async field => {
+        data.ballot[field] = undefined;
+        const result = await request(app)
+          .post('/api/ballots')
+          .send(data);
+        expect(result.status).toBe(400);
+      });
+
+      // cannot be empty strings
+      test.each(ballotStringFields)(
+        'it should return a 400 if `%s` is an empty string',
+        async field => {
+          data.ballot[field] = '';
+          const result = await request(app)
+            .post('/api/ballots')
+            .send(data);
+          expect(result.status).toBe(400);
+        }
+      );
+
+      // whitespace strings
+      test.each(ballotStringFields)(
+        'it should return a 400 if `%s` is all whitespace',
+        async field => {
+          data.ballot[field] = '             ';
+          const result = await request(app)
+            .post('/api/ballots')
+            .send(data);
+          expect(result.status).toBe(400);
+        }
+      );
+    });
+
+    describe('ballot choices', () => {
+      test.todo('it should return a 400 if any of the votes are missing a firstChoice');
+      test.todo('it should return a 400 if any of the votes are missing a secondChoice');
+    });
+  });
+
+  describe('field validation', () => {
+    test.todo('it should return a 400 if the signature does not match the voterAddress');
+    test.todo('it should return a 400 if the signature does not match the voterAddress');
+
+    test.todo('it should return a 400 if the salt is not numeric');
+    test.todo('it should return a 400 if the epochNumber is not numeric');
+    test.todo('it should return a 400 if the voterAddress is not a valid Ethereum address');
   });
 });
