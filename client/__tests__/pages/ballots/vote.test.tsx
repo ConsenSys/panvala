@@ -7,9 +7,22 @@ import { slatesArray } from '../../../utils/data';
 import { AppContext } from '../../../components/Layout';
 import { BUTTON_COLORS, COLORS } from '../../../styles';
 
+const oneWeekSeconds = 604800;
+const epochStartDate = 1549040401;
+const week11EndDate = epochStartDate + oneWeekSeconds * 11;
+const week12EndDate = week11EndDate + oneWeekSeconds;
+const week13EndDate = week12EndDate + oneWeekSeconds;
+
+const currentBallot = {
+  startDate: epochStartDate,
+  votingOpenDate: week11EndDate,
+  votingCloseDate: week12EndDate,
+  finalityDate: week13EndDate,
+};
+
 const setup: any = () => {
   const { getByText, getByTestId, container } = render(
-    <AppContext.Provider value={{ slates: slatesArray }}>
+    <AppContext.Provider value={{ slates: slatesArray, currentBallot }}>
       <Vote />
     </AppContext.Provider>
   );
