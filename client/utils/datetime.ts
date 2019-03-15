@@ -1,4 +1,4 @@
-// import { isAfter, format, differenceInSeconds } from 'date-fns';
+import { isAfter } from 'date-fns';
 import moment, { Moment } from 'moment-timezone';
 
 export const tsToDeadline = (unixTimestamp: number, customTimezone?: string): string => {
@@ -17,7 +17,8 @@ export const tsToDeadline = (unixTimestamp: number, customTimezone?: string): st
   return dead;
 };
 
-// export const dateHasPassed = uts => isAfter(new Date(), new Date(uts * 1000));
+export const dateHasPassed = (uts: number) => isAfter(new Date(), new Date(uts * 1000));
+
 // export const formatHtmlDatetime = date => format(date, 'YYYY-MM-DDTHH:mm:ss.SSSZ');
 // export const getEndDateString = uts => format(new Date(uts * 1000), 'MM/DD/YY_HH:mm:ss');
 // export const tsToMonthDate = uts => format(new Date(uts * 1000), 'MMMM Do');

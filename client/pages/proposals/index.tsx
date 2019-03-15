@@ -3,12 +3,10 @@ import styled from 'styled-components';
 import { AppContext } from '../../components/Layout';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
-import RouteTitle from '../../components/RouteTitle';
-import { statuses } from '../../utils/status';
 import Deadline from '../../components/Deadline';
-import { tsToDeadline } from '../../utils/datetime';
-import { IAppContext } from '../../interfaces';
 import RouterLink from '../../components/RouterLink';
+import RouteTitle from '../../components/RouteTitle';
+import { IAppContext } from '../../interfaces';
 
 interface IProps {
   errors?: string;
@@ -19,7 +17,7 @@ interface IProps {
 
 const Proposals: React.SFC<IProps> = props => {
   console.log('props:', props);
-  const { proposals, proposalDeadline }: IAppContext = React.useContext(AppContext);
+  const { proposals, currentBallot }: IAppContext = React.useContext(AppContext);
   console.log('proposals:', proposals);
 
   return (
@@ -36,11 +34,7 @@ const Proposals: React.SFC<IProps> = props => {
             <Button type="default">{'Add Proposal'}</Button>
           </RouterLink>
         </div>
-        {proposalDeadline && (
-          <Deadline status={statuses.PROPOSAL_DEADLINE}>{`${tsToDeadline(
-            proposalDeadline
-          )}`}</Deadline>
-        )}
+        {currentBallot.votingOpenDate && <Deadline ballot={currentBallot} route="proposals" />}
       </div>
 
       <CardsWrapper>

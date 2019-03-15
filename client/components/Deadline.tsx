@@ -1,32 +1,28 @@
-import React, { Children } from 'react';
+import * as React from 'react';
 import styled from 'styled-components';
-import { ITag } from '../interfaces';
+import { ITag, IBallotDates } from '../interfaces';
 import { COLORS } from '../styles';
 import Tag from './Tag';
-import { isPendingTokens, isPendingVote, isProposalDeadline } from '../utils/status';
+import { isBallotOpen, getPrefixAndDeadline } from '../utils/status';
+import { tsToDeadline } from '../utils/datetime';
 
-const StyledDeadline = styled(Tag)`
-  background-color: ${({ status }: any) =>
-    isPendingTokens(status) || isProposalDeadline(status)
-      ? COLORS.grey5
-      : isPendingVote(status)
-      ? COLORS.yellow1
-      : 'rgba(89, 182, 230, 0.2)'};
+const StyledDeadline = styled(Tag)<{ ballot: IBallotDates }>`
+  background-color: ${({ ballot }: any) => (isBallotOpen(ballot) ? COLORS.yellow1 : COLORS.grey5)};
   color: ${COLORS.text};
   letter-spacing: 0;
   height: 2rem;
 `;
 
-const Deadline: React.FunctionComponent<ITag> = (props: any) => {
+interface IProps extends ITag {
+  ballot: IBallotDates;
+  route: string;
+}
+
+const Deadline: React.FunctionComponent<IProps> = ({ ballot, route }) => {
+  const { prefix, deadline } = getPrefixAndDeadline(ballot, route);
   return (
     <Wrapper>
-      <StyledDeadline {...props}>{`${
-        isPendingTokens(props.status)
-          ? 'SLATE STAKING DEADLINE'
-          : isProposalDeadline(props.status)
-          ? 'PROPOSAL DEADLINE'
-          : 'VOTE UNTIL'
-      } ${Children.toArray(props.children)} EST`}</StyledDeadline>
+      <StyledDeadline ballot={ballot}>{`${prefix} ${tsToDeadline(deadline)} EST`}</StyledDeadline>
     </Wrapper>
   );
 };

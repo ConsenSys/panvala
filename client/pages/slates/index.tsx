@@ -7,10 +7,8 @@ import Button from '../../components/Button';
 import Card from '../../components/Card';
 import Deadline from '../../components/Deadline';
 import RouteTitle from '../../components/RouteTitle';
-import { tsToDeadline } from '../../utils/datetime';
-import { statuses } from '../../utils/status';
-import { ISlate, IAppContext } from '../../interfaces';
 import RouterLink from '../../components/RouterLink';
+import { ISlate, IAppContext } from '../../interfaces';
 
 type Props = {
   errors?: string;
@@ -25,7 +23,7 @@ const VisibilityFilterContainer = styled.div`
 `;
 
 const Slates: React.FunctionComponent<Props> = () => {
-  const { slates, slateStakingDeadline }: IAppContext = React.useContext(AppContext);
+  const { slates, currentBallot }: IAppContext = React.useContext(AppContext);
   const [visibilityFilter] = React.useState('all');
 
   function handleSelectVisibilityFilter(type: string) {
@@ -42,11 +40,7 @@ const Slates: React.FunctionComponent<Props> = () => {
             <Button type="default">{'Add Slate'}</Button>
           </RouterLink>
         </div>
-        {slateStakingDeadline && (
-          <Deadline status={statuses.PENDING_TOKENS}>{`${tsToDeadline(
-            slateStakingDeadline
-          )}`}</Deadline>
-        )}
+        <Deadline ballot={currentBallot} route="slates" />
       </div>
 
       <VisibilityFilterContainer>

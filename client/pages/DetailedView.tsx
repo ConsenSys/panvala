@@ -8,11 +8,9 @@ import SectionLabel from '../components/SectionLabel';
 import Tag from '../components/Tag';
 import Card, { CardAddress } from '../components/Card';
 import Deadline from '../components/Deadline';
-import { IProposal, ISlate, IAppContext } from '../interfaces';
+import { IProposal, ISlate, IAppContext, StatelessPage } from '../interfaces';
 import { splitAddressHumanReadable, formatPanvalaUnits } from '../utils/format';
-import { tsToDeadline } from '../utils/datetime';
 import { isPendingTokens, isPendingVote } from '../utils/status';
-import { StatelessPage } from '../interfaces/components';
 import RouterLink from '../components/RouterLink';
 
 const Incumbent = styled.div`
@@ -60,10 +58,8 @@ const SlateProposals = styled.div`
   flex-flow: column wrap;
 `;
 
-const DetailedView: StatelessPage<any> = ({ query, pathname, asPath }: any) => {
-  console.log('query, pathname, asPath');
-  console.log(query, pathname, asPath);
-  const { slates, proposals }: IAppContext = React.useContext(AppContext);
+const DetailedView: StatelessPage<any> = ({ query, asPath }: any) => {
+  const { slates, proposals, currentBallot }: IAppContext = React.useContext(AppContext);
   const slate: ISlate | undefined = (slates as ISlate[]).find(
     (slate: ISlate) => slate.id === query.id
   );
@@ -75,12 +71,10 @@ const DetailedView: StatelessPage<any> = ({ query, pathname, asPath }: any) => {
     includedInSlates = slates.filter(
       slate => slate.proposals.filter(p => p.id === proposal.id).length > 0
     );
+    console.log('includedInSlates:', includedInSlates);
   }
-  console.log('includedInSlates:', includedInSlates);
-  console.log('slate:', slate);
-  console.log('proposal:', proposal);
-
-  const slateOrProposal: any = slate ? slate : proposal;
+  const slateOrProposal: any = slate || proposal;
+  console.log('slateOrProposal:', slateOrProposal);
 
   return (
     <div className="flex flex-column">
@@ -91,9 +85,7 @@ const DetailedView: StatelessPage<any> = ({ query, pathname, asPath }: any) => {
               <Tag status={''}>{slate.category.toUpperCase()}</Tag>
               <Tag status={slate.status}>{slate.status}</Tag>
             </div>
-            {slate.deadline && (
-              <Deadline status={slate.status}>{`${tsToDeadline(slate.deadline)}`}</Deadline>
-            )}
+            {slate.deadline && <Deadline ballot={currentBallot} route={asPath} />}
           </>
         ) : proposal && includedInSlates && includedInSlates.length === 1 ? (
           <>
@@ -103,9 +95,12 @@ const DetailedView: StatelessPage<any> = ({ query, pathname, asPath }: any) => {
               <Tag status={includedInSlates[0].status}>{includedInSlates[0].status}</Tag>
             </div>
             {includedInSlates[0].deadline && (
-              <Deadline status={includedInSlates[0].status}>{`${tsToDeadline(
-                includedInSlates[0].deadline
-              )}`}</Deadline>
+              <Deadline
+                ballot={currentBallot}
+                route={asPath}
+                // deadline={includedInSlates[0].deadline}
+                // status={includedInSlates[0].status}
+              />
             )}
           </>
         ) : (

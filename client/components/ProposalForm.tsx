@@ -32,10 +32,7 @@ const FormSchema = yup.object().shape({
     .string()
     .max(4000, 'Too Long!')
     .required('Required'),
-  tokensRequested: yup
-    .string()
-    // .max(config.totalUpcomingDispatch, `Too many tokens (${config.totalUpcomingDispatch} max)`)
-    .required('Required'),
+  tokensRequested: yup.string().required('Required'),
   totalBudget: yup.string().required('Required'),
   otherFunding: yup.string().required('Required'),
   awardAddress: yup.string().required('Required'),
@@ -72,6 +69,7 @@ const ProposalForm: React.SFC<IProps> = ({ onHandleSubmit }) => {
             ...values,
             // throws on underflow (x.1234567890123456789)
             tokensRequested: convertedToBaseUnits(values.tokensRequested, 18),
+            // max: totalUpcomingDispatch
           };
           await onHandleSubmit(baseUnitsValues);
           setSubmitting(false);

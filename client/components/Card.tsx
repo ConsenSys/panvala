@@ -5,6 +5,7 @@ import Tag from './Tag';
 import { splitAddressHumanReadable } from '../utils/format';
 import Button from './Button';
 import { Separator } from './Form';
+import { IChoices } from '../interfaces';
 
 const Wrapper = styled.div<{ isActive?: boolean }>`
   width: 300px;
@@ -57,7 +58,7 @@ type IProps = {
   recommender?: string;
   status?: string;
   // /ballots/vote
-  choices?: any;
+  choices?: IChoices;
   onSetChoice?: any;
   slateID?: string;
   // /slates
@@ -111,15 +112,15 @@ const Card: React.FunctionComponent<IProps> = props => {
           <CardDescription>{'Select an option'}</CardDescription>
           <ChoiceOptions>
             <ChoiceButton
-              onClick={() => props.onSetChoice('first', props.slateID)}
-              firstChoice={props.choices.first === props.slateID}
+              onClick={() => props.onSetChoice('firstChoice', props.slateID)}
+              firstChoice={props.choices.firstChoice === props.slateID}
               data-testid="first-choice"
             >
               {'1st Choice'}
             </ChoiceButton>
             <ChoiceButton
-              onClick={() => props.onSetChoice('second', props.slateID)}
-              secondChoice={props.choices.second === props.slateID}
+              onClick={() => props.onSetChoice('secondChoice', props.slateID)}
+              secondChoice={props.choices.secondChoice === props.slateID}
               data-testid="second-choice"
             >
               {'2nd Choice'}
