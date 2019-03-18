@@ -8,6 +8,9 @@
     "type": "git",
     "url": "git+https://github.com/ConsenSys/panvala.git"
   },
+  "scripts": {
+    "update:abis": "cd scripts && node update-abis.js"
+  },
   "author": "",
   "license": "ISC",
   "bugs": {
