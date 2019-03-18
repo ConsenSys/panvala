@@ -1,0 +1,22 @@
+{
+  "name": "panvala",
+  "version": "0.0.1",
+  "description": "Make Ethereum safer",
+  "main": "index.js",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ConsenSys/panvala.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ConsenSys/panvala/issues"
+  },
+  "workspaces": [
+    "api",
+    "client",
+    "packages/*"
+  ],
+  "homepage": "https://github.com/ConsenSys/panvala#readme"
+}

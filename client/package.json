@@ -23,6 +23,7 @@
     "is-ipfs": "0.4.8",
     "moment-timezone": "^0.5.23",
     "next": "8.0.1",
+    "panvala-utils": "0.0.1",
     "react": "16.8.2",
     "react-dom": "16.8.2",
     "react-toastify": "4.5.2",

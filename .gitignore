@@ -3,3 +3,5 @@ docker/postgres/data/*
 docker/**/*.env
 
 **/coverage
+
+**/node_modules/
