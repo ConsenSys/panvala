@@ -25,44 +25,13 @@ get_image_name() {
     echo "$FULL_IMAGE_NAME"
 }
 
-# deploy_api ENVIRONMENT
-# Environment is staging or production
-# Creates service panvala-api-${ENVIRONMENT}
-deploy_api() {
-    ENVIRONMENT=$1
-    TAG=$(get_image_tag panvala/api)
-    REPO="$(get_image_registry)/panvala/api"
-    APP="panvala-api"
+# update_docker_token() {
+#     export TOKEN=$(aws ecr --region=$REGION get-authorization-token --output text --query authorizationData[].authorizationToken | base64 -d | cut -d: -f2)
+# }
 
-    helm upgrade --install \
-        --set environment=${ENVIRONMENT} \
-        --set image.tag=${TAG} \
-        --set image.repository=${REPO} \
-        --set databasePassword=${DATABASE_PASSWORD} \
-        --set databaseUser=${DATABASE_USER} \
-        --namespace ${ENVIRONMENT} \
-        ${APP}-${ENVIRONMENT} \
-        ./charts/${APP}
-}
-
-# deploy_frontend ENVIRONMENT
-# Environment is staging or production
-# Creates service panvala-api-${ENVIRONMENT}
-deploy_frontend() {
-    ENVIRONMENT=$1
-    REPO="$(get_image_registry)/panvala/frontend"
-    TAG=$(get_image_tag panvala/frontend)
-    APP="panvala-frontend"
-
-    helm upgrade --install \
-        --set environment=${ENVIRONMENT} \
-        --set apiHost=${API_HOST} \
-        --set image.tag=${TAG} \
-        --set image.repository=${REPO} \
-        --set service.type=LoadBalancer \
-        --namespace ${ENVIRONMENT} \
-        ${APP}-${ENVIRONMENT} \
-        ./charts/${APP}
+create_docker_pull_secret() {
+    NAMESPACE=$1
+    kubectl create secret generic regcred --from-file=.dockerconfigjson=$HOME/.docker/config.json --type=kubernetes.io/dockerconfigjson -n ${NAMESPACE}
 }
 
 install_helm() {

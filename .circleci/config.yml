@@ -129,8 +129,7 @@ jobs:
           name: Deploy API
           command: |
             . venv/bin/activate
-            . ./scripts/helpers.sh
-            deploy_api development
+            sh ./scripts/deploy-api.sh development
 
   # run api tests
   api:
@@ -236,8 +235,7 @@ jobs:
           name: Deploy frontend
           command: |
             . venv/bin/activate
-            . ./scripts/helpers.sh
-            deploy_frontend development
+            sh ./scripts/deploy-frontend.sh development
 
   # run client tests
   frontend:
