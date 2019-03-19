@@ -7,11 +7,8 @@ environment: production
 node_env: production
 containerPort: 5000
 
-databaseHost: panvala-db
-databasePort: "5432"
-databaseName: panvala_api
-databaseUser: root
-databasePassword: password
+ipfsHost: ipfs.infura.io
+ipfsPort: 5001
 
 ##
 
@@ -26,7 +23,7 @@ nameOverride: ""
 fullnameOverride: ""
 
 service:
-  type: LoadBalancer
+  type: ClusterIP
   port: 80
 
 ingress:

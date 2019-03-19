@@ -30,6 +30,17 @@ spec:
           env:
             - name: API_HOST
               value: {{ .Values.apiHost }}
+            # Contract info
+            - name: GATEKEEPER_ADDRESS
+              valueFrom:
+                configMapKeyRef:
+                  name: contracts-config
+                  key: gatekeeper
+            - name: TOKEN_CAPACITOR_ADDRESS
+              valueFrom:
+                configMapKeyRef:
+                  name: contracts-config
+                  key: tokenCapacitor
           livenessProbe:
             httpGet:
               path: /

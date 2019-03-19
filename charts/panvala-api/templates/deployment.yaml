@@ -30,19 +30,49 @@ spec:
           env:
             - name: NODE_ENV
               value: {{ .Values.node_env }}
+            # Database values (from config map)
             - name: PRODUCTION_HOST
-              value: {{ .Values.databaseHost }}
+              valueFrom:
+                configMapKeyRef:
+                  name: db-config
+                  key: host
             - name: PRODUCTION_PORT
-              value: {{ .Values.databasePort | quote }}
+              valueFrom:
+                configMapKeyRef:
+                  name: db-config
+                  key: port
             - name: PRODUCTION_DATABASE
-              value: {{ .Values.databaseName }}
+              valueFrom:
+                configMapKeyRef:
+                  name: db-config
+                  key: name
             - name: PRODUCTION_USERNAME
-              value: {{ .Values.databaseUser }}
+              valueFrom:
+                configMapKeyRef:
+                  name: db-config
+                  key: user
+            # Read database password from secret
             - name: PRODUCTION_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ printf "%s-%s" .Release.Name "externaldb" }}
+                  name: db-secret
                   key: databasePassword
+            - name: GATEKEEPER_ADDRESS
+            # Contract info (from config map)
+              valueFrom:
+                configMapKeyRef:
+                  name: contracts-config
+                  key: gatekeeper
+            - name: TOKEN_CAPACITOR_ADDRESS
+              valueFrom:
+                configMapKeyRef:
+                  name: contracts-config
+                  key: tokenCapacitor
+            # IPFS
+            - name: IPFS_HOST
+              value: {{ .Values.ipfsHost }}
+            - name: IPFS_PORT
+              value: {{ .Values.ipfsPort | quote }}
           livenessProbe:
             httpGet:
               path: /
