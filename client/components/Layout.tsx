@@ -25,8 +25,6 @@ export const AppContext: React.Context<IAppContext> = React.createContext<IAppCo
 const LayoutWrapper = styled.div`
   font-family: 'Roboto';
   min-height: 100vh;
-`;
-const ContentWrapper = styled.div`
   margin: 2em 12em;
 `;
 
@@ -45,6 +43,8 @@ export default class Layout extends React.Component<IProps, IAppContext> {
       votingCloseDate: 0,
       finalityDate: 0,
     },
+    onNotify: () => this.handleNotify,
+    onRefreshProposals: () => this.handleRefreshProposals,
   };
 
   constructor(props: IProps) {
@@ -136,8 +136,7 @@ export default class Layout extends React.Component<IProps, IAppContext> {
 
   render() {
     const { children, title }: IProps = this.props;
-    const { slates, proposals, currentBallot }: IAppContext = this.state;
-    console.log('this.state:', this.state);
+    console.log('Layout state:', this.state);
 
     return (
       <LayoutWrapper>
@@ -145,22 +144,8 @@ export default class Layout extends React.Component<IProps, IAppContext> {
           <title>{title}</title>
         </Head>
 
-        <ContentWrapper>
-          <Header />
-
-          <AppContext.Provider
-            value={{
-              onNotify: this.handleNotify,
-              onRefreshProposals: this.handleRefreshProposals,
-              slates,
-              proposals,
-              currentBallot,
-            }}
-          >
-            {children}
-          </AppContext.Provider>
-        </ContentWrapper>
-
+        <Header />
+        <AppContext.Provider value={this.state}>{children}</AppContext.Provider>
         <ToastContainer
           position="top-right"
           autoClose={8000}

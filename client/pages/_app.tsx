@@ -6,7 +6,6 @@ import ErrorPage from 'next/error';
 // required: import css at top-level
 import '../ReactToastify.css';
 import '../components/Toggle.css';
-
 import EthereumProvider from '../components/EthereumProvider';
 import Layout from '../components/Layout';
 
@@ -42,7 +41,7 @@ export default class MyApp extends App<IProps, IState> {
       pageProps = await Component.getInitialProps(ctx);
     }
 
-    return { pageProps, query: ctx.query };
+    return { pageProps };
   }
 
   // this sets state with the error so the next render will show fallback UI
@@ -69,19 +68,19 @@ export default class MyApp extends App<IProps, IState> {
   }
 
   render() {
-    const { Component, pageProps, query }: IProps = this.props;
+    const { Component, pageProps }: IProps = this.props;
     const { hasError, errorCode }: IState = this.state;
 
     return (
       <Container>
         <Layout title={pageProps.title || 'Panvala'}>
-          <EthereumProvider>
-            {hasError && errorCode ? (
-              <ErrorPage statusCode={errorCode} />
-            ) : (
-              <Component {...pageProps} query={query} />
-            )}
-          </EthereumProvider>
+          {hasError && errorCode ? (
+            <ErrorPage statusCode={errorCode} />
+          ) : (
+            <EthereumProvider>
+              <Component {...pageProps} />
+            </EthereumProvider>
+          )}
         </Layout>
       </Container>
     );

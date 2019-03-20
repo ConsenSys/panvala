@@ -45,16 +45,17 @@ export default class EthereumProvider extends React.Component<any, IEthereumCont
         const addresses: string[] = await ethereum.enable();
         // first account
         const account: string = utils.getAddress(addresses[0]);
+        console.log('account:', account);
 
         if (account) {
           toast.success('MetaMask successfully connected!');
           if (contracts.token) {
             // get the token balance and gate_keeper allowance
-            // panBalance = await contracts.token.functions.balanceOf(account);
-            // gkAllowance = await contracts.token.functions.allowance(
-            //   account,
-            //   contracts.gateKeeper.address
-            // );
+            panBalance = await contracts.token.functions.balanceOf(account);
+            gkAllowance = await contracts.token.functions.allowance(
+              account,
+              contracts.gateKeeper.address
+            );
           }
         }
 
@@ -73,27 +74,9 @@ export default class EthereumProvider extends React.Component<any, IEthereumCont
   }
 
   render() {
-    const {
-      account,
-      ethProvider,
-      contracts,
-      panBalance,
-      gkAllowance,
-    }: IEthereumContext = this.state;
-    const { children }: any = this.props;
-
+    console.log('ETH state:', this.state);
     return (
-      <EthereumContext.Provider
-        value={{
-          account,
-          ethProvider,
-          contracts,
-          panBalance,
-          gkAllowance,
-        }}
-      >
-        {children}
-      </EthereumContext.Provider>
+      <EthereumContext.Provider value={this.state}>{this.props.children}</EthereumContext.Provider>
     );
   }
 }

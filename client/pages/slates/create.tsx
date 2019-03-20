@@ -390,7 +390,6 @@ const CreateSlate: React.FunctionComponent = () => {
                   {'Create Slate'}
                 </Button>
               </div>
-              <div>{account}</div>
             </Form>
           )}
         </Formik>

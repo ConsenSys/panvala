@@ -10,7 +10,7 @@ import Card, { CardAddress } from '../components/Card';
 import Deadline from '../components/Deadline';
 import { IProposal, ISlate, IAppContext, StatelessPage } from '../interfaces';
 import { splitAddressHumanReadable, formatPanvalaUnits } from '../utils/format';
-import { isPendingTokens, isPendingVote } from '../utils/status';
+import { isPendingTokens, isPendingVote, statuses } from '../utils/status';
 import RouterLink from '../components/RouterLink';
 
 const Incumbent = styled.div`
@@ -90,7 +90,7 @@ const DetailedView: StatelessPage<any> = ({ query, asPath }: any) => {
         ) : proposal && includedInSlates && includedInSlates.length === 1 ? (
           <>
             <div className="flex">
-              <Tag status={''}>{includedInSlates[0].category.toUpperCase()}</Tag>
+              <Tag status={''}>{includedInSlates[0].category.toUpperCase() + ' PROPOSAL'}</Tag>
               {/* this should be proposal.status */}
               <Tag status={includedInSlates[0].status}>{includedInSlates[0].status}</Tag>
             </div>
@@ -104,7 +104,12 @@ const DetailedView: StatelessPage<any> = ({ query, asPath }: any) => {
             )}
           </>
         ) : (
-          <div>Unknown Status</div>
+          <>
+            <div className="flex">
+              <Tag status={''}>{'GRANT PROPOSAL'}</Tag>
+              <Tag status={statuses.PENDING_TOKENS}>{'PENDING TOKENS'}</Tag>
+            </div>
+          </>
         )}
       </div>
 

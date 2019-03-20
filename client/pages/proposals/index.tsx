@@ -16,9 +16,7 @@ interface IProps {
 }
 
 const Proposals: React.SFC<IProps> = props => {
-  console.log('props:', props);
   const { proposals, currentBallot }: IAppContext = React.useContext(AppContext);
-  console.log('proposals:', proposals);
 
   return (
     <div>
