@@ -25,6 +25,7 @@ deploy() {
         --set image.tag=${TAG} \
         --set image.repository=${REPO} \
         --set service.type=LoadBalancer \
+        --set web3Host=${RPC_ENDPOINT} \
         --set nameOverride="${APP}" \
         --set fullnameOverride="${APP}" \
         "${APP}-${ENVIRONMENT}" \
