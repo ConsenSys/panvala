@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const setupRoutes = require('./routes');
+const morgan = require('morgan');
 
 const app = express();
 
@@ -11,6 +12,8 @@ const port = process.env.PORT || 5000;
 app.use(cors({ credentials: true, origin: true }));
 // enable parsing of JSON in POST request bodies
 app.use(express.json());
+// add logging
+app.use(morgan('common'));
 
 // Routes:
 setupRoutes(app);
