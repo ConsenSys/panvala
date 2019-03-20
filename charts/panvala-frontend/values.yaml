@@ -6,7 +6,7 @@
 # the container port
 containerPort: 3000
 # the API host - the name of the service with the API
-apiHost: panvala-api
+apiHost: http://panvala-api
 
 ###
 

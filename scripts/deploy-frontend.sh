@@ -23,6 +23,7 @@ deploy() {
         --set image.tag=${TAG} \
         --set image.repository=${REPO} \
         --set service.type=LoadBalancer \
+        --set apiHost=${API_HOST} \
         --set nameOverride="${APP}" \
         --set fullnameOverride="${APP}" \
         "${APP}-${ENVIRONMENT}" \
