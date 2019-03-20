@@ -73,6 +73,9 @@ spec:
               value: {{ .Values.ipfsHost }}
             - name: IPFS_PORT
               value: {{ .Values.ipfsPort | quote }}
+            # Web3
+            - name: RPC_ENDPOINT
+              value: {{ .Values.web3Host }}
           livenessProbe:
             httpGet:
               path: /

@@ -10,6 +10,8 @@ containerPort: 5000
 ipfsHost: ipfs.infura.io
 ipfsPort: 5001
 
+web3Host: https://rinkeby.infura.io:8545
+
 ##
 
 replicaCount: 1
