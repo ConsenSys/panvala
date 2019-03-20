@@ -17,11 +17,12 @@ deploy() {
     REPO="$(get_image_registry)/panvala/frontend"
     APP="panvala-frontend"
 
-    echo helm upgrade --install \
+    helm upgrade --install \
         --namespace ${ENVIRONMENT} \
         --set environment=${ENVIRONMENT} \
         --set image.tag=${TAG} \
         --set image.repository=${REPO} \
+        --set service.type=LoadBalancer \
         --set nameOverride="${APP}" \
         --set fullnameOverride="${APP}" \
         "${APP}-${ENVIRONMENT}" \

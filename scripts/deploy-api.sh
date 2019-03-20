@@ -18,13 +18,13 @@ deploy() {
     APP="panvala-api"
 
     echo "$TAG $REPO $APP"
-    echo "$(aws ecr get-login)"
 
     helm upgrade --install \
         --namespace ${ENVIRONMENT} \
         --set environment=${ENVIRONMENT} \
         --set image.tag=${TAG} \
         --set image.repository=${REPO} \
+        --set service.type=LoadBalancer \
         --set nameOverride="${APP}" \
         --set fullnameOverride="${APP}" \
         "${APP}-${ENVIRONMENT}" \
