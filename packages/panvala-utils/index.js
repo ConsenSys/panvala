@@ -1,8 +1,5 @@
-
-const hello = () => {
-  console.log('hi panvala')
-};
+const voting = require('./voting');
 
 module.exports = {
-  hello,
-}
+  voting,
+};

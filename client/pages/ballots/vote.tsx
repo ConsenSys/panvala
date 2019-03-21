@@ -2,7 +2,6 @@ import * as React from 'react';
 import styled from 'styled-components';
 import { withRouter, SingletonRouter } from 'next/router';
 import { toast } from 'react-toastify';
-import { utils } from 'ethers';
 
 import { COLORS } from '../../styles';
 import { AppContext } from '../../components/Layout';
@@ -14,7 +13,7 @@ import Deadline from '../../components/Deadline';
 import Label from '../../components/Label';
 import SectionLabel from '../../components/SectionLabel';
 import { ISlate, IAppContext, IEthereumContext, ISubmitBallot, IChoices } from '../../interfaces';
-import { randomSalt, getCommitHashes } from '../../utils/values';
+import { randomSalt, getCommitHash } from '../../utils/voting';
 
 type IProps = {
   account?: string;
@@ -50,7 +49,7 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
     firstChoice: '',
     secondChoice: '',
   });
-  const [salt]: [string, any] = React.useState(randomSalt());
+  const [salt]: [string, any] = React.useState(randomSalt().toString());
 
   /**
    * Click handler for choosing which rank (first/second) a slate has
@@ -97,7 +96,8 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
     if (account && contracts) {
       const ballot: ISubmitBallot = {
         choices: {
-          grant: {
+          // 0 = grant
+          0: {
             firstChoice: choices.firstChoice,
             secondChoice: choices.secondChoice || choices.firstChoice,
           },
@@ -108,9 +108,8 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
       console.log('ballot:', ballot);
 
       // ['grant', 'governance']
-      const ballotChoicesKeys = Object.keys(ballot.choices);
-      const commitHashes: string[] = getCommitHashes(ballot, ballotChoicesKeys);
-      console.log('commitHashes:', commitHashes);
+      const commitHash: string = getCommitHash(ballot.choices, salt);
+      console.log('commitHash:', commitHash);
 
       // // check if user has voteTokenBalance
       // let votingRights: utils.BigNumber = await contracts.gateKeeper.functions.voteTokenBalance(
