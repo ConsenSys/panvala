@@ -13,7 +13,7 @@ import Deadline from '../../components/Deadline';
 import Label from '../../components/Label';
 import SectionLabel from '../../components/SectionLabel';
 import { ISlate, IAppContext, IEthereumContext, ISubmitBallot, IChoices } from '../../interfaces';
-import { randomSalt, getCommitHash } from '../../utils/voting';
+import { randomSalt, generateCommitHash } from '../../utils/voting';
 
 type IProps = {
   account?: string;
@@ -108,7 +108,7 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
       console.log('ballot:', ballot);
 
       // ['grant', 'governance']
-      const commitHash: string = getCommitHash(ballot.choices, salt);
+      const commitHash: string = generateCommitHash(ballot.choices, salt);
       console.log('commitHash:', commitHash);
 
       // // check if user has voteTokenBalance
