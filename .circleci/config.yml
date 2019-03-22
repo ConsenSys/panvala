@@ -151,6 +151,20 @@ jobs:
             - node_modules
           key: api-dependencies-{{ checksum "api/package.json" }}
 
+      # Install utils
+      - restore_cache:
+          keys:
+            - utils-dependencies-{{ checksum "packages/panvala-utils/package.json" }}
+            # fallback to using the latest cache if no exact match is found
+            - utils-dependencies-
+
+      - run: cd packages/panvala-utils && yarn install
+
+      - save_cache:
+          paths:
+            - node_modules
+          key: utils-dependencies-{{ checksum "packages/panvala-utils/package.json" }}
+
       # run tests!
       - run: cd api && yarn test
 
@@ -256,6 +270,20 @@ jobs:
           paths:
             - node_modules
           key: frontend-dependencies-{{ checksum "client/package.json" }}
+
+      # Install utils
+      - restore_cache:
+          keys:
+            - utils-dependencies-{{ checksum "packages/panvala-utils/package.json" }}
+            # fallback to using the latest cache if no exact match is found
+            - utils-dependencies-
+
+      - run: cd packages/panvala-utils && yarn install
+
+      - save_cache:
+          paths:
+            - node_modules
+          key: utils-dependencies-{{ checksum "packages/panvala-utils/package.json" }}
 
       - run:
           name: build server
