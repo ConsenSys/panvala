@@ -26,7 +26,7 @@ module.exports = {
    *
    * Fails if a row with the given slateID already exists.
    */
-  async save(req, res) {
+  async create(req, res) {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       // console.log(errors.array());

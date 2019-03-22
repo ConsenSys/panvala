@@ -57,7 +57,7 @@ module.exports = app => {
 
   // SLATES
   app.get('/api/slates', slate.getAll);
-  app.post('/api/slates', checkSchema(slateSchema), slate.save);
+  app.post('/api/slates', checkSchema(slateSchema), slate.create);
 
   // BALLOTS
   app.post(
