@@ -2,8 +2,7 @@
   "compilerOptions": {
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
-    "jsx": "preserve",
-    "lib": ["dom", "es2017"],
+    "lib": ["es2017"],
     "module": "esnext",
     "moduleResolution": "node",
     "noEmit": true,
@@ -18,5 +17,5 @@
     "target": "esnext"
   },
   "include": ["./**/*.ts"],
-  "exclude": ["node_modules", "_archive"]
+  "exclude": ["node_modules"]
 }
