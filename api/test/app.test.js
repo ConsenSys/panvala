@@ -587,5 +587,28 @@ describe('POST /api/slates', () => {
 
       expect(result.status).toEqual(400);
     });
+
+    test('is should accept and convert a string that parses as a number for the slateID', async () => {
+      data.slateID = '1';
+
+      const result = await request(app)
+        .post(route)
+        .send(data);
+
+      expect(result.status).toEqual(200);
+      const { slateID } = result.body;
+
+      expect(typeof slateID).toEqual('number');
+    });
+
+    test('it should return a 400 if the slateID does not parse as a number', async () => {
+      data.slateID = 'notanumber';
+
+      const result = await request(app)
+        .post(route)
+        .send(data);
+
+      expect(result.status).toEqual(400);
+    });
   });
 });

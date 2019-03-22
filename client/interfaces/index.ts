@@ -11,6 +11,7 @@ import {
   IChoices,
   ISubmitBallot,
   IBallotDates,
+  ISaveSlate,
 } from './contexts';
 
 export {
@@ -27,4 +28,5 @@ export {
   IChoices,
   ISubmitBallot,
   IBallotDates,
+  ISaveSlate,
 };

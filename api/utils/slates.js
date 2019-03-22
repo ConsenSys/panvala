@@ -108,6 +108,8 @@ const slateSchema = {
   slateID: {
     in: ['body'],
     exists: true,
+    // parse as integer
+    toInt: true,
     isInt: true,
   },
   metadataHash: {

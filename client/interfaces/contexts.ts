@@ -79,6 +79,15 @@ export interface ISlateMetadata {
   proposals: IProposalMetadata[];
 }
 
+/**
+ * Slate data to be saved in the database
+ */
+export interface ISaveSlate {
+  slateID: string,
+  metadataHash: string,
+  email?: string,
+}
+
 export interface IChoices {
   firstChoice: string;
   secondChoice: string;
