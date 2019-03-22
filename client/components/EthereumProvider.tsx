@@ -19,6 +19,7 @@ export default class EthereumProvider extends React.Component<any, IEthereumCont
     ethProvider: {},
     panBalance: utils.bigNumberify('0'),
     gkAllowance: utils.bigNumberify('0'),
+    votingRights: utils.bigNumberify('0'),
   };
 
   componentWillUnmount() {
@@ -34,6 +35,7 @@ export default class EthereumProvider extends React.Component<any, IEthereumCont
         const { ethereum }: Window = window;
         let panBalance: utils.BigNumber = this.state.panBalance;
         let gkAllowance: utils.BigNumber = this.state.gkAllowance;
+        let votingRights: utils.BigNumber = this.state.votingRights;
         // wrap it with ethers
         const ethProvider: providers.Web3Provider = await connectProvider(ethereum);
 
@@ -56,6 +58,7 @@ export default class EthereumProvider extends React.Component<any, IEthereumCont
               account,
               contracts.gateKeeper.address
             );
+            votingRights = await contracts.gateKeeper.functions.voteTokenBalance(account);
           }
         }
 
@@ -65,6 +68,7 @@ export default class EthereumProvider extends React.Component<any, IEthereumCont
           contracts,
           panBalance,
           gkAllowance,
+          votingRights,
         });
       }
     } catch (error) {

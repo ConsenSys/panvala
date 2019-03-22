@@ -3,8 +3,9 @@ const fs = require('fs');
 const Gatekeeper = fs.readFileSync('../governance-contracts/build/contracts/Gatekeeper.json');
 const ParameterStore = fs.readFileSync('../governance-contracts/build/contracts/ParameterStore.json');
 const TokenCapacitor = fs.readFileSync('../governance-contracts/build/contracts/TokenCapacitor.json');
+const BasicToken = fs.readFileSync('../governance-contracts/build/contracts/BasicToken.json');
 
-const contracts = [Gatekeeper, ParameterStore, TokenCapacitor];
+const contracts = [Gatekeeper, ParameterStore, TokenCapacitor, BasicToken];
 
 contracts.forEach(contract => {
   // extract only the fields we need
@@ -19,9 +20,9 @@ contracts.forEach(contract => {
     devdoc,
   });
 
-  console.log(`Writing ${contractName} to /client/utils/abis/`);
+  console.log(`Writing ${contractName} to /abis/`);
 
-  fs.writeFile(`../client/utils/abis/${contractName}.json`, jsonFile, err => {
+  fs.writeFile(`../abis/${contractName}.json`, jsonFile, err => {
     if (err) throw err;
     console.log('The file has been written:', contractName);
   });

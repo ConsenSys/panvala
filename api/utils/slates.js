@@ -1,9 +1,9 @@
 const ethers = require('ethers');
 const ipfs = require('./ipfs');
 
-const Gatekeeper = require('../contracts/Gatekeeper.json');
-const Slate = require('../contracts/Slate.json');
-const ParameterStore = require('../contracts/ParameterStore.json');
+const Gatekeeper = require('../../abis/Gatekeeper.json');
+const Slate = require('../../abis/Slate.json');
+const ParameterStore = require('../../abis/ParameterStore.json');
 
 const { toUtf8String } = ethers.utils;
 
@@ -22,13 +22,13 @@ async function getAllSlates() {
   const gatekeeper = new ethers.Contract(gatekeeperAddress, Gatekeeper.abi, provider);
 
   // Get an interface to the ParameterStore contract
-  const parameters = await gatekeeper.parameters();
-  const parameterStore = new ethers.Contract(parameters, ParameterStore.abi, provider);
+  const parameterStoreAddress = await gatekeeper.functions.parameters();
+  const parameterStore = new ethers.Contract(parameterStoreAddress, ParameterStore.abi, provider);
   // Get the slate staking requirement
-  const requiredStake = await parameterStore.get('slateStakeAmount');
+  const requiredStake = await parameterStore.functions.get('slateStakeAmount');
 
   // Get the number of available slates
-  const slateCount = await gatekeeper.slateCount();
+  const slateCount = await gatekeeper.functions.slateCount();
   console.log(`fetching ${slateCount} slates`);
 
   // 0..slateCount
@@ -55,7 +55,7 @@ async function getAllSlates() {
         return decoded;
       })
       .then(metadataHash => {
-        return getSlateMetadata(slate, metadataHash, requiredStake);
+        return getSlateMetadata(slate, slateID, metadataHash, requiredStake);
       });
   });
 
@@ -67,7 +67,7 @@ async function getAllSlates() {
  * @param {ethers.Contract} slate
  * @param {String} metadataHash
  */
-async function getSlateMetadata(slate, metadataHash, requiredStake) {
+async function getSlateMetadata(slate, slateID, metadataHash, requiredStake) {
   // TODO: get real data
   const deadline = 1539044131;
 
@@ -85,7 +85,8 @@ async function getSlateMetadata(slate, metadataHash, requiredStake) {
   const proposals = metadata.proposals;
 
   const slateMetadata = {
-    id: metadataHash,
+    id: slateID,
+    metadataHash,
     category: 'GRANT',
     status,
     deadline,

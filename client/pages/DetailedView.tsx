@@ -61,7 +61,7 @@ const SlateProposals = styled.div`
 const DetailedView: StatelessPage<any> = ({ query, asPath }: any) => {
   const { slates, proposals, currentBallot }: IAppContext = React.useContext(AppContext);
   const slate: ISlate | undefined = (slates as ISlate[]).find(
-    (slate: ISlate) => slate.id === query.id
+    (slate: ISlate) => slate.id.toString() === query.id
   );
   const proposal: IProposal | undefined = (proposals as IProposal[]).find(
     (proposal: IProposal) => proposal.id.toString() === query.id

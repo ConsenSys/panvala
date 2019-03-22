@@ -2,6 +2,7 @@ import * as React from 'react';
 import styled from 'styled-components';
 import { withRouter, SingletonRouter } from 'next/router';
 import { toast } from 'react-toastify';
+import { utils } from 'ethers';
 
 import { COLORS } from '../../styles';
 import { AppContext } from '../../components/Layout';
@@ -14,6 +15,7 @@ import Label from '../../components/Label';
 import SectionLabel from '../../components/SectionLabel';
 import { ISlate, IAppContext, IEthereumContext, ISubmitBallot, IChoices } from '../../interfaces';
 import { randomSalt, generateCommitHash } from '../../utils/voting';
+import { baseToConvertedUnits } from '../../utils/format';
 
 type IProps = {
   account?: string;
@@ -37,11 +39,11 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
   // get contexts
   const { slates, currentBallot }: IAppContext = React.useContext(AppContext);
   const {
-    ethProvider,
     contracts,
     account,
     panBalance,
     gkAllowance,
+    votingRights,
   }: IEthereumContext = React.useContext(EthereumContext);
 
   // component state
@@ -93,13 +95,13 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
       return;
     }
 
-    if (account && contracts) {
+    if (account && contracts && contracts.token) {
       const ballot: ISubmitBallot = {
         choices: {
           // 0 = grant
           0: {
-            firstChoice: choices.firstChoice,
-            secondChoice: choices.secondChoice || choices.firstChoice,
+            firstChoice: utils.bigNumberify(choices.firstChoice),
+            secondChoice: utils.bigNumberify(choices.secondChoice) || utils.bigNumberify(choices.firstChoice),
           },
         },
         salt,
@@ -111,37 +113,41 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
       const commitHash: string = generateCommitHash(ballot.choices, salt);
       console.log('commitHash:', commitHash);
 
-      // // check if user has voteTokenBalance
-      // let votingRights: utils.BigNumber = await contracts.gateKeeper.functions.voteTokenBalance(
-      //   account
-      // );
+      let numTokens: utils.BigNumber = utils.bigNumberify('0');
 
-      // let numTokens: utils.BigNumber = utils.bigNumberify('0');
-      // if (votingRights.gt('0') && panBalance.eq('0')) {
-      //   // entire balance is being used as votingRights
-      //   // -> vote w/ votingRights
-      //   numTokens = votingRights;
-      // } else if (votingRights.gt('0') && panBalance.gt('0')) {
-      //   // balance is split between gate_keeper and user_account
-      //   // -> deposit more tokens / get more votingRights
-      //   await contracts.gateKeeper.functions.depositVoteTokens(panBalance);
-      //   votingRights = await contracts.gateKeeper.functions.voteTokenBalance(account);
-      //   numTokens = votingRights;
-      // } else if (
-      //   (votingRights.eq('0') && panBalance.gt('0')) ||
-      //   (gkAllowance.eq('0') && panBalance.gt('0'))
-      // ) {
-      //   // entire balance is being kept by user -or- alowance is 0
-      //   // -> approve the gateKeeper contract
-      //   await contracts.token.functions.approve(contracts.gateKeeper.address, panBalance);
-      // }
+      // NOTE: this userflow might need revision
+      // check if user has voteTokenBalance
+      if (votingRights.gt('0') && panBalance.eq('0')) {
+        console.log('only votingRights');
+        // entire balance is being used as votingRights
+        // -> vote w/ votingRights
+        numTokens = votingRights;
+      } else if (votingRights.gt('0') && panBalance.gt('0')) {
+        console.log('both votingRights and user balance');
+        // balance is split between gate_keeper and user_account
+        // -> deposit more tokens / get more votingRights, then vote with entire (new) votingRights
+        await contracts.gateKeeper.functions.depositVoteTokens(panBalance);
+        const newVotingRights = await contracts.gateKeeper.functions.voteTokenBalance(account);
+        numTokens = newVotingRights;
+      } else if (gkAllowance.eq('0') && panBalance.gt('0')) {
+        console.log('no allowance. only user balance');
+        // allowance is 0
+        // -> approve the gateKeeper contract first, then vote with entire balance
+        await contracts.token.functions.approve(contracts.gateKeeper.address, panBalance);
+        numTokens = panBalance;
+      } else if (votingRights.eq('0') && panBalance.gt('0')) {
+        console.log('no voting rights. only user balance');
+        // entire balance is being kept by user
+        // -> vote with entire balance
+        numTokens = panBalance;
+      }
 
-      // console.log('numTokens:', numTokens);
+      console.log('numTokens:', baseToConvertedUnits(numTokens, 18));
 
-      // if (numTokens.gt('0')) {
-      //   // commit the ballot to the gateKeeper contract
-      //   await contracts.gateKeeper.functions.commitBallot(commitHash, numTokens);
-      // }
+      if (numTokens.gt('0')) {
+        // commit (vote) the ballot to the gateKeeper contract
+        await contracts.gateKeeper.functions.commitBallot(commitHash, numTokens);
+      }
     }
   }
 
@@ -167,7 +173,7 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
                     status={slate.status}
                     choices={choices}
                     onSetChoice={handleSetChoice}
-                    slateID={slate.id}
+                    slateID={slate.id.toString()}
                     onHandleViewSlateDetails={() => handleViewSlateDetails(slate.id)}
                   />
                 ))

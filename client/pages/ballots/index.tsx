@@ -35,7 +35,7 @@ const Ballots: React.FunctionComponent<any> = () => {
   console.log('currentBallot:', currentBallot);
   return (
     <div>
-      {isBallotOpen(currentBallot) ? (
+      {!isBallotOpen(currentBallot) ? ( // temporary hack to bypass ballot opening deadline
         <>
           <div className="flex justify-end">
             <Deadline ballot={currentBallot} route="ballots" />

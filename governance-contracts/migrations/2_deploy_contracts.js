@@ -13,7 +13,7 @@ module.exports = function (deployer, network) {
   const startTime = Math.floor(firstEpochTime / 1000);
   const stakeAmount = '5000000000000000000000';
 
-  const devNetworks = ['development', 'coverage'];
+  const devNetworks = ['coverage'];
   const isDev = devNetworks.indexOf(network) !== -1;
 
   // Do not deploy a token on the dev networks

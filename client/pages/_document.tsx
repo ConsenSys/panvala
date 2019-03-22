@@ -40,6 +40,7 @@ export default class MyDocument extends Document {
           <meta charSet="utf-8" />
           <meta name="viewport" content="initial-scale=1.0, width=device-width" />
           {this.props.styles}
+          <link rel="favicon" href="/static/favicon.ico" />
           <link rel="stylesheet" href="https://unpkg.com/tachyons@4/css/tachyons.min.css" />
           <link
             href="https://fonts.googleapis.com/css?family=Roboto:400,500,700"

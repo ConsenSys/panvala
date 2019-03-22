@@ -86,7 +86,10 @@ export interface IChoices {
 
 export interface ISubmitBallot {
   choices: {
-    [key: string]: IChoices;
+    [key: string]: {
+      firstChoice: utils.BigNumber;
+      secondChoice: utils.BigNumber;
+    };
   };
   salt: string;
   voterAddress: string;
@@ -120,4 +123,5 @@ export interface IEthereumContext {
   contracts?: IContracts;
   panBalance: utils.BigNumber;
   gkAllowance: utils.BigNumber;
+  votingRights: utils.BigNumber;
 }

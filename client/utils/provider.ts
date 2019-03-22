@@ -4,7 +4,7 @@ import getConfig from 'next/config';
 
 const TokenCapacitor = require('./abis/TokenCapacitor.json');
 const Gatekeeper = require('./abis/Gatekeeper.json');
-// const Token = require('./abis/IERC20.json');
+const Token = require('./abis/BasicToken.json');
 const ParameterStore = require('./abis/ParameterStore.json');
 
 // Defaults are a workaround for https://github.com/zeit/next.js/issues/4024
@@ -14,14 +14,12 @@ const { publicRuntimeConfig = {} } = getConfig() || {};
 export async function connectContracts(provider: providers.Web3Provider): Promise<IContracts> {
   const tcAbi: any[] = TokenCapacitor.abi;
   const gcAbi: any[] = Gatekeeper.abi;
-  // const tokenAbi: any[] = Token.abi;
+  const tokenAbi: any[] = Token.abi;
   const paramsAbi: any[] = ParameterStore.abi;
 
   // read addresses from env vars
-  const gcAddress: string =
-    publicRuntimeConfig.gatekeeperAddress || '0x8A3f7Ad6b368A6043D0D60Fda425c90DE6126005';
-  const tcAddress: string =
-    publicRuntimeConfig.tokenCapacitorAddress || '0xAabC1fE9c4A43CaFF0D70206B7C7D18E9A279894';
+  const tcAddress: string = publicRuntimeConfig.tokenCapacitorAddress;
+  const gcAddress: string = publicRuntimeConfig.gatekeeperAddress;
 
   // init ethers contract abstractions
   const signer: Signer = provider.getSigner();
@@ -35,8 +33,11 @@ export async function connectContracts(provider: providers.Web3Provider): Promis
   let token, parameterStore;
   // get the token and parameter_store associated with the gate_keeper
   try {
-    // const tokenAddress: string = await gc.functions.token();
-    // token = new ethers.Contract(tokenAddress, tokenAbi, provider);
+    const tokenAddress: string = await gc.functions.token();
+    const tokenContract: Contract = new ethers.Contract(tokenAddress, tokenAbi, provider);
+    // connect metamask wallet/signer to token contract
+    token = tokenContract.connect(signer);
+
     const paramsAddress: string = await gc.functions.parameters();
     parameterStore = new ethers.Contract(paramsAddress, paramsAbi, provider);
   } catch (error) {
