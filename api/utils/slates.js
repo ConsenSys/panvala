@@ -11,6 +11,8 @@ const config = require('./config');
 const { rpcEndpoint } = config;
 const { gatekeeperAddress } = config.contracts;
 
+const { nonEmptyString } = require('./validation');
+
 /**
  * Read slate info from the blockchain, IPFS, and the local DB
  */
@@ -98,6 +100,36 @@ async function getSlateMetadata(slate, metadataHash, requiredStake) {
   return slateMetadata;
 }
 
+
+/**
+ * Data received in a POST request
+ */
+const slateSchema = {
+  slateID: {
+    in: ['body'],
+    exists: true,
+    isInt: true,
+  },
+  metadataHash: {
+    in: ['body'],
+    exists: true,
+    ...nonEmptyString,
+  },
+  email: {
+    in: ['body'],
+    trim: true,
+    // is a valid email if present
+    isEmail: true,
+    optional: {
+      options: {
+        // Allow empty emails
+        checkFalsy: true,
+      },
+    },
+  }
+};
+
 module.exports = {
   getAllSlates,
+  slateSchema,
 };

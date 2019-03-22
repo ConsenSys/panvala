@@ -1,14 +1,19 @@
 const { sequelize } = require('./models');
 const { checkSchema } = require('express-validator/check');
+
+// Validation
 const { proposalSchema } = require('./utils/proposals');
 const { ballotSchema, ballotInsertSchema } = require('./utils/ballots');
+const { slateSchema } = require('./utils/slates');
+const eth = require('./utils/eth');
 
+// Controllers
 const proposal = require('./controllers/proposal');
 const slate = require('./controllers/slate');
 const ballot = require('./controllers/ballot');
 
-const eth = require('./utils/eth');
 
+// Routes
 module.exports = app => {
   app.get('/', (req, res) => {
     res.send('This is the Panvala API');
@@ -52,6 +57,7 @@ module.exports = app => {
 
   // SLATES
   app.get('/api/slates', slate.getAll);
+  app.post('/api/slates', checkSchema(slateSchema), slate.save);
 
   // BALLOTS
   app.post(
