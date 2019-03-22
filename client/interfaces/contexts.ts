@@ -51,7 +51,7 @@ export interface IProposalMetadata {
  * Slate fields that gets loaded/rendered in the frontend
  */
 export interface ISlate {
-  id: string;
+  id: number;
   category: string;
   status: string;
   deadline: number | false;

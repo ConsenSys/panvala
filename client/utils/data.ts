@@ -73,7 +73,8 @@ export const proposalsArray: IProposal[] = [
 
 export const slatesArray: ISlate[] = [
   {
-    id: 'QmRZxt2b1FVZPNqd8hsiykDL3TdBDeTSPX9Kv46HmX4Gx1',
+    id: 0,
+    // metadataHash: 'QmRZxt2b1FVZPNqd8hsiykDL3TdBDeTSPX9Kv46HmX4Gx1',
     category: 'GRANT',
     status: statuses.PENDING_VOTE,
     deadline: 1539044131,
@@ -88,7 +89,8 @@ export const slatesArray: ISlate[] = [
     requiredStake: '500',
   },
   {
-    id: 'QmRZxt2b1FVZPNqd8hsiykDL3TdBDeTSPX9Kv46HmX4Gx2',
+    id: 1,
+    // metadataHash: 'QmRZxt2b1FVZPNqd8hsiykDL3TdBDeTSPX9Kv46HmX4Gx2',
     category: 'GRANT',
     status: statuses.PENDING_TOKENS,
     deadline: 1539044131,

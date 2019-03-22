@@ -75,16 +75,9 @@ export async function postProposal(data: IProposal): Promise<AxiosResponse> {
 //   return selected;
 // }
 
-/** Calls a mock API which returns the above array to simulate "get all". */
-// export async function findAllProposals() {
-//   // Throw an error, just for example.
-//   if (!Array.isArray(proposalsArray)) {
-//     throw new Error('Cannot find users');
-//   }
-
-//   return proposalsArray;
-// }
-
+/**
+ * Get all the available slates
+ */
 export async function getAllSlates(): Promise<ISlate[] | AxiosResponse> {
   try {
     const response = await axios({

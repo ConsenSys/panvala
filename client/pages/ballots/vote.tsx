@@ -80,8 +80,14 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
   async function handleSubmitVote() {
     console.log('choices:', choices);
 
-    if (!choices.firstChoice) {
+    // enforce both first and second choices
+    if (choices.firstChoice === '' || (typeof choices.firstChoice === 'undefined')) {
       toast.error('Must select a first choice');
+      return;
+    }
+
+    if (choices.secondChoice === '' || (typeof choices.secondChoice === 'undefined')) {
+      toast.error('Must select a second choice');
       return;
     }
 
@@ -91,8 +97,7 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
           // 0 = grant
           0: {
             firstChoice: utils.bigNumberify(choices.firstChoice),
-            secondChoice:
-              utils.bigNumberify(choices.secondChoice) || utils.bigNumberify(choices.firstChoice),
+            secondChoice: utils.bigNumberify(choices.secondChoice),
           },
         },
         salt,

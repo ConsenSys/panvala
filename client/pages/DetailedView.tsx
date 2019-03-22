@@ -60,19 +60,36 @@ const SlateProposals = styled.div`
 
 const DetailedView: StatelessPage<any> = ({ query, asPath }: any) => {
   const { slates, proposals, currentBallot }: IAppContext = React.useContext(AppContext);
-  const slate: ISlate | undefined = (slates as ISlate[]).find(
-    (slate: ISlate) => slate.id.toString() === query.id
-  );
-  const proposal: IProposal | undefined = (proposals as IProposal[]).find(
-    (proposal: IProposal) => proposal.id.toString() === query.id
-  );
-  let includedInSlates;
-  if (proposal && slates) {
-    includedInSlates = slates.filter(
-      slate => slate.proposals.filter(p => p.id === proposal.id).length > 0
+
+  const currentContext: string = asPath.startsWith('/slates') ? 'slates' : 'proposals';
+  const identifier: number = parseInt(query.id);
+
+  let slate: ISlate | undefined;
+  let proposal: IProposal | undefined;
+  let includedInSlates: ISlate[] = [];
+
+  // Find the matching slate
+  if (currentContext === 'slates') {
+    slate = (slates as ISlate[]).find(
+        (slate: ISlate) => slate.id === identifier
     );
-    console.log('includedInSlates:', includedInSlates);
+  } else if (currentContext === 'proposals') {
+    // Or, find the matching proposal
+    proposal = (proposals as IProposal[]).find(
+        (proposal: IProposal) => proposal.id === identifier
+    );
+
+    // Get the slates that it is included in
+    if (proposal && slates) {
+        includedInSlates = slates.filter(
+        slate => slate.proposals.filter(p => p.id === proposal.id).length > 0
+        );
+        console.log('includedInSlates:', includedInSlates);
+    }
   }
+
+
+  // Set the target object
   const slateOrProposal: any = slate || proposal;
   console.log('slateOrProposal:', slateOrProposal);
 
