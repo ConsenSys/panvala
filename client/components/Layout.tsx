@@ -25,7 +25,7 @@ export const AppContext: React.Context<IAppContext> = React.createContext<IAppCo
 const LayoutWrapper = styled.div`
   font-family: 'Roboto';
   min-height: 100vh;
-  margin: 2em 12em;
+  margin: 2em 10em;
 `;
 
 type IProps = {

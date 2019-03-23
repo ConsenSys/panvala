@@ -33,13 +33,23 @@ const CardDescription = styled.div`
   font-size: 0.8rem;
   margin-top: 1rem;
   color: ${COLORS.grey3};
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
-const CardUser = styled(CardDescription)`
+const CardUser = styled.div`
+  font-size: 0.8rem;
+  margin-top: 1rem;
+  color: ${COLORS.grey3};
   display: flex;
   flex-flow: column wrap;
 `;
-export const CardAddress = styled(CardDescription)`
+export const CardAddress = styled.div`
+  font-size: 0.8rem;
+  color: ${COLORS.grey3};
   margin-top: 0.5rem;
   letter-spacing: 0.05em;
 `;
