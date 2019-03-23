@@ -55,7 +55,7 @@ const MainColumn = styled.div`
 `;
 const SlateProposals = styled.div`
   display: flex;
-  flex-flow: column wrap;
+  flex-flow: row wrap;
 `;
 
 const DetailedView: StatelessPage<any> = ({ query, asPath }: any) => {
@@ -198,25 +198,27 @@ const DetailedView: StatelessPage<any> = ({ query, asPath }: any) => {
           <SectionLabel>{slate ? 'DESCRIPTION' : 'PROJECT SUMMARY'}</SectionLabel>
           <DarkText>{slateOrProposal.description || slateOrProposal.summary}</DarkText>
           {slate && slate.proposals.length ? (
-            <SlateProposals>
+            <>
               <SectionLabel>{'GRANTS'}</SectionLabel>
-              {slate.proposals.map((proposal: IProposal, index: number) => (
-                <div key={proposal.id}>
-                  <RouterLink
-                    href={`/DetailedView?id=${proposal.id}`}
-                    as={`/proposals/${proposal.id}`}
-                  >
-                    <Card
-                      key={proposal.title + index}
-                      title={proposal.title}
-                      subtitle={proposal.tokensRequested + ' Tokens Requested'}
-                      description={proposal.summary}
-                      category={'GRANT PROPOSAL'}
-                    />
-                  </RouterLink>
-                </div>
-              ))}
-            </SlateProposals>
+              <SlateProposals>
+                {slate.proposals.map((proposal: IProposal, index: number) => (
+                  <div key={proposal.id}>
+                    <RouterLink
+                      href={`/DetailedView?id=${proposal.id}`}
+                      as={`/proposals/${proposal.id}`}
+                    >
+                      <Card
+                        key={proposal.title + index}
+                        title={proposal.title}
+                        subtitle={proposal.tokensRequested + ' Tokens Requested'}
+                        description={proposal.summary}
+                        category={'GRANT PROPOSAL'}
+                      />
+                    </RouterLink>
+                  </div>
+                ))}
+              </SlateProposals>
+            </>
           ) : proposal ? (
             <>
               <SectionLabel>{'PROJECT TIMELINE'}</SectionLabel>
