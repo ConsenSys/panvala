@@ -7,7 +7,7 @@ import Button from './Button';
 import { Separator } from './Form';
 import { IChoices, IProposal } from '../interfaces';
 
-const Wrapper = styled.div<{ isActive?: boolean }>`
+const Wrapper = styled.div<{ isActive?: boolean; asPath?: string }>`
   width: 300px;
   display: flex;
   flex-direction: column;
@@ -19,7 +19,8 @@ const Wrapper = styled.div<{ isActive?: boolean }>`
   margin-bottom: 1rem;
   margin-right: 1rem;
   cursor: pointer;
-  height: 100%;
+  max-height: 100%;
+  ${({ asPath }) => asPath && asPath.startsWith('/ballots') && 'height: 100%;'}
 `;
 const CardTitle = styled.div`
   font-size: 1.5rem;
@@ -87,6 +88,7 @@ type IProps = {
   onSetChoice?: any;
   slateID?: string;
   proposals?: IProposal[];
+  asPath?: string;
   // /slates
   onClick?: any;
   // /slates/create
@@ -113,7 +115,7 @@ const ChoiceButton: any = styled(Button)`
 
 const Card: React.FunctionComponent<IProps> = props => {
   return (
-    <Wrapper onClick={props.onClick} isActive={props.isActive}>
+    <Wrapper onClick={props.onClick} isActive={props.isActive} asPath={props.asPath}>
       <div className="flex">
         {/* GRANT | PENDING TOKENS */}
         <Tag status={''}>{props.category.toUpperCase()}</Tag>
@@ -133,13 +135,13 @@ const Card: React.FunctionComponent<IProps> = props => {
 
       {props.choices && ( // renders in /ballots/vote
         <>
-          <ViewSlateDetails onClick={props.onHandleViewSlateDetails}>View slate details</ViewSlateDetails>
+          <ViewSlateDetails onClick={props.onHandleViewSlateDetails}>
+            View slate details
+          </ViewSlateDetails>
           <Separator />
 
           <ViewSlateDetails>Grant Proposals:</ViewSlateDetails>
-          {props.proposals && props.proposals.map(p => (
-            <CardProposal>{p.title}</CardProposal>
-          ))}
+          {props.proposals && props.proposals.map(p => <CardProposal>{p.title}</CardProposal>)}
 
           <Separator />
           <CardDescription>{'Select an option'}</CardDescription>
