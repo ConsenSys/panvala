@@ -5,7 +5,7 @@ import Tag from './Tag';
 import { splitAddressHumanReadable } from '../utils/format';
 import Button from './Button';
 import { Separator } from './Form';
-import { IChoices } from '../interfaces';
+import { IChoices, IProposal } from '../interfaces';
 
 const Wrapper = styled.div<{ isActive?: boolean }>`
   width: 300px;
@@ -19,6 +19,7 @@ const Wrapper = styled.div<{ isActive?: boolean }>`
   margin-bottom: 1rem;
   margin-right: 1rem;
   cursor: pointer;
+  height: 100%;
 `;
 const CardTitle = styled.div`
   font-size: 1.5rem;
@@ -42,7 +43,7 @@ const CardDescription = styled.div`
 
 const CardUser = styled.div`
   font-size: 0.8rem;
-  margin-top: 1rem;
+  margin-top: 0.5rem;
   color: ${COLORS.grey3};
   display: flex;
   flex-flow: column wrap;
@@ -59,6 +60,20 @@ const ChoiceOptions = styled.div`
   margin-top: 0.5rem;
 `;
 
+const ViewSlateDetails = styled.div`
+  display: flex;
+  margin: 0.6rem 0;
+  font-size: 0.8rem;
+  font-weight: 500;
+`;
+const CardProposal = styled.div`
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+  color: ${COLORS.grey3};
+  display: flex;
+  flex-flow: column wrap;
+`;
+
 type IProps = {
   category: string;
   title: string;
@@ -71,6 +86,7 @@ type IProps = {
   choices?: IChoices;
   onSetChoice?: any;
   slateID?: string;
+  proposals?: IProposal[];
   // /slates
   onClick?: any;
   // /slates/create
@@ -110,14 +126,21 @@ const Card: React.FunctionComponent<IProps> = props => {
 
       {props.address && ( // 0x D09C C3BC 67E4 294C 4A44 6D8E 4A29 34A9 2141 0ED7
         <CardUser>
-          <div>{props.recommender}</div>
+          {/* <div>{props.recommender}</div> */}
           <CardAddress>{splitAddressHumanReadable(props.address)}</CardAddress>
         </CardUser>
       )}
 
       {props.choices && ( // renders in /ballots/vote
         <>
-          <div onClick={props.onHandleViewSlateDetails}>View slate details</div>
+          <ViewSlateDetails onClick={props.onHandleViewSlateDetails}>View slate details</ViewSlateDetails>
+          <Separator />
+
+          <ViewSlateDetails>Grant Proposals:</ViewSlateDetails>
+          {props.proposals && props.proposals.map(p => (
+            <CardProposal>{p.title}</CardProposal>
+          ))}
+
           <Separator />
           <CardDescription>{'Select an option'}</CardDescription>
           <ChoiceOptions>

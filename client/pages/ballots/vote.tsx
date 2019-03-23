@@ -178,7 +178,9 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
                     category={slate.category}
                     status={slate.status}
                     choices={choices}
+                    address={slate.ownerAddress}
                     onSetChoice={handleSetChoice}
+                    proposals={slate.proposals}
                     slateID={slate.id.toString()}
                     onHandleViewSlateDetails={() => handleViewSlateDetails(slate.id)}
                   />
