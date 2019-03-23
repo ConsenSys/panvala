@@ -18,7 +18,7 @@ const Wrapper = styled.div<{ isActive?: boolean; asPath?: string }>`
   box-shadow: 0px 5px 5px ${COLORS.grey5};
   margin-bottom: 1rem;
   margin-right: 1rem;
-  cursor: pointer;
+  ${({ asPath }) => !asPath && 'cursor: pointer;'}
   max-height: 100%;
   ${({ asPath }) => asPath && asPath.startsWith('/ballots') && 'height: 100%;'}
 `;
@@ -66,6 +66,7 @@ const ViewSlateDetails = styled.div`
   margin: 0.6rem 0;
   font-size: 0.8rem;
   font-weight: 500;
+  cursor: pointer;
 `;
 const CardProposal = styled.div`
   font-size: 0.8rem;
