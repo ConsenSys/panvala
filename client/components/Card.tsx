@@ -141,7 +141,8 @@ const Card: React.FunctionComponent<IProps> = props => {
           <Separator />
 
           <ViewSlateDetails>Grant Proposals:</ViewSlateDetails>
-          {props.proposals && props.proposals.map(p => <CardProposal>{p.title}</CardProposal>)}
+          {props.proposals &&
+            props.proposals.map(p => <CardProposal key={p.id}>{p.title}</CardProposal>)}
 
           <Separator />
           <CardDescription>{'Select an option'}</CardDescription>

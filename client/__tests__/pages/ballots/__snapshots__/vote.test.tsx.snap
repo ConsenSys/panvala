@@ -13,9 +13,9 @@ exports[`Ballots - vote should render correctly Ballot slate voting component pe
           class="Tag__Wrapper-l3n6sk-1 ceKKQx"
         >
           <div
-            class="Deadline__StyledDeadline-sc-1a3aqlz-0 kbjpMT Tag__StyledTag-l3n6sk-0 eAsWWP"
+            class="Deadline__StyledDeadline-sc-1a3aqlz-0 jpSHwD Tag__StyledTag-l3n6sk-0 cZzgaW"
           >
-            VOTE UNTIL 2018-10-08 AT 20:15 PM EST
+            BALLOT OPENS 2019-04-19 AT 13:00 PM EST
           </div>
         </div>
       </div>
@@ -51,7 +51,7 @@ exports[`Ballots - vote should render correctly Ballot slate voting component pe
           class="flex flex-wrap mt3"
         >
           <div
-            class="Card__Wrapper-h3ymxi-0 gjicgu"
+            class="Card__Wrapper-h3ymxi-0 fRdLKy"
           >
             <div
               class="flex"
@@ -82,20 +82,61 @@ exports[`Ballots - vote should render correctly Ballot slate voting component pe
             </div>
             <div
               class="Card__CardSubTitle-h3ymxi-2 kWUzrK"
-            />
+            >
+              4 Grants Included
+            </div>
             <div
-              class="Card__CardDescription-h3ymxi-3 iIGibR"
+              class="Card__CardDescription-h3ymxi-3 dTqFuR"
             >
               In tempus sem orci, eu auctor mi finibus eu. Nam mi risus, pretium ut laoreet fermentum, cursus nec mi. Nulla ...
             </div>
-            <div>
+            <div
+              class="Card__CardUser-h3ymxi-4 liiyUA"
+            >
+              <div
+                class="Card__CardAddress-h3ymxi-5 dGLzLS"
+              >
+                0x D115 BFFA BBDD 893A 6F7C EA40 2E73 3864 3CED 44A6
+              </div>
+            </div>
+            <div
+              class="Card__ViewSlateDetails-h3ymxi-7 cjMtgH"
+            >
               View slate details
             </div>
             <div
               class="Form__Separator-naepsk-0 eYZnFo"
             />
             <div
-              class="Card__CardDescription-h3ymxi-3 iIGibR"
+              class="Card__ViewSlateDetails-h3ymxi-7 cjMtgH"
+            >
+              Grant Proposals:
+            </div>
+            <div
+              class="Card__CardProposal-h3ymxi-8 fsABEt"
+            >
+              K Semantics for Web Assembly
+            </div>
+            <div
+              class="Card__CardProposal-h3ymxi-8 fsABEt"
+            >
+              Registry Builder Vote Weighting
+            </div>
+            <div
+              class="Card__CardProposal-h3ymxi-8 fsABEt"
+            >
+              Tidbit Dynamic Oracles
+            </div>
+            <div
+              class="Card__CardProposal-h3ymxi-8 fsABEt"
+            >
+              Infrastructure Monitoring
+            </div>
+            <div
+              class="Form__Separator-naepsk-0 eYZnFo"
+            />
+            <div
+              class="Card__CardDescription-h3ymxi-3 dTqFuR"
             >
               Select an option
             </div>
@@ -106,7 +147,7 @@ exports[`Ballots - vote should render correctly Ballot slate voting component pe
                 class="Button__Wrapper-sc-1vedn6s-2 jHiEij"
               >
                 <button
-                  class="Card__ChoiceButton-h3ymxi-7 fJptFY Button__StyledButton-sc-1vedn6s-0 lahyEh"
+                  class="Card__ChoiceButton-h3ymxi-9 VlzJp Button__StyledButton-sc-1vedn6s-0 lahyEh"
                   data-testid="first-choice"
                 >
                   1st Choice
@@ -116,7 +157,7 @@ exports[`Ballots - vote should render correctly Ballot slate voting component pe
                 class="Button__Wrapper-sc-1vedn6s-2 jHiEij"
               >
                 <button
-                  class="Card__ChoiceButton-h3ymxi-7 fJptFY Button__StyledButton-sc-1vedn6s-0 lahyEh"
+                  class="Card__ChoiceButton-h3ymxi-9 VlzJp Button__StyledButton-sc-1vedn6s-0 lahyEh"
                   data-testid="second-choice"
                 >
                   2nd Choice
@@ -125,7 +166,7 @@ exports[`Ballots - vote should render correctly Ballot slate voting component pe
             </div>
           </div>
           <div
-            class="Card__Wrapper-h3ymxi-0 gjicgu"
+            class="Card__Wrapper-h3ymxi-0 fRdLKy"
           >
             <div
               class="flex"
@@ -156,20 +197,61 @@ exports[`Ballots - vote should render correctly Ballot slate voting component pe
             </div>
             <div
               class="Card__CardSubTitle-h3ymxi-2 kWUzrK"
-            />
+            >
+              4 Grants Included
+            </div>
             <div
-              class="Card__CardDescription-h3ymxi-3 iIGibR"
+              class="Card__CardDescription-h3ymxi-3 dTqFuR"
             >
               In tempus sem orci, eu auctor mi finibus eu. Nam mi risus, pretium ut laoreet fermentum, cursus nec mi. Nulla sodales ultrices tellus sodales consectetur.Nullam id mattis velit.
             </div>
-            <div>
+            <div
+              class="Card__CardUser-h3ymxi-4 liiyUA"
+            >
+              <div
+                class="Card__CardAddress-h3ymxi-5 dGLzLS"
+              >
+                0x D115 BFFA BBDD 893A 6F7C EA40 2E73 3864 3CED 44A6
+              </div>
+            </div>
+            <div
+              class="Card__ViewSlateDetails-h3ymxi-7 cjMtgH"
+            >
               View slate details
             </div>
             <div
               class="Form__Separator-naepsk-0 eYZnFo"
             />
             <div
-              class="Card__CardDescription-h3ymxi-3 iIGibR"
+              class="Card__ViewSlateDetails-h3ymxi-7 cjMtgH"
+            >
+              Grant Proposals:
+            </div>
+            <div
+              class="Card__CardProposal-h3ymxi-8 fsABEt"
+            >
+              K Semantics for Web Assembly
+            </div>
+            <div
+              class="Card__CardProposal-h3ymxi-8 fsABEt"
+            >
+              Registry Builder Vote Weighting
+            </div>
+            <div
+              class="Card__CardProposal-h3ymxi-8 fsABEt"
+            >
+              Tidbit Dynamic Oracles
+            </div>
+            <div
+              class="Card__CardProposal-h3ymxi-8 fsABEt"
+            >
+              Infrastructure Monitoring
+            </div>
+            <div
+              class="Form__Separator-naepsk-0 eYZnFo"
+            />
+            <div
+              class="Card__CardDescription-h3ymxi-3 dTqFuR"
             >
               Select an option
             </div>
@@ -180,7 +262,7 @@ exports[`Ballots - vote should render correctly Ballot slate voting component pe
                 class="Button__Wrapper-sc-1vedn6s-2 jHiEij"
               >
                 <button
-                  class="Card__ChoiceButton-h3ymxi-7 fJptFY Button__StyledButton-sc-1vedn6s-0 lahyEh"
+                  class="Card__ChoiceButton-h3ymxi-9 VlzJp Button__StyledButton-sc-1vedn6s-0 lahyEh"
                   data-testid="first-choice"
                 >
                   1st Choice
@@ -190,7 +272,7 @@ exports[`Ballots - vote should render correctly Ballot slate voting component pe
                 class="Button__Wrapper-sc-1vedn6s-2 jHiEij"
               >
                 <button
-                  class="Card__ChoiceButton-h3ymxi-7 fJptFY Button__StyledButton-sc-1vedn6s-0 lahyEh"
+                  class="Card__ChoiceButton-h3ymxi-9 VlzJp Button__StyledButton-sc-1vedn6s-0 lahyEh"
                   data-testid="second-choice"
                 >
                   2nd Choice

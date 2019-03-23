@@ -183,7 +183,7 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
                     proposals={slate.proposals}
                     slateID={slate.id.toString()}
                     onHandleViewSlateDetails={() => handleViewSlateDetails(slate.id)}
-                    asPath={router.asPath}
+                    asPath={'/ballots/vote'}
                   />
                 ))
               : null}

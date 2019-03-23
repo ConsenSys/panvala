@@ -36,7 +36,7 @@ const setup: any = () => {
 };
 
 describe('Ballots - vote', () => {
-  test.skip('should render correctly Ballot slate voting component per snapshot', () => {
+  test('should render correctly Ballot slate voting component per snapshot', () => {
     const { container } = setup();
 
     expect(container).toMatchSnapshot();
