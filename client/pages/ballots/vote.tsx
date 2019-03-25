@@ -101,7 +101,8 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
           // 0 = grant
           0: {
             firstChoice: utils.bigNumberify(choices.firstChoice),
-            secondChoice: utils.bigNumberify(choices.secondChoice) || utils.bigNumberify(choices.firstChoice),
+            secondChoice:
+              utils.bigNumberify(choices.secondChoice) || utils.bigNumberify(choices.firstChoice),
           },
         },
         salt,
@@ -125,8 +126,15 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
       } else if (votingRights.gt('0') && panBalance.gt('0')) {
         console.log('both votingRights and user balance');
         // balance is split between gate_keeper and user_account
-        // -> vote with current balance + current votingRights
-        numTokens = panBalance.add(votingRights);
+        if (gkAllowance.gt(panBalance)) {
+          // allowance > balance
+          // -> use all balance + votingRights
+          numTokens = panBalance.add(votingRights);
+        } else {
+          // allowance <= balance
+          // -> use allowance + votingRights
+          numTokens = gkAllowance.add(votingRights);
+        }
       } else if (gkAllowance.eq('0') && panBalance.gt('0')) {
         console.log('no allowance. only user balance');
         // allowance is 0
