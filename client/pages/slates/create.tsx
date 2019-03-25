@@ -148,7 +148,7 @@ const CreateSlate: React.FunctionComponent = () => {
           .filter(d => d.name == 'SlateCreated');
 
         // Extract the slateID
-        const slateID: string = decoded[0].values.slateID;
+        const slateID: string = decoded[0].values.slateID.toString();
         const slate: any = { slateID, metadataHash };
         // console.log('Created slate', slate);
         return slate;
@@ -248,11 +248,9 @@ const CreateSlate: React.FunctionComponent = () => {
               const slate: any = await submitGrantSlate(requestIDs, slateMetadataHash);
               console.log('Submitted slate', slate);
 
-              const slateID: BigNumber = slate.slateID;
-
               // Add slate to db
               const slateToSave: ISaveSlate = {
-                slateID: slateID.toString(),
+                slateID: slate.slateID,
                 metadataHash: slateMetadataHash,
                 email: values.email,
               };
