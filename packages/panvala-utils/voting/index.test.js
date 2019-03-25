@@ -1,4 +1,4 @@
-const voting = require('.');
+const { voting } = require('../index.js');
 
 test('create a commit hash', () => {
   const votes = {

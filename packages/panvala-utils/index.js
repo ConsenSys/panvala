@@ -1,4 +1,4 @@
-const voting = require('./voting/index.js');
+const voting = require('./dist');
 
 module.exports = {
   voting,

@@ -3,19 +3,18 @@
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
     "lib": ["es2017"],
-    "module": "esnext",
+    "outDir": "dist",
+    "module": "commonjs",
     "moduleResolution": "node",
-    "noEmit": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "preserveConstEnums": true,
     "pretty": true,
     "removeComments": false,
     "skipLibCheck": true,
-    "sourceMap": true,
+    "sourceMap": false,
     "strict": true,
-    "target": "esnext"
+    "target": "es6"
   },
-  "include": ["./**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": ["./**/*.ts"]
 }

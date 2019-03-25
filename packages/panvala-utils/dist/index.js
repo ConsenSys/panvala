@@ -1,7 +1,7 @@
 "use strict";
-exports.__esModule = true;
-var ethers_1 = require("ethers");
-var solidityKeccak256 = ethers_1.utils.solidityKeccak256, randomBytes = ethers_1.utils.randomBytes, bigNumberify = ethers_1.utils.bigNumberify;
+Object.defineProperty(exports, "__esModule", { value: true });
+const ethers_1 = require("ethers");
+const { solidityKeccak256, randomBytes, bigNumberify } = ethers_1.utils;
 /**
  * generateCommitHash
  *
@@ -13,10 +13,10 @@ var solidityKeccak256 = ethers_1.utils.solidityKeccak256, randomBytes = ethers_1
  * @param {ethers.BN} salt Random 256-bit number
  */
 function generateCommitHash(votes, salt) {
-    var types = [];
-    var values = [];
-    Object.keys(votes).forEach(function (category) {
-        var _a = votes[category], firstChoice = _a.firstChoice, secondChoice = _a.secondChoice;
+    const types = [];
+    const values = [];
+    Object.keys(votes).forEach((category) => {
+        const { firstChoice, secondChoice } = votes[category];
         types.push('uint', 'uint', 'uint');
         values.push(category, firstChoice, secondChoice);
     });
@@ -31,10 +31,10 @@ function generateCommitHash(votes, salt) {
  * @return {ethers.BN}
  */
 function randomSalt() {
-    var salt = bigNumberify(randomBytes(32));
+    const salt = bigNumberify(randomBytes(32));
     return salt;
 }
 module.exports = {
-    generateCommitHash: generateCommitHash,
-    randomSalt: randomSalt
+    generateCommitHash,
+    randomSalt,
 };
