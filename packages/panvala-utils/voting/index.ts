@@ -16,7 +16,7 @@ interface IChoices {
  * @param {*} votes { category: { firstChoice, secondChoice }}
  * @param {ethers.BN} salt Random 256-bit number
  */
-function generateCommitHash(votes: any, salt: number): string {
+function generateCommitHash(votes: any, salt: utils.BigNumber): string {
   const types: string[] = [];
   const values: any[] = [];
 

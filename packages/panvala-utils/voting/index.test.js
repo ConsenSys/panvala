@@ -1,3 +1,4 @@
+const { utils } = require('ethers')
 const { voting } = require('../index.js');
 
 test('create a commit hash', () => {
@@ -12,7 +13,7 @@ test('create a commit hash', () => {
     },
   };
 
-  const salt = '2000';
+  const salt = utils.bigNumberify('2000');
 
   const commitHash = voting.generateCommitHash(votes, salt);
   const expectedHash = '0x7ec056187058ffd862ec47ec6ed02344961f1035adfc9db83e0823f9b022174f';
