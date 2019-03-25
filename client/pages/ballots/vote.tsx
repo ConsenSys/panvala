@@ -125,10 +125,8 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
       } else if (votingRights.gt('0') && panBalance.gt('0')) {
         console.log('both votingRights and user balance');
         // balance is split between gate_keeper and user_account
-        // -> deposit more tokens / get more votingRights, then vote with entire (new) votingRights
-        await contracts.gateKeeper.functions.depositVoteTokens(panBalance);
-        const newVotingRights = await contracts.gateKeeper.functions.voteTokenBalance(account);
-        numTokens = newVotingRights;
+        // -> vote with current balance + current votingRights
+        numTokens = panBalance.add(votingRights);
       } else if (gkAllowance.eq('0') && panBalance.gt('0')) {
         console.log('no allowance. only user balance');
         // allowance is 0
