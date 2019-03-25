@@ -6,6 +6,7 @@ import { splitAddressHumanReadable } from '../utils/format';
 import Button from './Button';
 import { Separator } from './Form';
 import { IChoices, IProposal } from '../interfaces';
+import RouterLink from './RouterLink';
 
 const Wrapper = styled.div<{ isActive?: boolean; asPath?: string }>`
   width: 300px;
@@ -68,6 +69,12 @@ const ViewSlateDetails = styled.div`
   font-weight: 500;
   cursor: pointer;
 `;
+const CardProposals = styled.div`
+  display: flex;
+  margin: 0.6rem 0;
+  font-size: 0.8rem;
+  font-weight: 500;
+`;
 const CardProposal = styled.div`
   font-size: 0.8rem;
   margin-bottom: 0.5rem;
@@ -94,7 +101,6 @@ type IProps = {
   onClick?: any;
   // /slates/create
   isActive?: boolean;
-  onHandleViewSlateDetails?: any;
 };
 
 const ChoiceButton: any = styled(Button)`
@@ -136,12 +142,12 @@ const Card: React.FunctionComponent<IProps> = props => {
 
       {props.choices && ( // renders in /ballots/vote
         <>
-          <ViewSlateDetails onClick={props.onHandleViewSlateDetails}>
-            View slate details
-          </ViewSlateDetails>
+          <RouterLink href={`/DetailedView?id=${props.slateID}`} as={`/slates/${props.slateID}`}>
+            <ViewSlateDetails>View slate details</ViewSlateDetails>
+          </RouterLink>
           <Separator />
 
-          <ViewSlateDetails>Grant Proposals:</ViewSlateDetails>
+          <CardProposals>Grant Proposals:</CardProposals>
           {props.proposals &&
             props.proposals.map(p => <CardProposal key={p.id}>{p.title}</CardProposal>)}
 

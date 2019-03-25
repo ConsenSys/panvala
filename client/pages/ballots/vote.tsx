@@ -75,16 +75,6 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
   }
 
   /**
-   * Click/Route handler for redirecting to the detailed view of a slate
-   * @param slateID id of slate
-   */
-  function handleViewSlateDetails(slateID: string) {
-    // this is necessary (instead of just using RouterLink)
-    // because click handler is on 'View slate details', not the actual card
-    router.push(`/DetailedView?id=${slateID}`, `/slates/${slateID}`);
-  }
-
-  /**
    * Click handler for submitting/committing a vote
    */
   async function handleSubmitVote() {
@@ -182,7 +172,6 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
                     onSetChoice={handleSetChoice}
                     proposals={slate.proposals}
                     slateID={slate.id.toString()}
-                    onHandleViewSlateDetails={() => handleViewSlateDetails(slate.id)}
                     asPath={'/ballots/vote'}
                   />
                 ))
