@@ -19,7 +19,7 @@ import Label from '../../components/Label';
 import SectionLabel from '../../components/SectionLabel';
 import { IAppContext, IProposal, IProposalMetadata, ISlateMetadata, ISaveSlate } from '../../interfaces';
 import { ipfsAddObject } from '../../utils/ipfs';
-import { LogDescription, BigNumber } from 'ethers/utils';
+import { LogDescription } from 'ethers/utils';
 import { convertedToBaseUnits } from '../../utils/format';
 import { postSlate } from '../../utils/api';
 
