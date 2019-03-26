@@ -1,4 +1,6 @@
 const request = require('supertest');
+const { Wallet } = require('ethers');
+const { voting } = require('../../packages/panvala-utils');
 
 const app = require('../index');
 const {
@@ -323,24 +325,32 @@ describe('POST /api/ballots', () => {
   let route = '/api/ballots';
 
   beforeEach(async () => {
+    const salt = voting.randomSalt();
+    const choices = {
+      0: {
+        firstChoice: '0',
+        secondChoice: '1',
+      },
+      1: {
+        firstChoice: '1',
+        secondChoice: '2',
+      },
+    };
+    const commitHash = voting.generateCommitHash(choices, salt);
+    const commitMessage = voting.generateCommitMessage(commitHash, choices['0'], salt);
+    const mnemonic = 'candy maple cake sugar pudding cream honey rich smooth crumble sweet treat';
+    const wallet = Wallet.fromMnemonic(mnemonic);
+    const signature = await wallet.signMessage(commitMessage);
     // Set up the ballot data
     data = {
       ballot: {
         epochNumber: '0',
-        choices: {
-          0: {
-            firstChoice: '0',
-            secondChoice: '1',
-          },
-          1: {
-            firstChoice: '1',
-            secondChoice: '2',
-          },
-        },
-        salt: '2010',
-        voterAddress: '0xD09cc3Bc67E4294c4A446d8e4a2934a921410eD7',
+        choices,
+        salt: salt.toString(),
+        voterAddress: wallet.address,
       },
-      signature: 'sig',
+      commitHash,
+      signature,
     };
   });
 
@@ -550,7 +560,6 @@ describe('POST /api/ballots', () => {
   });
 });
 
-
 describe('POST /api/slates', () => {
   let data;
   let route = '/api/slates';
@@ -581,7 +590,6 @@ describe('POST /api/slates', () => {
     ['slateID', 'metadataHash', 'email'].forEach(property => {
       expect(created).toHaveProperty(property);
     });
-
   });
 
   test('it should not allow multiple slates with the same ID', async () => {
@@ -634,13 +642,10 @@ describe('POST /api/slates', () => {
         .send(data);
       expect(result.status).toBe(400);
     });
-
   });
 
   describe('missing optional fields', () => {
-    const optionalFields = [
-      'email',
-    ];
+    const optionalFields = ['email'];
 
     test.each(optionalFields)('it should accept a missing `%s`', async field => {
       data[field] = undefined;
