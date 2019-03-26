@@ -2,7 +2,7 @@ import * as React from 'react';
 import styled from 'styled-components';
 import { withRouter, SingletonRouter } from 'next/router';
 import { toast } from 'react-toastify';
-import { utils } from 'ethers';
+import { utils, Signer } from 'ethers';
 
 import { COLORS } from '../../styles';
 import { AppContext } from '../../components/Layout';
@@ -14,8 +14,9 @@ import Deadline from '../../components/Deadline';
 import Label from '../../components/Label';
 import SectionLabel from '../../components/SectionLabel';
 import { ISlate, IAppContext, IEthereumContext, ISubmitBallot, IChoices } from '../../interfaces';
-import { randomSalt, generateCommitHash } from '../../utils/voting';
+import { randomSalt, generateCommitHash, generateCommitMessage } from '../../utils/voting';
 import { baseToConvertedUnits } from '../../utils/format';
+import { postBallot } from '../../utils/api';
 
 type IProps = {
   account?: string;
@@ -44,6 +45,7 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
     panBalance,
     gkAllowance,
     votingRights,
+    ethProvider,
   }: IEthereumContext = React.useContext(EthereumContext);
 
   // component state
@@ -93,11 +95,12 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
 
     if (account && contracts && contracts.token) {
       const ballot: ISubmitBallot = {
+        epochNumber: 1,
         choices: {
           // 0 = grant
           0: {
-            firstChoice: utils.bigNumberify(choices.firstChoice),
-            secondChoice: utils.bigNumberify(choices.secondChoice),
+            firstChoice: utils.bigNumberify(choices.firstChoice).toString(), // NOTE: api expects strings
+            secondChoice: utils.bigNumberify(choices.secondChoice).toString(),
           },
         },
         salt,
@@ -145,16 +148,40 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
 
       console.log('numTokens:', baseToConvertedUnits(numTokens, 18));
 
-      if (numTokens.gt('0')) {
-        // estimate how much it's gonna cost (gasLimit)
-        const estimate = await contracts.gateKeeper.estimate.commitBallot(commitHash, numTokens);
-        // commit (vote) the ballot to the gateKeeper contract
-        // custom gasLimit can be provided here
-        // -> gasPrice needs to be set also -- otherwise it will send with 1.0 gwei gas, which is not fast enough
-        await contracts.gateKeeper.functions.commitBallot(commitHash, numTokens, {
-          gasLimit: estimate.add('70000').toHexString(), // for safety, +70k gas (+20k doesn't cut it)
-          gasPrice: utils.parseUnits('9.0', 'gwei'),
-        });
+      if (ethProvider && numTokens.gt('0')) {
+        // 'Commit hash, first choice, second choice, salt'
+        const message = generateCommitMessage(commitHash, ballot.choices['0'], salt);
+        // sign mesage with metamask signer
+        const signer: Signer = ethProvider.getSigner();
+        const signature = await signer.signMessage(message);
+        console.log('signature:', signature);
+
+        try {
+          // save ballot to api/db
+          const res = await postBallot(ballot, commitHash, signature);
+
+          if (res.status === 200) {
+            // estimate how much it's gonna cost (gasLimit)
+            const estimate = await contracts.gateKeeper.estimate.commitBallot(
+              commitHash,
+              numTokens
+            );
+            // commit (vote) the ballot to the gateKeeper contract
+            // custom gasLimit can be provided here
+            // -> gasPrice needs to be set also -- otherwise it will send with 1.0 gwei gas, which is not fast enough
+            await contracts.gateKeeper.functions.commitBallot(commitHash, numTokens, {
+              gasLimit: estimate.add('70000').toHexString(), // for safety, +70k gas (+20k doesn't cut it)
+              gasPrice: utils.parseUnits('9.0', 'gwei'),
+            });
+          }
+        } catch (error) {
+          let errMsg = error.message;
+          if (votingRights.gt('0') && panBalance.eq('0')) {
+            errMsg =
+              'Entire balance is being used as votingRights, and they may currently be locked in a vote.';
+          }
+          toast.error(errMsg);
+        }
       }
     }
   }

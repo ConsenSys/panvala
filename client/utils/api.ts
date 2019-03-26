@@ -1,5 +1,5 @@
 import getConfig from 'next/config';
-import { IProposal, ISlate, ISaveSlate } from '../interfaces';
+import { IProposal, ISlate, ISaveSlate, ISubmitBallot } from '../interfaces';
 import axios, { AxiosResponse } from 'axios';
 import { proposalsArray } from './data';
 
@@ -101,7 +101,6 @@ export async function getAllSlates(): Promise<ISlate[] | AxiosResponse> {
   }
 }
 
-
 /**
  * Save slate info using the API
  * @param data
@@ -111,6 +110,35 @@ export async function postSlate(data: ISaveSlate): Promise<AxiosResponse> {
     const response = await axios({
       method: 'post',
       url: `${apiHost}/api/slates`,
+      data,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        ...corsHeaders,
+      },
+    });
+    return response;
+  } catch (error) {
+    throw new Error(error);
+  }
+}
+
+/**
+ * Save ballot info using the API
+ * @param ballot
+ * @param commitHash
+ * @param signature
+ */
+export async function postBallot(ballot: ISubmitBallot, commitHash: string, signature: string) {
+  const data = {
+    ballot,
+    commitHash,
+    signature,
+  };
+  try {
+    const response = await axios({
+      method: 'post',
+      url: `${apiHost}/api/ballots`,
       data,
       headers: {
         Accept: 'application/json',

@@ -1,8 +1,5 @@
-import  { panvala_utils } from "./index";
+import { panvala_utils } from './index';
 
-const { generateCommitHash, randomSalt } = panvala_utils.voting;
+const { generateCommitHash, randomSalt, generateCommitMessage } = panvala_utils.voting;
 
-export {
-    generateCommitHash,
-    randomSalt,
-};
+export { generateCommitHash, randomSalt, generateCommitMessage };

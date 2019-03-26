@@ -42,7 +42,21 @@ function randomSalt(): utils.BigNumber {
   return salt;
 }
 
+/**
+ * generateCommitMessage
+ *
+ * @param {string} commitHash keccak256(category + firstChoice + secondChoice ... + salt)
+ * @param {*} ballotChoices { firstChoice, secondChoice }
+ * @param {string} salt Random 256-bit number
+ */
+function generateCommitMessage(commitHash: string, ballotChoices: any, salt: string) {
+  return `Commit hash: ${commitHash}. First choice: ${ballotChoices.firstChoice}. Second choice: ${
+    ballotChoices.secondChoice
+  }. Salt: ${salt}`;
+}
+
 module.exports = {
   generateCommitHash,
   randomSalt,
+  generateCommitMessage,
 };

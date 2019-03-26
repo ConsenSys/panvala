@@ -12,7 +12,6 @@ const proposal = require('./controllers/proposal');
 const slate = require('./controllers/slate');
 const ballot = require('./controllers/ballot');
 
-
 // Routes
 module.exports = app => {
   app.get('/', (req, res) => {
@@ -60,6 +59,7 @@ module.exports = app => {
   app.post('/api/slates', checkSchema(slateSchema), slate.create);
 
   // BALLOTS
+  app.get('/api/ballots', ballot.getAll);
   app.post(
     '/api/ballots',
     ballot.process,
