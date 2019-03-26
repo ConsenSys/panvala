@@ -1,8 +1,15 @@
 const request = require('supertest');
 
 const app = require('../index');
-const { sequelize, Proposal, Slate, SubmittedBallot } = require('../models');
-const { migrate } = require('../migrate');
+const {
+  sequelize,
+  Proposal,
+  Slate,
+  SubmittedBallot
+} = require('../models');
+const {
+  migrate
+} = require('../migrate');
 
 // run migrations
 beforeAll(() => {
@@ -26,8 +33,7 @@ describe('GET /', () => {
 });
 
 function initProposals() {
-  const proposals = [
-    {
+  const proposals = [{
       title: 'An amazing proposal',
       summary: 'All sorts of amazing things',
       tokensRequested: '200000000000000000000000',
@@ -257,14 +263,15 @@ describe('POST /api/proposals', () => {
     test.todo('it should return a 4000 if lastName is too long');
 
     // formats
-    test('it should return a 400 if `tokensRequested` is a string that cannot be parsed as a number', async () => {
-      data.tokensRequested = 'a million';
+    test('it should return a 400 if `tokensRequested` is a string that cannot be parsed as a number',
+      async () => {
+        data.tokensRequested = 'a million';
 
-      const result = await request(app)
-        .post('/api/proposals')
-        .send(data);
-      expect(result.status).toBe(400);
-    });
+        const result = await request(app)
+          .post('/api/proposals')
+          .send(data);
+        expect(result.status).toBe(400);
+      });
 
     test('it should return a 400 if `tokensRequested` is a number', async () => {
       data.tokensRequested = 1000000000000000000000000000;
@@ -302,7 +309,9 @@ describe('POST /api/proposals', () => {
 
       // check to make sure each type is a string
       proposals.forEach(p => {
-        const { tokensRequested } = p;
+        const {
+          tokensRequested
+        } = p;
         expect(typeof tokensRequested).toBe('string');
       });
     });
@@ -311,6 +320,7 @@ describe('POST /api/proposals', () => {
 
 describe('POST /api/ballots', () => {
   let data;
+  let route = '/api/ballots';
 
   beforeEach(async () => {
     // Set up the ballot data
@@ -442,8 +452,45 @@ describe('POST /api/ballots', () => {
     });
 
     describe('ballot choices', () => {
-      test.todo('it should return a 400 if any of the votes are missing a firstChoice');
-      test.todo('it should return a 400 if any of the votes are missing a secondChoice');
+      const choiceFields = ['firstChoice', 'secondChoice'];
+
+      // missing
+      test.each(choiceFields)('it should return a 400 if any of the votes is missing a `%s`',
+    async field => {
+        data.ballot.choices[0][field] = undefined;
+        const result = await request(app)
+          .post(route)
+          .send(data);
+        expect(result.status).toBe(400);
+      });
+
+      test.each(choiceFields)('it should return a 400 if any of the votes has a null `%s`', async field => {
+        data.ballot.choices[0][field] = null;
+        const result = await request(app)
+          .post(route)
+          .send(data);
+        expect(result.status).toBe(400);
+      });
+
+      // not an integer
+      test.each(choiceFields)(
+        'it should return a 400 if any of the votes has a `%s` that does not parse as an integer',
+        async field => {
+          data.ballot.choices[0][field] = 'not a number';
+          const result = await request(app)
+            .post(route)
+            .send(data);
+          expect(result.status).toBe(400);
+        });
+
+      test.each(choiceFields)(
+        'it should return a 400 if any of the votes has a `%s` that parses as a float', async field => {
+          data.ballot.choices[0][field] = 0.3;
+          const result = await request(app)
+            .post(route)
+            .send(data);
+          expect(result.status).toBe(400);
+        });
     });
   });
 
@@ -451,9 +498,45 @@ describe('POST /api/ballots', () => {
     test.todo('it should return a 400 if the signature does not match the voterAddress');
     test.todo('it should return a 400 if the signature does not match the voterAddress');
 
-    test.todo('it should return a 400 if the salt is not numeric');
-    test.todo('it should return a 400 if the epochNumber is not numeric');
-    test.todo('it should return a 400 if the voterAddress is not a valid Ethereum address');
+    test('it should return a 400 if the salt is not numeric', async () => {
+      data.ballot.salt = 'not a number';
+
+      const result = await request(app)
+        .post(route)
+        .send(data);
+
+      expect(result.status).toBe(400);
+    });
+
+    test('it should return a 400 if the epochNumber is not numeric', async () => {
+      data.ballot.epochNumber = 'not a number';
+
+      const result = await request(app)
+        .post(route)
+        .send(data);
+
+      expect(result.status).toBe(400);
+    });
+
+    test('it should return a 400 if the epochNumber does not parse as an integer ', async () => {
+      data.ballot.epochNumber = '0.5';
+
+      const result = await request(app)
+        .post(route)
+        .send(data);
+
+      expect(result.status).toBe(400);
+    });
+
+    test('it should return a 400 if the voterAddress is not a valid Ethereum address', async () => {
+      data.ballot.voterAddress = '0';
+
+      const result = await request(app)
+        .post(route)
+        .send(data);
+
+      expect(result.status).toBe(400);
+    });
   });
 });
 
@@ -596,7 +679,9 @@ describe('POST /api/slates', () => {
         .send(data);
 
       expect(result.status).toEqual(200);
-      const { slateID } = result.body;
+      const {
+        slateID
+      } = result.body;
 
       expect(typeof slateID).toEqual('number');
     });

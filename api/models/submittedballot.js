@@ -3,10 +3,31 @@ module.exports = (sequelize, DataTypes) => {
   const SubmittedBallot = sequelize.define(
     'SubmittedBallot',
     {
-      epochNumber: DataTypes.STRING,
-      salt: DataTypes.STRING,
-      voterAddress: DataTypes.STRING,
-      signature: DataTypes.STRING,
+      epochNumber: {
+        type: DataTypes.STRING,
+        validate: {
+          // Will be a BN, but grows very slowly
+          isInt: true,
+        },
+      },
+      salt: {
+        type: DataTypes.STRING,
+        validate: {
+          notEmpty: true,
+        },
+      },
+      voterAddress: {
+        type: DataTypes.STRING,
+        validate: {
+          notEmpty: true,
+        },
+      },
+      signature: {
+        type: DataTypes.STRING,
+        validate: {
+          notEmpty: true,
+        },
+      },
     },
     {}
   );

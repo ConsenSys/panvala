@@ -3,8 +3,18 @@ module.exports = (sequelize, DataTypes) => {
   const VoteChoice = sequelize.define(
     'VoteChoice',
     {
-      firstChoice: DataTypes.STRING,
-      secondChoice: DataTypes.STRING,
+      firstChoice: {
+        type: DataTypes.STRING,
+        validate: {
+          notEmpty: true,
+        },
+      },
+      secondChoice: {
+        type: DataTypes.STRING,
+        validate: {
+          notEmpty: true,
+        },
+      },
     },
     {}
   );

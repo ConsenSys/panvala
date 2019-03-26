@@ -1,5 +1,9 @@
 const ethers = require('ethers');
-const { isHexString, hexDataLength } = ethers.utils;
+const {
+  isHexString,
+  hexDataLength,
+  bigNumberify
+} = ethers.utils;
 
 /**
  * Throw if the value is not a '0x'-prefixed, 20-byte hex string.
@@ -38,8 +42,23 @@ function isObject(value) {
   return value;
 }
 
+/**
+ * isBigNumber - Throw if the value can't be parsed as a BigNumber
+ * @param {Bignumberish} value
+ */
+function isBigNumber(value) {
+  try {
+    bigNumberify(value);
+  } catch (error) {
+    throw new Error('value must represent a BigNumber');
+  }
+
+  return value;
+}
+
 module.exports = {
   nonEmptyString,
   isEthereumAddress,
   isObject,
+  isBigNumber,
 };

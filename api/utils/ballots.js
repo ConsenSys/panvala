@@ -1,4 +1,17 @@
-const { isEthereumAddress, isObject, nonEmptyString } = require('./validation');
+const {
+  isEthereumAddress,
+  isObject,
+  nonEmptyString,
+  isBigNumber
+} = require('./validation');
+
+const validBN = {
+  ...nonEmptyString,
+  custom: {
+    options: isBigNumber,
+  }
+};
+
 
 /**
  * Ballot data received in a POST request
@@ -20,13 +33,11 @@ const ballotSchema = {
   // ballot data
   'ballot.epochNumber': {
     in: ['body'],
-    ...nonEmptyString,
-    isInt: true,
+    ...validBN,
   },
   'ballot.salt': {
     in: ['body'],
-    ...nonEmptyString,
-    // isInt: true,
+    ...validBN,
   },
   'ballot.voterAddress': {
     in: ['body'],
@@ -47,11 +58,11 @@ const ballotSchema = {
   'ballot.choices.*.firstChoice': {
     in: ['body'],
     isNull: false,
-    ...nonEmptyString,
+    ...validBN,
   },
   'ballot.choices.*.secondChoice': {
     in: ['body'],
-    ...nonEmptyString,
+    ...validBN,
   },
 
   // signature of the ballot data
