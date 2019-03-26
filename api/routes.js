@@ -62,7 +62,6 @@ module.exports = app => {
   // BALLOTS
   app.post(
     '/api/ballots',
-    checkSchema(ballotSchema),
     ballot.process,
     checkSchema(ballotInsertSchema),
     ballot.create

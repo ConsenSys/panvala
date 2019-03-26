@@ -1,9 +1,38 @@
+const Ajv = require('ajv');
+
 const ethers = require('ethers');
 const {
   isHexString,
   hexDataLength,
   bigNumberify
 } = ethers.utils;
+
+const { ballotSchema } = require('./schemas');
+
+const ajv = new Ajv();
+
+// Add special keyword to the schema for interpreting fields as (positive) bigNumber
+ajv.addKeyword('bigNumber', {
+  type: 'string',
+  validate: function(schema, data) {
+    // If `bigNumber: false`, then don't do anything
+    if (!schema) {
+      return true;
+    }
+
+    // Otherwise, check if it's a bigNumber
+    try {
+      const parsed = bigNumberify(data);
+      const isPositive = parsed.gte(ethers.constants.Zero);
+      // console.log(isPositive);
+      return isPositive;
+    } catch (error) {
+      return false;
+    }
+  },
+});
+
+const validateBallot = ajv.compile(ballotSchema);
 
 /**
  * Throw if the value is not a '0x'-prefixed, 20-byte hex string.
@@ -61,4 +90,5 @@ module.exports = {
   isEthereumAddress,
   isObject,
   isBigNumber,
+  validateBallot,
 };

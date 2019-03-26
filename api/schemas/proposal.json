@@ -1,0 +1,80 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "http://panvala.com/schemas/proposal.json",
+    "title": "Proposal",
+    "description": "A Panvala proposal, POSTed to proposals endpoint",
+    "type": "object",
+    "properties": {
+        "title": {
+            "description": "The title of the proposal",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+        },
+        "summary": {
+            "description": "A short summary of the proposal",
+            "type": "string",
+            "minLength": 1
+        },
+        "tokensRequested": {
+            "description": "The number of tokens requested for the work, in the token base unit",
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "bigNumber": true
+        },
+        "firstName": {
+            "description": "The proposer's first name",
+            "type": "string",
+            "minLength": 1
+        },
+        "lastName": {
+            "description": "The proposer's last name",
+            "type": "string",
+            "minLength": 1
+        },
+        "email": {
+            "description": "The proposer's email address",
+            "type": "string",
+            "minLength": 1,
+            "format": "email"
+        },
+        "github": {
+            "description": "The proposer's github handle",
+            "type": "string",
+            "minLength": 1
+        },
+        "website": {
+            "description": "The proposer's (team) website",
+            "type": "string",
+            "format": "uri"
+        },
+        "projectPlan": {
+            "description": "The team's plan for the project",
+            "type": "string"
+        },
+        "projectTimeline": {
+            "description": "The team's projected timeline for the project",
+            "type": "string"
+        },
+        "teamBackgrounds": {
+            "description": "Backgrounds of the team members",
+            "type": "string"
+        },
+        "totalBudget": {
+            "description": "The anticipated budget for the project",
+            "type": "string"
+        },
+        "otherFunding": {
+            "description": "Any other funding the team already has",
+            "type": "string"
+        },
+        "awardAddress": {
+            "description": "The address where the grant should be delivered, if the proposal is accepted",
+            "type": "string",
+            "pattern": "^0x[a-fA-F0-9]{40}$"
+        }
+    },
+    "required": ["title", "summary", "tokensRequested", "firstName", "email", "totalBudget", "otherFunding",
+        "awardAddress"
+    ]
+}

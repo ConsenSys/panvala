@@ -1,0 +1,26 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "http://panvala.com/schemas/slate.json",
+    "title": "Slate",
+    "description": "Slate information, POSTed to slates endpoint",
+    "type": "object",
+    "properties": {
+        "slateID": {
+            "description": "Unique ID for a slate, stored in the Gatekeeper",
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "bigNumber": true
+        },
+        "metadataHash": {
+            "description": "IPFS CID referencing metadata about the slate",
+            "type": "string",
+            "minLength": 1
+        },
+        "email": {
+            "description": "The slate recommender's email",
+            "type": "string",
+            "format": "email"
+        }
+    },
+    "required": ["slateID", "metadataHash"]
+}

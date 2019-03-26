@@ -1,5 +1,7 @@
 const { validationResult } = require('express-validator/check');
 const { SubmittedBallot, VoteChoice } = require('../models');
+const { validateBallot } = require('../utils/validation');
+
 
 module.exports = {
   /**
@@ -40,7 +42,7 @@ module.exports = {
         res.send(ballot);
       })
       .catch(err => {
-        console.log(err);
+        console.error(err);
         res.status(400).send(`Improper ballot format: ${err}`);
       });
   },
@@ -49,14 +51,16 @@ module.exports = {
    * Transform into the right format to be saved
    */
   process(req, res, next) {
-    // Check that it was properly validated
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
+    // Validate input
+    const valid = validateBallot(req.body);
+    if (!valid) {
       const msg = 'Invalid request data';
-      // console.log(msg, errors.array());
+      const errors = validateBallot.errors;
+
+      // console.error(errors);
       return res.status(400).json({
         msg,
-        errors: errors.array(),
+        errors,
       });
     }
 

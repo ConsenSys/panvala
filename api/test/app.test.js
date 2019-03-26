@@ -518,7 +518,17 @@ describe('POST /api/ballots', () => {
       expect(result.status).toBe(400);
     });
 
-    test('it should return a 400 if the epochNumber does not parse as an integer ', async () => {
+    test('it should return a 400 if the epochNumber parses as a negative number', async () => {
+      data.ballot.epochNumber = '-1';
+
+      const result = await request(app)
+        .post(route)
+        .send(data);
+
+      expect(result.status).toBe(400);
+    });
+
+    test('it should return a 400 if the epochNumber does not parse as an integer', async () => {
       data.ballot.epochNumber = '0.5';
 
       const result = await request(app)
