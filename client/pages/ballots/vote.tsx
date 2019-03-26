@@ -173,6 +173,8 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
               gasLimit: estimate.add('70000').toHexString(), // for safety, +70k gas (+20k doesn't cut it)
               gasPrice: utils.parseUnits('9.0', 'gwei'),
             });
+
+            toast.success('Successfully submitted a ballot')
           }
         } catch (error) {
           let errMsg = error.message;
