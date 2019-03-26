@@ -17,12 +17,17 @@ import FieldTextarea from '../../components/FieldTextarea';
 import { FormWrapper } from '../../components/Form';
 import Label from '../../components/Label';
 import SectionLabel from '../../components/SectionLabel';
-import { IAppContext, IProposal, IProposalMetadata, ISlateMetadata, ISaveSlate } from '../../interfaces';
+import {
+  IAppContext,
+  IProposal,
+  IProposalMetadata,
+  ISlateMetadata,
+  ISaveSlate,
+} from '../../interfaces';
 import { ipfsAddObject } from '../../utils/ipfs';
 import { LogDescription } from 'ethers/utils';
 import { convertedToBaseUnits } from '../../utils/format';
 import { postSlate } from '../../utils/api';
-
 
 const Separator = styled.div`
   border: 1px solid ${COLORS.grey5};
@@ -37,6 +42,7 @@ const FormSchema = yup.object().shape({
     .string()
     .max(80, 'Too Long!')
     .required('Required'),
+  firstName: yup.string().required('Required'),
   description: yup
     .string()
     .max(5000, 'Too Long!')
@@ -170,6 +176,13 @@ const CreateSlate: React.FunctionComponent = () => {
    * @param selectedProposals
    */
   async function handleSubmitSlate(values: IFormValues, selectedProposals: IProposal[]) {
+    if (!account) {
+      const msg =
+        'To create a slate, you must first log into MetaMask and switch to the Rinkeby Test Network.';
+      toast.error(msg);
+      return;
+    }
+
     // save proposal metadata to IPFS to be included in the slate metadata
     console.log('preparing proposals...');
     const extractMetadata = (proposal: IProposal) => ({
@@ -260,16 +273,14 @@ const CreateSlate: React.FunctionComponent = () => {
                 console.log('Saved slate info');
                 toast.success('Saved slate');
               } else {
-                errorMessage = `problem saving slate info ${response.data}`
+                errorMessage = `problem saving slate info ${response.data}`;
                 toast.error(errorMessage);
               }
               // end add slate
-
             } catch (error) {
               errorMessage = `error submitting slate ${error.message}`;
               toast.error(errorMessage);
             }
-
           } catch (error) {
             errorMessage = `error saving slate metadata: ${error.message}`;
             // console.error(errorMessage);
@@ -309,21 +320,29 @@ const CreateSlate: React.FunctionComponent = () => {
           validationSchema={FormSchema}
           onSubmit={async (values: IFormValues, { setSubmitting, setFieldError }: any) => {
             // console.log('form values:', values);
-            const selectedProposalIDs: string[] = Object.keys(values.proposals).filter(
-              (p: string) => values.proposals[p] === true
-            );
 
-            // validate for at least 1 selected proposal
-            if (selectedProposalIDs.length === 0) {
-              setFieldError('proposals', 'select at least 1 proposal.');
-            } else if (proposals && proposals.length) {
-              // filter for only the selected proposal objects
-              const selectedProposals: IProposal[] = proposals.filter((p: IProposal) =>
-                selectedProposalIDs.includes(p.id.toString())
+            const emptySlate = values.recommendation === 'noAction';
+
+            if (emptySlate) {
+              // submit the form values with no proposals
+              await handleSubmitSlate(values, []);
+            } else {
+              const selectedProposalIDs: string[] = Object.keys(values.proposals).filter(
+                (p: string) => values.proposals[p] === true
               );
 
-              // submit the associated proposals along with the slate form values
-              await handleSubmitSlate(values, selectedProposals);
+              // validate for at least 1 selected proposal
+              if (selectedProposalIDs.length === 0) {
+                setFieldError('proposals', 'select at least 1 proposal.');
+              } else if (proposals && proposals.length) {
+                // filter for only the selected proposal objects
+                const selectedProposals: IProposal[] = proposals.filter((p: IProposal) =>
+                  selectedProposalIDs.includes(p.id.toString())
+                );
+
+                // submit the associated proposals along with the slate form values
+                await handleSubmitSlate(values, selectedProposals);
+              }
             }
 
             // re-enable submit button
@@ -336,7 +355,7 @@ const CreateSlate: React.FunctionComponent = () => {
                 <SectionLabel>{'ABOUT'}</SectionLabel>
 
                 <FieldText required label={'Email'} name="email" placeholder="Enter your email" />
-                <FieldText required label={'Title'} name="title" placeholder="Enter title" />
+                <FieldText required label={'Slate Title'} name="title" placeholder="Enter title" />
 
                 <FieldText
                   required
@@ -376,35 +395,37 @@ const CreateSlate: React.FunctionComponent = () => {
                 </div>
               </div>
               <Separator />
-              <div className="pa4">
-                <SectionLabel>{'GRANTS'}</SectionLabel>
-                <div className="mv3 f7 black-50">
-                  {'Select the grants that you would like to add to your slate'}
+              {values.recommendation === 'grant' && (
+                <div className="pa4">
+                  <SectionLabel>{'GRANTS'}</SectionLabel>
+                  <div className="mv3 f7 black-50">
+                    {'Select the grants that you would like to add to your slate'}
+                  </div>
+                  <div className="flex flex-wrap">
+                    {proposals &&
+                      proposals.map((proposal: IProposal) => (
+                        <Card
+                          key={proposal.id}
+                          category={proposal.category + ' PROPOSAL'}
+                          title={proposal.title}
+                          subtitle={proposal.tokensRequested.toString()}
+                          description={proposal.summary}
+                          onClick={() => {
+                            if (values.proposals.hasOwnProperty(proposal.id)) {
+                              setFieldValue(
+                                `proposals.${proposal.id}`,
+                                !values.proposals[proposal.id]
+                              );
+                            } else {
+                              setFieldValue(`proposals.${proposal.id}`, true);
+                            }
+                          }}
+                          isActive={values.proposals[proposal.id]}
+                        />
+                      ))}
+                  </div>
                 </div>
-                <div className="flex flex-wrap">
-                  {proposals &&
-                    proposals.map((proposal: IProposal) => (
-                      <Card
-                        key={proposal.id}
-                        category={proposal.category + ' PROPOSAL'}
-                        title={proposal.title}
-                        subtitle={proposal.tokensRequested.toString()}
-                        description={proposal.summary}
-                        onClick={() => {
-                          if (values.proposals.hasOwnProperty(proposal.id)) {
-                            setFieldValue(
-                              `proposals.${proposal.id}`,
-                              !values.proposals[proposal.id]
-                            );
-                          } else {
-                            setFieldValue(`proposals.${proposal.id}`, true);
-                          }
-                        }}
-                        isActive={values.proposals[proposal.id]}
-                      />
-                    ))}
-                </div>
-              </div>
+              )}
               <Separator />
               <div className="flex pa4 justify-end">
                 <Button large>{'Back'}</Button>
