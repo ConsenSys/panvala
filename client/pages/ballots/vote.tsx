@@ -81,12 +81,12 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
     console.log('choices:', choices);
 
     // enforce both first and second choices
-    if (choices.firstChoice === '' || (typeof choices.firstChoice === 'undefined')) {
+    if (choices.firstChoice === '' || typeof choices.firstChoice === 'undefined') {
       toast.error('Must select a first choice');
       return;
     }
 
-    if (choices.secondChoice === '' || (typeof choices.secondChoice === 'undefined')) {
+    if (choices.secondChoice === '' || typeof choices.secondChoice === 'undefined') {
       toast.error('Must select a second choice');
       return;
     }
@@ -146,8 +146,15 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
       console.log('numTokens:', baseToConvertedUnits(numTokens, 18));
 
       if (numTokens.gt('0')) {
+        // estimate how much it's gonna cost (gasLimit)
+        const estimate = await contracts.gateKeeper.estimate.commitBallot(commitHash, numTokens);
         // commit (vote) the ballot to the gateKeeper contract
-        await contracts.gateKeeper.functions.commitBallot(commitHash, numTokens);
+        // custom gasLimit can be provided here
+        // -> gasPrice needs to be set also -- otherwise it will send with 1.0 gwei gas, which is not fast enough
+        await contracts.gateKeeper.functions.commitBallot(commitHash, numTokens, {
+          gasLimit: estimate.add('70000').toHexString(), // for safety, +70k gas (+20k doesn't cut it)
+          gasPrice: utils.parseUnits('9.0', 'gwei'),
+        });
       }
     }
   }
