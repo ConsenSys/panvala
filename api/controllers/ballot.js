@@ -6,11 +6,6 @@ const { validateBallot } = require('../utils/validation');
 
 
 module.exports = {
-  getAll(req, res) {
-    SubmittedBallot.findAll().then(ballots => {
-      res.send(ballots);
-    });
-  },
   /**
    * Create a new ballot
    */

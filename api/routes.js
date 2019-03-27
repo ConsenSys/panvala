@@ -59,7 +59,6 @@ module.exports = app => {
   app.post('/api/slates', checkSchema(slateSchema), slate.create);
 
   // BALLOTS
-  app.get('/api/ballots', ballot.getAll);
   app.post(
     '/api/ballots',
     ballot.process,
