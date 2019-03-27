@@ -32,7 +32,10 @@ const FormSchema = yup.object().shape({
     .string()
     .max(4000, 'Too Long!')
     .required('Required'),
-  tokensRequested: yup.string().required('Required'),
+  tokensRequested: yup
+    .string()
+    .matches(/^[0-9]+\.?[0-9]{0,18}$/, 'Must be a number with no more than 18 decimals')
+    .required('Required'),
   totalBudget: yup.string().required('Required'),
   otherFunding: yup.string().required('Required'),
   awardAddress: yup.string().required('Required'),
@@ -64,14 +67,21 @@ const ProposalForm: React.SFC<IProps> = ({ onHandleSubmit }) => {
           awardAddress: '',
         }}
         validationSchema={FormSchema}
-        onSubmit={async (values, { setSubmitting }) => {
-          const baseUnitsValues = {
-            ...values,
+        onSubmit={async (values, { setSubmitting, setFieldError }) => {
+          try {
             // throws on underflow (x.1234567890123456789)
-            tokensRequested: convertedToBaseUnits(values.tokensRequested, 18),
-            // max: totalUpcomingDispatch
-          };
-          await onHandleSubmit(baseUnitsValues);
+            const tokensRequested = convertedToBaseUnits(values.tokensRequested, 18);
+
+            const baseUnitsValues = {
+              ...values,
+              tokensRequested,
+              // max: totalUpcomingDispatch
+            };
+            await onHandleSubmit(baseUnitsValues);
+          } catch (error) {
+            setFieldError('tokensRequested', 'Number cannot have more than 18 decimals');
+          }
+
           setSubmitting(false);
         }}
       >
@@ -192,9 +202,6 @@ const ProposalForm: React.SFC<IProps> = ({ onHandleSubmit }) => {
                 <Button type="submit" large primary disabled={isSubmitting}>
                   {'Confirm and Submit'}
                 </Button>
-              </div>
-              <div className="f7 w5 tr mr3">
-                {'This will redirect to a seperate MetaMask window to confirm your transaction.'}
               </div>
             </div>
           </Form>

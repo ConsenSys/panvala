@@ -75,6 +75,8 @@ interface IProposalInfo {
 }
 
 const CreateSlate: React.FunctionComponent<{ router: SingletonRouter }> = ({ router }) => {
+  const query = router.query;
+
   // modal opener
   const [isOpen, setOpenModal] = React.useState(false);
   // get proposals and eth context
@@ -317,8 +319,8 @@ const CreateSlate: React.FunctionComponent<{ router: SingletonRouter }> = ({ rou
             organization: '',
             title: '',
             description: '',
-            recommendation: '',
-            proposals: {},
+            recommendation: query.selectedProposal ? 'grant' : '',
+            proposals: query.selectedProposal ? { [query.selectedProposal]: true } : {},
             selectedProposals: [],
           }}
           validationSchema={FormSchema}
@@ -444,5 +446,6 @@ const CreateSlate: React.FunctionComponent<{ router: SingletonRouter }> = ({ rou
     </div>
   );
 };
+
 
 export default withRouter(CreateSlate);
