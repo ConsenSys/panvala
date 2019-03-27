@@ -68,7 +68,7 @@ interface IFormValues {
 
 interface IProposalInfo {
   metadata: IProposalMetadata[];
-  multihashes: string[];
+  multihashes: Buffer[];
 }
 
 const CreateSlate: React.FunctionComponent = () => {
@@ -77,70 +77,70 @@ const CreateSlate: React.FunctionComponent = () => {
   const { account, ethProvider, contracts }: any = React.useContext(EthereumContext);
 
   /**
-   * Generate the proposal and slate information necessary for recommending a slate
-   * @param txHash
-   * @param values
+   * getRequestIDs
+   * Submit proposals to the token capacitor and get corresponding request IDs
    * @param proposalInfo
    */
-  async function generateSlateSubmissionInfo(
-    txHash: string,
-    values: IFormValues,
-    proposalInfo: any
-  ) {
-    const { multihashes: proposalMultihashes, metadata: proposalMetadatas } = proposalInfo;
+  function getRequestIDs(proposalInfo: IProposalInfo) {
+    const { metadata, multihashes: proposalMultihashes } = proposalInfo;
+    // submit to the capacitor, get requestIDs
+    // token distribution details
+    const beneficiaries: string[] = metadata.map(p => p.awardAddress);
+    const tokenAmounts: string[] = metadata.map(p =>
+      convertedToBaseUnits(p.tokensRequested, 18)
+    );
+    console.log('tokenAmounts:', tokenAmounts);
 
-    const receipt: TransactionReceipt = await ethProvider.waitForTransaction(txHash);
-    if (receipt.logs && contracts && contracts.tokenCapacitor) {
-      // console.log('Transaction Mined: ' + receipt);
-      // console.log('logs:', receipt.logs);
+    return contracts.tokenCapacitor.functions.createManyProposals(
+        beneficiaries,
+        tokenAmounts,
+        proposalMultihashes
+      )
+      .then((response: TransactionResponse) => {
+        return ethProvider.waitForTransaction(response.hash);
+      })
+      .then((receipt: TransactionReceipt) => {
+        if (receipt.logs && contracts && contracts.tokenCapacitor) {
+          // console.log('Transaction Mined: ' + receipt);
+          // console.log('logs:', receipt.logs);
 
-      // Get the ProposalCreated logs from the receipt
-      const decoded = receipt.logs
-        .map(log => {
-          return contracts.tokenCapacitor.interface.parseLog(log);
-        })
-        .filter(d => d !== null)
-        .filter(d => d.name == 'ProposalCreated');
+          // Get the ProposalCreated logs from the receipt
+          const decoded: LogDescription[] = receipt.logs
+            .map(log => {
+              return contracts.tokenCapacitor.interface.parseLog(log);
+            })
+            .filter(d => d !== null)
+            .filter(d => d.name == 'ProposalCreated');
 
-      // Extract the requestIDs
-      const requestIDs = decoded.map(d => d.values.requestID);
-      // console.log('requestIDs', requestIDs);
+          // Extract the requestIDs
+          const requestIDs = decoded.map(d => d.values.requestID);
 
-      // prepare the slate metadata
-      const slateMetadata: ISlateMetadata = {
-        firstName: values.firstName,
-        lastName: values.lastName,
-        organization: values.organization,
-        title: values.title,
-        description: values.description,
-        proposalMultihashes,
-        proposals: proposalMetadatas,
-      };
-      // console.log(slateMetadata);
-
-      return { slateMetadata, requestIDs };
-    }
+          return requestIDs;
+        }
+      });
   }
+
 
   /**
    * Submit requestIDs and metadataHash to the Gatekeeper.
    * @param requestIDs
    * @param metadataHash
    */
-  async function submitGrantSlate(requestIDs: any[], metadataHash: string): Promise<any> {
+  function submitGrantSlate(requestIDs: any[], metadataHash: string): Promise<any> {
     // these are placeholders for now
     const epochNumber = 1;
     const category = 0; // Grant
 
-    const txResponse: TransactionResponse = await contracts.gateKeeper.functions.recommendSlate(
+    return contracts.gateKeeper.functions.recommendSlate(
       epochNumber,
       category,
       requestIDs,
       Buffer.from(metadataHash)
-    );
-
-    if (txResponse.hash) {
-      const receipt: TransactionReceipt = await ethProvider.waitForTransaction(txResponse.hash);
+    )
+    .then((response: TransactionResponse) => {
+      return ethProvider.waitForTransaction(response.hash);
+    })
+    .then((receipt: TransactionReceipt) => {
       if (receipt.logs) {
         // console.log('Transaction Mined: ' + receipt);
         // console.log('logs:', receipt.logs);
@@ -156,10 +156,10 @@ const CreateSlate: React.FunctionComponent = () => {
         // Extract the slateID
         const slateID: string = decoded[0].values.slateID.toString();
         const slate: any = { slateID, metadataHash };
-        // console.log('Created slate', slate);
+        console.log('Created slate', slate);
         return slate;
       }
-    }
+    });
   }
 
   /**
@@ -185,23 +185,6 @@ const CreateSlate: React.FunctionComponent = () => {
 
     // save proposal metadata to IPFS to be included in the slate metadata
     console.log('preparing proposals...');
-    const extractMetadata = (proposal: IProposal) => ({
-      firstName: proposal.firstName,
-      lastName: proposal.lastName,
-      title: proposal.title,
-      summary: proposal.summary,
-      tokensRequested: proposal.tokensRequested,
-      github: proposal.github,
-      id: proposal.id,
-      website: proposal.website,
-      organization: proposal.organization,
-      recommendation: proposal.recommendation,
-      projectPlan: proposal.projectPlan,
-      projectTimeline: proposal.projectTimeline,
-      teamBackgrounds: proposal.teamBackgrounds,
-      otherFunding: proposal.otherFunding,
-      awardAddress: proposal.awardAddress,
-    });
 
     const proposalMultihashes: Buffer[] = await Promise.all(
       selectedProposals.map(async (metadata: IProposalMetadata) => {
@@ -217,88 +200,94 @@ const CreateSlate: React.FunctionComponent = () => {
     // TODO: add proposal multihashes to db
 
     // Only use the metadata from here forward - do not expose private information
-    const proposalMetadatas: IProposalMetadata[] = selectedProposals.map(extractMetadata);
-
-    // token distribution details
-    const beneficiaries: string[] = proposalMetadatas.map(p => p.awardAddress);
-    const tokenAmounts: string[] = proposalMetadatas.map(p =>
-      convertedToBaseUnits(p.tokensRequested, 18)
-    );
-    console.log('tokenAmounts:', tokenAmounts);
+    const proposalMetadatas: IProposalMetadata[] = selectedProposals.map(proposal => {
+      return {
+        firstName: proposal.firstName,
+        lastName: proposal.lastName,
+        title: proposal.title,
+        summary: proposal.summary,
+        tokensRequested: proposal.tokensRequested,
+        github: proposal.github,
+        id: proposal.id,
+        website: proposal.website,
+        organization: proposal.organization,
+        recommendation: proposal.recommendation,
+        projectPlan: proposal.projectPlan,
+        projectTimeline: proposal.projectTimeline,
+        teamBackgrounds: proposal.teamBackgrounds,
+        otherFunding: proposal.otherFunding,
+        awardAddress: proposal.awardAddress,
+      };
+    });
 
     let errorMessage = '';
+    const emptySlate = proposalMetadatas.length === 0;
+
+    // 1. batch create proposals and get request IDs
+    const proposalInfo: IProposalInfo = {
+        metadata: proposalMetadatas,
+        multihashes: proposalMultihashes,
+    };
+
+    const getRequests = emptySlate ? Promise.resolve([]) :
+      getRequestIDs(proposalInfo);
 
     try {
-      // batch create proposals
       // console.log('creating proposals...');
-      const txResponse: TransactionResponse = await contracts.tokenCapacitor.functions.createManyProposals(
-        beneficiaries,
-        tokenAmounts,
-        proposalMultihashes
-      );
+      const requestIDs = await getRequests;
 
-      // successful tx
-      if (txResponse.hash && contracts && contracts.gateKeeper) {
+      const slateMetadata: ISlateMetadata = {
+        firstName: values.firstName,
+        lastName: values.lastName,
+        organization: values.organization,
+        title: values.title,
+        description: values.description,
+        proposalMultihashes: proposalMetadatas.map(md => md.toString()),
+        proposals: proposalMetadatas,
+      };
+      // console.log(slateMetadata);
+
+      try {
+        console.log('saving slate metadata...');
+        const slateMetadataHash: string = await ipfsAddObject(slateMetadata);
+
+        // Submit the slate info to the contract
         try {
-          const proposalInfo: IProposalInfo = {
-            metadata: proposalMetadatas,
-            multihashes: proposalMultihashes.map(toString),
+          const slate: any = await submitGrantSlate(requestIDs, slateMetadataHash);
+          console.log('Submitted slate', slate);
+
+          // Add slate to db
+          const slateToSave: ISaveSlate = {
+            slateID: slate.slateID,
+            metadataHash: slateMetadataHash,
+            email: values.email,
           };
-          const { slateMetadata, requestIDs }: any = await generateSlateSubmissionInfo(
-            txResponse.hash,
-            values,
-            proposalInfo
-          );
 
-          // console.log(slateMetadata);
-
-          try {
-            console.log('saving slate metadata...');
-            const slateMetadataHash: string = await ipfsAddObject(slateMetadata);
-
-            // Submit the slate info to the contract
-            try {
-              const slate: any = await submitGrantSlate(requestIDs, slateMetadataHash);
-              console.log('Submitted slate', slate);
-
-              // Add slate to db
-              const slateToSave: ISaveSlate = {
-                slateID: slate.slateID,
-                metadataHash: slateMetadataHash,
-                email: values.email,
-              };
-
-              const response = await postSlate(slateToSave);
-              if (response.status === 200) {
-                console.log('Saved slate info');
-                toast.success('Saved slate');
-              } else {
-                errorMessage = `problem saving slate info ${response.data}`;
-                toast.error(errorMessage);
-              }
-              // end add slate
-            } catch (error) {
-              errorMessage = `error submitting slate ${error.message}`;
-              toast.error(errorMessage);
-            }
-          } catch (error) {
-            errorMessage = `error saving slate metadata: ${error.message}`;
-            // console.error(errorMessage);
+          const response = await postSlate(slateToSave);
+          if (response.status === 200) {
+            console.log('Saved slate info');
+            toast.success('Saved slate');
+          } else {
+            errorMessage = `problem saving slate info ${response.data}`;
             toast.error(errorMessage);
           }
+          // end add slate
         } catch (error) {
-          errorMessage = `error getting transaction receipt: ${error.message}`;
-          // console.error(errorMessage);
+          errorMessage = `error submitting slate ${error.message}`;
           toast.error(errorMessage);
         }
-
-        // TODO: Should take us to all slates view after successful submission
+      } catch (error) {
+        errorMessage = `error saving slate metadata: ${error.message}`;
+        // console.error(errorMessage);
+        toast.error(errorMessage);
       }
     } catch (error) {
-      errorMessage = `error while sending tx createManyProposals: ${error.message}`;
-      // console.error(errorMessage);
+      errorMessage = `error preparing proposals : ${error.message}`;
+      console.error(errorMessage);
       toast.error(errorMessage);
     }
+
+    // TODO: Should take us to all slates view after successful submission
   }
 
   return (
