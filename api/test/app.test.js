@@ -371,6 +371,18 @@ describe('POST /api/ballots', () => {
     });
   });
 
+  test('it should return a 400 if the provided epochNumber && voterAddress already exist', async () => {
+    await request(app)
+      .post('/api/ballots')
+      .send(data);
+
+    const result = await request(app)
+      .post('/api/ballots')
+      .send(data);
+
+    expect(result.status).toEqual(400);
+  });
+
   test('it should return a 400 if no ballot data was provided', async () => {
     const result = await request(app).post('/api/ballots');
 
