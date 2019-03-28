@@ -199,8 +199,8 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
   return (
     <div>
       <Modal handleClick={() => setOpenModal(false)} isOpen={isOpen}>
-        <Image src="/static/check.svg" alt="ballot submitted" />
-        <ModalTitle>{'Ballot submitted.'}</ModalTitle>
+        <Image src="/static/check.svg" alt="vote submitted" />
+        <ModalTitle>{'Vote submitted.'}</ModalTitle>
         <ModalDescription className="flex flex-wrap">
           Your vote has been recorded. It won't be revealed publicly until the vote concludes.
         </ModalDescription>
