@@ -4,7 +4,6 @@ const { voting } = require('../../packages/panvala-utils');
 const { SubmittedBallot, VoteChoice } = require('../models');
 const { validateBallot } = require('../utils/validation');
 
-
 module.exports = {
   /**
    * Create a new ballot
@@ -56,7 +55,7 @@ module.exports = {
     // Validate input
     const valid = validateBallot(req.body);
     if (!valid) {
-      const msg = 'Invalid request data';
+      const msg = 'Invalid ballot request data';
       const errors = validateBallot.errors;
 
       // console.error(errors);

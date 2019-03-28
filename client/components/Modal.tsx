@@ -2,6 +2,20 @@ import * as React from 'react';
 import styled from 'styled-components';
 import { COLORS } from '../styles';
 
+export const ModalTitle = styled.div`
+  font-size: 1.5em;
+  color: ${COLORS.grey2};
+  margin: 1em 0;
+`;
+
+export const ModalDescription = styled.div`
+  font-size: 1em;
+  color: ${COLORS.grey3};
+  line-height: 1.5em;
+  margin-bottom: 1em;
+  text-align: center;
+`;
+
 const ModalBody = styled.div`
   position: fixed;
   top: 50px;

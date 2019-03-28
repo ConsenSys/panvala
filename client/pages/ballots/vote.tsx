@@ -11,7 +11,9 @@ import Button from '../../components/Button';
 import Card from '../../components/Card';
 import CenteredTitle from '../../components/CenteredTitle';
 import Deadline from '../../components/Deadline';
+import Image from '../../components/Image';
 import Label from '../../components/Label';
+import Modal, { ModalTitle, ModalDescription } from '../../components/Modal';
 import SectionLabel from '../../components/SectionLabel';
 import { ISlate, IAppContext, IEthereumContext, ISubmitBallot, IChoices } from '../../interfaces';
 import { randomSalt, generateCommitHash, generateCommitMessage } from '../../utils/voting';
@@ -49,11 +51,15 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
   }: IEthereumContext = React.useContext(EthereumContext);
 
   // component state
+  // choice selector
   const [choices, setChoice]: [IChoices, any] = React.useState({
     firstChoice: '',
     secondChoice: '',
   });
+  // generate random salt on-load
   const [salt]: [string, any] = React.useState(randomSalt().toString());
+  // modal opener
+  const [isOpen, setOpenModal] = React.useState(false);
 
   /**
    * Click handler for choosing which rank (first/second) a slate has
@@ -95,7 +101,7 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
 
     if (account && contracts && contracts.token) {
       const ballot: ISubmitBallot = {
-        epochNumber: 1,
+        epochNumber: utils.bigNumberify('1').toString(),
         choices: {
           // 0 = grant
           0: {
@@ -174,15 +180,17 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
               gasPrice: utils.parseUnits('9.0', 'gwei'),
             });
 
-            toast.success('Successfully submitted a ballot')
+            setOpenModal(true);
+            toast.success('Successfully submitted a ballot');
+            router.push('/ballots');
           }
         } catch (error) {
-          let errMsg = error.message;
+          let toastMessage = error.toastMessage;
           if (votingRights.gt('0') && panBalance.eq('0')) {
-            errMsg =
+            toastMessage =
               'Entire balance is being used as votingRights, and they may currently be locked in a vote.';
           }
-          toast.error(errMsg);
+          toast.error(toastMessage);
         }
       }
     }
@@ -190,6 +198,17 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
 
   return (
     <div>
+      <Modal handleClick={() => setOpenModal(false)} isOpen={isOpen}>
+        <Image src="/static/check.svg" alt="ballot submitted" />
+        <ModalTitle>{'Ballot submitted.'}</ModalTitle>
+        <ModalDescription className="flex flex-wrap">
+          Your vote has been recorded. It won't be revealed publicly until the vote concludes.
+        </ModalDescription>
+        <Button type="default" onClick={() => setOpenModal(false)}>
+          {'Done'}
+        </Button>
+      </Modal>
+
       <div className="flex justify-end">
         <Deadline ballot={currentBallot} route="ballots" />
       </div>

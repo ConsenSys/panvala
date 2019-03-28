@@ -1,11 +1,9 @@
 import * as React from 'react';
-import styled from 'styled-components';
-import { COLORS } from '../../styles';
 import { AppContext } from '../../components/Layout';
 import Button from '../../components/Button';
 import { FormWrapper } from '../../components/Form';
 import Image from '../../components/Image';
-import Modal from '../../components/Modal';
+import Modal, { ModalTitle, ModalDescription } from '../../components/Modal';
 import ProposalForm from '../../components/ProposalForm';
 import { postProposal } from '../../utils/api';
 import { IProposal, IAppContext } from '../../interfaces';
@@ -16,20 +14,6 @@ type IProps = {
   account: string;
   provider: any;
 };
-
-const ModalTitle = styled.div`
-  font-size: 1.5em;
-  color: ${COLORS.grey2};
-  margin: 1em 0;
-`;
-
-const ModalDescription = styled.div`
-  font-size: 1em;
-  color: ${COLORS.grey3};
-  line-height: 1.5em;
-  margin-bottom: 1em;
-  text-align: center;
-`;
 
 const CreateProposal: React.FunctionComponent<IProps> = () => {
   const { onNotify, onRefreshProposals }: IAppContext = React.useContext(AppContext);

@@ -62,10 +62,9 @@
       "required": ["epochNumber", "choices", "voterAddress", "salt"]
     },
     "signature": {
-      "$comment": "`0x` + 64 hex characters",
+      "$comment": "`0x` + 130 hex characters",
       "type": "string",
-      "length": 66,
-      "pattern": "^0x[a-fA-F0-9]+$"
+      "pattern": "^0x[a-fA-F0-9]{130}$"
     }
   },
   "required": ["ballot", "signature"]

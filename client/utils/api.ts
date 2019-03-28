@@ -2,6 +2,7 @@ import getConfig from 'next/config';
 import { IProposal, ISlate, ISaveSlate, ISubmitBallot } from '../interfaces';
 import axios, { AxiosResponse } from 'axios';
 import { proposalsArray } from './data';
+import { handleApiError } from './errors';
 
 // Defaults are a workaround for https://github.com/zeit/next.js/issues/4024
 const { publicRuntimeConfig = {} } = getConfig() || {};
@@ -106,21 +107,18 @@ export async function getAllSlates(): Promise<ISlate[] | AxiosResponse> {
  * @param data
  */
 export async function postSlate(data: ISaveSlate): Promise<AxiosResponse> {
-  try {
-    const response = await axios({
-      method: 'post',
-      url: `${apiHost}/api/slates`,
-      data,
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        ...corsHeaders,
-      },
-    });
-    return response;
-  } catch (error) {
-    throw new Error(error);
-  }
+  return axios({
+    method: 'post',
+    url: `${apiHost}/api/slates`,
+    data,
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      ...corsHeaders,
+    },
+  }).catch(error => {
+    throw handleApiError(error);
+  });
 }
 
 /**
@@ -135,19 +133,16 @@ export async function postBallot(ballot: ISubmitBallot, commitHash: string, sign
     commitHash,
     signature,
   };
-  try {
-    const response = await axios({
-      method: 'post',
-      url: `${apiHost}/api/ballots`,
-      data,
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        ...corsHeaders,
-      },
-    });
-    return response;
-  } catch (error) {
-    throw new Error(error);
-  }
+  return axios({
+    method: 'post',
+    url: `${apiHost}/api/ballots`,
+    data,
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      ...corsHeaders,
+    },
+  }).catch(function(error) {
+    throw handleApiError(error);
+  });
 }
