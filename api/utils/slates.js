@@ -1,8 +1,10 @@
 const ethers = require('ethers');
 const ipfs = require('./ipfs');
 
+const { Slate } = require('../models');
+
 const Gatekeeper = require('../contracts/Gatekeeper.json');
-const Slate = require('../contracts/Slate.json');
+const SlateJSON = require('../contracts/Slate.json');
 const ParameterStore = require('../contracts/ParameterStore.json');
 
 const { toUtf8String } = ethers.utils;
@@ -43,7 +45,7 @@ async function getAllSlates() {
       .then(slateAddress => {
         // console.log('slate at:', slateAddress);
 
-        slate = new ethers.Contract(slateAddress, Slate.abi, provider);
+        slate = new ethers.Contract(slateAddress, SlateJSON.abi, provider);
         return slate.metadataHash();
       })
       .then(metadataHash => {
@@ -55,7 +57,7 @@ async function getAllSlates() {
         return decoded;
       })
       .then(metadataHash => {
-        return getSlateMetadata(slate, slateID, metadataHash, requiredStake);
+        return getSlateWithMetadata(slate, slateID, metadataHash, requiredStake);
       });
   });
 
@@ -69,38 +71,69 @@ async function getAllSlates() {
  * @param {String} metadataHash
  * @param {ethers.BigNumber} requiredStake
  */
-async function getSlateMetadata(slate, slateID, metadataHash, requiredStake) {
-  // TODO: get real data
-  const deadline = 1539044131;
+async function getSlateWithMetadata(slate, slateID, metadataHash, requiredStake) {
+  try {
+    // the slate as it exists in the db:
+    const dbSlate = await Slate.find({
+      where: {
+        slateID,
+      },
+    });
 
-  const metadata = await ipfs.get(metadataHash);
+    // --------------------------
+    // IPFS -- slate metadata
+    // --------------------------
+    const slateMetadata = await ipfs.get(metadataHash);
+    const {
+      firstName,
+      lastName,
+      proposals,
+      title,
+      description,
+      organization,
+      proposalMultihashes,
+    } = slateMetadata;
+    console.log('proposalMultihashes:', proposalMultihashes);
 
-  // get the slate's current status & the account that recommended this slate:
-  const status = await slate.status();
-  const ownerAddress = await slate.recommender();
+    // --------------------------
+    // CONTRACTS CALLS
+    // --------------------------
+    // get the slate's current status & the account that recommended this slate:
+    const slateStatus = await slate.status();
+    const ownerAddress = await slate.recommender();
 
-  // get from database
-  const incumbent = false;
-  const owner = metadata.owner;
+    // TODO: rehydrate proposals
 
-  // TODO: rehydrate proposals
-  const proposals = metadata.proposals;
+    // TODO: get real data
+    const deadline = 1539044131;
+    // TODO: get from database
+    const incumbent = false;
 
-  const slateMetadata = {
-    id: slateID,
-    metadataHash,
-    category: 'GRANT',
-    status,
-    deadline,
-    title: metadata.title,
-    description: metadata.description,
-    owner,
-    ownerAddress,
-    incumbent,
-    proposals,
-    requiredStake,
-  };
-  return slateMetadata;
+    // --------------------------
+    // COMBINE/RETURN SLATE DATA
+    // --------------------------
+    const slateData = {
+      id: slateID, // should we call this slateID instead of id? we're already using slateID as the primary key in the slates table
+      metadataHash,
+      category: 'GRANT',
+      slateStatus,
+      deadline,
+      title,
+      description,
+      organization,
+      ownerAddress,
+      incumbent,
+      proposals,
+      requiredStake,
+      // either first + last name or just first name
+      owner: lastName ? `${firstName} ${lastName}` : firstName,
+      verifiedRecommender: dbSlate.verifiedRecommender,
+    };
+    return slateData;
+  } catch (error) {
+    console.log('error while combining slate with metadata', error);
+    throw error;
+  }
 }
 
 /**
