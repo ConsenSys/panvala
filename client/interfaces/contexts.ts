@@ -63,6 +63,7 @@ export interface ISlate {
   incumbent?: boolean;
   proposals: IProposal[];
   requiredStake: string;
+  verifiedRecommender: boolean;
 }
 
 /**

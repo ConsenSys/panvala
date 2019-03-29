@@ -73,6 +73,7 @@ const Slates: React.FunctionComponent<Props> = () => {
                     status={slate.status}
                     address={slate.ownerAddress}
                     recommender={slate.owner}
+                    verifiedRecommender={slate.verifiedRecommender}
                   />
                 </RouterLink>
               </div>

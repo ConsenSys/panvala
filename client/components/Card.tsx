@@ -83,7 +83,7 @@ const CardProposal = styled.div`
   flex-flow: column wrap;
 `;
 
-type IProps = {
+interface ICardProps {
   category: string;
   title: string;
   subtitle: string;
@@ -99,9 +99,10 @@ type IProps = {
   asPath?: string;
   // /slates
   onClick?: any;
+  verifiedRecommender?: boolean;
   // /slates/create
   isActive?: boolean;
-};
+}
 
 const ChoiceButton: any = styled(Button)`
   background-color: ${({ firstChoice, secondChoice }: any) =>
@@ -120,7 +121,7 @@ const ChoiceButton: any = styled(Button)`
     firstChoice || secondChoice ? '2px solid transparent' : '2px solid ' + COLORS.grey5};
 `;
 
-const Card: React.FunctionComponent<IProps> = props => {
+const Card: React.FunctionComponent<ICardProps> = props => {
   return (
     <Wrapper onClick={props.onClick} isActive={props.isActive} asPath={props.asPath}>
       <div className="flex">
@@ -135,7 +136,7 @@ const Card: React.FunctionComponent<IProps> = props => {
 
       {props.address && ( // 0x D09C C3BC 67E4 294C 4A44 6D8E 4A29 34A9 2141 0ED7
         <CardUser>
-          {/* <div>{props.recommender}</div> */}
+          {props.recommender && <div>{props.recommender}</div>}
           <CardAddress>{splitAddressHumanReadable(props.address)}</CardAddress>
         </CardUser>
       )}

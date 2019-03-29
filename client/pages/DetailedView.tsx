@@ -183,13 +183,19 @@ const DetailedView: StatelessPage<any> = ({ query, asPath }: any) => {
 
             <TokensSection>
               <SectionLabel lessMargin>{'CREATED BY'}</SectionLabel>
-              <DarkText>{proposal && proposal.firstName + ' ' + proposal.lastName}</DarkText>
+              <DarkText>
+                {proposal ? proposal.firstName + ' ' + proposal.lastName : slate && slate.owner}
+              </DarkText>
               <SectionLabel lessMargin>{'EMAIL ADDRESS'}</SectionLabel>
               <DarkText>{proposal && proposal.email}</DarkText>
               <CardAddress>{slate && splitAddressHumanReadable(slate.ownerAddress)}</CardAddress>
 
-              <SectionLabel>{'ORGANIZATION'}</SectionLabel>
-              <DarkText>{slateOrProposal.organization}</DarkText>
+              {slate && slate.verifiedRecommender ? (
+                <>
+                  <SectionLabel lessMargin>{'ORGANIZATION'}</SectionLabel>
+                  <DarkText>{slateOrProposal.organization}</DarkText>
+                </>
+              ) : null}
 
               {includedInSlates && (
                 <>
