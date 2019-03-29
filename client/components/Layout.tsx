@@ -44,13 +44,15 @@ export default class Layout extends React.Component<IProps, IAppContext> {
       finalityDate: 0,
     },
     onNotify: () => this.handleNotify,
-    onRefreshProposals: () => this.handleRefreshProposals,
+    onRefreshProposals: () => this.handleRefreshProposals(),
+    onRefreshSlates: () => this.handleRefreshSlates(),
   };
 
   constructor(props: IProps) {
     super(props);
     this.handleNotify = this.handleNotify.bind(this);
     this.handleRefreshProposals = this.handleRefreshProposals.bind(this);
+    this.handleRefreshSlates = this.handleRefreshSlates.bind(this);
   }
 
   // runs once, onload
@@ -132,6 +134,21 @@ export default class Layout extends React.Component<IProps, IAppContext> {
   async handleRefreshProposals() {
     const proposals: IProposal[] = await this.handleGetAllProposals();
     return this.setState({ proposals });
+  }
+
+  async handleGetAllSlates() {
+    const slates: ISlate[] | AxiosResponse = await getAllSlates();
+    console.log('slates:', slates);
+    if (Array.isArray(slates)) {
+      return slates;
+    }
+
+    return [];
+  }
+
+  async handleRefreshSlates() {
+    const slates: ISlate[] = await this.handleGetAllSlates();
+    return this.setState({ slates });
   }
 
   render() {

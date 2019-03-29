@@ -9,13 +9,13 @@ import { postProposal } from '../../utils/api';
 import { IProposal, IAppContext } from '../../interfaces';
 import CenteredTitle from '../../components/CenteredTitle';
 import { AxiosResponse } from 'axios';
+import { SingletonRouter, withRouter } from 'next/router';
 
 type IProps = {
-  account: string;
-  provider: any;
+  router: SingletonRouter;
 };
 
-const CreateProposal: React.FunctionComponent<IProps> = () => {
+const CreateProposal: React.FunctionComponent<IProps> = ({ router }) => {
   const { onNotify, onRefreshProposals }: IAppContext = React.useContext(AppContext);
 
   const [isOpen, setOpenModal] = React.useState(false);
@@ -28,8 +28,6 @@ const CreateProposal: React.FunctionComponent<IProps> = () => {
       if (response.status === 200) {
         setOpenModal(true);
         await onRefreshProposals();
-        // TODO: redirect: /proposals
-        // or: move this logic to proposals/index and remove from componentDidMount in Layout
       }
     } catch (error) {
       onNotify(error.message, 'error');
@@ -45,7 +43,13 @@ const CreateProposal: React.FunctionComponent<IProps> = () => {
           You have successfully created a Panvala Grant Proposal. Now groups that are creating
           slates can attach your grant to their slate.
         </ModalDescription>
-        <Button type="default" onClick={() => setOpenModal(false)}>
+        <Button
+          type="default"
+          onClick={() => {
+            setOpenModal(false);
+            router.push('/proposals');
+          }}
+        >
           {'Done'}
         </Button>
       </Modal>
@@ -58,4 +62,4 @@ const CreateProposal: React.FunctionComponent<IProps> = () => {
   );
 };
 
-export default CreateProposal;
+export default withRouter(CreateProposal);

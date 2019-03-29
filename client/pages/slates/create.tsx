@@ -2,6 +2,7 @@ import * as React from 'react';
 import styled from 'styled-components';
 import { Formik, Form, FormikContext } from 'formik';
 import { TransactionResponse, TransactionReceipt } from 'ethers/providers';
+import { withRouter, SingletonRouter } from 'next/router';
 import { toast } from 'react-toastify';
 import * as yup from 'yup';
 
@@ -17,6 +18,7 @@ import FieldTextarea from '../../components/FieldTextarea';
 import { FormWrapper } from '../../components/Form';
 import Label from '../../components/Label';
 import SectionLabel from '../../components/SectionLabel';
+import Modal, { ModalTitle, ModalDescription } from '../../components/Modal';
 import {
   IAppContext,
   IProposal,
@@ -28,6 +30,7 @@ import { ipfsAddObject } from '../../utils/ipfs';
 import { LogDescription } from 'ethers/utils';
 import { convertedToBaseUnits } from '../../utils/format';
 import { postSlate } from '../../utils/api';
+import Image from '../../components/Image';
 
 const Separator = styled.div`
   border: 1px solid ${COLORS.grey5};
@@ -71,9 +74,11 @@ interface IProposalInfo {
   multihashes: Buffer[];
 }
 
-const CreateSlate: React.FunctionComponent = () => {
+const CreateSlate: React.FunctionComponent<{ router: SingletonRouter }> = ({ router }) => {
+  // modal opener
+  const [isOpen, setOpenModal] = React.useState(false);
   // get proposals and eth context
-  const { proposals }: IAppContext = React.useContext(AppContext);
+  const { proposals, onRefreshSlates }: IAppContext = React.useContext(AppContext);
   const { account, ethProvider, contracts }: any = React.useContext(EthereumContext);
 
   /**
@@ -86,16 +91,11 @@ const CreateSlate: React.FunctionComponent = () => {
     // submit to the capacitor, get requestIDs
     // token distribution details
     const beneficiaries: string[] = metadata.map(p => p.awardAddress);
-    const tokenAmounts: string[] = metadata.map(p =>
-      convertedToBaseUnits(p.tokensRequested, 18)
-    );
+    const tokenAmounts: string[] = metadata.map(p => convertedToBaseUnits(p.tokensRequested, 18));
     console.log('tokenAmounts:', tokenAmounts);
 
-    return contracts.tokenCapacitor.functions.createManyProposals(
-        beneficiaries,
-        tokenAmounts,
-        proposalMultihashes
-      )
+    return contracts.tokenCapacitor.functions
+      .createManyProposals(beneficiaries, tokenAmounts, proposalMultihashes)
       .then((response: TransactionResponse) => {
         return ethProvider.waitForTransaction(response.hash);
       })
@@ -120,7 +120,6 @@ const CreateSlate: React.FunctionComponent = () => {
       });
   }
 
-
   /**
    * Submit requestIDs and metadataHash to the Gatekeeper.
    * @param requestIDs
@@ -131,35 +130,31 @@ const CreateSlate: React.FunctionComponent = () => {
     const epochNumber = 1;
     const category = 0; // Grant
 
-    return contracts.gateKeeper.functions.recommendSlate(
-      epochNumber,
-      category,
-      requestIDs,
-      Buffer.from(metadataHash)
-    )
-    .then((response: TransactionResponse) => {
-      return ethProvider.waitForTransaction(response.hash);
-    })
-    .then((receipt: TransactionReceipt) => {
-      if (receipt.logs) {
-        // console.log('Transaction Mined: ' + receipt);
-        // console.log('logs:', receipt.logs);
+    return contracts.gateKeeper.functions
+      .recommendSlate(epochNumber, category, requestIDs, Buffer.from(metadataHash))
+      .then((response: TransactionResponse) => {
+        return ethProvider.waitForTransaction(response.hash);
+      })
+      .then((receipt: TransactionReceipt) => {
+        if (receipt.logs) {
+          // console.log('Transaction Mined: ' + receipt);
+          // console.log('logs:', receipt.logs);
 
-        // Get the SlateCreated logs from the receipt
-        const decoded: LogDescription[] = receipt.logs
-          .map(log => {
-            return contracts.gateKeeper.interface.parseLog(log);
-          })
-          .filter(d => d !== null)
-          .filter(d => d.name == 'SlateCreated');
+          // Get the SlateCreated logs from the receipt
+          const decoded: LogDescription[] = receipt.logs
+            .map(log => {
+              return contracts.gateKeeper.interface.parseLog(log);
+            })
+            .filter(d => d !== null)
+            .filter(d => d.name == 'SlateCreated');
 
-        // Extract the slateID
-        const slateID: string = decoded[0].values.slateID.toString();
-        const slate: any = { slateID, metadataHash };
-        console.log('Created slate', slate);
-        return slate;
-      }
-    });
+          // Extract the slateID
+          const slateID: string = decoded[0].values.slateID.toString();
+          const slate: any = { slateID, metadataHash };
+          console.log('Created slate', slate);
+          return slate;
+        }
+      });
   }
 
   /**
@@ -225,12 +220,11 @@ const CreateSlate: React.FunctionComponent = () => {
 
     // 1. batch create proposals and get request IDs
     const proposalInfo: IProposalInfo = {
-        metadata: proposalMetadatas,
-        multihashes: proposalMultihashes,
+      metadata: proposalMetadatas,
+      multihashes: proposalMultihashes,
     };
 
-    const getRequests = emptySlate ? Promise.resolve([]) :
-      getRequestIDs(proposalInfo);
+    const getRequests = emptySlate ? Promise.resolve([]) : getRequestIDs(proposalInfo);
 
     try {
       // console.log('creating proposals...');
@@ -267,6 +261,8 @@ const CreateSlate: React.FunctionComponent = () => {
           if (response.status === 200) {
             console.log('Saved slate info');
             toast.success('Saved slate');
+            setOpenModal(true);
+            await onRefreshSlates();
           } else {
             errorMessage = `problem saving slate info ${response.data}`;
             toast.error(errorMessage);
@@ -292,6 +288,25 @@ const CreateSlate: React.FunctionComponent = () => {
 
   return (
     <div>
+      <Modal handleClick={() => setOpenModal(false)} isOpen={isOpen}>
+        <Image src="/static/check.svg" alt="slate submitted" />
+        <ModalTitle>{'Slate submitted.'}</ModalTitle>
+        <ModalDescription className="flex flex-wrap">
+          Now that your slate has been created you and others have the ability to stake tokens on it
+          to propose it to token holders. Once there are tokens staked on the slate it will be
+          eligible for a vote.
+        </ModalDescription>
+        <Button
+          type="default"
+          onClick={() => {
+            setOpenModal(false);
+            router.push('/slates');
+          }}
+        >
+          {'Done'}
+        </Button>
+      </Modal>
+
       <CenteredTitle title="Create a Grant Slate" />
       <FormWrapper>
         <Formik
@@ -430,4 +445,4 @@ const CreateSlate: React.FunctionComponent = () => {
   );
 };
 
-export default CreateSlate;
+export default withRouter(CreateSlate);

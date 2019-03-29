@@ -124,6 +124,7 @@ export interface IAppContext {
   currentBallot: IBallotDates;
   onNotify?: any;
   onRefreshProposals?: any;
+  onRefreshSlates?: any;
 }
 
 export interface IEthereumContext {

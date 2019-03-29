@@ -12,6 +12,7 @@ export function handleApiError(error: AxiosError) {
   // -> use it to unpack and display more informative, custom errors
   // https://github.com/axios/axios/issues/960#issuecomment-309287911
   let data: string | ICustomApiError = error.response && error.response.data;
+  console.log('error.response.data:', data);
 
   if (
     typeof data === 'string' &&
