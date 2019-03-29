@@ -519,8 +519,15 @@ describe('POST /api/ballots', () => {
   });
 
   describe('field validation', () => {
-    test.todo('it should return a 400 if the signature does not match the voterAddress');
-    test.todo('it should return a 400 if the signature does not match the voterAddress');
+    test('it should return a 400 if the signature does not match the voterAddress', async () => {
+      data.ballot.voterAddress = '0xD09cc3Bc67E4294c4A446d8e4a2934a921410eD7';
+
+      const result = await request(app)
+        .post(route)
+        .send(data);
+
+      expect(result.status).toBe(400);
+    });
 
     test('it should return a 400 if the salt is not numeric', async () => {
       data.ballot.salt = 'not a number';
