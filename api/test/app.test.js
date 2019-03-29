@@ -332,6 +332,7 @@ describe('POST /api/ballots', () => {
         secondChoice: '2',
       },
     };
+    // NOTE: this might be problematic for testing specific fields
     const commitHash = voting.generateCommitHash(choices, salt);
     const commitMessage = voting.generateCommitMessage(commitHash, choices['0'], salt);
     const signature = await wallet.signMessage(commitMessage);
@@ -384,7 +385,7 @@ describe('POST /api/ballots', () => {
   });
 
   describe('missing required fields', () => {
-    const requiredFields = ['ballot', 'signature'];
+    const requiredFields = ['ballot', 'signature', 'commitHash'];
 
     test.each(requiredFields)('it should return a 400 if `%s` is null', async field => {
       data[field] = null;

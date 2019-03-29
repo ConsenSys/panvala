@@ -65,7 +65,11 @@
       "$comment": "`0x` + 130 hex characters",
       "type": "string",
       "pattern": "^0x[a-fA-F0-9]{130}$"
+    },
+    "commitHash": {
+      "type": "string",
+      "pattern": "^0x[a-fA-F0-9]+$"
     }
   },
-  "required": ["ballot", "signature"]
+  "required": ["ballot", "signature", "commitHash"]
 }
