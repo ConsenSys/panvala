@@ -1,15 +1,4 @@
 {
-  "presets": [
-    [
-      "next/babel",
-      {
-        "preset-env": {},
-        "transform-runtime": {},
-        "styled-jsx": {},
-        "class-properties": {}
-      }
-    ],
-    "@zeit/next-typescript/babel"
-  ],
+  "presets": [["next/babel"], "@zeit/next-typescript/babel"],
   "plugins": [["styled-components", { "ssr": true }]]
 }
