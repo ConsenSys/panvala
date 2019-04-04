@@ -1,7 +1,6 @@
 import getConfig from 'next/config';
 import { IProposal, ISlate, ISaveSlate, ISubmitBallot } from '../interfaces';
 import axios, { AxiosResponse } from 'axios';
-import { proposalsArray } from './data';
 import { handleApiError } from './errors';
 
 // Defaults are a workaround for https://github.com/zeit/next.js/issues/4024
@@ -33,9 +32,7 @@ export async function getAllProposals(): Promise<IProposal[] | AxiosResponse> {
     return response;
   } catch (error) {
     console.log('error:', error);
-    console.log('returning dummy data');
-    return proposalsArray;
-    throw new Error(error);
+    throw error;
   }
 }
 
@@ -60,21 +57,6 @@ export async function postProposal(data: IProposal): Promise<AxiosResponse> {
     throw new Error(error);
   }
 }
-
-/**
- * Calls a mock API which finds a user by ID from the list above.
- *
- * Throws an error if not found.
- */
-// export async function findProposal(title: string) {
-//   const selected = proposalsArray.find(data => data.title === title);
-
-//   if (!selected) {
-//     throw new Error('Cannot find proposal');
-//   }
-
-//   return selected;
-// }
 
 /**
  * Get all the available slates
