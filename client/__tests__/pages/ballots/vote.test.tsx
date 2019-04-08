@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { utils } from 'ethers';
 import { render, fireEvent, waitForElement } from 'react-testing-library';
 import 'jest-dom/extend-expect';
 
@@ -6,6 +7,7 @@ import Vote from '../../../pages/ballots/vote';
 import { slatesArray } from '../../../utils/data';
 import { AppContext } from '../../../components/Layout';
 import { BUTTON_COLORS, COLORS } from '../../../styles';
+import { EthereumContext } from '../../../components/EthereumProvider';
 
 const oneWeekSeconds = 604800;
 const epochStartDate = 1549040401;
@@ -23,7 +25,16 @@ const currentBallot = {
 const setup: any = () => {
   const { getByText, getByTestId, container } = render(
     <AppContext.Provider value={{ slates: slatesArray, currentBallot }}>
-      <Vote />
+      <EthereumContext.Provider
+        value={{
+          panBalance: utils.bigNumberify('0'),
+          gkAllowance: utils.bigNumberify('0'),
+          votingRights: utils.bigNumberify('0'),
+          onConnectEthereum: () => undefined,
+        }}
+      >
+        <Vote />
+      </EthereumContext.Provider>
     </AppContext.Provider>
   );
   const firstChoiceButton = getByText('1st Choice');
