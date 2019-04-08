@@ -143,7 +143,11 @@ const Card: React.FunctionComponent<ICardProps> = props => {
 
       {props.choices && ( // renders in /ballots/vote
         <>
-          <RouterLink href={`/DetailedView?id=${props.slateID}`} as={`/slates/${props.slateID}`}>
+          <RouterLink
+            newTab
+            href={`/DetailedView?id=${props.slateID}`}
+            as={`/slates/${props.slateID}`}
+          >
             <ViewSlateDetails>View slate details</ViewSlateDetails>
           </RouterLink>
           <Separator />

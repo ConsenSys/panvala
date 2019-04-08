@@ -11,12 +11,15 @@ interface IProps {
   href: string;
   as?: string;
   classNames?: string;
+  newTab?: boolean;
 }
 
-const RouterLink: React.SFC<IProps> = ({ children, href, as, classNames }) => {
+const RouterLink: React.SFC<IProps> = ({ children, href, as, classNames, newTab }) => {
   return (
-    <Link prefetch={process.env.NODE_ENV !== 'test'} href={href} as={as}>
-      <A className={`link ${classNames}`}>{children}</A>
+    <Link prefetch={process.env.NODE_ENV !== 'test'} passHref href={href} as={as}>
+      <A className={`link ${classNames}`} target={newTab ? '_blank' : undefined}>
+        {children}
+      </A>
     </Link>
   );
 };
