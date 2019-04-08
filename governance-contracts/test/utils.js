@@ -139,6 +139,12 @@ function generateCommitHash(votes, salt) {
   return solidityKeccak256(types, values);
 }
 
+/**
+ * Ask the Gatekeeper for permission and get back the requestIDs
+ * @param {*} gatekeeper
+ * @param {*} proposalData
+ * @param {*} options
+ */
 async function getRequestIDs(gatekeeper, proposalData, options) {
   // console.log(options);
   options = options || {};
@@ -165,6 +171,47 @@ async function newSlate(gatekeeper, data, options) {
   await gatekeeper.recommendSlate(batchNumber, category, requestIDs, asBytes(slateData), options);
   return requestIDs;
 }
+
+
+/**
+ * Commit a ballot and return data for revealing
+ * @param {*} gatekeeper
+ * @param {*} voter
+ * @param {*} category
+ * @param {*} firstChoice
+ * @param {*} secondChoice
+ * @param {*} numTokens
+ * @param {*} salt
+ */
+async function voteSingle(gatekeeper, voter, category, firstChoice, secondChoice, numTokens, salt) {
+  const votes = {
+    [category]: { firstChoice, secondChoice },
+  };
+
+  const commitHash = generateCommitHash(votes, salt);
+  await gatekeeper.commitBallot(commitHash, numTokens, { from: voter });
+
+  return {
+    voter,
+    categories: [category],
+    firstChoices: [firstChoice],
+    secondChoices: [secondChoice],
+    salt,
+  };
+}
+
+/**
+ * Reveal a ballot
+ * @param {Gatekeeper} gatekeeper
+ * @param {*} revealData
+ */
+async function revealVote(gatekeeper, revealData) {
+  const { voter, categories, firstChoices, secondChoices, salt } = revealData;
+  await gatekeeper.revealBallot(
+    voter, categories, firstChoices, secondChoices, salt, { from: voter });
+}
+
+
 const utils = {
   expectRevert,
   zeroAddress: ethUtils.zeroAddress,
@@ -180,6 +227,8 @@ const utils = {
   generateCommitHash,
   getRequestIDs,
   newSlate,
+  voteSingle,
+  revealVote,
 };
 
 module.exports = utils;

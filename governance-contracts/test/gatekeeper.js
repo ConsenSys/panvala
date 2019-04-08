@@ -9,10 +9,19 @@ const Slate = artifacts.require('Slate');
 const BasicToken = artifacts.require('BasicToken');
 
 
-const { expectRevert, newToken } = utils;
+const { expectRevert, newToken, voteSingle, revealVote: reveal } = utils;
 
 const GRANT = 0;
 const GOVERNANCE = 1;
+
+const ContestStatus = {
+  Empty: '0',
+  NoContest: '1',
+  Started: '2',
+  VoteFinalized: '3',
+  RunoffRequired: '4',
+  RunoffFinalized: '5',
+};
 
 
 contract('Gatekeeper', (accounts) => {
@@ -467,20 +476,19 @@ contract('Gatekeeper', (accounts) => {
     });
   });
 
-  // revealBallot
+
   describe('revealBallot', () => {
     const [creator, recommender, voter, nonvoter] = accounts;
-    // setup: commit, reveal
 
     let gatekeeper;
     let token;
     const initialTokens = '20000000';
 
-    let ballotID = 0;
+    const ballotID = 0;
     let votes;
-    let salt;
     let numTokens;
     let commitHash;
+    let revealData;
 
     beforeEach(async () => {
       token = await utils.newToken({ initialTokens, from: creator });
@@ -530,22 +538,34 @@ contract('Gatekeeper', (accounts) => {
         [GOVERNANCE]: { firstChoice: 2, secondChoice: 3 },
       };
 
-      salt = 2000;
+      // helper: commitBallot -> revealData
+      const salt = 2000;
       numTokens = '1000';
       commitHash = utils.generateCommitHash(votes, salt);
+
+      // commit here
+      await gatekeeper.commitBallot(commitHash, numTokens, { from: voter });
+
+      // set up reveal data
+      const categories = Object.keys(votes);
+      const firstChoices = categories.map(cat => votes[cat].firstChoice);
+      const secondChoices = categories.map(cat => votes[cat].secondChoice);
+
+      revealData = {
+        categories,
+        firstChoices,
+        secondChoices,
+        salt,
+      };
     });
 
     it('should successfully reveal a ballot', async () => {
-      await gatekeeper.commitBallot(commitHash, numTokens, { from: voter });
-
       // didReveal should be false
       const initialDidReveal = await gatekeeper.didReveal(ballotID, voter);
       assert.strictEqual(initialDidReveal, false, 'didReveal should have been false before reveal');
 
       // Reveal
-      const categories = Object.keys(votes);
-      const firstChoices = categories.map(cat => votes[cat].firstChoice);
-      const secondChoices = categories.map(cat => votes[cat].secondChoice);
+      const { categories, firstChoices, secondChoices, salt } = revealData;
 
       const receipt = await gatekeeper.revealBallot(
         voter,
@@ -604,17 +624,32 @@ contract('Gatekeeper', (accounts) => {
       assert.strictEqual(didReveal, true, 'didReveal should have been true after reveal');
     });
 
-    it('should revert if the submitted data does not match the committed ballot');
+    it('should revert if the submitted data does not match the committed ballot', async () => {
+      const { categories, firstChoices, secondChoices } = revealData;
+      const salt = '9999';
+
+      try {
+        await gatekeeper.revealBallot(
+          voter,
+          categories,
+          firstChoices,
+          secondChoices,
+          salt,
+        );
+      } catch (error) {
+        expectRevert(error);
+        assert(error.toString().includes('ballot does not match commitment'));
+        return;
+      }
+      assert.fail('Revealed ballot with different data from what was committed');
+    });
 
     // Inputs
     it('should fail if the supplied voter address is zero', async () => {
       const badVoter = utils.zeroAddress();
-      await gatekeeper.commitBallot(commitHash, numTokens, { from: voter });
 
       // Reveal
-      const categories = Object.keys(votes);
-      const firstChoices = categories.map(cat => votes[cat].firstChoice);
-      const secondChoices = categories.map(cat => votes[cat].secondChoice);
+      const { categories, firstChoices, secondChoices, salt } = revealData;
 
       try {
         await gatekeeper.revealBallot(
@@ -632,23 +667,51 @@ contract('Gatekeeper', (accounts) => {
       }
       assert.fail('Revealed with zero address');
     });
+
+    it('should fail if categories is uneven');
+    it('should fail if firstChoices is uneven');
+    it('should fail if secondChoices is uneven');
+
+    // it('should fail if any of the choices do not correspond to valid slates', async () => {
+    //   await gatekeeper.commitBallot(commitHash, numTokens, { from: voter });
+
+    //   // Reveal
+    //   const categories = Object.keys(votes);
+    //   const firstChoices = categories.map(cat => votes[cat].firstChoice);
+    //   const secondChoices = categories.map(cat => votes[cat].secondChoice);
+
+    //   try {
+    //     await gatekeeper.revealBallot(
+    //       voter,
+    //       categories,
+    //       firstChoices,
+    //       secondChoices,
+    //       salt,
+    //       { from: voter },
+    //     );
+    //   } catch (error) {
+    //     expectRevert(error);
+    //     assert(error.toString().includes('Voter address cannot be zero'));
+    //     return;
+    //   }
+    //   assert.fail('Revealed with zero address');
+
+    // });
     it('should fail if any of the categories are invalid');
 
     // State
     it('should fail if the voter has not committed for the ballot', async () => {
-      // Reveal without committing
-      const categories = Object.keys(votes);
-      const firstChoices = categories.map(cat => votes[cat].firstChoice);
-      const secondChoices = categories.map(cat => votes[cat].secondChoice);
+      // Reveal for a non-voter
+      const { categories, firstChoices, secondChoices, salt } = revealData;
 
       try {
         await gatekeeper.revealBallot(
-          voter,
+          nonvoter,
           categories,
           firstChoices,
           secondChoices,
           salt,
-          { from: voter },
+          { from: nonvoter },
         );
       } catch (error) {
         expectRevert(error);
@@ -660,5 +723,631 @@ contract('Gatekeeper', (accounts) => {
 
     it('should fail if the reveal period has not started');
     it('should fail if the reveal period has ended');
+  });
+
+  describe('didReveal', () => {
+    const [creator, recommender, voter, nonvoter] = accounts;
+
+    let gatekeeper;
+    let token;
+    const initialTokens = '20000000';
+
+    const ballotID = 0;
+    let votes;
+    let numTokens;
+    let commitHash;
+    let revealData;
+
+    beforeEach(async () => {
+      token = await utils.newToken({ initialTokens, from: creator });
+      gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+
+      const allocatedTokens = '1000';
+
+      // Make sure the voter has available tokens and the gatekeeper is approved to spend them
+      await token.transfer(voter, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: voter });
+
+      // grant - slates 0, 1
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GRANT,
+        proposalData: ['a', 'b', 'c'],
+        slateData: 'my slate',
+      }, { from: recommender });
+
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GRANT,
+        proposalData: ['a', 'b', 'd'],
+        slateData: 'competing slate',
+      }, { from: recommender });
+
+      // governance - slates 2, 3
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GOVERNANCE,
+        proposalData: ['e', 'f', 'g'],
+        slateData: 'governance slate',
+      }, { from: recommender });
+
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GRANT,
+        proposalData: ['g', 'h', 'i'],
+        slateData: 'competing slate',
+      }, { from: recommender });
+
+      // Commit a ballot
+      votes = {
+        [GRANT]: { firstChoice: 0, secondChoice: 1 },
+        [GOVERNANCE]: { firstChoice: 2, secondChoice: 3 },
+      };
+
+      const salt = 2000;
+      numTokens = '1000';
+      commitHash = utils.generateCommitHash(votes, salt);
+
+      // commit
+      await gatekeeper.commitBallot(commitHash, numTokens, { from: voter });
+
+      // set up reveal data
+      const categories = Object.keys(votes);
+      const firstChoices = categories.map(cat => votes[cat].firstChoice);
+      const secondChoices = categories.map(cat => votes[cat].secondChoice);
+
+      revealData = {
+        categories,
+        firstChoices,
+        secondChoices,
+        salt,
+      };
+    });
+
+    it('should return true if the voter has revealed for the ballot', async () => {
+      const { categories, firstChoices, secondChoices, salt } = revealData;
+
+      await gatekeeper.revealBallot(
+        voter,
+        categories,
+        firstChoices,
+        secondChoices,
+        salt,
+        { from: voter },
+      );
+
+      const didReveal = await gatekeeper.didReveal(ballotID, voter);
+      assert.strictEqual(didReveal, true, 'didReveal returned false when the voter HAS revealed');
+    });
+
+    it('should return false if the voter has not revealed', async () => {
+      const didReveal = await gatekeeper.didReveal(ballotID, voter);
+      assert.strictEqual(didReveal, false, 'didReveal returned true when the voter has NOT revealed');
+    });
+
+    it('should return false if the voter has not committed', async () => {
+      const didReveal = await gatekeeper.didReveal(ballotID, nonvoter);
+      assert.strictEqual(didReveal, false, 'didReveal returned true when the voter has NOT COMMITTED');
+    });
+  });
+
+  describe('countVotes', () => {
+    const [creator, recommender, alice, bob, carol] = accounts;
+
+    let gatekeeper;
+    let token;
+    const initialTokens = '20000000';
+    const ballotID = 0;
+
+    beforeEach(async () => {
+      token = await utils.newToken({ initialTokens, from: creator });
+      gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+
+      const allocatedTokens = '1000';
+
+      // Make sure the voter has available tokens and the gatekeeper is approved to spend them
+      await token.transfer(alice, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: alice });
+
+      await token.transfer(bob, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: bob });
+
+      await token.transfer(carol, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: carol });
+
+      // create simple ballot with just grants
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GRANT,
+        proposalData: ['a', 'b', 'c'],
+        slateData: 'my slate',
+      }, { from: recommender });
+
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GRANT,
+        proposalData: ['a', 'b', 'd'],
+        slateData: 'competing slate',
+      }, { from: recommender });
+    });
+
+    it('should correctly tally the votes and finalize a confidence vote', async () => {
+      // basic confidence vote
+      // slate 0 should win
+
+      // Commit for voters
+      const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
+      const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 0, 1, '1000', '5678');
+      const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '1000', '9012');
+
+      // Reveal all votes
+      await reveal(gatekeeper, aliceReveal);
+      await reveal(gatekeeper, bobReveal);
+      await reveal(gatekeeper, carolReveal);
+
+      const receipt = await gatekeeper.countVotes(ballotID, GRANT);
+
+      // should emit events
+      assert.strictEqual(receipt.logs.length, 2, 'Should have emitted 2 events');
+
+      // ConfidenceVoteCounted
+      assert.strictEqual(receipt.logs[0].event, 'ConfidenceVoteCounted');
+      const {
+        ballotID: ballotID0,
+        categoryID: categoryID0,
+        winningSlate: emittedWinner,
+        votes: emittedWinnerVotes,
+        totalVotes: emittedTotal,
+      } = receipt.logs[0].args;
+
+      assert.strictEqual(ballotID0.toString(), ballotID.toString(), 'Emitted ballotID did not match');
+      assert.strictEqual(categoryID0.toString(), GRANT.toString(), 'Emitted categoryID did not match');
+      assert.strictEqual(emittedWinner.toString(), '0', 'Slate 0 should have won');
+      assert.strictEqual(emittedWinnerVotes.toString(), '2000', 'Winner had the wrong number of votes');
+      assert.strictEqual(emittedTotal.toString(), '3000', 'Total vote count was wrong');
+
+      // ConfidenceVoteFinalized
+      assert.strictEqual(receipt.logs[1].event, 'ConfidenceVoteFinalized');
+      const {
+        ballotID: ballotID1,
+        categoryID: categoryID1,
+        winningSlate,
+      } = receipt.logs[1].args;
+
+      assert.strictEqual(ballotID1.toString(), ballotID.toString(), 'Emitted ballotID did not match');
+      assert.strictEqual(categoryID1.toString(), GRANT.toString(), 'Emitted categoryID did not match');
+      assert.strictEqual(winningSlate.toString(), '0', 'Slate 0 should have won');
+
+      // Status should be updated
+      const status = await gatekeeper.contestStatus(ballotID, GRANT);
+      assert.strictEqual(
+        status.toString(),
+        ContestStatus.VoteFinalized,
+        'Contest status should have been VoteFinalized',
+      );
+
+      // TODO: check winner
+    });
+
+    it('should revert if the category has no slates', async () => {
+      // Governance has no slates, not in progress
+      try {
+        await gatekeeper.countVotes(ballotID, GOVERNANCE);
+      } catch (error) {
+        expectRevert(error);
+        return;
+      }
+
+      assert.fail('Tallied votes for category with no slates');
+    });
+
+    it('should revert if the category has only one slate', async () => {
+      // Add a new governance slate
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GOVERNANCE,
+        proposalData: ['e', 'f', 'g'],
+        slateData: 'governance slate',
+      }, { from: recommender });
+
+      // Try to count
+      try {
+        await gatekeeper.countVotes(ballotID, GOVERNANCE);
+      } catch (error) {
+        expectRevert(error);
+        return;
+      }
+
+      assert.fail('Tallied votes for a category with no competition');
+    });
+
+    // it('should finalize the vote if one of the slates has a majority');
+
+    // runoff
+    it('should wait for a runoff if no slate has more than 50% of the votes', async () => {
+      // Add a third slate
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GRANT,
+        proposalData: ['h', 'i', 'j'],
+        slateData: 'yet another slate',
+      }, { from: recommender });
+
+      // Split the votes among the three slates
+      const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
+      const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 1, 2, '1000', '5678');
+      const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 2, 1, '1000', '9012');
+
+      // Reveal all votes
+      await reveal(gatekeeper, aliceReveal);
+      await reveal(gatekeeper, bobReveal);
+      await reveal(gatekeeper, carolReveal);
+
+      // Check logs
+      const receipt = await gatekeeper.countVotes(ballotID, GRANT);
+      assert.strictEqual(receipt.logs.length, 1, 'Only one event should have been emitted');
+
+      // Should be waiting for a runoff
+      const status = await gatekeeper.contestStatus(ballotID, GRANT);
+      assert.strictEqual(
+        status.toString(),
+        ContestStatus.RunoffRequired,
+        'Contest status should have been RunoffRequired',
+      );
+    });
+
+    it('should wait for a runoff if the lead slate has exactly 50% of the votes', async () => {
+      // Split the votes evenly
+      const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
+      const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 1, 2, '500', '5678');
+      const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '500', '9012');
+
+      // Reveal all votes
+      await reveal(gatekeeper, aliceReveal);
+      await reveal(gatekeeper, bobReveal);
+      await reveal(gatekeeper, carolReveal);
+
+      // Check logs
+      const receipt = await gatekeeper.countVotes(ballotID, GRANT);
+      assert.strictEqual(receipt.logs.length, 1, 'Only one event should have been emitted');
+
+      // Should be waiting for a runoff
+      const status = await gatekeeper.contestStatus(ballotID, GRANT);
+      assert.strictEqual(
+        status.toString(),
+        ContestStatus.RunoffRequired,
+        'Contest status should have been RunoffRequired',
+      );
+    });
+  });
+
+  describe('getFirstChoiceVotes', () => {
+    it('should correctly get the number of first choice votes for a slate');
+    // should return 0 if the slate has no votes
+    // it('should revert if the contest is not started');
+  });
+
+  describe('contestStatus', () => {
+    const [creator, recommender] = accounts;
+
+    let gatekeeper;
+    let token;
+
+    const initialTokens = '20000000';
+    const ballotID = 0;
+
+    beforeEach(async () => {
+      token = await utils.newToken({ initialTokens, from: creator });
+      gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+    });
+
+    it('should return Empty if the category has no slates', async () => {
+      const status = await gatekeeper.contestStatus(ballotID, GRANT);
+
+      assert.strictEqual(
+        status.toString(),
+        ContestStatus.Empty,
+        'Contest status should have been Empty',
+      );
+    });
+
+    it('should return NoContest if the category has only a single slate', async () => {
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GRANT,
+        proposalData: ['a', 'b', 'c'],
+        slateData: 'my slate',
+      }, { from: recommender });
+
+      const status = await gatekeeper.contestStatus(ballotID, GRANT);
+
+      assert.strictEqual(
+        status.toString(),
+        ContestStatus.NoContest,
+        'Contest status should have been NoContest',
+      );
+    });
+
+    it('should return Started if the category has two or more slates', async () => {
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GRANT,
+        proposalData: ['a', 'b', 'c'],
+        slateData: 'my slate',
+      }, { from: recommender });
+
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GRANT,
+        proposalData: ['a', 'b', 'd'],
+        slateData: 'competing slate',
+      }, { from: recommender });
+
+
+      const status = await gatekeeper.contestStatus(ballotID, GRANT);
+
+      assert.strictEqual(
+        status.toString(),
+        ContestStatus.Started,
+        'Contest status should have been Started',
+      );
+    });
+
+    // VoteFinalized, RunoffComplete
+  });
+
+  describe('countRunoffVotes', () => {
+    const [creator, recommender, alice, bob, carol] = accounts;
+
+    let gatekeeper;
+    let token;
+
+    const initialTokens = '20000000';
+    const ballotID = 0;
+
+    beforeEach(async () => {
+      token = await utils.newToken({ initialTokens, from: creator });
+      gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+
+      // create simple ballot with just grants
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GRANT,
+        proposalData: ['a', 'b', 'c'],
+        slateData: 'my slate',
+      }, { from: recommender });
+
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GRANT,
+        proposalData: ['a', 'b', 'd'],
+        slateData: 'competing slate',
+      }, { from: recommender });
+
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GRANT,
+        proposalData: ['h', 'i', 'j'],
+        slateData: 'yet another slate',
+      }, { from: recommender });
+
+      const allocatedTokens = '1000';
+
+      // Make sure the voter has available tokens and the gatekeeper is approved to spend them
+      await token.transfer(alice, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: alice });
+
+      await token.transfer(bob, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: bob });
+
+      await token.transfer(carol, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: carol });
+    });
+
+    it('should correctly tally and finalize a runoff vote', async () => {
+      const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '800', '1234');
+      const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 1, 2, '900', '5678');
+      const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 2, 0, '1000', '9012');
+
+      // Reveal all votes
+      await reveal(gatekeeper, aliceReveal);
+      await reveal(gatekeeper, bobReveal);
+      await reveal(gatekeeper, carolReveal);
+
+      // Confidence vote
+      await gatekeeper.countVotes(ballotID, GRANT);
+
+      // Runoff
+      const receipt = await gatekeeper.countRunoffVotes(ballotID, GRANT);
+
+      // Should emit events
+      assert.strictEqual(receipt.logs.length, 3);
+      assert.strictEqual(receipt.logs[0].event, 'RunoffStarted', 'First event is incorrect');
+      assert.strictEqual(receipt.logs[1].event, 'RunoffCounted', 'Second event is incorrect');
+      assert.strictEqual(receipt.logs[2].event, 'RunoffFinalized', 'Third event is incorrect');
+
+      // RunoffStarted
+      const { winningSlate: emittedWinner, runnerUpSlate: emittedRunnerUp } = receipt.logs[0].args;
+      assert.strictEqual(emittedWinner.toString(), '2', 'Confidence vote winner should have been slate 2');
+      assert.strictEqual(emittedRunnerUp.toString(), '1', 'Confidence vote runner-up should have been slate 1');
+
+      // RunoffCounted
+      const {
+        winningSlate: countWinner,
+        winnerVotes: countWinnerVotes,
+        losingSlate: countLoser,
+        loserVotes: countLoserVotes,
+      } = receipt.logs[1].args;
+
+      const expectedWinner = '1';
+      const expectedVotes = (900 + 800).toString();
+      const expectedLoser = '2';
+      const expectedLoserVotes = '1000';
+
+      assert.strictEqual(countWinner.toString(), expectedWinner, 'Incorrect winner in runoff count');
+      assert.strictEqual(countWinnerVotes.toString(), expectedVotes, 'Incorrect winning votes in runoff count');
+      assert.strictEqual(countLoser.toString(), expectedLoser, 'Incorrect loser in runoff count');
+      assert.strictEqual(countLoserVotes.toString(), expectedLoserVotes, 'Incorrect loser votes in runoff count');
+
+      // RunoffFinalized
+      const { winningSlate } = receipt.logs[2].args;
+
+      assert.strictEqual(winningSlate.toString(), expectedWinner, 'Runoff finalized with wrong winner');
+
+      // status should be RunoffFinalized at the end
+      const status = await gatekeeper.contestStatus(ballotID, GRANT);
+      assert.strictEqual(
+        status.toString(),
+        ContestStatus.RunoffFinalized,
+        'Contest status should have been RunoffFinalized',
+      );
+    });
+
+    it('should assign the slate with the lowest ID if the runoff ends in a tie', async () => {
+      const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '400', '1234');
+      const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 1, 2, '600', '5678');
+      const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 2, 0, '1000', '9012');
+
+      // Reveal all votes
+      await reveal(gatekeeper, aliceReveal);
+      await reveal(gatekeeper, bobReveal);
+      await reveal(gatekeeper, carolReveal);
+
+      // Confidence vote
+      await gatekeeper.countVotes(ballotID, GRANT);
+
+      // Runoff
+      const receipt = await gatekeeper.countRunoffVotes(ballotID, GRANT);
+      const { winningSlate, winnerVotes, losingSlate, loserVotes } = receipt.logs[1].args;
+
+      assert.strictEqual(winnerVotes.toString(), loserVotes.toString(), 'Runoff should end in a tie');
+      assert.strictEqual(winningSlate.toString(), '1', 'Winner should have been the slate with the lower ID');
+      assert.strictEqual(losingSlate.toString(), '2', 'Loser should have been the slate with the higher ID');
+    });
+
+    it('should revert if a runoff is not pending', async () => {
+      // Run a straight-forward confidence vote
+      const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '800', '1234');
+      const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 1, 2, '900', '5678');
+      const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '1000', '9012');
+
+      // Reveal all votes
+      await reveal(gatekeeper, aliceReveal);
+      await reveal(gatekeeper, bobReveal);
+      await reveal(gatekeeper, carolReveal);
+
+      // Confidence vote
+      await gatekeeper.countVotes(ballotID, GRANT);
+
+      const status = await gatekeeper.contestStatus(ballotID, GRANT);
+      assert.strictEqual(status.toString(), ContestStatus.VoteFinalized);
+
+      // Runoff
+      try {
+        await gatekeeper.countRunoffVotes(ballotID, GRANT);
+      } catch (error) {
+        expectRevert(error);
+        return;
+      }
+      assert.fail('Ran runoff even though none was pending');
+    });
+  });
+
+  describe('getWinningSlate', () => {
+    const [creator, recommender, alice, bob, carol] = accounts;
+
+    let gatekeeper;
+    let token;
+
+    const initialTokens = '20000000';
+    const ballotID = 0;
+
+    beforeEach(async () => {
+      token = await utils.newToken({ initialTokens, from: creator });
+      gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+
+      // create simple ballot with just grants
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GRANT,
+        proposalData: ['a', 'b', 'c'],
+        slateData: 'my slate',
+      }, { from: recommender });
+
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GRANT,
+        proposalData: ['a', 'b', 'd'],
+        slateData: 'competing slate',
+      }, { from: recommender });
+
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GRANT,
+        proposalData: ['h', 'i', 'j'],
+        slateData: 'yet another slate',
+      }, { from: recommender });
+
+      const allocatedTokens = '1000';
+
+      // Make sure the voter has available tokens and the gatekeeper is approved to spend them
+      await token.transfer(alice, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: alice });
+
+      await token.transfer(bob, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: bob });
+
+      await token.transfer(carol, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: carol });
+    });
+
+    it('should correctly get the winning slate after a finalized confidence vote', async () => {
+      const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
+      const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 0, 1, '1000', '5678');
+      const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '1000', '9012');
+
+      // Reveal all votes
+      await reveal(gatekeeper, aliceReveal);
+      await reveal(gatekeeper, bobReveal);
+      await reveal(gatekeeper, carolReveal);
+
+      // Confidence vote
+      await gatekeeper.countVotes(ballotID, GRANT);
+
+      // Check winner
+      const winner = await gatekeeper.getWinningSlate(ballotID, GRANT);
+      assert.strictEqual(winner.toString(), '0', 'Returned the wrong winner');
+    });
+
+    it('should correctly get the winning slate after a finalized runoff', async () => {
+      const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '800', '1234');
+      const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 1, 2, '900', '5678');
+      const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 2, 0, '1000', '9012');
+
+      // Reveal all votes
+      await reveal(gatekeeper, aliceReveal);
+      await reveal(gatekeeper, bobReveal);
+      await reveal(gatekeeper, carolReveal);
+
+      // Confidence vote
+      await gatekeeper.countVotes(ballotID, GRANT);
+
+      // Runoff
+      await gatekeeper.countRunoffVotes(ballotID, GRANT);
+
+      // Check winner
+      const winner = await gatekeeper.getWinningSlate(ballotID, GRANT);
+      assert.strictEqual(winner.toString(), '1', 'Returned the wrong winner');
+    });
+
+    it('should revert if the contest has not been finalized', async () => {
+      try {
+        await gatekeeper.getWinningSlate(ballotID, GRANT);
+      } catch (error) {
+        expectRevert(error);
+        return;
+      }
+      assert.fail('Returned a winner even though the contest has not been finalized');
+    });
   });
 });

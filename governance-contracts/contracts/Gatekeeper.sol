@@ -14,6 +14,24 @@ contract Gatekeeper {
     event VotingTokensDeposited(address indexed voter, uint numTokens);
     event BallotCommitted(uint ballotID, address indexed voter, uint numTokens, bytes32 commitHash);
     event BallotRevealed(uint ballotID, address indexed voter, uint numTokens);
+    event ConfidenceVoteCounted(
+        uint indexed ballotID,
+        uint indexed categoryID,
+        uint winningSlate,
+        uint votes,
+        uint totalVotes
+    );
+    event ConfidenceVoteFinalized(uint indexed ballotID, uint indexed categoryID, uint winningSlate);
+    event RunoffStarted(uint indexed ballotID, uint indexed categoryID, uint winningSlate, uint runnerUpSlate);
+    event RunoffCounted(
+        uint indexed ballotID,
+        uint indexed categoryID,
+        uint winningSlate,
+        uint winnerVotes,
+        uint losingSlate,
+        uint loserVotes
+    );
+    event RunoffFinalized(uint indexed ballotID, uint indexed category, uint winningSlate);
 
     // STATE
     using SafeMath for uint256;
@@ -394,12 +412,185 @@ contract Gatekeeper {
     function didReveal(uint ballotID, address voter) public view returns(bool) {
         return ballots[ballotID].commitments[voter].revealed;
     }
+
+    /**
+     @dev Trigger a vote count and update the status of the contest
+
+     Count the first choice votes for each slate. If a slate has more than 50% of the votes,
+     then it wins and the vote is finalized. Otherwise, wait for a runoff.
+
+     @param ballotID The ballot
+     @param categoryID The category to count votes for
+     */
+    function countVotes(uint ballotID, uint categoryID) public {
+        // TODO: revert if categoryID is invalid
+        // TODO: revert if the ballot doesn't have a contest for this category
+        Contest memory contest = ballots[ballotID].contests[categoryID];
+        require(contest.status == ContestStatus.Started, "No contest is in progress for this category");
+        assert(contest.slates.length > 1);
+
+        // TODO: timing: must after the vote period
+
+        // Iterate through the slates and get the one with the most votes
+        uint winner = 0;
+        uint winnerVotes = 0;
+        uint runnerUp = 0;
+        uint runnerUpVotes = 0;
+
+        uint total = 0;
+        bool noCount = true;
+
+        for (uint i = 0; i < contest.slates.length; i++) {
+            noCount = false;
+
+            uint slateID = contest.slates[i];
+            VoteOption storage currentSlate = ballots[ballotID].contests[categoryID].options[slateID];
+
+            uint votes = currentSlate.firstChoiceVotes;
+            total = total.add(votes);
+
+            if (votes > winnerVotes) {
+                // Previous winner is now the runner-up
+                runnerUp = winner;
+                runnerUpVotes = winnerVotes;
+
+                winner = slateID;
+                winnerVotes = votes;
+            } else if (votes > runnerUpVotes) {
+                // This slate overtook the previous runner-up
+                runnerUp = slateID;
+                runnerUpVotes = votes;
+            }
+        }
+
+        // TODO: what if no one has voted for anything?
+
+        // Update state
+        Contest storage updatedContest = ballots[ballotID].contests[categoryID];
+        updatedContest.confidenceVoteWinner = winner;
+        updatedContest.confidenceVoteRunnerUp = runnerUp;
+        emit ConfidenceVoteCounted(ballotID, categoryID, winner, winnerVotes, total);
+
+        // If the winner has more than 50%, we are done
+        // Otherwise, trigger a runoff
+        uint winnerPercentage = winnerVotes.mul(100).div(total);
+        if (winnerPercentage > 50) {
+            updatedContest.winner = winner;
+            updatedContest.status = ContestStatus.VoteFinalized;
+            emit ConfidenceVoteFinalized(ballotID, categoryID, winner);
+        } else {
+            updatedContest.status = ContestStatus.RunoffRequired;
+        }
+    }
+
     /**
      @dev Return the status of the specified contest
      */
     function contestStatus(uint ballotID, uint categoryID) public view returns(ContestStatus) {
         return ballots[ballotID].contests[categoryID].status;
     }
+
+    function contestSlates(uint ballotID, uint categoryID) public view returns(uint[] memory) {
+        return ballots[ballotID].contests[categoryID].slates;
+    }
+
+    /**
+     @dev Trigger a runoff count and update the status of the contest
+
+     Revert if a runoff is not in progress.
+     Eliminate all slates but the top two from the confidence vote. Re-count, including the
+     second-choice votes for the top two slates. The slate with the most votes wins. In case
+     of a tie, the earliest slate submitted wins.
+
+     @param ballotID The ballot
+     @param categoryID The category to count votes for
+     */
+    function countRunoffVotes(uint ballotID, uint categoryID) public {
+        Contest memory contest = ballots[ballotID].contests[categoryID];
+        require(contest.status == ContestStatus.RunoffRequired, "Runoff is not in progress");
+
+        uint confidenceVoteWinner = contest.confidenceVoteWinner;
+        uint confidenceVoteRunnerUp = contest.confidenceVoteRunnerUp;
+
+        emit RunoffStarted(ballotID, categoryID, confidenceVoteWinner, confidenceVoteRunnerUp);
+
+        // eliminate all but the winner and the runner-up from the confidence vote
+        uint[] memory eliminated = new uint[](contest.slates.length.sub(2));
+        uint index = 0;
+        for (uint i = 0; i < contest.slates.length; i++) {
+            uint slateID = contest.slates[i];
+            if (slateID != confidenceVoteWinner && slateID != confidenceVoteRunnerUp) {
+                eliminated[index] = slateID;
+                index = index.add(1);
+            }
+        }
+
+        // Get the number of first-choice votes for the top choices
+        uint confidenceWinnerVotes = getFirstChoiceVotes(ballotID, categoryID, confidenceVoteWinner);
+        uint confidenceRunnerUpVotes = getFirstChoiceVotes(ballotID, categoryID, confidenceVoteRunnerUp);
+
+        // Count second-choice votes for the top two slates
+        for (uint i = 0; i < eliminated.length; i++) {
+            uint slateID = eliminated[i];
+            VoteOption storage currentSlate = ballots[ballotID].contests[categoryID].options[slateID];
+
+            // Second-choice votes for the winning slate
+            uint votesForWinner = currentSlate.secondChoiceVotes[confidenceVoteWinner];
+            confidenceWinnerVotes = confidenceWinnerVotes.add(votesForWinner);
+
+            // Second-choice votes for the runner-up slate
+            uint votesForRunnerUp = currentSlate.secondChoiceVotes[confidenceVoteRunnerUp];
+            confidenceRunnerUpVotes = confidenceRunnerUpVotes.add(votesForRunnerUp);
+        }
+
+        // Tally for the runoff
+        uint runoffWinner = 0;
+        uint runoffWinnerVotes = 0;
+        uint runoffLoser = 0;
+        uint runoffLoserVotes = 0;
+
+        // Original winner has more votes, or it's tied and the original winner has a smaller ID
+        if ((confidenceWinnerVotes > confidenceRunnerUpVotes) ||
+           ((confidenceWinnerVotes == confidenceVoteRunnerUp) &&
+            (confidenceVoteWinner < confidenceVoteRunnerUp)
+            )) {
+            runoffWinner = confidenceVoteWinner;
+            runoffWinnerVotes = confidenceWinnerVotes;
+            runoffLoser = confidenceVoteRunnerUp;
+            runoffLoserVotes = confidenceRunnerUpVotes;
+        } else {
+            runoffWinner = confidenceVoteRunnerUp;
+            runoffWinnerVotes = confidenceRunnerUpVotes;
+            runoffLoser = confidenceVoteWinner;
+            runoffLoserVotes = confidenceWinnerVotes;
+        }
+        emit RunoffCounted(ballotID, categoryID, runoffWinner, runoffWinnerVotes, runoffLoser, runoffLoserVotes);
+
+        // Update state
+        Contest storage updatedContest = ballots[ballotID].contests[categoryID];
+        updatedContest.winner = runoffWinner;
+        updatedContest.status = ContestStatus.RunoffFinalized;
+
+        emit RunoffFinalized(ballotID, categoryID, runoffWinner);
+    }
+
+
+    /**
+     @dev Return the ID of the winning slate for the given ballot and category
+     Revert if the vote has not been finalized yet.
+     @param ballotID The ballot of interest
+     @param categoryID The category of interest
+     */
+    function getWinningSlate(uint ballotID, uint categoryID) public view returns(uint) {
+        Contest storage c = ballots[ballotID].contests[categoryID];
+        require(
+            (c.status == ContestStatus.VoteFinalized) ||
+            (c.status == ContestStatus.RunoffFinalized),
+            "Vote is not finalized yet");
+
+        return c.winner;
+    }
+
 
     // ACCESS CONTROL
     /**
