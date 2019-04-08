@@ -454,9 +454,4 @@ const CreateSlate: React.FunctionComponent<{ router: SingletonRouter }> = ({ rou
   );
 };
 
-CreateSlate.getInitialProps = props => {
-  console.log('props:', props);
-  return props;
-};
-
 export default withRouter(CreateSlate);

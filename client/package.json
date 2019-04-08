@@ -6,9 +6,9 @@
     "npm": ">= 6.0.0"
   },
   "scripts": {
-    "dev": "next",
     "build": "next build",
-    "start": "next start",
+    "dev": "nodemon server.js",
+    "start": "NODE_ENV=production node server.js",
     "storybook": "start-storybook -p 6006 -c .storybook",
     "test": "jest",
     "type-check": "tsc"
@@ -19,6 +19,7 @@
     "axios": "0.18.0",
     "date-fns": "1.30.1",
     "ethers": "4.0.25",
+    "express": "4.16.4",
     "formik": "1.5.1",
     "ipfs-mini": "1.1.5",
     "is-ipfs": "0.4.8",
@@ -53,6 +54,7 @@
     "jest": "24.1.0",
     "jest-dom": "3.1.2",
     "lint-staged": "8.1.4",
+    "nodemon": "1.18.10",
     "prettier": "1.16.4",
     "react-testing-library": "5.9.0",
     "typescript": "3.4.1"

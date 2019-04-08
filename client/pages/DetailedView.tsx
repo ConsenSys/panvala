@@ -1,5 +1,6 @@
 import * as React from 'react';
 import styled from 'styled-components';
+import { withRouter } from 'next/router';
 import { COLORS } from '../styles';
 import { AppContext } from '../components/Layout';
 import Button from '../components/Button';
@@ -58,11 +59,11 @@ const SlateProposals = styled.div`
   flex-flow: row wrap;
 `;
 
-const DetailedView: StatelessPage<any> = ({ query, asPath }: any) => {
+const DetailedView: StatelessPage<any> = ({ router }) => {
   const { slates, proposals, currentBallot }: IAppContext = React.useContext(AppContext);
 
-  const currentContext: string = asPath.startsWith('/slates') ? 'slates' : 'proposals';
-  const identifier: number = parseInt(query.id);
+  const currentContext: string = router.asPath.startsWith('/slates') ? 'slates' : 'proposals';
+  const identifier: number = parseInt(router.query.id);
 
   let slate: ISlate | undefined;
   let proposal: IProposal | undefined;
@@ -88,6 +89,10 @@ const DetailedView: StatelessPage<any> = ({ query, asPath }: any) => {
   const slateOrProposal: any = slate || proposal;
   console.log('slateOrProposal:', slateOrProposal);
 
+  if (!slateOrProposal) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="flex flex-column">
       <div className="flex justify-between">
@@ -97,7 +102,7 @@ const DetailedView: StatelessPage<any> = ({ query, asPath }: any) => {
               <Tag status={''}>{slate.category.toUpperCase()}</Tag>
               <Tag status={slate.status}>{slate.status}</Tag>
             </div>
-            {slate.deadline && <Deadline ballot={currentBallot} route={asPath} />}
+            {slate.deadline && <Deadline ballot={currentBallot} route={router.asPath} />}
           </>
         ) : proposal && includedInSlates && includedInSlates.length === 1 ? (
           <>
@@ -109,7 +114,7 @@ const DetailedView: StatelessPage<any> = ({ query, asPath }: any) => {
             {includedInSlates[0].deadline && (
               <Deadline
                 ballot={currentBallot}
-                route={asPath}
+                route={router.asPath}
                 // deadline={includedInSlates[0].deadline}
                 // status={includedInSlates[0].status}
               />
@@ -254,8 +259,4 @@ const DetailedView: StatelessPage<any> = ({ query, asPath }: any) => {
   );
 };
 
-DetailedView.getInitialProps = async ctx => {
-  return ctx;
-};
-
-export default DetailedView;
+export default withRouter(DetailedView);
