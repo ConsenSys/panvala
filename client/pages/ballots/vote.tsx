@@ -48,7 +48,12 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
     gkAllowance,
     votingRights,
     ethProvider,
+    onConnectEthereum,
   }: IEthereumContext = React.useContext(EthereumContext);
+
+  React.useEffect(() => {
+    onConnectEthereum();
+  }, []);
 
   // component state
   // choice selector

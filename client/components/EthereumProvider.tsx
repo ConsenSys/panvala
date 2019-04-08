@@ -20,15 +20,14 @@ export default class EthereumProvider extends React.Component<any, IEthereumCont
     panBalance: utils.bigNumberify('0'),
     gkAllowance: utils.bigNumberify('0'),
     votingRights: utils.bigNumberify('0'),
+    onConnectEthereum: () => this.handleConnectEthereum(),
   };
 
   componentWillUnmount() {
     console.log('unmounting..');
   }
 
-  // since componentDidMount will only run client-side,
-  // we'll be sure to have the window object here.
-  async componentDidMount() {
+  handleConnectEthereum = async () => {
     try {
       if (typeof window !== 'undefined' && window.hasOwnProperty('ethereum')) {
         // this means metamask is installed. get the ethereum provider
@@ -73,9 +72,9 @@ export default class EthereumProvider extends React.Component<any, IEthereumCont
       }
     } catch (error) {
       console.log(error);
-      // alert(`Error while attempting to connect to the Ethereum network... ${error.message}`);
+      toast.error('Error while attempting to connect to Ethereum.');
     }
-  }
+  };
 
   render() {
     console.log('ETH state:', this.state);

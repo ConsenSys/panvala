@@ -84,9 +84,9 @@ export interface ISlateMetadata {
  * Slate data to be saved in the database
  */
 export interface ISaveSlate {
-  slateID: string,
-  metadataHash: string,
-  email?: string,
+  slateID: string;
+  metadataHash: string;
+  email?: string;
 }
 
 export interface IChoices {
@@ -135,4 +135,5 @@ export interface IEthereumContext {
   panBalance: utils.BigNumber;
   gkAllowance: utils.BigNumber;
   votingRights: utils.BigNumber;
+  onConnectEthereum?: any;
 }

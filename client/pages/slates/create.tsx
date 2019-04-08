@@ -25,6 +25,7 @@ import {
   IProposalMetadata,
   ISlateMetadata,
   ISaveSlate,
+  IEthereumContext,
 } from '../../interfaces';
 import { ipfsAddObject } from '../../utils/ipfs';
 import { LogDescription } from 'ethers/utils';
@@ -81,7 +82,13 @@ const CreateSlate: React.FunctionComponent<{ router: SingletonRouter }> = ({ rou
   const [isOpen, setOpenModal] = React.useState(false);
   // get proposals and eth context
   const { proposals, onRefreshSlates }: IAppContext = React.useContext(AppContext);
-  const { account, ethProvider, contracts }: any = React.useContext(EthereumContext);
+  const { account, ethProvider, contracts, onConnectEthereum }: IEthereumContext = React.useContext(
+    EthereumContext
+  );
+
+  React.useEffect(() => {
+    onConnectEthereum();
+  }, []);
 
   /**
    * getRequestIDs
@@ -447,5 +454,9 @@ const CreateSlate: React.FunctionComponent<{ router: SingletonRouter }> = ({ rou
   );
 };
 
+CreateSlate.getInitialProps = props => {
+  console.log('props:', props);
+  return props;
+};
 
 export default withRouter(CreateSlate);
