@@ -111,6 +111,7 @@ contract('Gatekeeper', (accounts) => {
     let gatekeeper;
     let requestIDs;
     const metadataHash = utils.createMultihash('my slate');
+    const batchNumber = 0;
 
     beforeEach(async () => {
       gatekeeper = await utils.newGatekeeper({ from: creator });
@@ -125,7 +126,6 @@ contract('Gatekeeper', (accounts) => {
     });
 
     it('should create a new slate with the provided data', async () => {
-      const batchNumber = 0;
       const category = GRANT;
 
       // Initial status should be Empty
@@ -166,12 +166,67 @@ contract('Gatekeeper', (accounts) => {
       assert.strictEqual(status.toString(), '1', 'Contest status should be NoContest (1)');
     });
 
-    it('should revert if the metadataHash is empty');
+    it('should revert if the metadataHash is empty', async () => {
+      const category = GRANT;
+      const emptyHash = '';
+
+      try {
+        await gatekeeper.recommendSlate(
+          batchNumber,
+          category,
+          requestIDs,
+          utils.asBytes(emptyHash),
+          { from: recommender },
+        );
+      } catch (error) {
+        expectRevert(error);
+        return;
+      }
+      assert.fail('Recommended a slate with an empty metadataHash');
+    });
+
+    it('should revert if any of the requestIDs is invalid', async () => {
+      const category = GRANT;
+      const invalidRequestIDs = [...requestIDs, requestIDs.length];
+
+      try {
+        await gatekeeper.recommendSlate(
+          batchNumber,
+          category,
+          invalidRequestIDs,
+          utils.asBytes(metadataHash),
+          { from: recommender },
+        );
+      } catch (error) {
+        expectRevert(error);
+        assert(error.toString().includes('Invalid requestID'));
+        return;
+      }
+      assert.fail('Recommended a slate with an invalid requestID');
+    });
+
+    it('should revert if there are duplicate requestIDs', async () => {
+      const category = GRANT;
+      const invalidRequestIDs = [...requestIDs, requestIDs[0]];
+
+      try {
+        await gatekeeper.recommendSlate(
+          batchNumber,
+          category,
+          invalidRequestIDs,
+          utils.asBytes(metadataHash),
+          { from: recommender },
+        );
+      } catch (error) {
+        expectRevert(error);
+        assert(error.toString().includes('no duplicates'));
+        return;
+      }
+      assert.fail('Recommended a slate with duplicate requestIDs');
+    });
+
     it('should revert if the batchNumber is wrong');
     it('should revert if the category is invalid');
-
-    // recommending two slates should set contest status to Started
-    it('should start a contest if two slates are submitted for the same category');
   });
 
   describe('requestPermission', () => {
@@ -668,35 +723,67 @@ contract('Gatekeeper', (accounts) => {
       assert.fail('Revealed with zero address');
     });
 
-    it('should fail if categories is uneven');
-    it('should fail if firstChoices is uneven');
-    it('should fail if secondChoices is uneven');
+    it('should fail if the number of categories does not match', async () => {
+      const { categories, firstChoices, secondChoices } = revealData;
+      const salt = '9999';
 
-    // it('should fail if any of the choices do not correspond to valid slates', async () => {
-    //   await gatekeeper.commitBallot(commitHash, numTokens, { from: voter });
+      try {
+        await gatekeeper.revealBallot(
+          voter,
+          categories.slice(0, 1),
+          firstChoices,
+          secondChoices,
+          salt,
+        );
+      } catch (error) {
+        expectRevert(error);
+        assert(error.toString().includes('inputs must have the same length'));
+        return;
+      }
+      assert.fail('Revealed ballot with wrong number of categories');
+    });
 
-    //   // Reveal
-    //   const categories = Object.keys(votes);
-    //   const firstChoices = categories.map(cat => votes[cat].firstChoice);
-    //   const secondChoices = categories.map(cat => votes[cat].secondChoice);
+    it('should fail if the number of firstChoices does not match', async () => {
+      const { categories, firstChoices, secondChoices } = revealData;
+      const salt = '9999';
 
-    //   try {
-    //     await gatekeeper.revealBallot(
-    //       voter,
-    //       categories,
-    //       firstChoices,
-    //       secondChoices,
-    //       salt,
-    //       { from: voter },
-    //     );
-    //   } catch (error) {
-    //     expectRevert(error);
-    //     assert(error.toString().includes('Voter address cannot be zero'));
-    //     return;
-    //   }
-    //   assert.fail('Revealed with zero address');
+      try {
+        await gatekeeper.revealBallot(
+          voter,
+          categories,
+          firstChoices.slice(0, 1),
+          secondChoices,
+          salt,
+        );
+      } catch (error) {
+        expectRevert(error);
+        assert(error.toString().includes('inputs must have the same length'));
+        return;
+      }
+      assert.fail('Revealed ballot with wrong number of firstChoices');
+    });
 
-    // });
+    it('should fail if the number of secondChoices does not match', async () => {
+      const { categories, firstChoices, secondChoices } = revealData;
+      const salt = '9999';
+
+      try {
+        await gatekeeper.revealBallot(
+          voter,
+          categories,
+          firstChoices,
+          secondChoices.slice(0, 1),
+          salt,
+        );
+      } catch (error) {
+        expectRevert(error);
+        assert(error.toString().includes('inputs must have the same length'));
+        return;
+      }
+      assert.fail('Revealed ballot with wrong number of secondChoices');
+    });
+
+    it('should fail if any of the choices do not correspond to valid slates');
     it('should fail if any of the categories are invalid');
 
     // State
@@ -721,7 +808,35 @@ contract('Gatekeeper', (accounts) => {
       assert.fail('Revealed for a voter who has not committed for the ballot');
     });
 
-    it('should fail if the voter has already revealed for the ballot');
+    it('should fail if the voter has already revealed for the ballot', async () => {
+      // Reveal
+      const { categories, firstChoices, secondChoices, salt } = revealData;
+
+      await gatekeeper.revealBallot(
+        voter,
+        categories,
+        firstChoices,
+        secondChoices,
+        salt,
+        { from: voter },
+      );
+
+      try {
+        await gatekeeper.revealBallot(
+          voter,
+          categories,
+          firstChoices,
+          secondChoices,
+          salt,
+          { from: voter },
+        );
+      } catch (error) {
+        expectRevert(error);
+        assert(error.toString().includes('Voter has already revealed'));
+        return;
+      }
+      assert.fail('Revealed for a voter who has already revealed for the ballot');
+    });
 
     it('should fail if the reveal period has not started');
     it('should fail if the reveal period has ended');
@@ -1200,6 +1315,41 @@ contract('Gatekeeper', (accounts) => {
         ContestStatus.RunoffFinalized,
         'Contest status should have been RunoffFinalized',
       );
+    });
+
+    it('should count correctly if the original leader wins the runoff', async () => {
+      const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '99', '1234');
+      const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 1, 2, '900', '5678');
+      const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 2, 0, '1000', '9012');
+
+      // Reveal all votes
+      await reveal(gatekeeper, aliceReveal);
+      await reveal(gatekeeper, bobReveal);
+      await reveal(gatekeeper, carolReveal);
+
+      // Confidence vote
+      await gatekeeper.countVotes(ballotID, GRANT);
+
+      // Runoff
+      const receipt = await gatekeeper.countRunoffVotes(ballotID, GRANT);
+
+      // RunoffCounted
+      const {
+        winningSlate: countWinner,
+        winnerVotes: countWinnerVotes,
+        losingSlate: countLoser,
+        loserVotes: countLoserVotes,
+      } = receipt.logs[1].args;
+
+      const expectedWinner = '2';
+      const expectedVotes = '1000';
+      const expectedLoser = '1';
+      const expectedLoserVotes = (900 + 99).toString();
+
+      assert.strictEqual(countWinner.toString(), expectedWinner, 'Incorrect winner in runoff count');
+      assert.strictEqual(countWinnerVotes.toString(), expectedVotes, 'Incorrect winning votes in runoff count');
+      assert.strictEqual(countLoser.toString(), expectedLoser, 'Incorrect loser in runoff count');
+      assert.strictEqual(countLoserVotes.toString(), expectedLoserVotes, 'Incorrect loser votes in runoff count');
     });
 
     it('should assign the slate with the lowest ID if the runoff ends in a tie', async () => {

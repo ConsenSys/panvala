@@ -83,7 +83,6 @@ contract Gatekeeper {
         uint firstChoiceVotes;
         // slateID -> count
         mapping(uint => uint) secondChoiceVotes;
-        bool included;
     }
 
     enum ContestStatus {
@@ -201,10 +200,15 @@ contract Gatekeeper {
         // TODO: category must be valid
         // TODO: timing: the slate submission period must be active for the given epoch
         for (uint i = 0; i < requestIDs.length; i++) {
-            require(
-                requestIDs[i] < requestCount,
-                "Request IDs must be sorted in ascending order with no duplicates"
-            );
+            uint requestID = requestIDs[i];
+            require(requestID < requestCount, "Invalid requestID");
+
+            if (i > 0) {
+                require(
+                    requestID > requestIDs[i-1],
+                    "Request IDs must be sorted in ascending order with no duplicates"
+                );
+            }
         }
         require(metadataHash.length > 0, "metadataHash cannot be empty");
 
@@ -333,9 +337,11 @@ contract Gatekeeper {
         uint ballotID = currentEpochNumber();
 
         require(voter != address(0), "Voter address cannot be zero");
-        require(didCommit(ballotID, voter), "Voter has not committed for this ballot");
         require(categories.length == firstChoices.length, "All inputs must have the same length");
         require(firstChoices.length == secondChoices.length, "All inputs must have the same length");
+
+        require(didCommit(ballotID, voter), "Voter has not committed for this ballot");
+        require(didReveal(ballotID, voter) == false, "Voter has already revealed for this ballot");
 
         // TODO: timing: must be in reveal period
 
