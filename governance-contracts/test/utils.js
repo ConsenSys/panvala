@@ -147,12 +147,12 @@ function generateCommitHash(votes, salt) {
  */
 async function getRequestIDs(gatekeeper, proposalData, options) {
   // console.log(options);
-  options = options || {};
+  const txOptions = options || {};
 
   const metadataHashes = proposalData.map(createMultihash);
   const requests = metadataHashes.map(md => gatekeeper.requestPermission(
     asBytes(md),
-    options,
+    txOptions,
   ));
 
   const receipts = await Promise.all(requests);
@@ -165,7 +165,9 @@ async function getRequestIDs(gatekeeper, proposalData, options) {
 }
 
 async function newSlate(gatekeeper, data, options) {
-  const { batchNumber, category, proposalData, slateData } = data;
+  const {
+    batchNumber, category, proposalData, slateData,
+  } = data;
   const requestIDs = await getRequestIDs(gatekeeper, proposalData, options);
 
   await gatekeeper.recommendSlate(batchNumber, category, requestIDs, asBytes(slateData), options);
@@ -206,11 +208,30 @@ async function voteSingle(gatekeeper, voter, category, firstChoice, secondChoice
  * @param {*} revealData
  */
 async function revealVote(gatekeeper, revealData) {
-  const { voter, categories, firstChoices, secondChoices, salt } = revealData;
+  const {
+    voter, categories, firstChoices, secondChoices, salt,
+  } = revealData;
   await gatekeeper.revealBallot(
-    voter, categories, firstChoices, secondChoices, salt, { from: voter });
+    voter, categories, firstChoices, secondChoices, salt, { from: voter },
+  );
 }
 
+
+const ContestStatus = {
+  Empty: '0',
+  NoContest: '1',
+  Started: '2',
+  VoteFinalized: '3',
+  RunoffPending: '4',
+  RunoffFinalized: '5',
+};
+
+const SlateStatus = {
+  Unstaked: '0',
+  Staked: '1',
+  Rejected: '2',
+  Accepted: '3',
+};
 
 const utils = {
   expectRevert,
@@ -229,6 +250,8 @@ const utils = {
   newSlate,
   voteSingle,
   revealVote,
+  ContestStatus,
+  SlateStatus,
 };
 
 module.exports = utils;

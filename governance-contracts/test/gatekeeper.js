@@ -9,26 +9,13 @@ const Slate = artifacts.require('Slate');
 const BasicToken = artifacts.require('BasicToken');
 
 
-const { expectRevert, newToken, voteSingle, revealVote: reveal } = utils;
+const {
+  expectRevert, newToken, voteSingle, revealVote: reveal, ContestStatus, SlateStatus,
+} = utils;
 
 const GRANT = 0;
 const GOVERNANCE = 1;
 
-const ContestStatus = {
-  Empty: '0',
-  NoContest: '1',
-  Started: '2',
-  VoteFinalized: '3',
-  RunoffPending: '4',
-  RunoffFinalized: '5',
-};
-
-const SlateStatus = {
-  Unstaked: '0',
-  Staked: '1',
-  Rejected: '2',
-  Accepted: '3',
-};
 
 contract('Gatekeeper', (accounts) => {
   describe('constructor', () => {
@@ -626,7 +613,9 @@ contract('Gatekeeper', (accounts) => {
       assert.strictEqual(initialDidReveal, false, 'didReveal should have been false before reveal');
 
       // Reveal
-      const { categories, firstChoices, secondChoices, salt } = revealData;
+      const {
+        categories, firstChoices, secondChoices, salt,
+      } = revealData;
 
       const receipt = await gatekeeper.revealBallot(
         voter,
@@ -710,7 +699,9 @@ contract('Gatekeeper', (accounts) => {
       const badVoter = utils.zeroAddress();
 
       // Reveal
-      const { categories, firstChoices, secondChoices, salt } = revealData;
+      const {
+        categories, firstChoices, secondChoices, salt,
+      } = revealData;
 
       try {
         await gatekeeper.revealBallot(
@@ -795,7 +786,9 @@ contract('Gatekeeper', (accounts) => {
     // State
     it('should fail if the voter has not committed for the ballot', async () => {
       // Reveal for a non-voter
-      const { categories, firstChoices, secondChoices, salt } = revealData;
+      const {
+        categories, firstChoices, secondChoices, salt,
+      } = revealData;
 
       try {
         await gatekeeper.revealBallot(
@@ -816,7 +809,9 @@ contract('Gatekeeper', (accounts) => {
 
     it('should fail if the voter has already revealed for the ballot', async () => {
       // Reveal
-      const { categories, firstChoices, secondChoices, salt } = revealData;
+      const {
+        categories, firstChoices, secondChoices, salt,
+      } = revealData;
 
       await gatekeeper.revealBallot(
         voter,
@@ -928,7 +923,9 @@ contract('Gatekeeper', (accounts) => {
     });
 
     it('should return true if the voter has revealed for the ballot', async () => {
-      const { categories, firstChoices, secondChoices, salt } = revealData;
+      const {
+        categories, firstChoices, secondChoices, salt,
+      } = revealData;
 
       await gatekeeper.revealBallot(
         voter,
@@ -1065,7 +1062,7 @@ contract('Gatekeeper', (accounts) => {
         contestSlates.filter(s => s.toString() !== winningSlate.toString())
           .map(id => gatekeeper.slates.call(id)
             .then(address => Slate.at(address))
-            .then(s => s.status.call()))
+            .then(s => s.status.call())),
       );
 
       statuses.forEach((_status) => {
@@ -1174,9 +1171,71 @@ contract('Gatekeeper', (accounts) => {
   });
 
   describe('getFirstChoiceVotes', () => {
-    it('should correctly get the number of first choice votes for a slate');
-    // should return 0 if the slate has no votes
-    // it('should revert if the contest is not started');
+    const [creator, recommender, alice, bob, carol] = accounts;
+
+    let gatekeeper;
+    let token;
+    const initialTokens = '20000000';
+    const ballotID = 0;
+
+    beforeEach(async () => {
+      token = await utils.newToken({ initialTokens, from: creator });
+      gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+
+      const allocatedTokens = '1000';
+
+      // Make sure the voter has available tokens and the gatekeeper is approved to spend them
+      await token.transfer(alice, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: alice });
+
+      await token.transfer(bob, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: bob });
+
+      await token.transfer(carol, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: carol });
+
+      // create simple ballot with just grants
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GRANT,
+        proposalData: ['a', 'b', 'c'],
+        slateData: 'my slate',
+      }, { from: recommender });
+
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GRANT,
+        proposalData: ['a', 'b', 'd'],
+        slateData: 'competing slate',
+      }, { from: recommender });
+
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GRANT,
+        proposalData: ['e', 'f', 'g'],
+        slateData: 'competing slate',
+      }, { from: recommender });
+    });
+
+    it('should correctly get the number of first choice votes for a slate', async () => {
+      // Commit for voters
+      const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
+      const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 0, 1, '1000', '5678');
+      const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '1000', '9012');
+
+      // Reveal all votes
+      await reveal(gatekeeper, aliceReveal);
+      await reveal(gatekeeper, bobReveal);
+      await reveal(gatekeeper, carolReveal);
+
+      // expect 2000, 1000, 0
+      const slate0Votes = await gatekeeper.getFirstChoiceVotes(ballotID, GRANT, 0);
+      assert.strictEqual(slate0Votes.toString(), '2000');
+      const slate1Votes = await gatekeeper.getFirstChoiceVotes(ballotID, GRANT, 1);
+      assert.strictEqual(slate1Votes.toString(), '1000');
+      const slate2Votes = await gatekeeper.getFirstChoiceVotes(ballotID, GRANT, 2);
+      assert.strictEqual(slate2Votes.toString(), '0');
+    });
   });
 
   describe('contestStatus', () => {
@@ -1370,7 +1429,7 @@ contract('Gatekeeper', (accounts) => {
         contestSlates.filter(s => s.toString() !== winningSlate.toString())
           .map(id => gatekeeper.slates.call(id)
             .then(address => Slate.at(address))
-            .then(s => s.status.call()))
+            .then(s => s.status.call())),
       );
 
       statuses.forEach((_status) => {
@@ -1439,7 +1498,9 @@ contract('Gatekeeper', (accounts) => {
 
       // Runoff
       const receipt = await gatekeeper.countRunoffVotes(ballotID, GRANT);
-      const { winningSlate, winnerVotes, losingSlate, loserVotes } = receipt.logs[1].args;
+      const {
+        winningSlate, winnerVotes, losingSlate, loserVotes,
+      } = receipt.logs[1].args;
 
       assert.strictEqual(winnerVotes.toString(), loserVotes.toString(), 'Runoff should end in a tie');
       assert.strictEqual(winningSlate.toString(), '1', 'Winner should have been the slate with the lower ID');

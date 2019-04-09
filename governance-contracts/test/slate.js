@@ -4,18 +4,12 @@ const utils = require('./utils');
 
 const Slate = artifacts.require('Slate');
 
-const { bytesAsString, expectRevert } = utils;
-
-const states = {
-  0: 'Unstaked',
-  1: 'Rejected',
-  2: 'Accepted',
-};
+const { bytesAsString, expectRevert, SlateStatus } = utils;
 
 
 contract('Slate', (accounts) => {
   describe('constructor', () => {
-    const [recommender] = accounts;
+    const [owner, recommender] = accounts;
     let requestIDs;
 
     beforeEach(async () => {
@@ -30,7 +24,7 @@ contract('Slate', (accounts) => {
         recommender,
         utils.asBytes(metadataHash),
         requestIDs,
-        { from: recommender },
+        { from: owner },
       );
 
       // recommender
@@ -56,7 +50,7 @@ contract('Slate', (accounts) => {
 
       // status
       const actualStatus = await slate.status.call();
-      assert.strictEqual(states[actualStatus.toString()], 'Unstaked', 'Status should have been `Unstaked`');
+      assert.strictEqual(actualStatus.toString(), SlateStatus.Unstaked, 'Status should have been `Unstaked`');
     });
 
     it('should allow creation of an empty slate', async () => {
@@ -67,12 +61,12 @@ contract('Slate', (accounts) => {
         recommender,
         utils.asBytes(metadataHash),
         requestIDs,
-        { from: recommender },
+        { from: owner },
       );
 
       // status
       const actualStatus = await slate.status.call();
-      assert.strictEqual(states[actualStatus.toString()], 'Unstaked', 'Status should have been `Unstaked`');
+      assert.strictEqual(actualStatus.toString(), SlateStatus.Unstaked, 'Status should have been `Unstaked`');
     });
 
     // rejection criteria
@@ -85,7 +79,7 @@ contract('Slate', (accounts) => {
           invalidRecommender,
           utils.asBytes(metadataHash),
           requestIDs,
-          { from: recommender },
+          { from: owner },
         );
       } catch (error) {
         expectRevert(error);
@@ -120,7 +114,7 @@ contract('Slate', (accounts) => {
           recommender,
           utils.asBytes(metadataHash),
           requestIDs,
-          { from: recommender },
+          { from: owner },
         );
       } catch (error) {
         expectRevert(error);
@@ -129,5 +123,92 @@ contract('Slate', (accounts) => {
       assert.fail('allowed creation of a request with duplicate requestIDs');
     });
   });
+
+  describe('markAccepted', () => {
+    const [owner, recommender] = accounts;
+    let requestIDs;
+
+    beforeEach(async () => {
+      // Set up requests for slate
+      requestIDs = [0, 1, 2, 3];
+    });
+
+    it('should allow the owner to mark a slate as accepted', async () => {
+      const metadataHash = utils.createMultihash('my slate');
+
+      const slate = await Slate.new(
+        recommender,
+        utils.asBytes(metadataHash),
+        requestIDs,
+        { from: owner },
+      );
+
+      const receipt = await slate.markAccepted({ from: owner });
+      const { event } = receipt.logs[0];
+      assert.strictEqual(event, 'Accepted');
+    });
+
+    it('should not allow an account other than the owner to mark a slate as accepted', async () => {
+      const metadataHash = utils.createMultihash('my slate');
+
+      const slate = await Slate.new(
+        recommender,
+        utils.asBytes(metadataHash),
+        requestIDs,
+        { from: owner },
+      );
+
+      try {
+        await slate.markAccepted({ from: recommender });
+      } catch (error) {
+        expectRevert(error);
+        return;
+      }
+      assert.fail('Allowed an account other than the owner to mark a slate as accepted');
+    });
+  });
+
+  describe('markRejected', () => {
+    const [owner, recommender] = accounts;
+    let requestIDs;
+
+    beforeEach(async () => {
+      // Set up requests for slate
+      requestIDs = [0, 1, 2, 3];
+    });
+
+    it('should allow the owner to mark a slate as rejected', async () => {
+      const metadataHash = utils.createMultihash('my slate');
+
+      const slate = await Slate.new(
+        recommender,
+        utils.asBytes(metadataHash),
+        requestIDs,
+        { from: owner },
+      );
+
+      const receipt = await slate.markRejected({ from: owner });
+      const { event } = receipt.logs[0];
+      assert.strictEqual(event, 'Rejected');
+    });
+
+    it('should not allow an account other than the owner to mark a slate as rejected', async () => {
+      const metadataHash = utils.createMultihash('my slate');
+
+      const slate = await Slate.new(
+        recommender,
+        utils.asBytes(metadataHash),
+        requestIDs,
+        { from: owner },
+      );
+
+      try {
+        await slate.markRejected({ from: recommender });
+      } catch (error) {
+        expectRevert(error);
+        return;
+      }
+      assert.fail('Allowed an account other than the owner to mark a slate as rejected');
+    });
   });
 });
