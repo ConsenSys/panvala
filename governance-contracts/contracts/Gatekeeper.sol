@@ -78,8 +78,8 @@ contract Gatekeeper {
         bool revealed;
     }
 
-    // An option in a contest
-    struct VoteOption {
+    // The votes for a slate in a contest
+    struct SlateVotes {
         uint firstChoiceVotes;
         // slateID -> count
         mapping(uint => uint) secondChoiceVotes;
@@ -92,7 +92,7 @@ contract Gatekeeper {
         Started, // Active
         // Voting?
         VoteFinalized,
-        RunoffRequired,
+        RunoffPending,
         RunoffFinalized
     }
 
@@ -103,7 +103,7 @@ contract Gatekeeper {
         uint[] slates;
 
         // slateID -> tally
-        mapping(uint => VoteOption) options;
+        mapping(uint => SlateVotes) votes;
 
         // Intermediate results
         uint confidenceVoteWinner;
@@ -197,11 +197,14 @@ contract Gatekeeper {
     )
         public returns(uint)
     {
-        // TODO: batchNumber must be the current one
+        // TODO: timing: batchNumber must be the current one
         // TODO: category must be valid
-        // TODO: all requestIDs must be unique
+        // TODO: timing: the slate submission period must be active for the given epoch
         for (uint i = 0; i < requestIDs.length; i++) {
-            require(requestIDs[i] < requestCount, "Invalid requestID");
+            require(
+                requestIDs[i] < requestCount,
+                "Request IDs must be sorted in ascending order with no duplicates"
+            );
         }
         require(metadataHash.length > 0, "metadataHash cannot be empty");
 
@@ -213,14 +216,16 @@ contract Gatekeeper {
         slates[slateID] = s;
         slateCount = slateCount.add(1);
 
-        // Associate the slate with a contest and update the status
+        // Associate the slate with a contest and update the contest status
+        // A vote can only happen if there is more than one associated slate
         Contest storage c = ballots[batchNumber].contests[categoryID];
         c.slates.push(slateID);
 
         uint numSlates = c.slates.length;
+        assert(numSlates >= 1);
         if (numSlates == 1) {
             c.status = ContestStatus.NoContest;
-        } else if (numSlates > 1) {
+        } else {
             c.status = ContestStatus.Started;
         }
 
@@ -311,7 +316,7 @@ contract Gatekeeper {
 
 
     /**
-     @dev Reveal a given voter's choices for the current ballot
+     @dev Reveal a given voter's choices for the current ballot and record their choices
      @param voter The voter's address
      @param categories The contests to vote on
      @param firstChoices The corresponding first choices
@@ -331,7 +336,6 @@ contract Gatekeeper {
         require(didCommit(ballotID, voter), "Voter has not committed for this ballot");
         require(categories.length == firstChoices.length, "All inputs must have the same length");
         require(firstChoices.length == secondChoices.length, "All inputs must have the same length");
-        // TODO: cannot reveal twice
 
         // TODO: timing: must be in reveal period
 
@@ -364,11 +368,11 @@ contract Gatekeeper {
 
             // Increment totals for first and second choice slates
             uint firstChoice = firstChoices[i];
-            VoteOption storage option = contest.options[firstChoice];
-            option.firstChoiceVotes = option.firstChoiceVotes.add(v.numTokens);
+            SlateVotes storage slateVotes = contest.votes[firstChoice];
+            slateVotes.firstChoiceVotes = slateVotes.firstChoiceVotes.add(v.numTokens);
 
             uint secondChoice = secondChoices[i];
-            option.secondChoiceVotes[secondChoice] = option.secondChoiceVotes[secondChoice].add(v.numTokens);
+            slateVotes.secondChoiceVotes[secondChoice] = slateVotes.secondChoiceVotes[secondChoice].add(v.numTokens);
         }
 
         // update state
@@ -378,16 +382,22 @@ contract Gatekeeper {
     }
 
     /**
-     @dev Get the number of first-choice votes cast in the ballot for the given slate and category
+     @dev Get the number of first-choice votes cast for the given slate and category
      @param ballotID The ballot
      @param categoryID The category
      @param slateID The slate
      */
     function getFirstChoiceVotes(uint ballotID, uint categoryID, uint slateID) public view returns(uint) {
-        VoteOption storage v = ballots[ballotID].contests[categoryID].options[slateID];
+        SlateVotes storage v = ballots[ballotID].contests[categoryID].votes[slateID];
         return v.firstChoiceVotes;
     }
 
+    /**
+     @dev Get the number of second-choice votes cast for the given slate and category
+     @param ballotID The ballot
+     @param categoryID The category
+     @param slateID The slate
+     */
     function getSecondChoiceVotes(uint ballotID, uint categoryID, uint slateID) public view returns(uint) {
         // for each option that isn't this one, get the second choice votes
         Contest storage contest = ballots[ballotID].contests[categoryID];
@@ -395,11 +405,11 @@ contract Gatekeeper {
         uint votes = 0;
         for (uint i = 0; i < numSlates; i++) {
             uint otherSlateID = contest.slates[i];
-            // if (otherSlateID != slateID) {
-                VoteOption storage v = contest.options[otherSlateID];
+            if (otherSlateID != slateID) {
+                SlateVotes storage v = contest.votes[otherSlateID];
                 // get second-choice votes for the target slate
                 votes = votes.add(v.secondChoiceVotes[slateID]);
-            // }
+            }
         }
         return votes;
     }
@@ -429,7 +439,7 @@ contract Gatekeeper {
         require(contest.status == ContestStatus.Started, "No contest is in progress for this category");
         assert(contest.slates.length > 1);
 
-        // TODO: timing: must after the vote period
+        // TODO: timing: must be after the vote period
 
         // Iterate through the slates and get the one with the most votes
         uint winner = 0;
@@ -444,7 +454,7 @@ contract Gatekeeper {
             noCount = false;
 
             uint slateID = contest.slates[i];
-            VoteOption storage currentSlate = ballots[ballotID].contests[categoryID].options[slateID];
+            SlateVotes storage currentSlate = ballots[ballotID].contests[categoryID].votes[slateID];
 
             uint votes = currentSlate.firstChoiceVotes;
             total = total.add(votes);
@@ -479,7 +489,7 @@ contract Gatekeeper {
             updatedContest.status = ContestStatus.VoteFinalized;
             emit ConfidenceVoteFinalized(ballotID, categoryID, winner);
         } else {
-            updatedContest.status = ContestStatus.RunoffRequired;
+            updatedContest.status = ContestStatus.RunoffPending;
         }
     }
 
@@ -490,6 +500,9 @@ contract Gatekeeper {
         return ballots[ballotID].contests[categoryID].status;
     }
 
+    /**
+     @dev Return the IDs of the slates associated with the contest
+     */
     function contestSlates(uint ballotID, uint categoryID) public view returns(uint[] memory) {
         return ballots[ballotID].contests[categoryID].slates;
     }
@@ -500,14 +513,14 @@ contract Gatekeeper {
      Revert if a runoff is not in progress.
      Eliminate all slates but the top two from the confidence vote. Re-count, including the
      second-choice votes for the top two slates. The slate with the most votes wins. In case
-     of a tie, the earliest slate submitted wins.
+     of a tie, the earliest slate submitted (slate with the lowest ID) wins.
 
      @param ballotID The ballot
      @param categoryID The category to count votes for
      */
     function countRunoffVotes(uint ballotID, uint categoryID) public {
         Contest memory contest = ballots[ballotID].contests[categoryID];
-        require(contest.status == ContestStatus.RunoffRequired, "Runoff is not in progress");
+        require(contest.status == ContestStatus.RunoffPending, "Runoff is not in progress");
 
         uint confidenceVoteWinner = contest.confidenceVoteWinner;
         uint confidenceVoteRunnerUp = contest.confidenceVoteRunnerUp;
@@ -532,7 +545,7 @@ contract Gatekeeper {
         // Count second-choice votes for the top two slates
         for (uint i = 0; i < eliminated.length; i++) {
             uint slateID = eliminated[i];
-            VoteOption storage currentSlate = ballots[ballotID].contests[categoryID].options[slateID];
+            SlateVotes storage currentSlate = ballots[ballotID].contests[categoryID].votes[slateID];
 
             // Second-choice votes for the winning slate
             uint votesForWinner = currentSlate.secondChoiceVotes[confidenceVoteWinner];
@@ -584,9 +597,9 @@ contract Gatekeeper {
     function getWinningSlate(uint ballotID, uint categoryID) public view returns(uint) {
         Contest storage c = ballots[ballotID].contests[categoryID];
         require(
-            (c.status == ContestStatus.VoteFinalized) ||
-            (c.status == ContestStatus.RunoffFinalized),
-            "Vote is not finalized yet");
+            (c.status == ContestStatus.VoteFinalized) || (c.status == ContestStatus.RunoffFinalized),
+            "Vote is not finalized yet"
+        );
 
         return c.winner;
     }

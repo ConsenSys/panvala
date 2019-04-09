@@ -19,7 +19,7 @@ const ContestStatus = {
   NoContest: '1',
   Started: '2',
   VoteFinalized: '3',
-  RunoffRequired: '4',
+  RunoffPending: '4',
   RunoffFinalized: '5',
 };
 
@@ -721,6 +721,8 @@ contract('Gatekeeper', (accounts) => {
       assert.fail('Revealed for a voter who has not committed for the ballot');
     });
 
+    it('should fail if the voter has already revealed for the ballot');
+
     it('should fail if the reveal period has not started');
     it('should fail if the reveal period has ended');
   });
@@ -961,9 +963,6 @@ contract('Gatekeeper', (accounts) => {
       assert.fail('Tallied votes for a category with no competition');
     });
 
-    // it('should finalize the vote if one of the slates has a majority');
-
-    // runoff
     it('should wait for a runoff if no slate has more than 50% of the votes', async () => {
       // Add a third slate
       await utils.newSlate(gatekeeper, {
@@ -991,8 +990,8 @@ contract('Gatekeeper', (accounts) => {
       const status = await gatekeeper.contestStatus(ballotID, GRANT);
       assert.strictEqual(
         status.toString(),
-        ContestStatus.RunoffRequired,
-        'Contest status should have been RunoffRequired',
+        ContestStatus.RunoffPending,
+        'Contest status should have been RunoffPending',
       );
     });
 
@@ -1015,8 +1014,8 @@ contract('Gatekeeper', (accounts) => {
       const status = await gatekeeper.contestStatus(ballotID, GRANT);
       assert.strictEqual(
         status.toString(),
-        ContestStatus.RunoffRequired,
-        'Contest status should have been RunoffRequired',
+        ContestStatus.RunoffPending,
+        'Contest status should have been RunoffPending',
       );
     });
   });
