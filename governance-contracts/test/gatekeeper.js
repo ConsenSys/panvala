@@ -23,6 +23,12 @@ const ContestStatus = {
   RunoffFinalized: '5',
 };
 
+const SlateStatus = {
+  Unstaked: '0',
+  Staked: '1',
+  Rejected: '2',
+  Accepted: '3',
+};
 
 contract('Gatekeeper', (accounts) => {
   describe('constructor', () => {
@@ -1043,7 +1049,39 @@ contract('Gatekeeper', (accounts) => {
         'Contest status should have been VoteFinalized',
       );
 
-      // TODO: check winner
+      // Winning slate should have status Accepted
+      const slateAddress = await gatekeeper.slates.call(winningSlate);
+      const slate = await Slate.at(slateAddress);
+      const slateStatus = await slate.status();
+      assert.strictEqual(
+        slateStatus.toString(),
+        SlateStatus.Accepted,
+        'Winning slate status should have been Accepted',
+      );
+
+      // All the other slates should have status Rejected
+      const contestSlates = await gatekeeper.contestSlates.call(ballotID, GRANT);
+      const statuses = await Promise.all(
+        contestSlates.filter(s => s.toString() !== winningSlate.toString())
+          .map(id => gatekeeper.slates.call(id)
+            .then(address => Slate.at(address))
+            .then(s => s.status.call()))
+      );
+
+      statuses.forEach((_status) => {
+        assert.strictEqual(
+          _status.toString(),
+          SlateStatus.Rejected,
+          'Non-winning slate should have status Rejected',
+        );
+      });
+
+      // requests in the slate should all return true for hasPermission
+      const slateRequests = await slate.getRequests.call();
+      const permissions = await Promise.all(slateRequests.map(r => gatekeeper.hasPermission(r)));
+      permissions.forEach((has) => {
+        assert.strictEqual(has, true, 'Request should have permission');
+      });
     });
 
     it('should revert if the category has no slates', async () => {
@@ -1315,6 +1353,40 @@ contract('Gatekeeper', (accounts) => {
         ContestStatus.RunoffFinalized,
         'Contest status should have been RunoffFinalized',
       );
+
+      // Winning slate should have status Accepted
+      const slateAddress = await gatekeeper.slates.call(winningSlate);
+      const slate = await Slate.at(slateAddress);
+      const slateStatus = await slate.status();
+      assert.strictEqual(
+        slateStatus.toString(),
+        SlateStatus.Accepted,
+        'Winning slate status should have been Accepted',
+      );
+
+      // All the other slates should have status Rejected
+      const contestSlates = await gatekeeper.contestSlates.call(ballotID, GRANT);
+      const statuses = await Promise.all(
+        contestSlates.filter(s => s.toString() !== winningSlate.toString())
+          .map(id => gatekeeper.slates.call(id)
+            .then(address => Slate.at(address))
+            .then(s => s.status.call()))
+      );
+
+      statuses.forEach((_status) => {
+        assert.strictEqual(
+          _status.toString(),
+          SlateStatus.Rejected,
+          'Non-winning slate should have status Rejected',
+        );
+      });
+
+      // requests in the slate should all return true for hasPermission
+      const slateRequests = await slate.getRequests.call();
+      const permissions = await Promise.all(slateRequests.map(r => gatekeeper.hasPermission(r)));
+      permissions.forEach((has) => {
+        assert.strictEqual(has, true, 'Request should have permission');
+      });
     });
 
     it('should count correctly if the original leader wins the runoff', async () => {
@@ -1497,6 +1569,123 @@ contract('Gatekeeper', (accounts) => {
         return;
       }
       assert.fail('Returned a winner even though the contest has not been finalized');
+    });
+  });
+
+  describe('hasPermission', () => {
+    const [creator, recommender, alice, bob, carol] = accounts;
+
+    let gatekeeper;
+    let token;
+    const initialTokens = '20000000';
+    const ballotID = 0;
+
+    beforeEach(async () => {
+      token = await utils.newToken({ initialTokens, from: creator });
+      gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+
+      const allocatedTokens = '1000';
+
+      // Make sure the voter has available tokens and the gatekeeper is approved to spend them
+      await token.transfer(alice, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: alice });
+
+      await token.transfer(bob, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: bob });
+
+      await token.transfer(carol, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: carol });
+
+      // create simple ballot with just grants
+      // contains requests 0, 1, 2
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GRANT,
+        proposalData: ['a', 'b', 'c'],
+        slateData: 'my slate',
+      }, { from: recommender });
+
+      // contains requests 3, 4, 5
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GRANT,
+        proposalData: ['a', 'b', 'd'],
+        slateData: 'competing slate',
+      }, { from: recommender });
+
+      // contains requests 6, 7, 8
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GRANT,
+        proposalData: ['e', 'f', 'g'],
+        slateData: 'competing slate',
+      }, { from: recommender });
+    });
+
+    it('should return false for a request before votes are counted', async () => {
+      const requestID = 0;
+      const hasPermission = await gatekeeper.hasPermission.call(requestID);
+      assert.strictEqual(hasPermission, false, 'Request should NOT be approved');
+    });
+
+    describe('simple vote', () => {
+      beforeEach(async () => {
+        // Run a simple vote
+        const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
+        const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 0, 1, '1000', '5678');
+        const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '1000', '9012');
+
+        // Reveal all votes
+        await reveal(gatekeeper, aliceReveal);
+        await reveal(gatekeeper, bobReveal);
+        await reveal(gatekeeper, carolReveal);
+      });
+
+      it('should return true for a request that was included in an accepted slate', async () => {
+        await gatekeeper.countVotes(ballotID, GRANT);
+
+        const requestID = 0;
+        const hasPermission = await gatekeeper.hasPermission.call(requestID);
+        assert.strictEqual(hasPermission, true, 'Request should have been approved');
+      });
+
+      it('should return false for a request that was included in a rejected slate', async () => {
+        await gatekeeper.countVotes(ballotID, GRANT);
+
+        const requestID = 3;
+        const hasPermission = await gatekeeper.hasPermission.call(requestID);
+        assert.strictEqual(hasPermission, false, 'Request should NOT have been approved');
+      });
+    });
+
+    describe('runoff', () => {
+      beforeEach(async () => {
+        // Run a vote that triggers a runoff
+        const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '800', '1234');
+        const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 1, 2, '900', '5678');
+        const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 2, 0, '1000', '9012');
+
+        // Reveal all votes
+        await reveal(gatekeeper, aliceReveal);
+        await reveal(gatekeeper, bobReveal);
+        await reveal(gatekeeper, carolReveal);
+
+        // Run -- slate 1 wins
+        await gatekeeper.countVotes(ballotID, GRANT);
+        await gatekeeper.countRunoffVotes(ballotID, GRANT);
+      });
+
+      it('should return true for a request that was included in an accepted slate', async () => {
+        const requestID = 3;
+        const hasPermission = await gatekeeper.hasPermission.call(requestID);
+        assert.strictEqual(hasPermission, true, 'Request should have been approved');
+      });
+
+      it('should return false for a request that was included in a rejected slate', async () => {
+        const requestID = 0;
+        const hasPermission = await gatekeeper.hasPermission.call(requestID);
+        assert.strictEqual(hasPermission, false, 'Request should NOT have been approved');
+      });
     });
   });
 });

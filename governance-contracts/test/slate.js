@@ -42,15 +42,17 @@ contract('Slate', (accounts) => {
       assert.strictEqual(bytesAsString(actualMetadata), metadataHash.toString(), 'Metadata hash is incorrect');
 
       // requests
-      const requestsExistence = await Promise.all(requestIDs.map(async (id) => {
-        // await slate.requests(id); // DOES NOT WORK
-        const receipt = await slate.requests(id);
-        return receipt;
-      }));
-
+      const requestsExistence = await Promise.all(requestIDs.map(id => slate.requestIncluded(id)));
       requestsExistence.forEach((exists) => {
         assert(exists, 'Request should exist');
       });
+
+      const storedRequests = await slate.getRequests.call();
+      assert.deepStrictEqual(
+        storedRequests.map(r => r.toString()),
+        requestIDs.map(r => r.toString()),
+        'Requests were not properly stored',
+      );
 
       // status
       const actualStatus = await slate.status.call();
@@ -108,5 +110,24 @@ contract('Slate', (accounts) => {
       }
       assert.fail('allowed creation of a slate with an empty metadataHash');
     });
+
+    it('should not allow creation of a slate with duplicate request IDs', async () => {
+      const metadataHash = utils.createMultihash('my slate');
+      requestIDs = [0, 1, 0, 2];
+
+      try {
+        await Slate.new(
+          recommender,
+          utils.asBytes(metadataHash),
+          requestIDs,
+          { from: recommender },
+        );
+      } catch (error) {
+        expectRevert(error);
+        return;
+      }
+      assert.fail('allowed creation of a request with duplicate requestIDs');
+    });
+  });
   });
 });

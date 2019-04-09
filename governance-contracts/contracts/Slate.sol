@@ -2,15 +2,24 @@ pragma solidity ^0.5.0;
 
 
 contract Slate {
+    // EVENTS
+    event Rejected();
+    event Accepted();
+
     // Possible states for a Slate
     enum Status {
         // Has not been staked on yet
         Unstaked,
+        // Has been staked on
+        Staked,
         // Was rejected through a vote
         Rejected,
         // Was accepted through no contest or through a vote
         Accepted
     }
+
+    // The account that created the slate (the Gatekeeper)
+    address public owner;
 
     // The account that recommended this slate
     address public recommender;
@@ -19,7 +28,8 @@ contract Slate {
     bytes public metadataHash;
 
     // Requests included in the slate
-    mapping(uint => bool) public requests;
+    mapping(uint => bool) public requestIncluded;
+    uint[] _requests;
 
     // The current status of the slate
     Status public status;
@@ -40,15 +50,47 @@ contract Slate {
         require(_recommender != address(0), "Recommender cannot be the zero address");
         require(_metadataHash.length > 0, "Metadata hash cannot be empty");
 
+        owner = msg.sender;
         recommender = _recommender;
         metadataHash = _metadataHash;
 
         for (uint i = 0; i < _requestIDs.length; i++) {
-            // NOTE: no duplicates
             uint requestID = _requestIDs[i];
-            requests[requestID] = true;
+            require(requestIncluded[requestID] == false, "Request has already been added to slate");
+
+            _requests.push(requestID);
+            requestIncluded[requestID] = true;
         }
 
         status = Status.Unstaked;
+    }
+
+    /**
+    @dev Return the requestIDs included in this slate
+     */
+    function getRequests() public view returns(uint[] memory) {
+        return _requests;
+    }
+
+    /**
+    @dev Mark this slate as accepted through slate governance
+     */
+    function markAccepted() external returns(bool) {
+        require(msg.sender == owner, "Only owning account can mark the slate as accepted");
+
+        status = Status.Accepted;
+        emit Accepted();
+        return true;
+    }
+
+    /**
+    @dev Mark this slate as rejected through slate governance
+     */
+    function markRejected() external returns(bool) {
+        require(msg.sender == owner, "Only the owning account can mark the slate as rejected");
+
+        status = Status.Rejected;
+        emit Rejected();
+        return true;
     }
 }

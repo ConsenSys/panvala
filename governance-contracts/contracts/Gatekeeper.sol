@@ -492,9 +492,12 @@ contract Gatekeeper {
         uint winnerPercentage = winnerVotes.mul(100).div(total);
         if (winnerPercentage > 50) {
             updatedContest.winner = winner;
+            acceptWinningSlate(winner);
+            rejectLosingSlates(ballotID, categoryID);
             updatedContest.status = ContestStatus.VoteFinalized;
             emit ConfidenceVoteFinalized(ballotID, categoryID, winner);
         } else {
+            rejectEliminatedSlates(ballotID, categoryID);
             updatedContest.status = ContestStatus.RunoffPending;
         }
     }
@@ -516,7 +519,7 @@ contract Gatekeeper {
     /**
      @dev Trigger a runoff count and update the status of the contest
 
-     Revert if a runoff is not in progress.
+     Revert if a runoff is not pending.
      Eliminate all slates but the top two from the confidence vote. Re-count, including the
      second-choice votes for the top two slates. The slate with the most votes wins. In case
      of a tie, the earliest slate submitted (slate with the lowest ID) wins.
@@ -526,7 +529,7 @@ contract Gatekeeper {
      */
     function countRunoffVotes(uint ballotID, uint categoryID) public {
         Contest memory contest = ballots[ballotID].contests[categoryID];
-        require(contest.status == ContestStatus.RunoffPending, "Runoff is not in progress");
+        require(contest.status == ContestStatus.RunoffPending, "Runoff is not pending");
 
         uint confidenceVoteWinner = contest.confidenceVoteWinner;
         uint confidenceVoteRunnerUp = contest.confidenceVoteRunnerUp;
@@ -589,10 +592,52 @@ contract Gatekeeper {
         Contest storage updatedContest = ballots[ballotID].contests[categoryID];
         updatedContest.winner = runoffWinner;
         updatedContest.status = ContestStatus.RunoffFinalized;
+        acceptWinningSlate(runoffWinner);
+
+        Slate losingSlate = Slate(slates[runoffLoser]);
+        losingSlate.markRejected();
 
         emit RunoffFinalized(ballotID, categoryID, runoffWinner);
     }
 
+    /**
+    @dev Mark all but the winning slate as rejected
+     */
+    function rejectLosingSlates(uint ballotID, uint categoryID) internal {
+        Contest storage contest = ballots[ballotID].contests[categoryID];
+        uint winningSlate = contest.confidenceVoteWinner;
+
+        // Reject all the other slates
+        uint[] memory allSlates = contestSlates(ballotID, categoryID);
+        uint numSlates = allSlates.length;
+        for (uint i = 0; i < numSlates; i++) {
+            uint slateID = allSlates[i];
+            if (slateID != winningSlate) {
+                Slate s = Slate(slates[slateID]);
+                s.markRejected();
+            }
+        }
+    }
+
+    /**
+    @dev Mark all but the top two slates as rejected
+     */
+    function rejectEliminatedSlates(uint ballotID, uint categoryID) internal {
+        Contest storage contest = ballots[ballotID].contests[categoryID];
+        uint winningSlate = contest.confidenceVoteWinner;
+        uint runnerUp = contest.confidenceVoteRunnerUp;
+
+        // Reject all the other slates
+        uint[] memory allSlates = contestSlates(ballotID, categoryID);
+        uint numSlates = allSlates.length;
+        for (uint i = 0; i < numSlates; i++) {
+            uint slateID = allSlates[i];
+            if (slateID != winningSlate && slateID != runnerUp) {
+                Slate s = Slate(slates[slateID]);
+                s.markRejected();
+            }
+        }
+    }
 
     /**
      @dev Return the ID of the winning slate for the given ballot and category
@@ -632,5 +677,33 @@ contract Gatekeeper {
 
         emit PermissionRequested(requestID, metadataHash);
         return requestID;
+    }
+
+    /**
+    @dev Update the winning slate and its associated requests
+    @param slateID The slate to update
+     */
+    function acceptWinningSlate(uint slateID) internal {
+        // TODO: must be a winner
+
+        // get the slate
+        Slate s = Slate(slates[slateID]);
+        // mark it as accepted
+        s.markAccepted();
+
+        // mark all of its requests as approved
+        uint[] memory requestIDs = s.getRequests();
+        for (uint i = 0; i < requestIDs.length; i++) {
+            uint requestID = requestIDs[i];
+            requests[requestID].approved = true;
+        }
+    }
+
+    /**
+    @dev Return true if the requestID has been approved via slate governance
+    @param requestID The ID of the request to check
+     */
+    function hasPermission(uint requestID) public view returns(bool) {
+        return requests[requestID].approved;
     }
 }
