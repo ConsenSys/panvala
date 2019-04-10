@@ -10,7 +10,7 @@ const BasicToken = artifacts.require('BasicToken');
 
 
 const {
-  expectRevert, newToken, voteSingle, revealVote: reveal, ContestStatus, SlateStatus,
+  expectRevert, newToken, voteSingle, revealVote: reveal, ContestStatus, SlateStatus, commitBallot,
 } = utils;
 
 const GRANT = 0;
@@ -841,6 +841,107 @@ contract('Gatekeeper', (accounts) => {
 
     it('should fail if the reveal period has not started');
     it('should fail if the reveal period has ended');
+  });
+
+  describe('revealManyBallots', () => {
+    const [creator, recommender, alice, bob, carol] = accounts;
+
+    let gatekeeper;
+    let token;
+    const initialTokens = '20000000';
+    const ballotID = 0;
+
+    beforeEach(async () => {
+      token = await utils.newToken({ initialTokens, from: creator });
+      gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+
+      // Set up ballot
+      // New slates 0, 1
+      // grant
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GRANT,
+        proposalData: ['a', 'b', 'c'],
+        slateData: 'grant slate',
+      }, { from: recommender });
+
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GRANT,
+        proposalData: ['a', 'b', 'd'],
+        slateData: 'competing slate',
+      }, { from: recommender });
+
+      // New slates 2, 3
+      // governance
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GOVERNANCE,
+        proposalData: ['e', 'f', 'g'],
+        slateData: 'governance slate',
+      }, { from: recommender });
+
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GRANT,
+        proposalData: ['g', 'h', 'i'],
+        slateData: 'competing slate',
+      }, { from: recommender });
+
+      // Give everyone tokens
+      const allocatedTokens = '1000';
+      await token.transfer(alice, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: alice });
+
+      await token.transfer(bob, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: bob });
+
+      await token.transfer(carol, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: carol });
+    });
+
+    it('should correctly reveal multiple ballots', async () => {
+      const [aliceSalt, bobSalt, carolSalt] = ['1234', '5678', '9012'];
+
+      const aliceReveal = await commitBallot(gatekeeper, alice, [[GRANT, 0, 1], [GOVERNANCE, 2, 3]], '1000', aliceSalt);
+      const bobReveal = await commitBallot(gatekeeper, bob, [[GRANT, 0, 1], [GOVERNANCE, 2, 3]], '1000', bobSalt);
+      const carolReveal = await commitBallot(gatekeeper, carol, [[GRANT, 1, 0], [GOVERNANCE, 2, 3]], '1000', carolSalt);
+
+      // Prepare data
+      const voters = [alice, bob, carol];
+      const ballots = [aliceReveal, bobReveal, carolReveal].map(_reveal => utils.encodeBallot(
+        _reveal.categories,
+        _reveal.firstChoices,
+        _reveal.secondChoices,
+      ));
+      const salts = [aliceSalt, bobSalt, carolSalt];
+
+      // Reveal
+      const receipt = await gatekeeper.revealManyBallots(voters, ballots, salts);
+
+      // should have emitted 3 BallotRevealed events
+      assert.strictEqual(receipt.logs.length, 3);
+      assert.deepStrictEqual(
+        receipt.logs.map(l => l.event),
+        ['BallotRevealed', 'BallotRevealed', 'BallotRevealed'],
+        'Incorrect events emitted',
+      );
+
+      // check first and second choice votes
+      const slate0Votes = await utils.getVotes(gatekeeper, ballotID, GRANT, 0);
+      const slate1Votes = await utils.getVotes(gatekeeper, ballotID, GRANT, 1);
+      assert.strictEqual(slate0Votes.toString(), '2000,1000');
+      assert.strictEqual(slate1Votes.toString(), '1000,2000');
+
+      const slate2Votes = await utils.getVotes(gatekeeper, ballotID, GOVERNANCE, 2);
+      const slate3Votes = await utils.getVotes(gatekeeper, ballotID, GOVERNANCE, 3);
+      assert.strictEqual(slate2Votes.toString(), '3000,0');
+      assert.strictEqual(slate3Votes.toString(), '0,3000');
+
+      // Everyone should be marked as having revealed
+      const didReveal = await Promise.all(voters.map(v => gatekeeper.didReveal(ballotID, v)));
+      didReveal.forEach(revealed => assert.strictEqual(revealed, true, 'Voter should have revealed'));
+    });
   });
 
   describe('didReveal', () => {

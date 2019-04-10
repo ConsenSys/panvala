@@ -203,6 +203,34 @@ async function voteSingle(gatekeeper, voter, category, firstChoice, secondChoice
 }
 
 /**
+ * Commit a ballot and return data for revealing
+ * @param {*} gatekeeper
+ * @param {*} voter
+ * @param {*} ballot Array of [category, firstChoice, secondChoice] triples
+ * @param {*} numTokens
+ * @param {*} salt
+ */
+async function commitBallot(gatekeeper, voter, ballot, numTokens, salt) {
+  const votes = {};
+  ballot.forEach((data) => {
+    const [category, firstChoice, secondChoice] = data;
+    votes[category] = { firstChoice, secondChoice };
+  });
+
+  const commitHash = generateCommitHash(votes, salt);
+  await gatekeeper.commitBallot(commitHash, numTokens, { from: voter });
+
+  const categories = Object.keys(votes);
+  return {
+    voter,
+    categories,
+    firstChoices: categories.map(cat => votes[cat].firstChoice),
+    secondChoices: categories.map(cat => votes[cat].secondChoice),
+    salt,
+  };
+}
+
+/**
  * Reveal a ballot
  * @param {Gatekeeper} gatekeeper
  * @param {*} revealData
@@ -214,6 +242,35 @@ async function revealVote(gatekeeper, revealData) {
   await gatekeeper.revealBallot(
     voter, categories, firstChoices, secondChoices, salt, { from: voter },
   );
+}
+
+/**
+ * Encode a ballot to be submitted to Gatekeeper.revealManyBallots()
+ * @param {*} categories
+ * @param {*} firstChoices
+ * @param {*} secondChoices
+ */
+function encodeBallot(categories, firstChoices, secondChoices) {
+  const types = ['uint256[]', 'uint256[]', 'uint256[]'];
+  const values = [categories, firstChoices, secondChoices];
+
+  const encoded = ethers.utils.defaultAbiCoder.encode(types, values);
+  return encoded;
+}
+
+/**
+ * Get the number of first and second choice votes for a slate in a contest
+ * @param {*} gatekeeper
+ * @param {*} ballotID
+ * @param {*} categoryID
+ * @param {*} slateID
+ */
+async function getVotes(gatekeeper, ballotID, categoryID, slateID) {
+  const result = await Promise.all([
+    gatekeeper.getFirstChoiceVotes(ballotID, categoryID, slateID),
+    gatekeeper.getSecondChoiceVotes(ballotID, categoryID, slateID),
+  ]);
+  return result;
 }
 
 
@@ -249,9 +306,12 @@ const utils = {
   getRequestIDs,
   newSlate,
   voteSingle,
+  commitBallot,
   revealVote,
   ContestStatus,
   SlateStatus,
+  encodeBallot,
+  getVotes,
 };
 
 module.exports = utils;

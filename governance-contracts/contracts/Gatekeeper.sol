@@ -12,8 +12,8 @@ contract Gatekeeper {
     event PermissionRequested(uint requestID, bytes metadataHash);
     event SlateCreated(uint slateID, address indexed recommender, bytes metadataHash);
     event VotingTokensDeposited(address indexed voter, uint numTokens);
-    event BallotCommitted(uint ballotID, address indexed voter, uint numTokens, bytes32 commitHash);
-    event BallotRevealed(uint ballotID, address indexed voter, uint numTokens);
+    event BallotCommitted(uint indexed ballotID, address indexed voter, uint numTokens, bytes32 commitHash);
+    event BallotRevealed(uint indexed ballotID, address indexed voter, uint numTokens);
     event ConfidenceVoteCounted(
         uint indexed ballotID,
         uint indexed categoryID,
@@ -385,6 +385,28 @@ contract Gatekeeper {
         ballot.commitments[voter].revealed = true;
 
         emit BallotRevealed(ballotID, voter, v.numTokens);
+    }
+
+    /**
+    @dev Reveal ballots for multiple voters
+     */
+    function revealManyBallots(
+        address[] memory _voters,
+        bytes[] memory _ballots,
+        uint[] memory _salts
+    ) public {
+        uint numBallots = _voters.length;
+
+        for (uint i = 0; i < numBallots; i++) {
+            // extract categories, firstChoices, secondChoices from the ballot
+            (
+                uint[] memory categories,
+                uint[] memory firstChoices,
+                uint[] memory secondChoices
+            ) = abi.decode(_ballots[i], (uint[], uint[], uint[]));
+
+            revealBallot(_voters[i], categories, firstChoices, secondChoices, _salts[i]);
+        }
     }
 
     /**
