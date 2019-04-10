@@ -1,13 +1,13 @@
 import * as React from 'react';
 import { AppContext } from '../../components/Layout';
 import Button from '../../components/Button';
-import { FormWrapper } from '../../components/Form';
+import CenteredTitle from '../../components/CenteredTitle';
+import CenteredWrapper from '../../components/CenteredWrapper';
 import Image from '../../components/Image';
 import Modal, { ModalTitle, ModalDescription } from '../../components/Modal';
 import ProposalForm from '../../components/ProposalForm';
 import { postProposal } from '../../utils/api';
 import { IProposal, IAppContext } from '../../interfaces';
-import CenteredTitle from '../../components/CenteredTitle';
 import { AxiosResponse } from 'axios';
 import { SingletonRouter, withRouter } from 'next/router';
 
@@ -55,9 +55,9 @@ const CreateProposal: React.FunctionComponent<IProps> = ({ router }) => {
       </Modal>
 
       <CenteredTitle title="Create a Grant Proposal" />
-      <FormWrapper>
+      <CenteredWrapper>
         <ProposalForm onHandleSubmit={handleSubmit} />
-      </FormWrapper>
+      </CenteredWrapper>
     </div>
   );
 };

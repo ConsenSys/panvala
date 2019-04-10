@@ -3,8 +3,8 @@ import styled from 'styled-components';
 import { COLORS } from '../styles';
 
 const StyledSectionLabel = styled.div`
-  margin: ${(props: any) => (props.lessMargin ? '1em 0' : '1em 0 2em')};
-  font-size: 0.9em;
+  margin: ${(props: any) => (props.lessMargin ? '1rem 0' : '1rem 0 2rem')};
+  font-size: 0.9rem;
   font-weight: bold;
   color: ${COLORS.grey3};
 `;

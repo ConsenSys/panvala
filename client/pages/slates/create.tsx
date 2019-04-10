@@ -15,7 +15,7 @@ import Card from '../../components/Card';
 import { EthereumContext } from '../../components/EthereumProvider';
 import FieldText, { ErrorMessage } from '../../components/FieldText';
 import FieldTextarea from '../../components/FieldTextarea';
-import { FormWrapper } from '../../components/Form';
+import CenteredWrapper from '../../components/CenteredWrapper';
 import Label from '../../components/Label';
 import SectionLabel from '../../components/SectionLabel';
 import Modal, { ModalTitle, ModalDescription } from '../../components/Modal';
@@ -317,7 +317,7 @@ const CreateSlate: React.FunctionComponent<{ router: SingletonRouter }> = ({ rou
       </Modal>
 
       <CenteredTitle title="Create a Grant Slate" />
-      <FormWrapper>
+      <CenteredWrapper>
         <Formik
           initialValues={{
             email: '',
@@ -449,7 +449,7 @@ const CreateSlate: React.FunctionComponent<{ router: SingletonRouter }> = ({ rou
             </Form>
           )}
         </Formik>
-      </FormWrapper>
+      </CenteredWrapper>
     </div>
   );
 };

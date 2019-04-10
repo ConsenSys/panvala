@@ -10,6 +10,7 @@ import { EthereumContext } from '../../components/EthereumProvider';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
 import CenteredTitle from '../../components/CenteredTitle';
+import CenteredWrapper from '../../components/CenteredWrapper';
 import Deadline from '../../components/Deadline';
 import Image from '../../components/Image';
 import Label from '../../components/Label';
@@ -25,14 +26,6 @@ type IProps = {
   provider?: any;
   router: SingletonRouter;
 };
-
-const BallotWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  margin: 2em;
-  border: 1px solid #f0f5f6;
-  color: ${COLORS.text};
-`;
 
 const Separator = styled.div`
   border: 1px solid ${COLORS.grey5};
@@ -218,7 +211,7 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
         <Deadline ballot={currentBallot} route="ballots" />
       </div>
       <CenteredTitle title="Submit Vote" />
-      <BallotWrapper>
+      <CenteredWrapper>
         <div className="pa4">
           <SectionLabel>{'GRANTS'}</SectionLabel>
           <Label required>{'Select your first and second choice slate'}</Label>
@@ -257,7 +250,7 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
             {'This will redirect to a seperate MetaMask window to confirm your transaction.'}
           </div>
         </div>
-      </BallotWrapper>
+      </CenteredWrapper>
     </div>
   );
 };

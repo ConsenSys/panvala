@@ -4,7 +4,7 @@ import { COLORS, BUTTON_COLORS } from '../styles';
 import Tag from './Tag';
 import { splitAddressHumanReadable } from '../utils/format';
 import Button from './Button';
-import { Separator } from './Form';
+import { Separator } from './Separator';
 import { IChoices, IProposal } from '../interfaces';
 import RouterLink from './RouterLink';
 

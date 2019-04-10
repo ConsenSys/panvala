@@ -1,24 +1,17 @@
 import * as React from 'react';
 import styled from 'styled-components';
 import { COLORS } from '../../styles';
+import { AppContext } from '../../components/Layout';
 import Button from '../../components/Button';
-import SectionLabel from '../../components/SectionLabel';
 import CenteredTitle from '../../components/CenteredTitle';
-import { statuses, isBallotOpen } from '../../utils/status';
+import CenteredWrapper from '../../components/CenteredWrapper';
 import Deadline from '../../components/Deadline';
 import RouterLink from '../../components/RouterLink';
 import RouteTitle from '../../components/RouteTitle';
+import SectionLabel from '../../components/SectionLabel';
 import { IAppContext } from '../../interfaces';
-import { AppContext } from '../../components/Layout';
 import { tsToDeadline } from '../../utils/datetime';
-
-const BallotWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  margin: 2em;
-  border: 1px solid #f0f5f6;
-  color: ${COLORS.text};
-`;
+import { isBallotOpen } from '../../utils/status';
 
 const Separator = styled.div`
   border: 1px solid ${COLORS.grey5};
@@ -41,7 +34,7 @@ const Ballots: React.FunctionComponent<any> = () => {
             <Deadline ballot={currentBallot} route="ballots" />
           </div>
           <CenteredTitle title="Submit Vote" />
-          <BallotWrapper>
+          <CenteredWrapper>
             <div className="pa4">
               <SectionLabel>{'HOW VOTING WORKS'}</SectionLabel>
               <div className="mb4 f6">
@@ -73,7 +66,7 @@ const Ballots: React.FunctionComponent<any> = () => {
                 </RouterLink>
               </div>
             </div>
-          </BallotWrapper>
+          </CenteredWrapper>
         </>
       ) : !isBallotOpen(currentBallot) ? (
         <>

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as yup from 'yup';
 import { Formik, Form } from 'formik';
-import { Separator } from '../components/Form';
+import { Separator } from '../components/Separator';
 import Label from './Label';
 import SectionLabel from './SectionLabel';
 import Button from './Button';
