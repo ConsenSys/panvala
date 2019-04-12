@@ -4,6 +4,7 @@ import App, { Container } from 'next/app';
 import { SingletonRouter } from 'next/router';
 import ErrorPage from 'next/error';
 // required: import css at top-level
+import '../reset.css';
 import '../ReactToastify.css';
 import '../components/Toggle.css';
 import EthereumProvider from '../components/EthereumProvider';

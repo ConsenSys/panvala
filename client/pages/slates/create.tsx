@@ -407,37 +407,39 @@ const CreateSlate: React.FunctionComponent<{ router: SingletonRouter }> = ({ rou
                   }
                 </div>
               </div>
-              <Separator />
               {values.recommendation === 'grant' && (
-                <div className="pa4">
-                  <SectionLabel>{'GRANTS'}</SectionLabel>
-                  <div className="mv3 f7 black-50">
-                    {'Select the grants that you would like to add to your slate'}
+                <>
+                  <Separator />
+                  <div className="pa4">
+                    <SectionLabel>{'GRANTS'}</SectionLabel>
+                    <div className="mv3 f7 black-50">
+                      {'Select the grants that you would like to add to your slate'}
+                    </div>
+                    <div className="flex flex-wrap">
+                      {proposals &&
+                        proposals.map((proposal: IProposal) => (
+                          <Card
+                            key={proposal.id}
+                            category={proposal.category + ' PROPOSAL'}
+                            title={proposal.title}
+                            subtitle={proposal.tokensRequested.toString()}
+                            description={proposal.summary}
+                            onClick={() => {
+                              if (values.proposals.hasOwnProperty(proposal.id)) {
+                                setFieldValue(
+                                  `proposals.${proposal.id}`,
+                                  !values.proposals[proposal.id]
+                                );
+                              } else {
+                                setFieldValue(`proposals.${proposal.id}`, true);
+                              }
+                            }}
+                            isActive={values.proposals[proposal.id]}
+                          />
+                        ))}
+                    </div>
                   </div>
-                  <div className="flex flex-wrap">
-                    {proposals &&
-                      proposals.map((proposal: IProposal) => (
-                        <Card
-                          key={proposal.id}
-                          category={proposal.category + ' PROPOSAL'}
-                          title={proposal.title}
-                          subtitle={proposal.tokensRequested.toString()}
-                          description={proposal.summary}
-                          onClick={() => {
-                            if (values.proposals.hasOwnProperty(proposal.id)) {
-                              setFieldValue(
-                                `proposals.${proposal.id}`,
-                                !values.proposals[proposal.id]
-                              );
-                            } else {
-                              setFieldValue(`proposals.${proposal.id}`, true);
-                            }
-                          }}
-                          isActive={values.proposals[proposal.id]}
-                        />
-                      ))}
-                  </div>
-                </div>
+                </>
               )}
               <Separator />
               <div className="flex pa4 justify-end">

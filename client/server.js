@@ -23,7 +23,7 @@ app.prepare().then(() => {
   server.get('/', (req, res) => res.redirect(301, '/slates'));
 
   // ----------------------------------------------
-  // FORMS
+  // FORMS / TRANSACTIONS
   // ----------------------------------------------
 
   server.get('/slates/create', (req, res) => {
@@ -32,6 +32,12 @@ app.prepare().then(() => {
     return app.render(req, res, '/slates/create', requestParams);
   });
   server.get('/proposals/create', (req, res) => app.render(req, res, '/proposals/create'));
+
+  server.get('/slates/stake', (req, res) => {
+    // slate id
+    const requestParams = setIdParamsByRequestQuery(req);
+    return app.render(req, res, '/slates/stake', requestParams);
+  });
 
   // ----------------------------------------------
   // INDIVIDUAL SLATE or PROPOSAL

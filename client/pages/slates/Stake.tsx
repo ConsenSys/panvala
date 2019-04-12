@@ -5,14 +5,13 @@ import CenteredTitle from '../../components/CenteredTitle';
 import CenteredWrapper from '../../components/CenteredWrapper';
 import Image from '../../components/Image';
 import Modal, { ModalTitle, ModalDescription } from '../../components/Modal';
-import RouterLink from '../../components/RouterLink';
 import SectionLabel from '../../components/SectionLabel';
 import { Separator } from '../../components/Separator';
 import { COLORS } from '../../styles';
 
 const Wrapper = styled.div`
   font-family: 'Roboto';
-  margin: 2rem 10rem;
+  /* margin: 2rem 10rem; */
 `;
 
 const CenteredSection = styled.div`
@@ -53,52 +52,21 @@ const BlackSeparator = styled.div`
   border-bottom: 3px solid #606060;
 `;
 
-export const StakeActions = () => (
+export const StakeActions = ({ onHandleSetOpenModal }): any => (
   <ActionsWrapper>
     <FlexWrapper>
       <Button large>Back</Button>
-      <Button large type="default">
+      <Button large type="default" onClick={() => onHandleSetOpenModal(true)}>
         Confirm and Deposit PAN
       </Button>
     </FlexWrapper>
     <ActionHelpMessage>
-      This will redirect to a seperate MetaMask window to confirm your transaction.
+      This will redirect to a separate MetaMask window to confirm your transaction.
     </ActionHelpMessage>
-    {/* <RouterLink href="/ballots/vote" as="/ballots/vote">
-          </RouterLink> */}
   </ActionsWrapper>
 );
 
-export const StakeContainer = () => (
-  <Wrapper>
-    {/* <CenteredTitle title="Stake Tokens on a  Slate" /> */}
-    <CenteredWrapper>
-      <CenteredSection>
-        <SectionLabel>TOKEN DEPOSIT</SectionLabel>
-        <SectionStatement>
-          A deposit of <strong>{500} PAN</strong> tokens is required.
-        </SectionStatement>
-        <P>
-          After a slate has tokens staked, the Panvala token holding community will have the ability
-          to vote for or against the slate when the voting period begins. If the slate that you
-          stake tokens on is successful, you will receive a supporter reward of 500 PAN. If the
-          slate that you stake tokens on is unsuccessful, you will lose your token deposit.
-        </P>
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '5rem' }}>
-          <div>Total token deposit</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>500 PAN</div>
-        </div>
-        <BlackSeparator />
-      </CenteredSection>
-
-      <Separator />
-      <StakeActions />
-    </CenteredWrapper>
-  </Wrapper>
-);
-
-export default () => {
+const Stake: React.SFC = () => {
   // modal opener
   const [isOpen, setOpenModal] = React.useState(false);
   return (
@@ -115,7 +83,35 @@ export default () => {
         </Button>
       </Modal>
 
-      <StakeContainer />
+      <Wrapper>
+        <CenteredTitle title="Stake Tokens on a  Slate" />
+        <CenteredWrapper>
+          <CenteredSection>
+            <SectionLabel>TOKEN DEPOSIT</SectionLabel>
+            <SectionStatement>
+              A deposit of <strong>{500} PAN</strong> tokens is required.
+            </SectionStatement>
+            <P>
+              After a slate has tokens staked, the Panvala token holding community will have the
+              ability to vote for or against the slate when the voting period begins. If the slate
+              that you stake tokens on is successful, you will receive a supporter reward of 500
+              PAN. If the slate that you stake tokens on is unsuccessful, you will lose your token
+              deposit.
+            </P>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '5rem' }}>
+              <div>Total token deposit</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>500 PAN</div>
+            </div>
+            <BlackSeparator />
+          </CenteredSection>
+
+          <Separator />
+          <StakeActions onHandleSetOpenModal={setOpenModal} />
+        </CenteredWrapper>
+      </Wrapper>
     </>
   );
 };
+
+export default Stake;

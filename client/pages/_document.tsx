@@ -39,8 +39,8 @@ export default class MyDocument extends Document {
         <Head>
           <meta charSet="utf-8" />
           <meta name="viewport" content="initial-scale=1.0, width=device-width" />
+          <link rel="icon" href="/static/favicon.ico" />
           {this.props.styles}
-          <link rel="favicon" href="/static/favicon.ico" />
           <link rel="stylesheet" href="https://unpkg.com/tachyons@4/css/tachyons.min.css" />
           <link
             href="https://fonts.googleapis.com/css?family=Roboto:400,500,700"
