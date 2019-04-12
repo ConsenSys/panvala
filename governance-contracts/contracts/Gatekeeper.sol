@@ -11,6 +11,7 @@ contract Gatekeeper {
     // EVENTS
     event PermissionRequested(uint requestID, bytes metadataHash);
     event SlateCreated(uint slateID, address indexed recommender, bytes metadataHash);
+    event SlateStaked(uint slateID, address indexed staker, uint numTokens);
     event VotingTokensDeposited(address indexed voter, uint numTokens);
     event BallotCommitted(uint indexed ballotID, address indexed voter, uint numTokens, bytes32 commitHash);
     event BallotRevealed(uint indexed ballotID, address indexed voter, uint numTokens);
@@ -237,6 +238,23 @@ contract Gatekeeper {
         emit SlateCreated(slateID, msg.sender, metadataHash);
         return slateID;
     }
+
+    /**
+    @dev Stake tokens on the given slate to include it for consideration in votes. If the slate
+    loses in a contest, the amount staked will go to the winner. If it wins, it will be returned.
+    @param slateID The slate to stake on
+     */
+    function stakeTokens(uint slateID) public payable returns(bool) {
+        require(msg.value == parameters.get('slateStakeAmount'), "Value must equal the required stake");
+        require(slateID < slateCount, "No slate exists with that slateID");
+
+        Slate s = Slate(slates[slateID]);
+        s.markStaked(msg.sender, msg.value);
+
+        emit SlateStaked(slateID, msg.sender, msg.value);
+        return true;
+    }
+
 
     /**
      @dev Deposit `numToken` tokens into the Gatekeeper to use in voting

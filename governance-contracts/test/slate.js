@@ -124,6 +124,57 @@ contract('Slate', (accounts) => {
     });
   });
 
+  describe('markStaked', () => {
+    const [owner, recommender, staker] = accounts;
+    let requestIDs;
+    let slate;
+    const numTokens = '500';
+
+    beforeEach(async () => {
+      // Set up requests for slate
+      requestIDs = [0, 1, 2, 3];
+      const metadataHash = utils.createMultihash('my slate');
+
+      slate = await Slate.new(
+        recommender,
+        utils.asBytes(metadataHash),
+        requestIDs,
+        { from: owner },
+      );
+    });
+
+    it('should allow the owner to mark a slate as staked', async () => {
+      const receipt = await slate.markStaked(staker, numTokens, { from: owner });
+      const { event } = receipt.logs[0];
+      assert.strictEqual(event, 'Staked');
+    });
+
+    it('should not allow an account other than the owner to mark a slate as staked', async () => {
+      try {
+        await slate.markStaked(staker, numTokens, { from: recommender });
+      } catch (error) {
+        expectRevert(error);
+        return;
+      }
+      assert.fail('Allowed an account other than the owner to mark a slate as staked');
+    });
+
+    describe('isStaked', () => {
+      it('should return true if the slate has been staked on', async () => {
+        await slate.markStaked(staker, numTokens, { from: owner });
+
+        const isStaked = await slate.isStaked();
+        assert.strictEqual(isStaked, true, 'isStaked should be true after staking');
+      });
+
+      it('should return false if the slate has not been staked on', async () => {
+        const isStaked = await slate.isStaked();
+        assert.strictEqual(isStaked, false, 'isStaked should be false before staking');
+      });
+    });
+  });
+
+
   describe('markAccepted', () => {
     const [owner, recommender] = accounts;
     let requestIDs;

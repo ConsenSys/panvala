@@ -222,6 +222,94 @@ contract('Gatekeeper', (accounts) => {
     it('should revert if the category is invalid');
   });
 
+  describe('stakeTokens', () => {
+    const [creator, recommender, staker] = accounts;
+    let gatekeeper;
+    let token;
+    const initialTokens = '20000000';
+
+    const batchNumber = 0;
+    const slateID = 0;
+    let stakeAmount;
+
+    beforeEach(async () => {
+      token = await utils.newToken({ initialTokens, from: creator });
+      gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+
+      await utils.newSlate(gatekeeper, {
+        batchNumber,
+        category: GRANT,
+        proposalData: ['a', 'b', 'c'],
+        slateData: 'grant slate',
+      }, { from: recommender });
+
+      // Give out tokens
+      const allocatedTokens = '1000';
+      await token.transfer(staker, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: staker });
+
+      const parameters = await gatekeeper.parameters()
+        .then(address => ParameterStore.at(address));
+      stakeAmount = await parameters.get('slateStakeAmount');
+    });
+
+    it('should allow a user to stake tokens on a slate', async () => {
+      const receipt = await gatekeeper.stakeTokens(slateID, { from: staker, value: stakeAmount });
+
+      // Check logs
+      const {
+        slateID: emittedSlateID,
+        staker: emittedStaker,
+        numTokens: emittedTokens,
+      } = receipt.logs[0].args;
+
+      assert.strictEqual(emittedSlateID.toString(), slateID.toString(), 'Emitted wrong slateID');
+      assert.strictEqual(emittedStaker, staker, 'Emitted wrong staker');
+      assert.strictEqual(emittedTokens.toString(), stakeAmount.toString(), 'Emitted wrong stake amount');
+
+      // Slate should be staked
+      const slateAddress = await gatekeeper.slates(slateID);
+      const slate = await Slate.at(slateAddress);
+      const isStaked = await slate.isStaked();
+      assert.strictEqual(isStaked, true, 'Slate should be staked');
+    });
+
+    it('should revert if the slate does not exist', async () => {
+      const badSlateID = 500;
+      try {
+        await gatekeeper.stakeTokens(badSlateID, { from: staker, value: stakeAmount });
+      } catch (error) {
+        expectRevert(error);
+        assert(error.toString().includes('No slate exists'));
+
+        return;
+      }
+      assert.fail('Staked on a non-existent stake');
+    });
+
+    it('should revert if the amount sent is less than the stake amount', async () => {
+      const amount = stakeAmount.sub(new utils.BN(1));
+      try {
+        await gatekeeper.stakeTokens(slateID, { from: staker, value: amount });
+      } catch (error) {
+        expectRevert(error);
+        return;
+      }
+      assert.fail('Staked with less than the required stake');
+    });
+
+    it('should revert if the amount sent is greater than the stake amount', async () => {
+      const amount = stakeAmount.add(new utils.BN(1));
+      try {
+        await gatekeeper.stakeTokens(slateID, { from: staker, value: amount });
+      } catch (error) {
+        expectRevert(error);
+        return;
+      }
+      assert.fail('Staked with less than the required stake');
+    });
+  });
+
   describe('requestPermission', () => {
     const [creator, requestor] = accounts;
     let gatekeeper;

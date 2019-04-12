@@ -3,6 +3,7 @@ pragma solidity ^0.5.0;
 
 contract Slate {
     // EVENTS
+    event Staked();
     event Rejected();
     event Accepted();
 
@@ -33,6 +34,10 @@ contract Slate {
 
     // The current status of the slate
     Status public status;
+
+    // Staking info
+    address public staker;
+    uint public stake;
 
     /**
      @dev Initialize a new Slate.
@@ -92,5 +97,26 @@ contract Slate {
         status = Status.Rejected;
         emit Rejected();
         return true;
+    }
+
+
+    /**
+    @dev Mark this slate as having been staked on
+    @param _staker The account staking on the slate
+    @param _numTokens The number of tokens staked
+     */
+    function markStaked(address _staker, uint _numTokens) external returns(bool) {
+        require(msg.sender == owner, "Only the owning account can mark the slate as staked");
+        require(status == Status.Unstaked, "Slate has already been staked on");
+
+        staker = _staker;
+        stake = _numTokens;
+        status = Status.Staked;
+        emit Staked();
+        return true;
+    }
+
+    function isStaked() public view returns(bool) {
+        return status == Status.Staked;
     }
 }
