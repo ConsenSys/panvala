@@ -21,6 +21,20 @@ function expectRevert(error) {
   );
 }
 
+/**
+ * Assert that the receipt contains the expected events
+ * @param {TransactionReceipt} receipt
+ * @param {Array} eventNames
+ */
+function expectEvents(receipt, eventNames) {
+  // const actualEventNames = receipt.logs.map(l => l.event);
+  assert.deepStrictEqual(
+    receipt.logs.map(l => l.event),
+    eventNames,
+    `Incorrect events emitted -- expected ${eventNames}`,
+  );
+}
+
 function createMultihash(data) {
   const digest = ethUtils.sha256(data);
 
@@ -292,6 +306,7 @@ const SlateStatus = {
 
 const utils = {
   expectRevert,
+  expectEvents,
   zeroAddress: ethUtils.zeroAddress,
   BN: ethUtils.BN,
   createMultihash,

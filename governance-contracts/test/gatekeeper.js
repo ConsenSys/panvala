@@ -1235,7 +1235,7 @@ contract('Gatekeeper', (accounts) => {
 
       // Check logs
       const receipt = await gatekeeper.countVotes(ballotID, GRANT);
-      assert.strictEqual(receipt.logs.length, 1, 'Only one event should have been emitted');
+      utils.expectEvents(receipt, ['ConfidenceVoteCounted', 'ConfidenceVoteFailed']);
 
       // Should be waiting for a runoff
       const status = await gatekeeper.contestStatus(ballotID, GRANT);
@@ -1259,7 +1259,7 @@ contract('Gatekeeper', (accounts) => {
 
       // Check logs
       const receipt = await gatekeeper.countVotes(ballotID, GRANT);
-      assert.strictEqual(receipt.logs.length, 1, 'Only one event should have been emitted');
+      utils.expectEvents(receipt, ['ConfidenceVoteCounted', 'ConfidenceVoteFailed']);
 
       // Should be waiting for a runoff
       const status = await gatekeeper.contestStatus(ballotID, GRANT);

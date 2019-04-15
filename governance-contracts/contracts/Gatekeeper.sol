@@ -22,6 +22,7 @@ contract Gatekeeper {
         uint totalVotes
     );
     event ConfidenceVoteFinalized(uint indexed ballotID, uint indexed categoryID, uint winningSlate);
+    event ConfidenceVoteFailed(uint indexed ballotID, uint categoryID);
     event RunoffStarted(uint indexed ballotID, uint indexed categoryID, uint winningSlate, uint runnerUpSlate);
     event RunoffCounted(
         uint indexed ballotID,
@@ -521,6 +522,7 @@ contract Gatekeeper {
         } else {
             rejectEliminatedSlates(ballotID, categoryID);
             updatedContest.status = ContestStatus.RunoffPending;
+            emit ConfidenceVoteFailed(ballotID, categoryID);
         }
     }
 
