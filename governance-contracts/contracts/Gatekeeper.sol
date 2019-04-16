@@ -2,7 +2,6 @@ pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
 import "./ParameterStore.sol";
-import "./Slate.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
@@ -63,6 +62,23 @@ contract Gatekeeper {
     uint public requestCount;
 
     // Voting
+    enum SlateStatus {
+        Unstaked,
+        Staked,
+        Rejected,
+        Accepted
+    }
+
+    struct Slate {
+        address recommender;
+        bytes metadataHash;
+        mapping(uint => bool) requestIncluded;
+        uint[] requests;
+        SlateStatus status;
+        // Staking info
+        address staker;
+        uint stake;
+    }
     // The slates created by the Gatekeeper. Maps slateID -> Slate.
     mapping(uint => Slate) public slates;
 
@@ -201,26 +217,31 @@ contract Gatekeeper {
         // TODO: timing: batchNumber must be the current one
         // TODO: category must be valid
         // TODO: timing: the slate submission period must be active for the given epoch
-        for (uint i = 0; i < requestIDs.length; i++) {
-            uint requestID = requestIDs[i];
-            require(requestID < requestCount, "Invalid requestID");
-
-            if (i > 0) {
-                require(
-                    requestID > requestIDs[i-1],
-                    "Request IDs must be sorted in ascending order with no duplicates"
-                );
-            }
-        }
         require(metadataHash.length > 0, "metadataHash cannot be empty");
 
         // create slate
-        Slate s = new Slate(msg.sender, metadataHash, requestIDs);
+        Slate memory s = Slate({
+            recommender: msg.sender,
+            metadataHash: metadataHash,
+            requests: requestIDs,
+            status: SlateStatus.Unstaked,
+            staker: address(0),
+            stake: 0
+        });
 
         // Record slate and return its ID
         uint slateID = slateCount;
         slates[slateID] = s;
         slateCount = slateCount.add(1);
+
+        // Set up the requests
+        for (uint i = 0; i < requestIDs.length; i++) {
+            uint requestID = requestIDs[i];
+            require(requestID < requestCount, "Invalid requestID");
+
+            require(slates[slateID].requestIncluded[requestID] == false, "Duplicate requests are not allowed");
+            slates[slateID].requestIncluded[requestID] = true;
+        }
 
         // Associate the slate with a contest and update the contest status
         // A vote can only happen if there is more than one associated slate
@@ -240,6 +261,14 @@ contract Gatekeeper {
     }
 
     /**
+    @dev Get a list of the requests associated with a slate
+    @param slateID The slate
+     */
+    function slateRequests(uint slateID) public view returns(uint[] memory) {
+        return slates[slateID].requests;
+    }
+
+    /**
     @dev Stake tokens on the given slate to include it for consideration in votes. If the slate
     loses in a contest, the amount staked will go to the winner. If it wins, it will be returned.
     @param slateID The slate to stake on
@@ -248,8 +277,7 @@ contract Gatekeeper {
         require(msg.value == parameters.get('slateStakeAmount'), "Value must equal the required stake");
         require(slateID < slateCount, "No slate exists with that slateID");
 
-        Slate s = Slate(slates[slateID]);
-        s.markStaked(msg.sender, msg.value);
+        slates[slateID].status = SlateStatus.Staked;
 
         emit SlateStaked(slateID, msg.sender, msg.value);
         return true;
@@ -636,8 +664,8 @@ contract Gatekeeper {
         updatedContest.status = ContestStatus.RunoffFinalized;
         acceptWinningSlate(runoffWinner);
 
-        Slate losingSlate = Slate(slates[runoffLoser]);
-        losingSlate.markRejected();
+        // Reject the losing slate
+        slates[runoffLoser].status = SlateStatus.Rejected;
 
         emit RunoffFinalized(ballotID, categoryID, runoffWinner);
     }
@@ -655,8 +683,7 @@ contract Gatekeeper {
         for (uint i = 0; i < numSlates; i++) {
             uint slateID = allSlates[i];
             if (slateID != winningSlate) {
-                Slate s = Slate(slates[slateID]);
-                s.markRejected();
+                slates[slateID].status = SlateStatus.Rejected;
             }
         }
     }
@@ -675,8 +702,7 @@ contract Gatekeeper {
         for (uint i = 0; i < numSlates; i++) {
             uint slateID = allSlates[i];
             if (slateID != winningSlate && slateID != runnerUp) {
-                Slate s = Slate(slates[slateID]);
-                s.markRejected();
+                slates[slateID].status = SlateStatus.Rejected;
             }
         }
     }
@@ -728,13 +754,12 @@ contract Gatekeeper {
     function acceptWinningSlate(uint slateID) internal {
         // TODO: must be a winner
 
-        // get the slate
-        Slate s = Slate(slates[slateID]);
-        // mark it as accepted
-        s.markAccepted();
+        // Mark the slate as accepted
+        Slate storage s = slates[slateID];
+        s.status = SlateStatus.Accepted;
 
         // mark all of its requests as approved
-        uint[] memory requestIDs = s.getRequests();
+        uint[] memory requestIDs = s.requests;
         for (uint i = 0; i < requestIDs.length; i++) {
             uint requestID = requestIDs[i];
             requests[requestID].approved = true;

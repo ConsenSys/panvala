@@ -5,7 +5,6 @@ const utils = require('./utils');
 
 const Gatekeeper = artifacts.require('Gatekeeper');
 const ParameterStore = artifacts.require('ParameterStore');
-const Slate = artifacts.require('Slate');
 const BasicToken = artifacts.require('BasicToken');
 
 
@@ -149,14 +148,41 @@ contract('Gatekeeper', (accounts) => {
       const slateCount = await gatekeeper.slateCount();
       assert.strictEqual(slateCount.toString(), '1', 'Slate count was not properly incremented');
 
-      // Check that we can interact with the slate
-      const slateAddress = await gatekeeper.slates(slateID);
-      const newSlate = await Slate.at(slateAddress);
-      assert.strictEqual(newSlate.address, slateAddress, 'Slate address is incorrect');
+      // Check that the slate was initialized properly
+      const slate = await gatekeeper.slates(slateID);
+      assert.strictEqual(slate.recommender, recommender, 'Recommender was not properly set');
+      assert.strictEqual(utils.bytesAsString(slate.metadataHash), metadataHash, 'Metadata hash is incorrect');
+      const storedRequests = await gatekeeper.slateRequests(slateID);
+      assert.deepStrictEqual(
+        storedRequests.map(r => r.toString()),
+        requestIDs.map(r => r.toString()),
+        'Requests were not properly stored',
+      );
+      // requestIncluded
+      assert.strictEqual(slate.status.toString(), SlateStatus.Unstaked, 'Status should have been `Unstaked`');
+
 
       // Adding a slate should set contest status to NoContest
       const status = await gatekeeper.contestStatus(batchNumber, category);
       assert.strictEqual(status.toString(), '1', 'Contest status should be NoContest (1)');
+    });
+
+    it('should allow creation of an empty slate', async () => {
+      const category = GRANT;
+      const noRequests = [];
+
+      // Create a slate
+      const receipt = await gatekeeper.recommendSlate(
+        batchNumber,
+        category,
+        noRequests,
+        utils.asBytes(metadataHash),
+        { from: recommender },
+      );
+
+      const { slateID } = receipt.logs[0].args;
+      const requests = await gatekeeper.slateRequests(slateID);
+      assert.deepStrictEqual(requests, noRequests);
     });
 
     it('should revert if the metadataHash is empty', async () => {
@@ -212,7 +238,7 @@ contract('Gatekeeper', (accounts) => {
         );
       } catch (error) {
         expectRevert(error);
-        assert(error.toString().includes('no duplicates'));
+        assert(error.toString().includes('Duplicate requests'));
         return;
       }
       assert.fail('Recommended a slate with duplicate requestIDs');
@@ -268,10 +294,8 @@ contract('Gatekeeper', (accounts) => {
       assert.strictEqual(emittedTokens.toString(), stakeAmount.toString(), 'Emitted wrong stake amount');
 
       // Slate should be staked
-      const slateAddress = await gatekeeper.slates(slateID);
-      const slate = await Slate.at(slateAddress);
-      const isStaked = await slate.isStaked();
-      assert.strictEqual(isStaked, true, 'Slate should be staked');
+      const slate = await gatekeeper.slates(slateID);
+      assert.strictEqual(slate.status.toString(), SlateStatus.Staked, 'Slate should be staked');
     });
 
     it('should revert if the slate does not exist', async () => {
@@ -1236,11 +1260,9 @@ contract('Gatekeeper', (accounts) => {
       );
 
       // Winning slate should have status Accepted
-      const slateAddress = await gatekeeper.slates.call(winningSlate);
-      const slate = await Slate.at(slateAddress);
-      const slateStatus = await slate.status();
+      const slate = await gatekeeper.slates(winningSlate);
       assert.strictEqual(
-        slateStatus.toString(),
+        slate.status.toString(),
         SlateStatus.Accepted,
         'Winning slate status should have been Accepted',
       );
@@ -1250,8 +1272,7 @@ contract('Gatekeeper', (accounts) => {
       const statuses = await Promise.all(
         contestSlates.filter(s => s.toString() !== winningSlate.toString())
           .map(id => gatekeeper.slates.call(id)
-            .then(address => Slate.at(address))
-            .then(s => s.status.call())),
+            .then(s => s.status)),
       );
 
       statuses.forEach((_status) => {
@@ -1263,7 +1284,7 @@ contract('Gatekeeper', (accounts) => {
       });
 
       // requests in the slate should all return true for hasPermission
-      const slateRequests = await slate.getRequests.call();
+      const slateRequests = await gatekeeper.slateRequests(winningSlate);
       const permissions = await Promise.all(slateRequests.map(r => gatekeeper.hasPermission(r)));
       permissions.forEach((has) => {
         assert.strictEqual(has, true, 'Request should have permission');
@@ -1603,11 +1624,9 @@ contract('Gatekeeper', (accounts) => {
       );
 
       // Winning slate should have status Accepted
-      const slateAddress = await gatekeeper.slates.call(winningSlate);
-      const slate = await Slate.at(slateAddress);
-      const slateStatus = await slate.status();
+      const slate = await gatekeeper.slates(winningSlate);
       assert.strictEqual(
-        slateStatus.toString(),
+        slate.status.toString(),
         SlateStatus.Accepted,
         'Winning slate status should have been Accepted',
       );
@@ -1617,8 +1636,7 @@ contract('Gatekeeper', (accounts) => {
       const statuses = await Promise.all(
         contestSlates.filter(s => s.toString() !== winningSlate.toString())
           .map(id => gatekeeper.slates.call(id)
-            .then(address => Slate.at(address))
-            .then(s => s.status.call())),
+            .then(s => s.status)),
       );
 
       statuses.forEach((_status) => {
@@ -1630,7 +1648,7 @@ contract('Gatekeeper', (accounts) => {
       });
 
       // requests in the slate should all return true for hasPermission
-      const slateRequests = await slate.getRequests.call();
+      const slateRequests = await gatekeeper.slateRequests(winningSlate);
       const permissions = await Promise.all(slateRequests.map(r => gatekeeper.hasPermission(r)));
       permissions.forEach((has) => {
         assert.strictEqual(has, true, 'Request should have permission');
