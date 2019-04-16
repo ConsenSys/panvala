@@ -136,7 +136,7 @@ const DetailedView: StatelessPage<any> = ({ router }) => {
       <Container>
         <MetaColumn>
           {slate && !isPendingTokens(slate.status) ? (
-            <RouterLink href="/slates/stake" as="/slates/stake">
+            <RouterLink href={`/slates/stake?slateID=${slate.id}`} as="/slates/stake">
               <Button large type="default">
                 {'Stake Tokens'}
               </Button>

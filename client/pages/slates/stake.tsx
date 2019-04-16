@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import { withRouter } from 'next/router';
 import Button from '../../components/Button';
 import CenteredTitle from '../../components/CenteredTitle';
 import CenteredWrapper from '../../components/CenteredWrapper';
@@ -8,6 +9,8 @@ import Modal, { ModalTitle, ModalDescription } from '../../components/Modal';
 import SectionLabel from '../../components/SectionLabel';
 import { Separator } from '../../components/Separator';
 import { COLORS } from '../../styles';
+import { IEthereumContext } from '../../interfaces';
+import { EthereumContext } from '../../components/EthereumProvider';
 
 const Wrapper = styled.div`
   font-family: 'Roboto';
@@ -52,11 +55,11 @@ const BlackSeparator = styled.div`
   border-bottom: 3px solid #606060;
 `;
 
-export const StakeActions = ({ onHandleSetOpenModal }): any => (
+export const StakeActions = ({ onHandleStakeTokens }): any => (
   <ActionsWrapper>
     <FlexWrapper>
       <Button large>Back</Button>
-      <Button large type="default" onClick={() => onHandleSetOpenModal(true)}>
+      <Button large type="default" onClick={onHandleStakeTokens}>
         Confirm and Deposit PAN
       </Button>
     </FlexWrapper>
@@ -66,9 +69,24 @@ export const StakeActions = ({ onHandleSetOpenModal }): any => (
   </ActionsWrapper>
 );
 
-const Stake: React.SFC = () => {
+const Stake: React.SFC<any> = ({ router }) => {
   // modal opener
   const [isOpen, setOpenModal] = React.useState(false);
+  const { account, contracts, onConnectEthereum }: IEthereumContext = React.useContext(
+    EthereumContext
+  );
+  React.useEffect(() => {
+    onConnectEthereum();
+  }, []);
+  console.log('contracts:', contracts);
+
+  async function handleStakeTokens() {
+    const { slateID } = router.query;
+    if (account) {
+      // await contracts.gateKeeper.functions.stakeTokens(slateID);
+    }
+  }
+
   return (
     <>
       <Modal handleClick={() => setOpenModal(false)} isOpen={isOpen}>
@@ -107,11 +125,11 @@ const Stake: React.SFC = () => {
           </CenteredSection>
 
           <Separator />
-          <StakeActions onHandleSetOpenModal={setOpenModal} />
+          <StakeActions onHandleStakeTokens={handleStakeTokens} />
         </CenteredWrapper>
       </Wrapper>
     </>
   );
 };
 
-export default Stake;
+export default withRouter(Stake);
