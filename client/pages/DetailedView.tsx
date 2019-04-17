@@ -204,18 +204,19 @@ const DetailedView: StatelessPage<any> = ({ router }) => {
                 </>
               ) : null}
 
-              {includedInSlates && (
+              {proposal && (
                 <>
                   <SectionLabel lessMargin>{'INCLUDED IN SLATES'}</SectionLabel>
-                  {includedInSlates.map(includedInSlate => (
-                    <RouterLink
-                      href={`/DetailedView?id=${includedInSlate.id}`}
-                      as={`/slates/${includedInSlate.id}`}
-                      key={includedInSlate.id}
-                    >
-                      <DarkText>{includedInSlate.title}</DarkText>
-                    </RouterLink>
-                  ))}
+                  {includedInSlates.length > 0 &&
+                    includedInSlates.map(includedInSlate => (
+                      <RouterLink
+                        href={`/DetailedView?id=${includedInSlate.id}`}
+                        as={`/slates/${includedInSlate.id}`}
+                        key={includedInSlate.id}
+                      >
+                        <DarkText>{includedInSlate.title}</DarkText>
+                      </RouterLink>
+                    ))}
                 </>
               )}
             </TokensSection>
