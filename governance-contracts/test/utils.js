@@ -35,6 +35,16 @@ function expectEvents(receipt, eventNames) {
   );
 }
 
+/**
+ * Assert that the error message contains the expected substring
+ * @param {String} error
+ * @param {String} substring
+ */
+function expectErrorLike(error, substring) {
+  const msg = `Expected error "${error.message}" to include "${substring}"`;
+  assert(error.toString().includes(substring), msg);
+}
+
 function createMultihash(data) {
   const digest = ethUtils.sha256(data);
 
@@ -151,6 +161,49 @@ function generateCommitHash(votes, salt) {
   // const packed = ethers.utils.solidityPack(types, values);
   // console.log(packed);
   return solidityKeccak256(types, values);
+}
+
+const proposalCategories = {
+  GRANT: 0,
+  GOVERNANCE: 1,
+};
+
+/**
+ * Create a grant proposal slate from proposal info
+ * options include: gatekeeper, capacitor, proposals, recommender, metadata, batchNumber
+ * @param {*} options
+ */
+async function grantSlateFromProposals(options) {
+  const {
+    gatekeeper, capacitor, proposals, recommender, metadata, batchNumber,
+  } = options;
+  const beneficiaries = [];
+  const tokenAmounts = [];
+  const metadataHashes = [];
+  proposals.forEach((p) => {
+    beneficiaries.push(p.to);
+    tokenAmounts.push(p.tokens);
+    metadataHashes.push(asBytes(p.metadataHash));
+  });
+
+  const receipt = await capacitor.createManyProposals(
+    beneficiaries,
+    tokenAmounts,
+    metadataHashes,
+    { from: recommender },
+  );
+
+  const requestIDs = receipt.logs.map(l => l.args.requestID);
+
+  await gatekeeper.recommendSlate(
+    batchNumber,
+    proposalCategories.GRANT,
+    requestIDs,
+    asBytes(metadata),
+    { from: recommender },
+  );
+
+  return requestIDs;
 }
 
 /**
@@ -307,6 +360,7 @@ const SlateStatus = {
 const utils = {
   expectRevert,
   expectEvents,
+  expectErrorLike,
   zeroAddress: ethUtils.zeroAddress,
   BN: ethUtils.BN,
   createMultihash,
@@ -318,6 +372,7 @@ const utils = {
   keccak: ethUtils.keccak,
   zeroHash,
   generateCommitHash,
+  grantSlateFromProposals,
   getRequestIDs,
   newSlate,
   voteSingle,
@@ -327,6 +382,7 @@ const utils = {
   SlateStatus,
   encodeBallot,
   getVotes,
+  categories: proposalCategories,
 };
 
 module.exports = utils;

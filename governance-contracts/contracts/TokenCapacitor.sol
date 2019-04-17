@@ -3,6 +3,7 @@ pragma experimental ABIEncoderV2;
 
 import "./Gatekeeper.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
 
 contract TokenCapacitor {
@@ -14,6 +15,7 @@ contract TokenCapacitor {
         uint tokens,
         bytes metadataHash
     );
+    event TokensWithdrawn(uint proposalID, address indexed to, uint numTokens);
 
     // STATE
     using SafeMath for uint;
@@ -25,7 +27,7 @@ contract TokenCapacitor {
         uint tokens;
         address to;
         bytes metadataHash;
-        bool approved;
+        bool withdrawn;
     }
 
     // The proposals created for the TokenCapacitor. Maps requestIDs to proposals.
@@ -52,7 +54,7 @@ contract TokenCapacitor {
             tokens: tokens,
             to: to,
             metadataHash: metadataHash,
-            approved: false
+            withdrawn: false
         });
 
         // Request permission from the Gatekeeper and store the proposal data for later.
@@ -86,5 +88,26 @@ contract TokenCapacitor {
             bytes memory metadataHash = metadataHashes[i];
             createProposal(to, tokens, metadataHash);
         }
+    }
+
+    /**
+    @dev Withdraw tokens associated with a proposal and send them to the named beneficiary. The
+    proposal must have been included in an accepted grant slate.
+    @param proposalID The proposal
+    */
+    function withdrawTokens(uint proposalID) public returns(bool) {
+        require(proposalID < proposalCount, "Invalid proposalID");
+        require(gatekeeper.hasPermission(proposalID), "Proposal has not been approved");
+
+        Proposal memory p = proposals[proposalID];
+
+        require(p.withdrawn == false, "Tokens have already been withdrawn for this proposal");
+
+        IERC20 token = IERC20(gatekeeper.token());
+        proposals[proposalID].withdrawn = true;
+
+        token.transfer(p.to, p.tokens);
+        emit TokensWithdrawn(proposalID, p.to, p.tokens);
+        return true;
     }
 }
