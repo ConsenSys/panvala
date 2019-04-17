@@ -273,13 +273,19 @@ contract Gatekeeper {
     loses in a contest, the amount staked will go to the winner. If it wins, it will be returned.
     @param slateID The slate to stake on
      */
-    function stakeTokens(uint slateID) public payable returns(bool) {
-        require(msg.value == parameters.get('slateStakeAmount'), "Value must equal the required stake");
+    function stakeTokens(uint slateID) public returns(bool) {
         require(slateID < slateCount, "No slate exists with that slateID");
 
-        slates[slateID].status = SlateStatus.Staked;
+        // Staker must have enough tokens
+        uint stakeAmount = parameters.get('slateStakeAmount');
+        require(token.balanceOf(msg.sender) >= stakeAmount, "Insufficient token balance");
 
-        emit SlateStaked(slateID, msg.sender, msg.value);
+        // Transfer tokens and mark the slate as staked
+        // Must successfully transfer tokens from staker to this contract
+        slates[slateID].status = SlateStatus.Staked;
+        require(token.transferFrom(msg.sender, address(this), stakeAmount), "Failed to transfer tokens");
+
+        emit SlateStaked(slateID, msg.sender, stakeAmount);
         return true;
     }
 

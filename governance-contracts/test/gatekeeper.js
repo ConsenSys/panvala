@@ -10,6 +10,7 @@ const BasicToken = artifacts.require('BasicToken');
 
 const {
   expectRevert, newToken, voteSingle, revealVote: reveal, ContestStatus, SlateStatus, commitBallot,
+  BN,
 } = utils;
 
 const GRANT = 0;
@@ -249,7 +250,7 @@ contract('Gatekeeper', (accounts) => {
   });
 
   describe('stakeTokens', () => {
-    const [creator, recommender, staker] = accounts;
+    const [creator, recommender, staker, staker2] = accounts;
     let gatekeeper;
     let token;
     const initialTokens = '20000000';
@@ -269,18 +270,20 @@ contract('Gatekeeper', (accounts) => {
         slateData: 'grant slate',
       }, { from: recommender });
 
-      // Give out tokens
-      const allocatedTokens = '1000';
-      await token.transfer(staker, allocatedTokens, { from: creator });
-      await token.approve(gatekeeper.address, allocatedTokens, { from: staker });
-
       const parameters = await gatekeeper.parameters()
         .then(address => ParameterStore.at(address));
       stakeAmount = await parameters.get('slateStakeAmount');
+
+      // Give out tokens
+      const allocatedTokens = stakeAmount.add(new BN('1000'));
+      await token.transfer(staker, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: staker });
     });
 
     it('should allow a user to stake tokens on a slate', async () => {
-      const receipt = await gatekeeper.stakeTokens(slateID, { from: staker, value: stakeAmount });
+      // Stake tokens
+      const initialBalance = await token.balanceOf(staker);
+      const receipt = await gatekeeper.stakeTokens(slateID, { from: staker });
 
       // Check logs
       const {
@@ -296,12 +299,24 @@ contract('Gatekeeper', (accounts) => {
       // Slate should be staked
       const slate = await gatekeeper.slates(slateID);
       assert.strictEqual(slate.status.toString(), SlateStatus.Staked, 'Slate should be staked');
+
+      // User's balance should have changed
+      const finalBalance = await token.balanceOf(staker);
+      const expectedBalance = initialBalance.sub(new BN(stakeAmount));
+      assert.strictEqual(finalBalance.toString(), expectedBalance.toString(), 'Tokens were not transferred');
+
+      const gatekeeperBalance = await token.balanceOf(gatekeeper.address);
+      assert.strictEqual(
+        gatekeeperBalance.toString(),
+        stakeAmount.toString(),
+        'Gatekeeper did not get the tokens',
+      );
     });
 
     it('should revert if the slate does not exist', async () => {
       const badSlateID = 500;
       try {
-        await gatekeeper.stakeTokens(badSlateID, { from: staker, value: stakeAmount });
+        await gatekeeper.stakeTokens(badSlateID, { from: staker });
       } catch (error) {
         expectRevert(error);
         assert(error.toString().includes('No slate exists'));
@@ -311,26 +326,37 @@ contract('Gatekeeper', (accounts) => {
       assert.fail('Staked on a non-existent stake');
     });
 
-    it('should revert if the amount sent is less than the stake amount', async () => {
-      const amount = stakeAmount.sub(new utils.BN(1));
+    it('should revert if the user does not have enough tokens', async () => {
+      const poorStaker = staker2;
+      await token.transfer(poorStaker, stakeAmount.sub(new BN('1')), { from: creator });
+
+      const initialBalance = await token.balanceOf(poorStaker);
+      assert(initialBalance.lt(stakeAmount), 'Initial balance was not less than the stake amount');
+
       try {
-        await gatekeeper.stakeTokens(slateID, { from: staker, value: amount });
+        await gatekeeper.stakeTokens(slateID, { from: poorStaker });
       } catch (error) {
         expectRevert(error);
+        assert(error.toString().includes('Insufficient token balance'));
         return;
       }
-      assert.fail('Staked with less than the required stake');
+      assert.fail('Staked with insufficient balance');
     });
 
-    it('should revert if the amount sent is greater than the stake amount', async () => {
-      const amount = stakeAmount.add(new utils.BN(1));
+    it('should revert if the token transfer fails', async () => {
+      const thisStaker = staker2;
+      // Give the staker a sufficient balance, but don't approve the Gatekeeper to spend
+      await token.transfer(thisStaker, stakeAmount, { from: creator });
+      const initialBalance = await token.balanceOf(thisStaker);
+      assert(initialBalance.gte(stakeAmount), 'Initial balance was not sufficient for staking');
+
       try {
-        await gatekeeper.stakeTokens(slateID, { from: staker, value: amount });
+        await gatekeeper.stakeTokens(slateID, { from: thisStaker });
       } catch (error) {
         expectRevert(error);
         return;
       }
-      assert.fail('Staked with less than the required stake');
+      assert.fail('Staked even though token transfer failed');
     });
   });
 
