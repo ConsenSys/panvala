@@ -12,6 +12,7 @@ contract Gatekeeper {
     event SlateCreated(uint slateID, address indexed recommender, bytes metadataHash);
     event SlateStaked(uint slateID, address indexed staker, uint numTokens);
     event VotingTokensDeposited(address indexed voter, uint numTokens);
+    event VotingTokensWithdrawn(address indexed voter, uint numTokens);
     event BallotCommitted(uint indexed ballotID, address indexed voter, uint numTokens, bytes32 commitHash);
     event BallotRevealed(uint indexed ballotID, address indexed voter, uint numTokens);
     event ConfidenceVoteCounted(
@@ -309,6 +310,25 @@ contract Gatekeeper {
         require(token.transferFrom(voter, address(this), numTokens), "Failed to transfer tokens");
 
         emit VotingTokensDeposited(voter, numTokens);
+        return true;
+    }
+
+    /**
+    @dev Withdraw `numTokens` vote tokens to the caller and decrease voting power
+    @param numTokens The number of tokens to withdraw
+     */
+    function withdrawVoteTokens(uint numTokens) public returns(bool) {
+        address voter = msg.sender;
+
+        uint balance = voteTokenBalance[voter];
+        require(balance >= numTokens, "Insufficient vote token balance");
+
+        // Transfer tokens to decrease the voter's balance by `numTokens`
+        voteTokenBalance[voter] = balance.sub(numTokens);
+
+        token.transfer(voter, numTokens);
+
+        emit VotingTokensWithdrawn(voter, numTokens);
         return true;
     }
 
