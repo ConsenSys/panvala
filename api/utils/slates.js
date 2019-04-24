@@ -37,9 +37,9 @@ async function getAllSlates() {
   const ids = Array.from(Array(slateCount.toNumber()).keys());
   // console.log('IDs', ids);
 
-  // give access to this variable throughout the loop
-  let slate;
   const slatePromises = ids.map(slateID => {
+    // give access to this variable throughout the chain
+    let slate;
     return gatekeeper
       .slates(slateID)
       .then(slateAddress => {
