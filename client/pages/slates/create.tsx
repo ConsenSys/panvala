@@ -245,7 +245,7 @@ const CreateSlate: React.FunctionComponent<{ router: SingletonRouter }> = ({ rou
         organization: values.organization,
         title: values.title,
         description: values.description,
-        proposalMultihashes: proposalMetadatas.map(md => md.toString()),
+        proposalMultihashes: proposalMultihashes.map(md => md.toString()),
         proposals: proposalMetadatas,
       };
       // console.log(slateMetadata);
