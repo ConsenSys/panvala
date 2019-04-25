@@ -21,6 +21,7 @@ const PanelWrapper = styled.div`
   background: #ffffff;
   border: 2px solid ${COLORS.grey5};
   box-shadow: 0px 5px 5px ${COLORS.grey5};
+  margin-top: 1rem;
 `;
 
 const PanelHeading = styled.div`
@@ -33,7 +34,7 @@ const PanelHeading = styled.div`
 `;
 
 const ItemWrapper = styled.div`
-  background: white;
+  background: ${({ index }) => (index % 2 === 0 ? 'rgba(222, 240, 250, 0.3)' : 'white')};
   padding: 20px;
   border-top: 1px solid ${COLORS.grey5};
   color: #8e9ea6;
@@ -75,8 +76,8 @@ const NotificationItems: React.FunctionComponent<ItemProps> = props => {
   // TODO: if the item has a link, then make a RouterLink
   return (
     <div>
-      {props.items.map(item => (
-        <ItemWrapper>
+      {props.items.map((item, index) => (
+        <ItemWrapper index={index}>
           {item.link ? (
             <a href={item.link}>
               <ItemAction>{item.action}</ItemAction>
