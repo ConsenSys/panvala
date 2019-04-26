@@ -1,20 +1,36 @@
 import * as React from 'react';
 import { withRouter } from 'next/router';
-import Image from './Image';
+import styled from 'styled-components';
 import Button from './Button';
+import Image from './Image';
+import NotificationPanel from './NotificationPanel';
 import RouterLink from './RouterLink';
+
+const StyledHeader = styled.header`
+  margin-bottom: 2rem;
+`;
+const FlexContainer = styled.div`
+  display: flex;
+`;
+const NavWrapper = styled(FlexContainer)`
+  justify-content: space-between;
+  align-items: center;
+`;
+const NavItems = styled(FlexContainer)`
+  justify-content: flex-start;
+`;
 
 const Header: React.FunctionComponent = ({ router }: any) => {
   return (
-    <header className="mb4">
+    <StyledHeader>
       <nav>
-        <div className="flex justify-between items-center">
-          <div className="flex">
+        <NavWrapper>
+          <FlexContainer>
             <RouterLink href="/" as="/">
               <Image src="/static/logo-black.svg" alt="panvala logo" />
             </RouterLink>
-          </div>
-          <div className="flex justify-end">
+          </FlexContainer>
+          <NavItems>
             <RouterLink href="/" as="/">
               <Button
                 active={
@@ -35,10 +51,11 @@ const Header: React.FunctionComponent = ({ router }: any) => {
                 {'Ballots'}
               </Button>
             </RouterLink>
-          </div>
-        </div>
+            <NotificationPanel items={[]} />
+          </NavItems>
+        </NavWrapper>
       </nav>
-    </header>
+    </StyledHeader>
   );
 };
 

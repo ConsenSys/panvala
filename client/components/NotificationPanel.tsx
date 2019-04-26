@@ -1,43 +1,50 @@
 import * as React from 'react';
 import styled from 'styled-components';
 import { COLORS } from '../styles';
+import Image from './Image';
+// import noti from '../static/notification.svg';
+// import notiRed from '../static/notification-red.svg';
 
 const Wrapper = styled.div`
+  font-family: 'Roboto';
   display: flex;
   flex-direction: column;
+  justify-content: center;
   align-items: flex-end;
 `;
 
 const IconWrapper = styled.div`
   width: 20px;
   height: 20px;
-  background: black;
   margin-left: auto;
+  cursor: pointer;
 `;
 
 const PanelWrapper = styled.div`
   width: 344px;
-
+  position: absolute;
   background: #ffffff;
   border: 2px solid ${COLORS.grey5};
   box-shadow: 0px 5px 5px ${COLORS.grey5};
   margin-top: 1rem;
+  top: 70px;
 `;
 
 const PanelHeading = styled.div`
- padding 20px;
- color: ${COLORS.grey2};
+  padding: 1.4rem;
+  color: ${COLORS.grey2};
 
- font-family: Roboto;
- font-style: normal;
- font-weight: bold;
+  font-family: Roboto;
+  font-style: normal;
+  font-weight: bold;
 `;
 
-const ItemWrapper = styled.div`
+const ItemWrapper: any = styled.div`
   background: ${({ index }) => (index % 2 === 0 ? 'rgba(222, 240, 250, 0.3)' : 'white')};
-  padding: 20px;
+  padding: 1.4rem;
   border-top: 1px solid ${COLORS.grey5};
   color: #8e9ea6;
+  font-size: 0.85rem;
 `;
 
 const ItemAction = styled.div`
@@ -49,7 +56,6 @@ const SelectedItem = styled.div`
 `;
 
 interface Props {
-  isOpen: boolean;
   handleClose?(): void;
   handleClick?(): any;
   items: Item[];
@@ -96,15 +102,24 @@ const NotificationItems: React.FunctionComponent<ItemProps> = props => {
 };
 
 const NotificationIcon: React.FunctionComponent<any> = props => {
-  return <IconWrapper />;
+  return (
+    <IconWrapper onClick={props.onHandleClick}>
+      <Image src="/static/notification.svg" alt="notifications" />
+    </IconWrapper>
+  );
 };
 
-// TODO: on click, toggle isOpen
 const NotificationPanel: React.FunctionComponent<Props> = props => {
+  const [isOpen, setOpen] = React.useState(true);
+
+  function handleClick() {
+    setOpen(!isOpen);
+  }
+
   return (
     <Wrapper>
-      <NotificationIcon />
-      {props.isOpen && (
+      <NotificationIcon onHandleClick={handleClick} />
+      {isOpen && (
         <PanelWrapper>
           <PanelHeading>Notifications</PanelHeading>
           <NotificationItems items={props.items} />
