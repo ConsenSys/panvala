@@ -20,6 +20,7 @@ export const AppContext: React.Context<IAppContext> = React.createContext<IAppCo
     votingCloseDate: 0,
     finalityDate: 0,
   },
+  notifications: [],
 });
 
 export const LayoutWrapper = styled.div`
@@ -43,9 +44,11 @@ export default class Layout extends React.Component<IProps, IAppContext> {
       votingCloseDate: 0,
       finalityDate: 0,
     },
+    notifications: [{ action: 'Welcome to Panvala!' }],
     onNotify: () => this.handleNotify,
     onRefreshProposals: () => this.handleRefreshProposals(),
     onRefreshSlates: () => this.handleRefreshSlates(),
+    onHandleNotification: (n: any) => this.handleNotification(n),
   };
 
   constructor(props: IProps) {
@@ -53,6 +56,7 @@ export default class Layout extends React.Component<IProps, IAppContext> {
     this.handleNotify = this.handleNotify.bind(this);
     this.handleRefreshProposals = this.handleRefreshProposals.bind(this);
     this.handleRefreshSlates = this.handleRefreshSlates.bind(this);
+    this.handleNotification = this.handleNotification.bind(this);
   }
 
   // runs once, onload
@@ -151,6 +155,12 @@ export default class Layout extends React.Component<IProps, IAppContext> {
     return this.setState({ slates });
   }
 
+  handleNotification(notification: any) {
+    this.setState({
+      notifications: [...this.state.notifications, notification],
+    });
+  }
+
   render() {
     const { children, title }: IProps = this.props;
     console.log('Layout state:', this.state);
@@ -161,10 +171,10 @@ export default class Layout extends React.Component<IProps, IAppContext> {
           <title>{title}</title>
         </Head>
 
-        <Header />
+        <Header notifications={this.state.notifications} />
         <AppContext.Provider value={this.state}>{children}</AppContext.Provider>
         <ToastContainer
-          position="top-right"
+          position="bottom-right"
           autoClose={8000}
           hideProgressBar={true}
           newestOnTop={false}

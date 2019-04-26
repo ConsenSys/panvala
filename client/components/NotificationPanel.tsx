@@ -14,8 +14,8 @@ const Wrapper = styled.div`
 `;
 
 const IconWrapper = styled.div`
-  width: 20px;
-  height: 20px;
+  width: 25px;
+  height: 25px;
   margin-left: auto;
   cursor: pointer;
 `;
@@ -40,7 +40,8 @@ const PanelHeading = styled.div`
 `;
 
 const ItemWrapper: any = styled.div`
-  background: ${({ index }) => (index % 2 === 0 ? 'rgba(222, 240, 250, 0.3)' : 'white')};
+  /* background: ${({ index }) => (index % 2 === 0 ? 'rgba(222, 240, 250, 0.3)' : 'white')}; */
+  background-color: white;
   padding: 1.4rem;
   border-top: 1px solid ${COLORS.grey5};
   color: #8e9ea6;
@@ -83,7 +84,7 @@ const NotificationItems: React.FunctionComponent<ItemProps> = props => {
   return (
     <div>
       {props.items.map((item, index) => (
-        <ItemWrapper index={index}>
+        <ItemWrapper key={index} index={index}>
           {item.link ? (
             <a href={item.link}>
               <ItemAction>{item.action}</ItemAction>
@@ -104,13 +105,16 @@ const NotificationItems: React.FunctionComponent<ItemProps> = props => {
 const NotificationIcon: React.FunctionComponent<any> = props => {
   return (
     <IconWrapper onClick={props.onHandleClick}>
-      <Image src="/static/notification.svg" alt="notifications" />
+      <Image
+        src={props.unread ? '/static/notification-red.svg' : '/static/notification.svg'}
+        alt="notifications"
+      />
     </IconWrapper>
   );
 };
 
 const NotificationPanel: React.FunctionComponent<Props> = props => {
-  const [isOpen, setOpen] = React.useState(true);
+  const [isOpen, setOpen] = React.useState(false);
 
   function handleClick() {
     setOpen(!isOpen);
@@ -118,7 +122,10 @@ const NotificationPanel: React.FunctionComponent<Props> = props => {
 
   return (
     <Wrapper>
-      <NotificationIcon onHandleClick={handleClick} />
+      <NotificationIcon
+        onHandleClick={handleClick}
+        unread={props.items.length > 0 ? true : false}
+      />
       {isOpen && (
         <PanelWrapper>
           <PanelHeading>Notifications</PanelHeading>

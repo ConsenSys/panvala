@@ -20,7 +20,7 @@ const NavItems = styled(FlexContainer)`
   justify-content: flex-start;
 `;
 
-const Header: React.FunctionComponent = ({ router }: any) => {
+const Header: React.FunctionComponent<any> = ({ router, notifications }: any) => {
   return (
     <StyledHeader>
       <nav>
@@ -51,7 +51,7 @@ const Header: React.FunctionComponent = ({ router }: any) => {
                 {'Ballots'}
               </Button>
             </RouterLink>
-            <NotificationPanel items={[]} />
+            <NotificationPanel items={notifications} />
           </NavItems>
         </NavWrapper>
       </nav>

@@ -8,7 +8,7 @@ import '../reset.css';
 import '../ReactToastify.css';
 import '../components/Toggle.css';
 import EthereumProvider from '../components/EthereumProvider';
-import Layout from '../components/Layout';
+import Layout, { AppContext } from '../components/Layout';
 
 type IProps = {
   Component: any;
@@ -78,9 +78,13 @@ export default class MyApp extends App<IProps, IState> {
           {hasError && errorCode ? (
             <ErrorPage statusCode={errorCode} />
           ) : (
-            <EthereumProvider>
-              <Component {...pageProps} />
-            </EthereumProvider>
+            <AppContext.Consumer>
+              {({ onHandleNotification }) => (
+                <EthereumProvider onHandleNotification={onHandleNotification}>
+                  <Component {...pageProps} />
+                </EthereumProvider>
+              )}
+            </AppContext.Consumer>
           )}
         </Layout>
       </Container>

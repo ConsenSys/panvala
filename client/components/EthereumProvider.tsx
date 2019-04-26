@@ -42,6 +42,10 @@ export default class EthereumProvider extends React.Component<any, IEthereumCont
         const contracts: IContracts = await connectContracts(ethProvider);
         console.log('contracts:', contracts);
 
+        const unlocked = await ethereum._metamask.isUnlocked();
+        if (!unlocked) {
+          this.props.onHandleNotification({ action: 'Sign in with MetaMask' });
+        }
         // pop-up metamask to authorize panvala-app (account signature validation)
         const addresses: string[] = await ethereum.enable();
         // first account

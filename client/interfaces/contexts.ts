@@ -127,6 +127,8 @@ export interface IAppContext {
   onNotify?: any;
   onRefreshProposals?: any;
   onRefreshSlates?: any;
+  notifications?: any[];
+  onHandleNotification?: any;
 }
 
 export interface IEthereumContext {
