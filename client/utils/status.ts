@@ -84,7 +84,7 @@ export function getPrefixAndDeadline(
     deadline = ballot.votingCloseDate;
   } else if (isBallotClosed(ballot)) {
     prefix = 'VOTING CLOSED';
-    deadline = ballot.finalityDate;
+    deadline = ballot.votingCloseDate;
   } else if (isBallotFinalized(ballot)) {
     prefix = 'BALLOT FINALIZED';
     deadline = ballot.finalityDate + 1;
