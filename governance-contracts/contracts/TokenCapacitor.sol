@@ -106,7 +106,7 @@ contract TokenCapacitor {
         IERC20 token = IERC20(gatekeeper.token());
         proposals[proposalID].withdrawn = true;
 
-        token.transfer(p.to, p.tokens);
+        require(token.transfer(p.to, p.tokens), "Failed to transfer tokens");
         emit TokensWithdrawn(proposalID, p.to, p.tokens);
         return true;
     }

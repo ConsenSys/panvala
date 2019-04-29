@@ -320,13 +320,13 @@ contract Gatekeeper {
     function withdrawVoteTokens(uint numTokens) public returns(bool) {
         address voter = msg.sender;
 
-        uint balance = voteTokenBalance[voter];
-        require(balance >= numTokens, "Insufficient vote token balance");
+        uint votingRights = voteTokenBalance[voter];
+        require(votingRights >= numTokens, "Insufficient vote token balance");
 
         // Transfer tokens to decrease the voter's balance by `numTokens`
-        voteTokenBalance[voter] = balance.sub(numTokens);
+        voteTokenBalance[voter] = votingRights.sub(numTokens);
 
-        token.transfer(voter, numTokens);
+        require(token.transfer(voter, numTokens), "Failed to transfer tokens");
 
         emit VotingTokensWithdrawn(voter, numTokens);
         return true;
