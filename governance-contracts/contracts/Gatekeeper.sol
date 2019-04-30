@@ -34,6 +34,7 @@ contract Gatekeeper {
         uint loserVotes
     );
     event RunoffFinalized(uint indexed ballotID, uint indexed category, uint winningSlate);
+    event StakeWithdrawn(uint slateID, address indexed staker, uint numTokens);
 
     // STATE
     using SafeMath for uint256;
@@ -296,6 +297,28 @@ contract Gatekeeper {
         return true;
     }
 
+
+    /**
+    @dev Withdraw tokens previously staked on a slate that was accepted through slate governance.
+    @param slateID The slate to withdraw the stake from
+     */
+    function withdrawStake(uint slateID) public returns(bool) {
+        require(slateID < slateCount, "No slate exists with that slateID");
+
+        // get slate
+        Slate memory slate = slates[slateID];
+
+        require(slate.status == SlateStatus.Accepted, "Slate has not been accepted");
+        require(msg.sender == slate.staker, "Only the original staker can withdraw this stake");
+        require(slate.stake > 0, "Stake has already been withdrawn");
+
+        // Update slate and transfer tokens
+        slates[slateID].stake = 0;
+        require(token.transfer(slate.staker, slate.stake), "Failed to transfer tokens");
+
+        emit StakeWithdrawn(slateID, slate.staker, slate.stake);
+        return true;
+    }
 
     /**
      @dev Deposit `numToken` tokens into the Gatekeeper to use in voting

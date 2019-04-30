@@ -9,12 +9,18 @@ const BasicToken = artifacts.require('BasicToken');
 
 
 const {
-  expectRevert, newToken, voteSingle, revealVote: reveal, ContestStatus, SlateStatus, commitBallot,
+  expectRevert,
+  expectErrorLike,
+  newToken,
+  voteSingle,
+  revealVote: reveal,
+  ContestStatus,
+  SlateStatus,
+  commitBallot,
   BN,
 } = utils;
 
-const GRANT = 0;
-const GOVERNANCE = 1;
+const { GRANT, GOVERNANCE } = utils.categories;
 
 
 contract('Gatekeeper', (accounts) => {
@@ -2052,6 +2058,276 @@ contract('Gatekeeper', (accounts) => {
         const requestID = 0;
         const hasPermission = await gatekeeper.hasPermission.call(requestID);
         assert.strictEqual(hasPermission, false, 'Request should NOT have been approved');
+      });
+    });
+  });
+
+  describe('withdrawStake', () => {
+    const [creator, recommender, alice, bob, carol] = accounts;
+
+    let gatekeeper;
+    let token;
+    let stakeAmount;
+
+    const initialTokens = '20000000';
+    const ballotID = 0;
+
+    beforeEach(async () => {
+      token = await utils.newToken({ initialTokens, from: creator });
+      gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+
+      // create simple ballot with just grants
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GRANT,
+        proposalData: ['a', 'b', 'c'],
+        slateData: 'my slate',
+      }, { from: recommender });
+
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GRANT,
+        proposalData: ['a', 'b', 'd'],
+        slateData: 'competing slate',
+      }, { from: recommender });
+
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GRANT,
+        proposalData: ['h', 'i', 'j'],
+        slateData: 'yet another slate',
+      }, { from: recommender });
+
+      const allocatedTokens = '10000';
+
+      // Make sure the voter has available tokens and the gatekeeper is approved to spend them
+      await token.transfer(alice, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: alice });
+
+      await token.transfer(bob, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: bob });
+
+      await token.transfer(carol, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: carol });
+
+      const parametersAddress = await gatekeeper.parameters();
+      const parameters = await ParameterStore.at(parametersAddress);
+      stakeAmount = await parameters.get('slateStakeAmount');
+
+      // Stake
+      await gatekeeper.stakeTokens(0, { from: alice });
+      await gatekeeper.stakeTokens(1, { from: carol });
+    });
+
+
+    describe('confidence vote', () => {
+      beforeEach(async () => {
+        const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
+        const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 0, 1, '1000', '5678');
+        const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '1000', '9012');
+
+        // Reveal all votes
+        await reveal(gatekeeper, aliceReveal);
+        await reveal(gatekeeper, bobReveal);
+        await reveal(gatekeeper, carolReveal);
+      });
+
+      it('should withdraw tokens after a finalized confidence vote', async () => {
+        // Confidence vote
+        await gatekeeper.countVotes(ballotID, GRANT);
+
+        // Get winner
+        const winner = await gatekeeper.getWinningSlate(ballotID, GRANT);
+        assert.strictEqual(winner.toString(), '0', 'Returned the wrong winner');
+
+        const { staker } = await gatekeeper.slates(winner);
+
+        // initial balances
+        const initialBalance = await token.balanceOf(staker);
+        const initialGatekeeperBalance = await token.balanceOf(gatekeeper.address);
+
+        // Withdraw
+        const receipt = await gatekeeper.withdrawStake(winner, { from: staker });
+        // console.log(receipt);
+
+        // Check logs
+        assert.strictEqual(receipt.logs[0].event, 'StakeWithdrawn', 'Wrong event was emitted');
+
+        const { slateID, staker: emittedStaker, numTokens } = receipt.logs[0].args;
+        assert.strictEqual(slateID.toString(), winner.toString(), 'Emitted wrong slateID');
+        assert.strictEqual(emittedStaker, staker, 'Emitted staker was wrong');
+        assert.strictEqual(
+          numTokens.toString(),
+          stakeAmount.toString(),
+          'Emitted numTokens was wrong',
+        );
+
+        // Tokens should have been transferred
+        const expectedBalance = initialBalance.add(stakeAmount);
+        const finalBalance = await token.balanceOf(staker);
+        assert.strictEqual(
+          expectedBalance.toString(),
+          finalBalance.toString(),
+          "Staker's final balance was incorrect",
+        );
+
+        const expectedGatekeeperBalance = initialGatekeeperBalance.sub(stakeAmount);
+        const finalGatekeeperBalance = await token.balanceOf(gatekeeper.address);
+        assert.strictEqual(
+          expectedGatekeeperBalance.toString(),
+          finalGatekeeperBalance.toString(),
+          "Gatekeeper's final balance was incorrect",
+        );
+      });
+
+      it('should revert if the slate has not been accepted', async () => {
+        await gatekeeper.countVotes(ballotID, GRANT);
+
+        // Get a rejected slate
+        const loser = '1';
+        const { staker } = await gatekeeper.slates(loser);
+
+        try {
+          await gatekeeper.withdrawStake(loser, { from: staker });
+        } catch (error) {
+          expectRevert(error);
+          expectErrorLike(error, 'has not been accepted');
+          return;
+        }
+        assert.fail('Allowed withdrawal from a slate that has not been accepted');
+      });
+
+      it('should revert if the msg.sender is not the original staker', async () => {
+        await gatekeeper.countVotes(ballotID, GRANT);
+
+        // Get winner
+        const winner = await gatekeeper.getWinningSlate(ballotID, GRANT);
+        const { staker } = await gatekeeper.slates(winner);
+
+        const badStaker = carol;
+        assert(badStaker !== staker, 'Wrong staker');
+
+        try {
+          await gatekeeper.withdrawStake(winner, { from: badStaker });
+        } catch (error) {
+          expectRevert(error);
+          expectErrorLike(error, 'the original staker');
+          return;
+        }
+        assert.fail('Allowed someone other than the original staker to withdraw the stake');
+      });
+
+      it('should revert if the stake has already been withdrawn', async () => {
+        await gatekeeper.countVotes(ballotID, GRANT);
+
+        // Get winner
+        const winner = await gatekeeper.getWinningSlate(ballotID, GRANT);
+        const { staker } = await gatekeeper.slates(winner);
+
+        // Withdraw
+        await gatekeeper.withdrawStake(winner, { from: staker });
+
+        // Try to withdraw again
+        try {
+          await gatekeeper.withdrawStake(winner, { from: staker });
+        } catch (error) {
+          expectRevert(error);
+          expectErrorLike(error, 'already been withdrawn');
+          return;
+        }
+        assert.fail('Allowed a stake to be withdrawn twice');
+      });
+
+      it('should revert if the slate is invalid', async () => {
+        const slateID = '5000';
+
+        try {
+          await gatekeeper.withdrawStake(slateID, { from: alice });
+        } catch (error) {
+          expectRevert(error);
+          expectErrorLike(error, 'No slate exists');
+          return;
+        }
+        assert.fail('Allowed withdrawal from a non-existent slate');
+      });
+    });
+
+    describe('runoff vote', () => {
+      beforeEach(async () => {
+        // Run a vote that triggers a runoff
+        const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '800', '1234');
+        const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 1, 2, '900', '5678');
+        const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 2, 0, '1000', '9012');
+
+        // Reveal all votes
+        await reveal(gatekeeper, aliceReveal);
+        await reveal(gatekeeper, bobReveal);
+        await reveal(gatekeeper, carolReveal);
+
+        // Run -- slate 1 wins
+        await gatekeeper.countVotes(ballotID, GRANT);
+        await gatekeeper.countRunoffVotes(ballotID, GRANT);
+      });
+
+      it('should withdraw tokens after a finalized runoff vote', async () => {
+        // Get winner
+        const winner = await gatekeeper.getWinningSlate(ballotID, GRANT);
+        assert.strictEqual(winner.toString(), '1', 'Returned the wrong winner');
+
+        const { staker } = await gatekeeper.slates(winner);
+
+        // initial balances
+        const initialBalance = await token.balanceOf(staker);
+        const initialGatekeeperBalance = await token.balanceOf(gatekeeper.address);
+
+        // Withdraw
+        const receipt = await gatekeeper.withdrawStake(winner, { from: staker });
+        // console.log(receipt);
+
+        // Check logs
+        assert.strictEqual(receipt.logs[0].event, 'StakeWithdrawn', 'Wrong event was emitted');
+
+        const { slateID, staker: emittedStaker, numTokens } = receipt.logs[0].args;
+        assert.strictEqual(slateID.toString(), winner.toString(), 'Emitted wrong slateID');
+        assert.strictEqual(emittedStaker, staker, 'Emitted staker was wrong');
+        assert.strictEqual(
+          numTokens.toString(),
+          stakeAmount.toString(),
+          'Emitted numTokens was wrong',
+        );
+
+        // Tokens should have been transferred
+        const expectedBalance = initialBalance.add(stakeAmount);
+        const finalBalance = await token.balanceOf(staker);
+        assert.strictEqual(
+          expectedBalance.toString(),
+          finalBalance.toString(),
+          "Staker's final balance was incorrect",
+        );
+
+        const expectedGatekeeperBalance = initialGatekeeperBalance.sub(stakeAmount);
+        const finalGatekeeperBalance = await token.balanceOf(gatekeeper.address);
+        assert.strictEqual(
+          expectedGatekeeperBalance.toString(),
+          finalGatekeeperBalance.toString(),
+          "Gatekeeper's final balance was incorrect",
+        );
+      });
+
+      it('should revert if the slate has not been accepted', async () => {
+        // Get a rejected slate
+        const loser = '0';
+        const { staker } = await gatekeeper.slates(loser);
+
+        // Try to withdraw
+        try {
+          await gatekeeper.withdrawStake(loser, { from: staker });
+        } catch (error) {
+          expectRevert(error);
+          expectErrorLike(error, 'has not been accepted');
+          return;
+        }
+        assert.fail('Allowed withdrawal from a slate that has not been accepted');
       });
     });
   });
