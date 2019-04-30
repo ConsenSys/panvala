@@ -296,9 +296,11 @@ contract('Gatekeeper', (accounts) => {
       assert.strictEqual(emittedStaker, staker, 'Emitted wrong staker');
       assert.strictEqual(emittedTokens.toString(), stakeAmount.toString(), 'Emitted wrong stake amount');
 
-      // Slate should be staked
+      // Slate should be staked, with staking info recorded
       const slate = await gatekeeper.slates(slateID);
       assert.strictEqual(slate.status.toString(), SlateStatus.Staked, 'Slate should be staked');
+      assert.strictEqual(slate.stake.toString(), stakeAmount.toString(), 'Wrong stake was saved');
+      assert.strictEqual(slate.staker, staker, 'Wrong staker was saved');
 
       // User's balance should have changed
       const finalBalance = await token.balanceOf(staker);

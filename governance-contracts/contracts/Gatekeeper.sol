@@ -277,16 +277,22 @@ contract Gatekeeper {
     function stakeTokens(uint slateID) public returns(bool) {
         require(slateID < slateCount, "No slate exists with that slateID");
 
+        address staker = msg.sender;
+
         // Staker must have enough tokens
         uint stakeAmount = parameters.get('slateStakeAmount');
-        require(token.balanceOf(msg.sender) >= stakeAmount, "Insufficient token balance");
+        require(token.balanceOf(staker) >= stakeAmount, "Insufficient token balance");
 
-        // Transfer tokens and mark the slate as staked
+        // Transfer tokens and update the slate's staking info
         // Must successfully transfer tokens from staker to this contract
-        slates[slateID].status = SlateStatus.Staked;
-        require(token.transferFrom(msg.sender, address(this), stakeAmount), "Failed to transfer tokens");
+        Slate storage slate = slates[slateID];
+        slate.staker = staker;
+        slate.stake = stakeAmount;
+        slate.status = SlateStatus.Staked;
 
-        emit SlateStaked(slateID, msg.sender, stakeAmount);
+        require(token.transferFrom(staker, address(this), stakeAmount), "Failed to transfer tokens");
+
+        emit SlateStaked(slateID, staker, stakeAmount);
         return true;
     }
 
