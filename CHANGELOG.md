@@ -4,13 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.0]
+## [0.2.0] 2019-04-26
 
 ### Changed
 - Fix `ipfs-mini` was using wrong URL format - switched to `ipfs-http-client`
 - Forcing use of Node 10 for API
 - Fix incorrect display of slate submitter address on main page ([#40](https://github.com/ConsenSys/panvala/issues/40))
 - Fix saving of proposal multihashes in slate metadata
+- Slates viewed on ballot now open in new window.
 
 ### Added
 - Direct links to slates and proposals
