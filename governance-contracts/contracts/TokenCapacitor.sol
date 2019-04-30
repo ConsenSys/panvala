@@ -16,6 +16,7 @@ contract TokenCapacitor {
         bytes metadataHash
     );
     event TokensWithdrawn(uint proposalID, address indexed to, uint numTokens);
+    event Donation(address indexed payer, address indexed donor, uint numTokens, bytes metadataHash);
 
     // STATE
     using SafeMath for uint;
@@ -109,5 +110,24 @@ contract TokenCapacitor {
         require(token.transfer(p.to, p.tokens), "Failed to transfer tokens");
         emit TokensWithdrawn(proposalID, p.to, p.tokens);
         return true;
+    }
+
+    /**
+    @dev Donate tokens on behalf of the given donor.
+    Donor of `address(0)` indicates an unspecified donor.
+    @param donor The account on behalf of which this donation is being made
+    @param tokens The number of tokens to donate
+    @param metadataHash A reference to metadata describing the donation
+     */
+    function donate(address donor, uint tokens, bytes memory metadataHash) public {
+        require(tokens > 0, "Cannot donate zero tokens");
+
+        address payer = msg.sender;
+
+        // transfer tokens from payer
+        IERC20 token = IERC20(gatekeeper.token());
+        require(token.transferFrom(payer, address(this), tokens), "Failed to transfer tokens");
+
+        emit Donation(payer, donor, tokens, metadataHash);
     }
 }

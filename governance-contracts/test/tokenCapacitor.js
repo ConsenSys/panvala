@@ -372,4 +372,188 @@ contract('TokenCapacitor', (accounts) => {
       assert.fail('Allowed withdrawal for an invalid proposalID');
     });
   });
+
+  describe('donate', () => {
+    const [creator, payer, donor] = accounts;
+    let gatekeeper;
+    let token;
+    let capacitor;
+
+    const initialTokens = '100000000';
+    const capacitorSupply = '50000000';
+
+    beforeEach(async () => {
+      token = await utils.newToken({ initialTokens, from: creator });
+      gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+      capacitor = await TokenCapacitor.new(gatekeeper.address, { from: creator });
+
+      // Charge the capacitor
+      await token.transfer(capacitor.address, capacitorSupply, { from: creator });
+
+      // Allocate tokens
+      const allocatedTokens = '1000';
+      await token.transfer(payer, allocatedTokens, { from: creator });
+      await token.approve(capacitor.address, allocatedTokens, { from: payer });
+    });
+
+    it('should let a payer donate tokens', async () => {
+      const selfDonor = payer;
+      const numTokens = '100';
+      const metadataHash = utils.createMultihash('My donation');
+
+      const initialBalance = await token.balanceOf(payer);
+      const initialCapacitorBalance = await token.balanceOf(capacitor.address);
+
+      const receipt = await capacitor.donate(selfDonor, numTokens, utils.asBytes(metadataHash), {
+        from: payer,
+      });
+
+      // Check logs
+      const {
+        payer: emittedPayer,
+        donor: emittedDonor,
+        numTokens: emittedTokens,
+        metadataHash: emittedHash,
+      } = receipt.logs[0].args;
+
+      assert.strictEqual(emittedPayer, payer, 'Emitted payer was incorrect');
+      assert.strictEqual(emittedDonor, selfDonor, 'Emitted donor was incorrect');
+      assert.strictEqual(emittedTokens.toString(), numTokens, 'Emitted token amount was incorrect');
+      assert.strictEqual(utils.bytesAsString(emittedHash), metadataHash, 'Emitted metadataHash was incorrect');
+
+      // Check balances
+      const transferred = new BN(numTokens);
+      const finalBalance = await token.balanceOf(payer);
+      const expectedBalance = initialBalance.sub(transferred);
+      assert.strictEqual(
+        finalBalance.toString(),
+        expectedBalance.toString(),
+        "Payer's final balance was incorrect",
+      );
+
+      const finalCapacitorBalance = await token.balanceOf(capacitor.address);
+      const expectedCapacitorBalance = initialCapacitorBalance.add(transferred);
+      assert.strictEqual(
+        finalCapacitorBalance.toString(),
+        expectedCapacitorBalance.toString(),
+        "Capacitor's final balance was incorrect",
+      );
+    });
+
+    it('should let a payer donate tokens on behalf of a donor', async () => {
+      const numTokens = '100';
+      const metadataHash = utils.createMultihash('My donation');
+
+      const initialBalance = await token.balanceOf(payer);
+      const initialCapacitorBalance = await token.balanceOf(capacitor.address);
+
+      // Donate on behalf of the donor
+      const receipt = await capacitor.donate(donor, numTokens, utils.asBytes(metadataHash), {
+        from: payer,
+      });
+
+      // Check logs
+      const {
+        payer: emittedPayer,
+        donor: emittedDonor,
+        numTokens: emittedTokens,
+        metadataHash: emittedHash,
+      } = receipt.logs[0].args;
+
+      assert.strictEqual(emittedPayer, payer, 'Emitted payer was incorrect');
+      assert.strictEqual(emittedDonor, donor, 'Emitted donor was incorrect');
+      assert.strictEqual(emittedTokens.toString(), numTokens, 'Emitted token amount was incorrect');
+      assert.strictEqual(utils.bytesAsString(emittedHash), metadataHash, 'Emitted metadataHash was incorrect');
+
+      // Check balances
+      const transferred = new BN(numTokens);
+      const finalBalance = await token.balanceOf(payer);
+      const expectedBalance = initialBalance.sub(transferred);
+      assert.strictEqual(
+        finalBalance.toString(),
+        expectedBalance.toString(),
+        "Payer's final balance was incorrect",
+      );
+
+      const finalCapacitorBalance = await token.balanceOf(capacitor.address);
+      const expectedCapacitorBalance = initialCapacitorBalance.add(transferred);
+      assert.strictEqual(
+        finalCapacitorBalance.toString(),
+        expectedCapacitorBalance.toString(),
+        "Capacitor's final balance was incorrect",
+      );
+    });
+
+    it('should let a payer donate tokens on behalf of a unspecified donor (zero address)', async () => {
+      const unspecifiedDonor = utils.zeroAddress();
+
+      const numTokens = '100';
+      const metadataHash = utils.createMultihash('My donation');
+
+      // Donate on behalf of the donor
+      const receipt = await capacitor.donate(
+        unspecifiedDonor,
+        numTokens,
+        utils.asBytes(metadataHash),
+        { from: payer },
+      );
+
+      // Check logs
+      const {
+        payer: emittedPayer,
+        donor: emittedDonor,
+        numTokens: emittedTokens,
+        metadataHash: emittedHash,
+      } = receipt.logs[0].args;
+
+      assert.strictEqual(emittedPayer, payer, 'Emitted payer was incorrect');
+      assert.strictEqual(emittedDonor, unspecifiedDonor, 'Emitted donor was incorrect');
+      assert.strictEqual(emittedTokens.toString(), numTokens, 'Emitted token amount was incorrect');
+      assert.strictEqual(utils.bytesAsString(emittedHash), metadataHash, 'Emitted metadataHash was incorrect');
+    });
+
+    it('should allow a donation with an empty metadataHash', async () => {
+      const numTokens = '100';
+      const emptyHash = '';
+
+      // Donate on behalf of the donor
+      await capacitor.donate(
+        donor,
+        numTokens,
+        utils.asBytes(emptyHash),
+        { from: payer },
+      );
+    });
+
+    it('should revert if the number of tokens is zero', async () => {
+      const numTokens = '0';
+      const metadataHash = utils.createMultihash('My donation');
+
+      // Try to donate zero tokens
+      try {
+        await capacitor.donate(donor, numTokens, utils.asBytes(metadataHash), { from: payer });
+      } catch (error) {
+        expectRevert(error);
+        expectErrorLike(error, 'zero tokens');
+        return;
+      }
+      assert.fail('Allowed a donation of zero tokens');
+    });
+
+    it('should revert if the token transfer fails', async () => {
+      await token.approve(capacitor.address, '0', { from: payer });
+
+      const numTokens = '100';
+      const metadataHash = utils.createMultihash('My donation');
+
+      // Try to donate
+      try {
+        await capacitor.donate(donor, numTokens, utils.asBytes(metadataHash), { from: payer });
+      } catch (error) {
+        expectRevert(error);
+        return;
+      }
+      assert.fail('Donation succeeded even though token transfer failed');
+    });
+  });
 });
