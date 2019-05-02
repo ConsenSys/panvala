@@ -6,9 +6,20 @@ const ethers = require('ethers');
 
 const Gatekeeper = artifacts.require('Gatekeeper');
 const BasicToken = artifacts.require('BasicToken');
+const ParameterStore = artifacts.require('ParameterStore');
+const TokenCapacitor = artifacts.require('TokenCapacitor');
 
-const { BN } = ethUtils;
-const { solidityKeccak256 } = ethers.utils;
+const { solidityKeccak256, defaultAbiCoder: abiCoder } = ethers.utils;
+
+const {
+  BN,
+  abiEncode,
+  asBytes,
+  stripHexPrefix,
+  bytesAsString,
+  zeroHash,
+  sha256,
+} = require('../utils');
 
 /**
  * Check that the error is an EVM `revert`
@@ -45,8 +56,9 @@ function expectErrorLike(error, substring) {
   assert(error.toString().includes(substring), msg);
 }
 
+
 function createMultihash(data) {
-  const digest = ethUtils.sha256(data);
+  const digest = sha256(data);
 
   const hashFunction = Buffer.from('12', 'hex'); // 0x20
   const digestSize = Buffer.from(digest.byteLength.toString(16), 'hex');
@@ -84,59 +96,84 @@ async function newToken(params) {
   });
 }
 
+/**
+ * Convenience function for creating a Gatekeeper
+ * Deploys a Token and a ParameterStore they aren't passed in.
+ * @param {*} options from, parameterStoreAddress, tokenAddress
+ */
 async function newGatekeeper(options) {
-  const { from: creator } = options;
+  const { from: creator, parameterStoreAddress } = options;
   let { tokenAddress } = options;
+  let parameters;
 
   // Deploy a token if the address of one isn't passed in
   if (typeof tokenAddress === 'undefined') {
+    // console.log('deploying token');
     const token = await newToken({ from: creator });
     tokenAddress = token.address;
   }
+  // console.log(`token deployed at ${tokenAddress}`);
+  assert(typeof tokenAddress !== 'undefined', 'Token is undefined');
+
+  // deploy a ParameterStore if the address of one isn't passed in
+  if (typeof parameterStoreAddress === 'undefined') {
+    const stakeAmount = '5000';
+    parameters = await ParameterStore.new(
+      ['slateStakeAmount', 'tokenAddress'],
+      [
+        abiCoder.encode(['uint256'], [stakeAmount]),
+        abiCoder.encode(['address'], [tokenAddress]),
+      ],
+      { from: creator },
+    );
+  } else {
+    parameters = await ParameterStore.at(parameterStoreAddress);
+  }
 
   // console.log('using token at address', tokenAddress);
+  // set token
+  await parameters.setInitialValue(
+    'tokenAddress',
+    abiCoder.encode(['address'], [tokenAddress]),
+    { from: creator },
+  );
 
+  // deploy a Gatekeeeper
   const startTime = '6000';
-  const stakeAmount = '5000';
-  const gatekeeper = await Gatekeeper.new(tokenAddress, startTime, stakeAmount, { from: creator });
+  const gatekeeper = await Gatekeeper.new(startTime, parameters.address, { from: creator });
+  await parameters.setInitialValue(
+    'gatekeeperAddress',
+    abiCoder.encode(['address'], [gatekeeper.address]),
+    { from: creator },
+  );
+
+  // initialize
+  await parameters.init({ from: creator });
+
+  // console.log('tokenAddress', await parameters.getAsAddress('tokenAddress'));
+  // console.log('gatekeeperAddress', await parameters.getAsAddress('gatekeeperAddress'));
 
   return gatekeeper;
 }
 
 
-function asBytes(string) {
-  return ethUtils.toBuffer(string);
-}
-
 /**
- * stripHexPrefix
- * Remove '0x' from the beginning of a string, if present
- * @param {String} value
- * @return String
+ * Set up the Panvala contracts
+ * @param {*} options from, parameterStoreAddress, tokenAddress
  */
-function stripHexPrefix(value) {
-  // assume string
-  const stripped = value.startsWith('0x') ? value.substring(2) : value;
-  return stripped;
-}
+async function newPanvala(options) {
+  const { from: creator } = options;
 
-/**
- * bytesAsString
- * @param {String} bytes Hex-encoded string returned from a contract
- * @return UTF-8 encoded string
- */
-function bytesAsString(bytes) {
-  const stripped = stripHexPrefix(bytes);
-  const decoded = Buffer.from(stripHexPrefix(stripped), 'hex');
-  return decoded.toString();
-}
+  const gatekeeper = await newGatekeeper(options);
+  const parametersAddress = await gatekeeper.parameters();
+  const parameters = await ParameterStore.at(parametersAddress);
+  const tokenAddress = await parameters.getAsAddress('tokenAddress');
+  const token = await BasicToken.at(tokenAddress);
+  const capacitor = await TokenCapacitor.new(parameters.address, { from: creator });
 
-/**
- * zeroHash
- * @dev Return a 32-byte value of all zeros
- */
-function zeroHash() {
-  return ethUtils.zeros(32);
+  return {
+    gatekeeper, parameters, capacitor, token,
+  };
 }
 
 
@@ -365,9 +402,12 @@ const utils = {
   BN: ethUtils.BN,
   createMultihash,
   newGatekeeper,
+  newPanvala,
   asBytes,
   stripHexPrefix,
   bytesAsString,
+  abiCoder,
+  abiEncode,
   newToken,
   keccak: ethUtils.keccak,
   zeroHash,

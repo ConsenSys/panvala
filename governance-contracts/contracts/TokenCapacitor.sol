@@ -2,6 +2,7 @@ pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
 import "./Gatekeeper.sol";
+import "./ParameterStore.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
@@ -21,8 +22,8 @@ contract TokenCapacitor {
     // STATE
     using SafeMath for uint;
 
-    // The address of the associated Gatekeeper contract
-    Gatekeeper public gatekeeper;
+    // The address of the associated ParameterStore contract
+    ParameterStore public parameters;
 
     struct Proposal {
         uint tokens;
@@ -38,8 +39,19 @@ contract TokenCapacitor {
     uint public proposalCount;
 
     // IMPLEMENTATION
-    constructor(Gatekeeper _gatekeeper) public {
-        gatekeeper = _gatekeeper;
+    constructor(ParameterStore _parameters) public {
+        parameters = _parameters;
+
+        require(address(_gatekeeper()) != address(0), "Gatekeeper address cannot be zero");
+        require(address(_token()) != address(0), "Token address cannot be zero");
+    }
+
+    function _gatekeeper() private view returns(Gatekeeper) {
+        return Gatekeeper(parameters.getAsAddress("gatekeeperAddress"));
+    }
+
+    function _token() private view returns(IERC20) {
+        return IERC20(parameters.getAsAddress("tokenAddress"));
     }
 
     /**
@@ -61,7 +73,7 @@ contract TokenCapacitor {
         // Request permission from the Gatekeeper and store the proposal data for later.
         // If the request is approved, a user can execute the proposal by providing the
         // requestID.
-        uint requestID = gatekeeper.requestPermission(metadataHash);
+        uint requestID = _gatekeeper().requestPermission(metadataHash);
         proposals[requestID] = p;
         proposalCount = proposalCount.add(1);
 
@@ -98,13 +110,14 @@ contract TokenCapacitor {
     */
     function withdrawTokens(uint proposalID) public returns(bool) {
         require(proposalID < proposalCount, "Invalid proposalID");
+        Gatekeeper gatekeeper = _gatekeeper();
         require(gatekeeper.hasPermission(proposalID), "Proposal has not been approved");
 
         Proposal memory p = proposals[proposalID];
 
         require(p.withdrawn == false, "Tokens have already been withdrawn for this proposal");
 
-        IERC20 token = IERC20(gatekeeper.token());
+        IERC20 token = _token();
         proposals[proposalID].withdrawn = true;
 
         require(token.transfer(p.to, p.tokens), "Failed to transfer tokens");
@@ -125,7 +138,7 @@ contract TokenCapacitor {
         address payer = msg.sender;
 
         // transfer tokens from payer
-        IERC20 token = IERC20(gatekeeper.token());
+        IERC20 token = _token();
         require(token.transferFrom(payer, address(this), tokens), "Failed to transfer tokens");
 
         emit Donation(payer, donor, tokens, metadataHash);

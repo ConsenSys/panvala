@@ -4,9 +4,10 @@
 const utils = require('./utils');
 
 const TokenCapacitor = artifacts.require('TokenCapacitor');
+const ParameterStore = artifacts.require('ParameterStore');
 
 const {
-  expectRevert, expectErrorLike, voteSingle, revealVote, grantSlateFromProposals, BN,
+  expectRevert, expectErrorLike, voteSingle, revealVote, grantSlateFromProposals, BN, abiCoder,
 } = utils;
 const { GRANT } = utils.categories;
 
@@ -15,36 +16,72 @@ contract('TokenCapacitor', (accounts) => {
   describe('constructor', () => {
     const [creator] = accounts;
     let gatekeeper;
+    let parameters;
 
     beforeEach(async () => {
       // deploy a gatekeeper
       gatekeeper = await utils.newGatekeeper({ from: creator });
+      const parametersAddress = await gatekeeper.parameters();
+      parameters = await ParameterStore.at(parametersAddress);
     });
 
     it('should correctly initialize the capacitor', async () => {
       // deploy a new capacitor
-      const capacitor = await TokenCapacitor.new(gatekeeper.address, { from: creator });
+      const capacitor = await TokenCapacitor.new(parameters.address, { from: creator });
 
-      // Gatekeeper was connected
-      const connectedGatekeeper = await capacitor.gatekeeper();
-      assert.strictEqual(connectedGatekeeper, gatekeeper.address);
+      // ParameterStore was connected
+      const connectedParameterStore = await capacitor.parameters();
+      assert.strictEqual(connectedParameterStore, parameters.address);
 
       // no proposals yet
       const proposalCount = await capacitor.proposalCount();
       assert.strictEqual(proposalCount.toString(), '0', 'There should be no proposals yet');
     });
+
+    it('should fail if the token address is zero', async () => {
+      const badParameters = await ParameterStore.new([], [], { from: creator });
+      await badParameters.setInitialValue(
+        'gatekeeperAddress',
+        abiCoder.encode(['address'], [gatekeeper.address]),
+      );
+      await badParameters.init({ from: creator });
+
+      try {
+        await TokenCapacitor.new(badParameters.address, { from: creator });
+      } catch (error) {
+        expectRevert(error);
+        expectErrorLike(error, 'Token address');
+        return;
+      }
+      assert.fail('Created TokenCapacitor with a zero token address');
+    });
+
+    it('should fail if the Gatekeeper address is zero', async () => {
+      const badParameters = await ParameterStore.new([], [], { from: creator });
+      const tokenAddress = await gatekeeper.token();
+      await badParameters.setInitialValue(
+        'tokenAddress',
+        abiCoder.encode(['address'], [tokenAddress]),
+      );
+      await badParameters.init({ from: creator });
+
+      try {
+        await TokenCapacitor.new(badParameters.address, { from: creator });
+      } catch (error) {
+        expectRevert(error);
+        expectErrorLike(error, 'Gatekeeper address');
+        return;
+      }
+      assert.fail('Created TokenCapacitor with a zero token address');
+    });
   });
 
   describe('createProposal', () => {
     const [creator, beneficiary] = accounts;
-    let gatekeeper;
     let capacitor;
 
     beforeEach(async () => {
-      // deploy a gatekeeper
-      gatekeeper = await utils.newGatekeeper({ from: creator });
-      // deploy a new capacitor
-      capacitor = await TokenCapacitor.new(gatekeeper.address, { from: creator });
+      ({ capacitor } = await utils.newPanvala({ from: creator }));
     });
 
     it('should create a proposal to the appropriate beneficiary', async () => {
@@ -131,14 +168,10 @@ contract('TokenCapacitor', (accounts) => {
 
   describe('createManyProposals', () => {
     const [creator, proposer, beneficiary1, beneficiary2] = accounts;
-    let gatekeeper;
     let capacitor;
 
     beforeEach(async () => {
-      // deploy a gatekeeper
-      gatekeeper = await utils.newGatekeeper({ from: creator });
-      // deploy a new capacitor
-      capacitor = await TokenCapacitor.new(gatekeeper.address, { from: creator });
+      ({ capacitor } = await utils.newPanvala({ from: creator }));
     });
 
     it('should create proposals and emit an event for each', async () => {
@@ -203,9 +236,7 @@ contract('TokenCapacitor', (accounts) => {
     let losingSlate;
 
     beforeEach(async () => {
-      token = await utils.newToken({ initialTokens, from: creator });
-      gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
-      capacitor = await TokenCapacitor.new(gatekeeper.address, { from: creator });
+      ({ gatekeeper, token, capacitor } = await utils.newPanvala({ initialTokens, from: creator }));
 
       // Charge the capacitor
       await token.transfer(capacitor.address, capacitorSupply, { from: creator });
@@ -375,7 +406,7 @@ contract('TokenCapacitor', (accounts) => {
 
   describe('donate', () => {
     const [creator, payer, donor] = accounts;
-    let gatekeeper;
+    // let gatekeeper;
     let token;
     let capacitor;
 
@@ -383,9 +414,7 @@ contract('TokenCapacitor', (accounts) => {
     const capacitorSupply = '50000000';
 
     beforeEach(async () => {
-      token = await utils.newToken({ initialTokens, from: creator });
-      gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
-      capacitor = await TokenCapacitor.new(gatekeeper.address, { from: creator });
+      ({ token, capacitor } = await utils.newPanvala({ initialTokens, from: creator }));
 
       // Charge the capacitor
       await token.transfer(capacitor.address, capacitorSupply, { from: creator });

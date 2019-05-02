@@ -11,36 +11,53 @@ const BasicToken = artifacts.require('BasicToken');
 const {
   expectRevert,
   expectErrorLike,
-  newToken,
   voteSingle,
   revealVote: reveal,
   ContestStatus,
   SlateStatus,
   commitBallot,
   BN,
+  abiCoder,
 } = utils;
 
 const { GRANT, GOVERNANCE } = utils.categories;
 
 
 contract('Gatekeeper', (accounts) => {
+  let parameters;
+
+  before(async () => {
+    const stakeAmount = '5000';
+    const [creator] = accounts;
+    const token = await BasicToken.deployed();
+
+    parameters = await ParameterStore.new(
+      ['slateStakeAmount'],
+      [abiCoder.encode(['uint256'], [stakeAmount])],
+      { from: creator },
+    );
+    await parameters.setInitialValue(
+      'tokenAddress',
+      abiCoder.encode(['address'], [token.address]),
+      { from: creator },
+    );
+    await parameters.init({ from: creator });
+  });
+
   describe('constructor', () => {
     const [creator] = accounts;
+    const startTime = '6000';
 
     it('should correctly initialize the gatekeeper', async () => {
-      const startTime = '6000';
-      const stakeAmount = '5000';
-      const token = await newToken({ from: creator });
       const gatekeeper = await Gatekeeper.new(
-        token.address,
-        startTime, stakeAmount, {
-          from: creator,
-        },
+        startTime,
+        parameters.address,
+        { from: creator },
       );
 
       // Check initial values
-      const actualToken = await gatekeeper.token({ from: creator });
-      assert.strictEqual(actualToken.toString(), token.address);
+      const actualParams = await gatekeeper.parameters({ from: creator });
+      assert.strictEqual(actualParams.toString(), parameters.address);
 
       // start time
       const actualStartTime = await gatekeeper.startTime({ from: creator });
@@ -50,31 +67,33 @@ contract('Gatekeeper', (accounts) => {
       const batchLength = await gatekeeper.batchLength();
       const expected = 604800 * 13;
       assert.strictEqual(batchLength.toString(), expected.toString());
+    });
 
-      // mutable parameters
-      const ps = await gatekeeper.parameters();
-      const parameters = await ParameterStore.at(ps);
+    it('should fail if the parameter store address is zero', async () => {
+      const parameterStoreAddress = utils.zeroAddress();
 
-      // stake amount
-      const actualStakeAmount = await parameters.get('slateStakeAmount');
-      assert.strictEqual(actualStakeAmount.toString(), stakeAmount.toString());
+      try {
+        await Gatekeeper.new(startTime, parameterStoreAddress, { from: creator });
+      } catch (error) {
+        expectRevert(error);
+        return;
+      }
+      assert.fail('Created Gatekeeper with a zero parameter store address');
     });
 
     it('should fail if the token address is zero', async () => {
-      const tokenAddress = utils.zeroAddress();
-
-      const startTime = '6000';
-      const stakeAmount = '5000';
+      const badParameters = await ParameterStore.new(
+        ['slateStakeAmount'],
+        [abiCoder.encode(['uint256'], ['1000'])],
+        { from: creator },
+      );
+      await badParameters.init({ from: creator });
 
       try {
-        await Gatekeeper.new(
-          tokenAddress,
-          startTime, stakeAmount, {
-            from: creator,
-          },
-        );
+        await Gatekeeper.new(startTime, badParameters.address, { from: creator });
       } catch (error) {
         expectRevert(error);
+
         return;
       }
       assert.fail('Created Gatekeeper with a zero token address');
@@ -84,14 +103,27 @@ contract('Gatekeeper', (accounts) => {
   // Test the helper for creating gatekeepers
   describe('newGatekeeper helper', () => {
     const [creator] = accounts;
+    let createdParameters;
+
+    beforeEach(async () => {
+      createdParameters = await ParameterStore.new(
+        ['slateStakeAmount'],
+        [abiCoder.encode(['uint256'], ['5000'])],
+        { from: creator },
+      );
+    });
 
     it('should create a gatekeeper', async () => {
       const initialTokens = '10000000';
       const token = await utils.newToken({ initialTokens, from: creator });
-      const gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+      const gatekeeper = await utils.newGatekeeper({
+        parameterStoreAddress: createdParameters.address,
+        tokenAddress: token.address,
+        from: creator,
+      });
 
-      const t = await gatekeeper.token();
-      assert.strictEqual(t, token.address);
+      const pa = await gatekeeper.parameters();
+      assert.strictEqual(pa, createdParameters.address);
     });
   });
 
@@ -276,9 +308,7 @@ contract('Gatekeeper', (accounts) => {
         slateData: 'grant slate',
       }, { from: recommender });
 
-      const parameters = await gatekeeper.parameters()
-        .then(address => ParameterStore.at(address));
-      stakeAmount = await parameters.get('slateStakeAmount');
+      stakeAmount = await parameters.getAsUint('slateStakeAmount');
 
       // Give out tokens
       const allocatedTokens = stakeAmount.add(new BN('1000'));
@@ -668,7 +698,10 @@ contract('Gatekeeper', (accounts) => {
     const ballotID = 0;
 
     beforeEach(async () => {
-      gatekeeper = await utils.newGatekeeper({ from: creator });
+      gatekeeper = await utils.newGatekeeper({
+        // parameterStoreAddress: parameters.address,
+        from: creator,
+      });
 
       const allocatedTokens = '1000';
 
@@ -2110,9 +2143,7 @@ contract('Gatekeeper', (accounts) => {
       await token.transfer(carol, allocatedTokens, { from: creator });
       await token.approve(gatekeeper.address, allocatedTokens, { from: carol });
 
-      const parametersAddress = await gatekeeper.parameters();
-      const parameters = await ParameterStore.at(parametersAddress);
-      stakeAmount = await parameters.get('slateStakeAmount');
+      stakeAmount = await parameters.getAsUint('slateStakeAmount');
 
       // Stake
       await gatekeeper.stakeTokens(0, { from: alice });
