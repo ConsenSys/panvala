@@ -487,6 +487,77 @@ contract('Gatekeeper', (accounts) => {
     });
   });
 
+  describe('withdrawVoteTokens', () => {
+    const [creator, voter] = accounts;
+    let gatekeeper;
+    let token;
+    const initialTokens = '20000000';
+
+    beforeEach(async () => {
+      token = await utils.newToken({ initialTokens, from: creator });
+      gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+
+      // Give the user some tokens
+      const allocatedTokens = '1000';
+      await token.transfer(voter, allocatedTokens, { from: creator });
+
+      // Deposit the tokens
+      await token.approve(gatekeeper.address, allocatedTokens, { from: voter });
+      await gatekeeper.depositVoteTokens(allocatedTokens, { from: voter });
+    });
+
+    it('should decrease the user\'s voting balance', async () => {
+      const numTokens = '1000';
+      const initialBalance = await token.balanceOf(voter);
+      const initialVoteBalance = await gatekeeper.voteTokenBalance(voter);
+
+      // Withdraw tokens
+      const receipt = await gatekeeper.withdrawVoteTokens(numTokens, { from: voter });
+
+      // Check logs
+      const { voter: emittedVoter, numTokens: emittedTokens } = receipt.logs[0].args;
+      assert.strictEqual(emittedVoter, voter, 'Emitted voter was wrong');
+      assert.strictEqual(emittedTokens.toString(), numTokens, 'Emitted numTokens was wrong');
+
+      // Check balances
+      const amount = new BN(numTokens);
+      const balance = await token.balanceOf(voter);
+      const expectedBalance = initialBalance.add(amount);
+      assert.strictEqual(
+        balance.toString(),
+        expectedBalance.toString(),
+        'Incorrect final token balance',
+      );
+
+      const voteBalance = await gatekeeper.voteTokenBalance(voter);
+      const expectedVoteBalance = initialVoteBalance.sub(amount);
+      assert.strictEqual(
+        voteBalance.toString(),
+        expectedVoteBalance.toString(),
+        'Incorrect final vote token balance',
+      );
+    });
+
+    it('should fail if the amount is greater than the user\'s vote token balance', async () => {
+      const numTokens = '5000';
+
+      const initialVoteBalance = await gatekeeper.voteTokenBalance(voter);
+      assert(initialVoteBalance.lt(new BN(numTokens)), 'Balance should have been less than numTokens');
+
+      // Withdraw tokens
+      try {
+        await gatekeeper.withdrawVoteTokens(numTokens, { from: voter });
+      } catch (error) {
+        expectRevert(error);
+        assert(error.toString().includes('Insufficient vote token balance'));
+        return;
+      }
+      assert.fail('Withdrew more vote tokens than allowed');
+    });
+
+    it('should fail if the token transfer fails');
+  });
+
   describe('commitBallot', () => {
     const [creator, voter] = accounts;
     let gatekeeper;

@@ -2,10 +2,28 @@
 
 [![CircleCI](https://circleci.com/gh/ConsenSys/panvala/tree/develop.svg?style=shield)](https://circleci.com/gh/ConsenSys/panvala/tree/develop)
 
-Panvala wraps the existing ecosystem of grant funders, corporate open source projects and volunteers with a token that gives them all a shared incentive to find sustainable funding together.
+Built by ConsenSys, Panvala is a platform that helps fund the work that the whole Ethereum community depends on. This Panvala platform is used by PAN token holders to determine which grant applications should be funded using a process called slate governance.
 
 ## Documentation
 Documentation is available at [https://panvala.gitbook.io/docs](https://panvala.gitbook.io/docs)
+
+## Release Notes
+
+### 0.2.0
+
+- Users now have a *notification panel* where they can find important information after signing in with MetaMask.
+- *Vote counting* logic and contracts have been implemented.
+- Various UI improvements, dependency updates, and bug fixes (more details in Changelog).
+
+### 0.1.0
+
+- The *token capacitor*, a smart contract holding all available tokens for grant allocation, and releasing them on a quarterly schedule.
+- Grant applicants are able to create a grant proposal. *Grant proposals* created on the platform are public and can be evaluated by the whole of the Panvala community.
+- Grant proposals can be selected by the platform’s token holders who curate lists of grant proposals they recommend to be funded. These lists of grant proposals are called *slates*. 
+- Slates themselves can be viewed by the platform’s token holders and evaluated as a part of the platform’s quarterly *ballot*. 
+- The platform’s ballot includes a ranked choice voting system that empowers the platform’s token holders to *commit votes* they feel confident in.
+- Token holders are able to connect their MetaMask wallet to complete all of the above.
+
 
 ## Quickstart
 Set up your environment for local development.
