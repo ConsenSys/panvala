@@ -2,6 +2,7 @@ pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
 import "./ParameterStore.sol";
+import "./TokenCapacitor.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
@@ -716,6 +717,43 @@ contract Gatekeeper {
         slates[runoffLoser].status = SlateStatus.Rejected;
 
         emit RunoffFinalized(ballotID, categoryID, runoffWinner);
+    }
+
+
+    /**
+     @dev Send tokens of the rejected slates to the token capacitor.
+     @param ballotID The ballot
+     @param categoryID The category
+     */
+    function donateChallengerStakes(uint256 ballotID, uint256 categoryID) public {
+        Contest memory contest = ballots[ballotID].contests[categoryID];
+        require(
+            contest.status == ContestStatus.VoteFinalized ||
+            contest.status == ContestStatus.RunoffFinalized,
+            "Contest is not finalized"
+        );
+
+        address tokenCapacitorAddress = parameters.getAsAddress("tokenCapacitorAddress");
+        TokenCapacitor capacitor = TokenCapacitor(tokenCapacitorAddress);
+        IERC20 token = token();
+        bytes memory emptyHash = new bytes(0);
+
+        uint256[] memory allSlates = contestSlates(ballotID, categoryID);
+        uint256 numSlates = allSlates.length;
+        for (uint256 i = 0; i < numSlates; i++) {
+            uint256 slateID = allSlates[i];
+            Slate storage slate = slates[slateID];
+            if (slate.status == SlateStatus.Rejected) {
+                uint256 donationAmount = slate.stake;
+                slate.stake = 0;
+
+                // NOTE: temporary until only staked slates are included in a contest
+                if (donationAmount > 0) {
+                    token.approve(address(capacitor), donationAmount);
+                    capacitor.donate(address(this), donationAmount, emptyHash);
+                }
+            }
+        }
     }
 
     /**

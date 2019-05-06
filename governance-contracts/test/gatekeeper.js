@@ -23,6 +23,47 @@ const {
 const { GRANT, GOVERNANCE } = utils.categories;
 
 
+async function doRunoff(gatekeeper, ballotID, voters, options) {
+  const { finalize = true } = options || {};
+  const [alice, bob, carol] = voters;
+
+  // Run a vote that triggers a runoff
+  const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '800', '1234');
+  const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 1, 2, '900', '5678');
+  const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 2, 0, '1000', '9012');
+
+  // Reveal all votes
+  await reveal(gatekeeper, aliceReveal);
+  await reveal(gatekeeper, bobReveal);
+  await reveal(gatekeeper, carolReveal);
+
+  // Run -- slate 1 wins
+  if (finalize) {
+    await gatekeeper.countVotes(ballotID, GRANT);
+    await gatekeeper.countRunoffVotes(ballotID, GRANT);
+  }
+}
+
+async function doConfidenceVote(gatekeeper, ballotID, voters, options) {
+  const { finalize = true } = options || {};
+  const [alice, bob, carol] = voters;
+
+  const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
+  const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 0, 1, '1000', '5678');
+  const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '1000', '9012');
+
+  // Reveal all votes
+  await reveal(gatekeeper, aliceReveal);
+  await reveal(gatekeeper, bobReveal);
+  await reveal(gatekeeper, carolReveal);
+
+  // Run - slate 0 wins
+  if (finalize) {
+    await gatekeeper.countVotes(ballotID, GRANT);
+  }
+}
+
+
 contract('Gatekeeper', (accounts) => {
   let parameters;
 
@@ -2359,6 +2400,183 @@ contract('Gatekeeper', (accounts) => {
           return;
         }
         assert.fail('Allowed withdrawal from a slate that has not been accepted');
+      });
+    });
+  });
+
+  describe('donateChallengerStakes', () => {
+    const [creator, recommender, alice, bob, carol] = accounts;
+
+    let gatekeeper;
+    let token;
+    let capacitor;
+
+    const initialTokens = '20000000';
+    const ballotID = 0;
+
+    beforeEach(async () => {
+      ({ gatekeeper, token, capacitor } = await utils.newPanvala({ initialTokens, from: creator }));
+
+      // create simple ballot with just grants
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GRANT,
+        proposalData: ['a', 'b', 'c'],
+        slateData: 'my slate',
+      }, { from: recommender });
+
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GRANT,
+        proposalData: ['a', 'b', 'd'],
+        slateData: 'competing slate',
+      }, { from: recommender });
+
+      await utils.newSlate(gatekeeper, {
+        batchNumber: ballotID,
+        category: GRANT,
+        proposalData: ['h', 'i', 'j'],
+        slateData: 'yet another slate',
+      }, { from: recommender });
+
+      const allocatedTokens = '10000';
+
+      // Make sure the voter has available tokens and the gatekeeper is approved to spend them
+      await token.transfer(alice, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: alice });
+
+      await token.transfer(bob, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: bob });
+
+      await token.transfer(carol, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: carol });
+
+      // Stake
+      await gatekeeper.stakeTokens(0, { from: alice });
+      await gatekeeper.stakeTokens(1, { from: carol });
+    });
+
+
+    describe('confidence vote', () => {
+      it('should send tokens to the capacitor after a finalized confidence vote', async () => {
+        await doConfidenceVote(gatekeeper, ballotID, [alice, bob, carol]);
+
+        // initial balances
+        const initialTokenCapacitorBalance = await token.balanceOf(capacitor.address);
+        const initialGatekeeperBalance = await token.balanceOf(gatekeeper.address);
+
+        // get slates from the contest
+        const slateIDs = await gatekeeper.contestSlates(ballotID, GRANT);
+
+        const losingSlates = await utils.getLosingSlates(gatekeeper, slateIDs);
+        const totalDonation = losingSlates.map(s => s.stake)
+          .reduce((total, num) => total.add(num), new BN(0));
+
+        // Donate tokens
+        await gatekeeper.donateChallengerStakes(ballotID, GRANT, { from: creator });
+
+        // Tokens should have been transferred
+        const expectedTokenCapacitorBalance = initialTokenCapacitorBalance.add(totalDonation);
+        const finalTokenCapacitorBalance = await token.balanceOf(capacitor.address);
+        assert.strictEqual(
+          expectedTokenCapacitorBalance.toString(),
+          finalTokenCapacitorBalance.toString(),
+          "Token capacitor's final balance was incorrect",
+        );
+
+        const expectedGatekeeperBalance = initialGatekeeperBalance.sub(totalDonation);
+        const finalGatekeeperBalance = await token.balanceOf(gatekeeper.address);
+        assert.strictEqual(
+          expectedGatekeeperBalance.toString(),
+          finalGatekeeperBalance.toString(),
+          "Gatekeeper's final balance was incorrect",
+        );
+
+        // Slates should have zero stake
+        const resultingSlates = await utils.getLosingSlates(gatekeeper, slateIDs);
+        const remainingStake = resultingSlates.map(s => s.stake)
+          .reduce((total, num) => total.add(num), new BN(0));
+        assert.strictEqual(
+          remainingStake.toString(),
+          '0',
+          'All of the losing stake should have been donated',
+        );
+      });
+
+      it('should revert if the contest is not finalized', async () => {
+        await doConfidenceVote(gatekeeper, ballotID, [alice, bob, carol], { finalize: false });
+
+        // Try to donate
+        try {
+          await gatekeeper.donateChallengerStakes(ballotID, GRANT, { from: creator });
+        } catch (error) {
+          expectRevert(error);
+          expectErrorLike(error, 'not finalized');
+          return;
+        }
+        assert.fail('Allowed donation of challenger stakes for an unfinalized contest');
+      });
+    });
+
+
+    describe('runoff vote', () => {
+      it('should send tokens to the capacitor after a finalized runoff', async () => {
+        await doRunoff(gatekeeper, ballotID, [alice, bob, carol]);
+
+        // initial balances
+        const initialTokenCapacitorBalance = await token.balanceOf(capacitor.address);
+        const initialGatekeeperBalance = await token.balanceOf(gatekeeper.address);
+
+        // get slates from the contest
+        const slateIDs = await gatekeeper.contestSlates(ballotID, GRANT);
+
+        const losingSlates = await utils.getLosingSlates(gatekeeper, slateIDs);
+        const totalDonation = losingSlates.map(s => s.stake)
+          .reduce((total, num) => total.add(num), new BN(0));
+
+        // Donate tokens
+        await gatekeeper.donateChallengerStakes(ballotID, GRANT, { from: creator });
+
+        // Tokens should have been transferred
+        const expectedTokenCapacitorBalance = initialTokenCapacitorBalance.add(totalDonation);
+        const finalTokenCapacitorBalance = await token.balanceOf(capacitor.address);
+        assert.strictEqual(
+          expectedTokenCapacitorBalance.toString(),
+          finalTokenCapacitorBalance.toString(),
+          "Token capacitor's final balance was incorrect",
+        );
+
+        const expectedGatekeeperBalance = initialGatekeeperBalance.sub(totalDonation);
+        const finalGatekeeperBalance = await token.balanceOf(gatekeeper.address);
+        assert.strictEqual(
+          expectedGatekeeperBalance.toString(),
+          finalGatekeeperBalance.toString(),
+          "Gatekeeper's final balance was incorrect",
+        );
+
+        // Slates should have zero stake
+        const resultingSlates = await utils.getLosingSlates(gatekeeper, slateIDs);
+        const remainingStake = resultingSlates.map(s => s.stake)
+          .reduce((total, num) => total.add(num), new BN(0));
+        assert.strictEqual(
+          remainingStake.toString(),
+          '0',
+          'All of the losing stake should have been donated',
+        );
+      });
+
+      it('should revert if the contest is not finalized', async () => {
+        await doRunoff(gatekeeper, ballotID, [alice, bob, carol], { finalize: false });
+
+        // Try to donate
+        try {
+          await gatekeeper.donateChallengerStakes(ballotID, GRANT, { from: creator });
+        } catch (error) {
+          expectRevert(error);
+          expectErrorLike(error, 'not finalized');
+          return;
+        }
+        assert.fail('Allowed donation of challenger stakes for an unfinalized contest');
       });
     });
   });

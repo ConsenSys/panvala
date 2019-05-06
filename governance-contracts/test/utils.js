@@ -99,10 +99,10 @@ async function newToken(params) {
 /**
  * Convenience function for creating a Gatekeeper
  * Deploys a Token and a ParameterStore they aren't passed in.
- * @param {*} options from, parameterStoreAddress, tokenAddress
+ * @param {*} options from, parameterStoreAddress, tokenAddress, init
  */
 async function newGatekeeper(options) {
-  const { from: creator, parameterStoreAddress } = options;
+  const { from: creator, parameterStoreAddress, init = true } = options;
   let { tokenAddress } = options;
   let parameters;
 
@@ -148,7 +148,9 @@ async function newGatekeeper(options) {
   );
 
   // initialize
-  await parameters.init({ from: creator });
+  if (init) {
+    await parameters.init({ from: creator });
+  }
 
   // console.log('tokenAddress', await parameters.getAsAddress('tokenAddress'));
   // console.log('gatekeeperAddress', await parameters.getAsAddress('gatekeeperAddress'));
@@ -164,12 +166,22 @@ async function newGatekeeper(options) {
 async function newPanvala(options) {
   const { from: creator } = options;
 
-  const gatekeeper = await newGatekeeper(options);
+  const gatekeeper = await newGatekeeper({ ...options, init: false });
   const parametersAddress = await gatekeeper.parameters();
   const parameters = await ParameterStore.at(parametersAddress);
   const tokenAddress = await parameters.getAsAddress('tokenAddress');
   const token = await BasicToken.at(tokenAddress);
   const capacitor = await TokenCapacitor.new(parameters.address, { from: creator });
+
+  await parameters.setInitialValue(
+    'tokenCapacitorAddress',
+    abiCoder.encode(['address'], [capacitor.address]),
+    { from: creator },
+  );
+  // console.log(`ParameterStore: ${parameters.address}`);
+  // console.log(`Gatekeeper: ${gatekeeper.address}`);
+  // console.log(`TokenCapacitor: ${capacitor.address}`);
+  // console.log(`Token: ${token.address}`);
 
   return {
     gatekeeper, parameters, capacitor, token,
@@ -394,6 +406,13 @@ const SlateStatus = {
   Accepted: '3',
 };
 
+
+async function getLosingSlates(gatekeeper, slateIDs) {
+  const ls = await Promise.all(slateIDs.map(id => gatekeeper.slates(id)));
+  return ls.filter(s => s.status.toString() === SlateStatus.Rejected);
+}
+
+
 const utils = {
   expectRevert,
   expectEvents,
@@ -423,6 +442,7 @@ const utils = {
   encodeBallot,
   getVotes,
   categories: proposalCategories,
+  getLosingSlates,
 };
 
 module.exports = utils;
