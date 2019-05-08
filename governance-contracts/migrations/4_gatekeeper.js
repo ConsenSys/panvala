@@ -8,7 +8,7 @@ const { abiEncode } = require('../utils');
 
 // eslint-disable-next-line func-names
 module.exports = async function (deployer) {
-  const firstEpochTime = new Date('01 Feb 2019 GMT');
+  const firstEpochTime = new Date('12:00 01 Feb 2019 EST');
   const startTime = Math.floor(firstEpochTime / 1000);
 
   const parameters = await ParameterStore.deployed();

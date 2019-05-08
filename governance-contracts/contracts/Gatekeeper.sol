@@ -749,7 +749,10 @@ contract Gatekeeper {
 
                 // NOTE: temporary until only staked slates are included in a contest
                 if (donationAmount > 0) {
-                    token.approve(address(capacitor), donationAmount);
+                    require(
+                        token.approve(address(capacitor), donationAmount),
+                        "Failed to approve Gatekeeper to spend tokens"
+                    );
                     capacitor.donate(address(this), donationAmount, emptyHash);
                 }
             }

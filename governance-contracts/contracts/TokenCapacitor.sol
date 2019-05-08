@@ -132,7 +132,7 @@ contract TokenCapacitor {
     @param tokens The number of tokens to donate
     @param metadataHash A reference to metadata describing the donation
      */
-    function donate(address donor, uint tokens, bytes memory metadataHash) public {
+    function donate(address donor, uint tokens, bytes memory metadataHash) public returns(bool) {
         require(tokens > 0, "Cannot donate zero tokens");
 
         address payer = msg.sender;
@@ -142,5 +142,6 @@ contract TokenCapacitor {
         require(token.transferFrom(payer, address(this), tokens), "Failed to transfer tokens");
 
         emit Donation(payer, donor, tokens, metadataHash);
+        return true;
     }
 }
