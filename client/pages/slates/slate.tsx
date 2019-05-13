@@ -118,6 +118,12 @@ export const SlateSidebar = ({ slate, requiredStake }: IStakeSidebarProps): any 
             If you want the Panvala Awards Committee to keep making recommendations and approve of
             the work they have done, you should stake tokens on this slate.
           </div>
+          <div className="f6 lh-copy">
+            Tokens staked on a winning slate are returned to the slate recommender, along with any
+            invoice proposal the slate recommender uses to compensate their work. Slates that are
+            rejected by token holders have their token donated to the system to fund the social
+            good.
+          </div>
         </TokensSection>
 
         <Separator />
@@ -211,7 +217,7 @@ const Slate: StatelessPage<IProps> = ({ query: { id } }) => {
                         title={proposal.title}
                         subtitle={proposal.tokensRequested + ' Tokens Requested'}
                         description={proposal.summary}
-                        category={`${proposal.category} PROPOSAL`}
+                        category={`${slate.category} PROPOSAL`}
                       />
                     </RouterLink>
                   </div>
