@@ -20,6 +20,7 @@ import Stepper, { StepperDialog } from '../../components/Stepper';
 import StepperMetamaskDialog from '../../components/StepperMetamaskDialog';
 import { sendAndWaitForTransaction } from '../../utils/transaction';
 import { COLORS } from '../../styles';
+import { formatPanvalaUnits } from '../../utils/format';
 
 const Wrapper = styled.div`
   font-family: 'Roboto';
@@ -72,13 +73,15 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
 
   let steps = [
     <StepperDialog>
-      By confirming this transaction, you approve to spend 500 PAN tokens to stake for this slate.
+      {`By confirming this transaction, you approve to spend ${formatPanvalaUnits(
+        slateStakeAmount
+      )} PAN tokens to stake for this slate.`}
       {/* To prove you are the account owner, please sign this message. This is similar to signing in
       with a password. */}
     </StepperDialog>,
     <StepperDialog>
-      Waiting to confirm in MetaMask. By confirming this transaction, you are spending 500 PAN
-      tokens to stake for this slate.
+      {`Waiting to confirm in MetaMask. By confirming this transaction, you are spending
+      ${formatPanvalaUnits(slateStakeAmount)} tokens to stake for this slate.`}
     </StepperDialog>,
   ];
 
@@ -148,7 +151,7 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
         <StepperMetamaskDialog />
         <MetamaskButton
           handleClick={approveOrStakeTokens}
-          text={approved ? 'Stake Tokens' : 'Approve 500 PAN'}
+          text={approved ? 'Stake Tokens' : `Approve ${slateStakeAmount} PAN`}
         />
       </Stepper>
 
@@ -184,19 +187,24 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
           <CenteredSection>
             <SectionLabel>TOKEN DEPOSIT</SectionLabel>
             <SectionStatement>
-              A deposit of <strong>{500} PAN</strong> tokens is required.
+              A deposit of <strong>{`${formatPanvalaUnits(slateStakeAmount)}`}</strong> tokens is
+              required.
             </SectionStatement>
             <P>
-              After a slate has tokens staked, the Panvala token holding community will have the
+              {`After a slate has tokens staked, the Panvala token holding community will have the
               ability to vote for or against the slate when the voting period begins. If the slate
-              that you stake tokens on is successful, you will receive a supporter reward of 500
-              PAN. If the slate that you stake tokens on is unsuccessful, you will lose your token
-              deposit.
+              that you stake tokens on is successful, you will receive a supporter reward of
+              ${formatPanvalaUnits(
+                slateStakeAmount
+              )}. If the slate that you stake tokens on is unsuccessful, you will lose your token
+              deposit.`}
             </P>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '5rem' }}>
               <div>Total token deposit</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>500 PAN</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{`${formatPanvalaUnits(
+                slateStakeAmount
+              )}`}</div>
             </div>
             <BlackSeparator />
           </CenteredSection>

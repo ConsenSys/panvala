@@ -13,6 +13,8 @@ const StepperDialog = styled.div`
   line-height: 2rem;
 `;
 
+const requiredStake = '400';
+
 const stories = storiesOf('Stepper Knobs', module);
 stories.addDecorator(withKnobs);
 
@@ -33,17 +35,17 @@ stories.add('Step 1/2: sign message', () => {
   );
 });
 
-stories.add('Step 2/2: approve 500 pan', () => {
+stories.add(`Step 2/2: approve ${requiredStake} pan`, () => {
   return (
     <Stepper isOpen={true} step={2} steps={2} handleCancel={action('button-cancel')}>
       <StepperDialog>
-        Waiting to confirm in MetaMask. By confirming this transaction, you approve to spend 500 PAN
-        tokens to stake for this slate.
+        Waiting to confirm in MetaMask. By confirming this transaction, you approve to spend{' '}
+        {requiredStake} PAN tokens to stake for this slate.
       </StepperDialog>
       <StepperMetamaskDialog />
 
       <Image src="/static/signature-request-tip.svg" alt="signature request tip" wide />
-      <MetamaskButton handleClick={action('button-click')} text="Approve 500 PAN" />
+      <MetamaskButton handleClick={action('button-click')} text={`Approve ${requiredStake} PAN`} />
     </Stepper>
   );
 });
