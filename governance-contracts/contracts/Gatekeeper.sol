@@ -34,7 +34,7 @@ contract Gatekeeper {
         uint losingSlate,
         uint loserVotes
     );
-    event RunoffFinalized(uint indexed ballotID, uint indexed category, uint winningSlate);
+    event RunoffFinalized(uint indexed ballotID, uint indexed categoryID, uint winningSlate);
     event StakeWithdrawn(uint slateID, address indexed staker, uint numTokens);
 
     // STATE

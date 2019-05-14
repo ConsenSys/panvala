@@ -99,7 +99,7 @@ contract('TokenCapacitor', (accounts) => {
       const {
         proposer,
         requestID,
-        to: emittedRecipient,
+        recipient: emittedRecipient,
         tokens: emittedTokens,
         metadataHash: emittedHash,
       } = receipt.logs[0].args;
@@ -198,7 +198,7 @@ contract('TokenCapacitor', (accounts) => {
         const {
           proposer: emittedProposer,
           requestID,
-          to: emittedRecipient,
+          recipient: emittedRecipient,
           tokens: emittedTokens,
           metadataHash: emittedHash,
         } = log.args;

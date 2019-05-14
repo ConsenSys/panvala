@@ -12,7 +12,7 @@ contract TokenCapacitor {
     event ProposalCreated(
         address indexed proposer,
         uint indexed requestID,
-        address indexed to,
+        address indexed recipient,
         uint tokens,
         bytes metadataHash
     );
