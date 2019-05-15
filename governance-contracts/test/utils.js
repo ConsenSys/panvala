@@ -393,11 +393,9 @@ async function getVotes(gatekeeper, ballotID, categoryID, slateID) {
 const ContestStatus = {
   Empty: '0',
   NoContest: '1',
-  Started: '2',
-  VoteFinalized: '3',
-  RunoffPending: '4',
-  RunoffFinalized: '5',
-  AutomaticallyFinalized: '6',
+  Active: '2',
+  RunoffPending: '3',
+  Finalized: '4',
 };
 
 const SlateStatus = {

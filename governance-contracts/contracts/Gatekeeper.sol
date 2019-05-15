@@ -111,12 +111,9 @@ contract Gatekeeper {
     enum ContestStatus {
         Empty,
         NoContest,
-        Started, // Active
-        // Voting?
-        VoteFinalized,
+        Active,
         RunoffPending,
-        RunoffFinalized,
-        AutomaticallyFinalized
+        Finalized
     }
 
     struct Contest {
@@ -251,7 +248,7 @@ contract Gatekeeper {
         if (numSlates == 1) {
             c.status = ContestStatus.NoContest;
         } else {
-            c.status = ContestStatus.Started;
+            c.status = ContestStatus.Active;
         }
 
         emit SlateCreated(slateID, msg.sender, metadataHash);
@@ -566,7 +563,7 @@ contract Gatekeeper {
         // TODO: revert if categoryID is invalid
         // TODO: revert if the ballot doesn't have a contest for this category
         Contest memory contest = ballots[ballotID].contests[categoryID];
-        require(contest.status == ContestStatus.Started || contest.status == ContestStatus.NoContest,
+        require(contest.status == ContestStatus.Active || contest.status == ContestStatus.NoContest,
             "No contest is in progress for this category");
         assert(contest.slates.length > 0);
 
@@ -574,9 +571,9 @@ contract Gatekeeper {
         // Finalization should be possible as soon as the slate submission period is over
         if (contest.status == ContestStatus.NoContest) {
             uint256 winningSlate = contest.slates[0];
-            Contest storage contest = ballots[ballotID].contests[categoryID];
-            contest.winner = winningSlate;
-            contest.status = ContestStatus.AutomaticallyFinalized;
+            Contest storage updatedContest = ballots[ballotID].contests[categoryID];
+            updatedContest.winner = winningSlate;
+            updatedContest.status = ContestStatus.Finalized;
 
             acceptWinningSlate(winningSlate);
             emit ContestAutomaticallyFinalized(ballotID, categoryID, winningSlate);
@@ -632,7 +629,7 @@ contract Gatekeeper {
             updatedContest.winner = winner;
             acceptWinningSlate(winner);
             rejectLosingSlates(ballotID, categoryID);
-            updatedContest.status = ContestStatus.VoteFinalized;
+            updatedContest.status = ContestStatus.Finalized;
             emit ConfidenceVoteFinalized(ballotID, categoryID, winner);
         } else {
             rejectEliminatedSlates(ballotID, categoryID);
@@ -730,7 +727,7 @@ contract Gatekeeper {
         // Update state
         Contest storage updatedContest = ballots[ballotID].contests[categoryID];
         updatedContest.winner = runoffWinner;
-        updatedContest.status = ContestStatus.RunoffFinalized;
+        updatedContest.status = ContestStatus.Finalized;
         acceptWinningSlate(runoffWinner);
 
         // Reject the losing slate
@@ -747,11 +744,7 @@ contract Gatekeeper {
      */
     function donateChallengerStakes(uint256 ballotID, uint256 categoryID) public {
         Contest memory contest = ballots[ballotID].contests[categoryID];
-        require(
-            contest.status == ContestStatus.VoteFinalized ||
-            contest.status == ContestStatus.RunoffFinalized,
-            "Contest is not finalized"
-        );
+        require(contest.status == ContestStatus.Finalized, "Contest is not finalized");
 
         address tokenCapacitorAddress = parameters.getAsAddress("tokenCapacitorAddress");
         TokenCapacitor capacitor = TokenCapacitor(tokenCapacitorAddress);
@@ -824,10 +817,7 @@ contract Gatekeeper {
      */
     function getWinningSlate(uint ballotID, uint categoryID) public view returns(uint) {
         Contest storage c = ballots[ballotID].contests[categoryID];
-        require(
-            (c.status == ContestStatus.VoteFinalized) || (c.status == ContestStatus.RunoffFinalized),
-            "Vote is not finalized yet"
-        );
+        require(c.status == ContestStatus.Finalized, "Vote is not finalized yet");
 
         return c.winner;
     }

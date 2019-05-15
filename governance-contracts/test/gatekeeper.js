@@ -1434,8 +1434,8 @@ contract('Gatekeeper', (accounts) => {
       const status = await gatekeeper.contestStatus(ballotID, GRANT);
       assert.strictEqual(
         status.toString(),
-        ContestStatus.VoteFinalized,
-        'Contest status should have been VoteFinalized',
+        ContestStatus.Finalized,
+        'Contest status should have been Finalized',
       );
 
       // Winning slate should have status Accepted
@@ -1515,12 +1515,12 @@ contract('Gatekeeper', (accounts) => {
         'Slate should have been accepted',
       );
 
-      // Contest should be AutomaticallyFinalized
+      // Contest should be Finalized
       const contestStatus = await gatekeeper.contestStatus(ballotID, GOVERNANCE);
       assert.strictEqual(
         contestStatus.toString(),
-        ContestStatus.AutomaticallyFinalized,
-        'Contest should have been automatically finalized',
+        ContestStatus.Finalized,
+        'Contest should have status Finalized',
       );
     });
 
@@ -1690,7 +1690,7 @@ contract('Gatekeeper', (accounts) => {
       );
     });
 
-    it('should return Started if the category has two or more slates', async () => {
+    it('should return Active if the category has two or more slates', async () => {
       await utils.newSlate(gatekeeper, {
         batchNumber: ballotID,
         category: GRANT,
@@ -1710,8 +1710,8 @@ contract('Gatekeeper', (accounts) => {
 
       assert.strictEqual(
         status.toString(),
-        ContestStatus.Started,
-        'Contest status should have been Started',
+        ContestStatus.Active,
+        'Contest status should have been Active',
       );
     });
 
@@ -1816,12 +1816,12 @@ contract('Gatekeeper', (accounts) => {
 
       assert.strictEqual(winningSlate.toString(), expectedWinner, 'Runoff finalized with wrong winner');
 
-      // status should be RunoffFinalized at the end
+      // status should be Finalized at the end
       const status = await gatekeeper.contestStatus(ballotID, GRANT);
       assert.strictEqual(
         status.toString(),
-        ContestStatus.RunoffFinalized,
-        'Contest status should have been RunoffFinalized',
+        ContestStatus.Finalized,
+        'Contest status should have been Finalized',
       );
 
       // Winning slate should have status Accepted
@@ -1930,7 +1930,7 @@ contract('Gatekeeper', (accounts) => {
       await gatekeeper.countVotes(ballotID, GRANT);
 
       const status = await gatekeeper.contestStatus(ballotID, GRANT);
-      assert.strictEqual(status.toString(), ContestStatus.VoteFinalized);
+      assert.strictEqual(status.toString(), ContestStatus.Finalized);
 
       // Runoff
       try {
