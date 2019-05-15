@@ -397,6 +397,7 @@ const ContestStatus = {
   VoteFinalized: '3',
   RunoffPending: '4',
   RunoffFinalized: '5',
+  AutomaticallyFinalized: '6',
 };
 
 const SlateStatus = {

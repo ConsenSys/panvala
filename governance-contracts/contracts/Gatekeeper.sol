@@ -16,6 +16,11 @@ contract Gatekeeper {
     event VotingTokensWithdrawn(address indexed voter, uint numTokens);
     event BallotCommitted(uint indexed ballotID, address indexed voter, uint numTokens, bytes32 commitHash);
     event BallotRevealed(uint indexed ballotID, address indexed voter, uint numTokens);
+    event ContestAutomaticallyFinalized(
+        uint256 indexed ballotID,
+        uint256 indexed categoryID,
+        uint256 winningSlate
+    );
     event ConfidenceVoteCounted(
         uint indexed ballotID,
         uint indexed categoryID,
@@ -110,7 +115,8 @@ contract Gatekeeper {
         // Voting?
         VoteFinalized,
         RunoffPending,
-        RunoffFinalized
+        RunoffFinalized,
+        AutomaticallyFinalized
     }
 
     struct Contest {
@@ -560,8 +566,22 @@ contract Gatekeeper {
         // TODO: revert if categoryID is invalid
         // TODO: revert if the ballot doesn't have a contest for this category
         Contest memory contest = ballots[ballotID].contests[categoryID];
-        require(contest.status == ContestStatus.Started, "No contest is in progress for this category");
-        assert(contest.slates.length > 1);
+        require(contest.status == ContestStatus.Started || contest.status == ContestStatus.NoContest,
+            "No contest is in progress for this category");
+        assert(contest.slates.length > 0);
+
+        // Handle the case of a single slate in the contest -- it should automatically win
+        // Finalization should be possible as soon as the slate submission period is over
+        if (contest.status == ContestStatus.NoContest) {
+            uint256 winningSlate = contest.slates[0];
+            Contest storage contest = ballots[ballotID].contests[categoryID];
+            contest.winner = winningSlate;
+            contest.status = ContestStatus.AutomaticallyFinalized;
+
+            acceptWinningSlate(winningSlate);
+            emit ContestAutomaticallyFinalized(ballotID, categoryID, winningSlate);
+            return;
+        }
 
         // TODO: timing: must be after the vote period
 

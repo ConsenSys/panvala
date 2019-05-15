@@ -1482,7 +1482,9 @@ contract('Gatekeeper', (accounts) => {
       assert.fail('Tallied votes for category with no slates');
     });
 
-    it('should revert if the category has only one slate', async () => {
+    it('should declare a slate as the winner if it is the only one in the category', async () => {
+      const slateID = await gatekeeper.slateCount();
+
       // Add a new governance slate
       await utils.newSlate(gatekeeper, {
         batchNumber: ballotID,
@@ -1491,15 +1493,35 @@ contract('Gatekeeper', (accounts) => {
         slateData: 'governance slate',
       }, { from: recommender });
 
-      // Try to count
-      try {
-        await gatekeeper.countVotes(ballotID, GOVERNANCE);
-      } catch (error) {
-        expectRevert(error);
-        return;
-      }
 
-      assert.fail('Tallied votes for a category with no competition');
+      const receipt = await gatekeeper.countVotes(ballotID, GOVERNANCE);
+
+      // Check events
+      assert.strictEqual(receipt.logs[0].event, 'ContestAutomaticallyFinalized');
+      const {
+        ballotID: emittedBallotID,
+        categoryID: emittedCategoryID,
+        winningSlate: emittedWinner,
+      } = receipt.logs[0].args;
+      assert.strictEqual(emittedBallotID.toString(), ballotID.toString(), 'Wrong ballotID emitted');
+      assert.strictEqual(emittedCategoryID.toString(), GOVERNANCE.toString(), 'Wrong categoryID emitted');
+      assert.strictEqual(emittedWinner.toString(), slateID.toString(), 'Wrong winner emitted');
+
+      // Slate should be Accepted
+      const { status } = await gatekeeper.slates(slateID);
+      assert.strictEqual(
+        status.toString(),
+        SlateStatus.Accepted,
+        'Slate should have been accepted',
+      );
+
+      // Contest should be AutomaticallyFinalized
+      const contestStatus = await gatekeeper.contestStatus(ballotID, GOVERNANCE);
+      assert.strictEqual(
+        contestStatus.toString(),
+        ContestStatus.AutomaticallyFinalized,
+        'Contest should have been automatically finalized',
+      );
     });
 
     it('should wait for a runoff if no slate has more than 50% of the votes', async () => {
