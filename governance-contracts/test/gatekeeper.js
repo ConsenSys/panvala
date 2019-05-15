@@ -437,6 +437,22 @@ contract('Gatekeeper', (accounts) => {
       }
       assert.fail('Staked even though token transfer failed');
     });
+
+    it('should revert if the slate has already been staked on', async () => {
+      await token.transfer(staker, '10000', { from: creator });
+      await token.approve(gatekeeper.address, '10000', { from: staker });
+
+      await gatekeeper.stakeTokens(slateID, { from: staker });
+
+      try {
+        await gatekeeper.stakeTokens(slateID, { from: staker });
+      } catch (error) {
+        expectRevert(error);
+        expectErrorLike(error, 'already been staked');
+        return;
+      }
+      assert.fail('Allowed a slate to be staked multiple times');
+    });
   });
 
   describe('requestPermission', () => {

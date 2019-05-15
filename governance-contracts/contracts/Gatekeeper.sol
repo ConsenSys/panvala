@@ -270,6 +270,7 @@ contract Gatekeeper {
      */
     function stakeTokens(uint slateID) public returns(bool) {
         require(slateID < slateCount, "No slate exists with that slateID");
+        require(slates[slateID].status == SlateStatus.Unstaked, "Slate has already been staked");
 
         address staker = msg.sender;
         IERC20 token = token();
