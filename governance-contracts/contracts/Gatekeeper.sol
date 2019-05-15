@@ -196,20 +196,19 @@ contract Gatekeeper {
     // SLATE GOVERNANCE
     /**
     * @dev Create a new slate with the associated requestIds and metadata hash.
-    * @param batchNumber The batch to submit for
     * @param categoryID The category to submit the slate for
     * @param requestIDs A list of request IDs to include in the slate
     * @param metadataHash A reference to metadata about the slate
     */
     function recommendSlate(
-        uint batchNumber,
         uint categoryID,
         uint[] memory requestIDs,
         bytes memory metadataHash
     )
         public returns(uint)
     {
-        // TODO: timing: batchNumber must be the current one
+        uint256 epochNumber = currentEpochNumber();
+
         // TODO: category must be valid
         // TODO: timing: the slate submission period must be active for the given epoch
         require(metadataHash.length > 0, "metadataHash cannot be empty");

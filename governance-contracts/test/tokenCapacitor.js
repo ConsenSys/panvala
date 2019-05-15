@@ -263,7 +263,6 @@ contract('TokenCapacitor', (accounts) => {
         capacitor,
         recommender: recommender1,
         metadata: 'slate 1',
-        batchNumber: ballotID,
       });
 
       proposals2 = [
@@ -276,7 +275,6 @@ contract('TokenCapacitor', (accounts) => {
         capacitor,
         recommender: recommender2,
         metadata: 'slate 2',
-        batchNumber: ballotID,
       });
 
 

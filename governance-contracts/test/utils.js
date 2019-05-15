@@ -224,7 +224,7 @@ const proposalCategories = {
  */
 async function grantSlateFromProposals(options) {
   const {
-    gatekeeper, capacitor, proposals, recommender, metadata, batchNumber,
+    gatekeeper, capacitor, proposals, recommender, metadata,
   } = options;
   const beneficiaries = [];
   const tokenAmounts = [];
@@ -245,7 +245,6 @@ async function grantSlateFromProposals(options) {
   const requestIDs = receipt.logs.map(l => l.args.requestID);
 
   await gatekeeper.recommendSlate(
-    batchNumber,
     proposalCategories.GRANT,
     requestIDs,
     asBytes(metadata),
@@ -282,11 +281,11 @@ async function getRequestIDs(gatekeeper, proposalData, options) {
 
 async function newSlate(gatekeeper, data, options) {
   const {
-    batchNumber, category, proposalData, slateData,
+    category, proposalData, slateData,
   } = data;
   const requestIDs = await getRequestIDs(gatekeeper, proposalData, options);
 
-  await gatekeeper.recommendSlate(batchNumber, category, requestIDs, asBytes(slateData), options);
+  await gatekeeper.recommendSlate(category, requestIDs, asBytes(slateData), options);
   return requestIDs;
 }
 

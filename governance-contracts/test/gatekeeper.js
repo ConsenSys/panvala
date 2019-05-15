@@ -206,7 +206,6 @@ contract('Gatekeeper', (accounts) => {
 
       // Create a slate
       const receipt = await gatekeeper.recommendSlate(
-        batchNumber,
         category,
         requestIDs,
         utils.asBytes(metadataHash),
@@ -253,7 +252,6 @@ contract('Gatekeeper', (accounts) => {
 
       // Create a slate
       const receipt = await gatekeeper.recommendSlate(
-        batchNumber,
         category,
         noRequests,
         utils.asBytes(metadataHash),
@@ -271,7 +269,6 @@ contract('Gatekeeper', (accounts) => {
 
       try {
         await gatekeeper.recommendSlate(
-          batchNumber,
           category,
           requestIDs,
           utils.asBytes(emptyHash),
@@ -290,7 +287,6 @@ contract('Gatekeeper', (accounts) => {
 
       try {
         await gatekeeper.recommendSlate(
-          batchNumber,
           category,
           invalidRequestIDs,
           utils.asBytes(metadataHash),
@@ -310,7 +306,6 @@ contract('Gatekeeper', (accounts) => {
 
       try {
         await gatekeeper.recommendSlate(
-          batchNumber,
           category,
           invalidRequestIDs,
           utils.asBytes(metadataHash),
@@ -324,7 +319,6 @@ contract('Gatekeeper', (accounts) => {
       assert.fail('Recommended a slate with duplicate requestIDs');
     });
 
-    it('should revert if the batchNumber is wrong');
     it('should revert if the category is invalid');
   });
 
@@ -858,14 +852,12 @@ contract('Gatekeeper', (accounts) => {
       // New slates 0, 1
       // grant
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['a', 'b', 'c'],
         slateData: 'my slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['a', 'b', 'd'],
         slateData: 'competing slate',
@@ -874,14 +866,12 @@ contract('Gatekeeper', (accounts) => {
       // New slates 2, 3
       // governance
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GOVERNANCE,
         proposalData: ['e', 'f', 'g'],
         slateData: 'governance slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['g', 'h', 'i'],
         slateData: 'competing slate',
@@ -1166,14 +1156,12 @@ contract('Gatekeeper', (accounts) => {
       // New slates 0, 1
       // grant
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['a', 'b', 'c'],
         slateData: 'grant slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['a', 'b', 'd'],
         slateData: 'competing slate',
@@ -1182,14 +1170,12 @@ contract('Gatekeeper', (accounts) => {
       // New slates 2, 3
       // governance
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GOVERNANCE,
         proposalData: ['e', 'f', 'g'],
         slateData: 'governance slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['g', 'h', 'i'],
         slateData: 'competing slate',
@@ -1276,14 +1262,12 @@ contract('Gatekeeper', (accounts) => {
 
       // grant - slates 0, 1
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['a', 'b', 'c'],
         slateData: 'my slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['a', 'b', 'd'],
         slateData: 'competing slate',
@@ -1291,14 +1275,12 @@ contract('Gatekeeper', (accounts) => {
 
       // governance - slates 2, 3
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GOVERNANCE,
         proposalData: ['e', 'f', 'g'],
         slateData: 'governance slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['g', 'h', 'i'],
         slateData: 'competing slate',
@@ -1385,14 +1367,12 @@ contract('Gatekeeper', (accounts) => {
 
       // create simple ballot with just grants
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['a', 'b', 'c'],
         slateData: 'my slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['a', 'b', 'd'],
         slateData: 'competing slate',
@@ -1503,7 +1483,6 @@ contract('Gatekeeper', (accounts) => {
 
       // Add a new governance slate
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GOVERNANCE,
         proposalData: ['e', 'f', 'g'],
         slateData: 'governance slate',
@@ -1543,7 +1522,6 @@ contract('Gatekeeper', (accounts) => {
     it('should wait for a runoff if no slate has more than 50% of the votes', async () => {
       // Add a third slate
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['h', 'i', 'j'],
         slateData: 'yet another slate',
@@ -1623,21 +1601,18 @@ contract('Gatekeeper', (accounts) => {
 
       // create simple ballot with just grants
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['a', 'b', 'c'],
         slateData: 'my slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['a', 'b', 'd'],
         slateData: 'competing slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['e', 'f', 'g'],
         slateData: 'competing slate',
@@ -1691,7 +1666,6 @@ contract('Gatekeeper', (accounts) => {
 
     it('should return NoContest if the category has only a single slate', async () => {
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['a', 'b', 'c'],
         slateData: 'my slate',
@@ -1708,14 +1682,12 @@ contract('Gatekeeper', (accounts) => {
 
     it('should return Active if the category has two or more slates', async () => {
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['a', 'b', 'c'],
         slateData: 'my slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['a', 'b', 'd'],
         slateData: 'competing slate',
@@ -1749,21 +1721,18 @@ contract('Gatekeeper', (accounts) => {
 
       // create simple ballot with just grants
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['a', 'b', 'c'],
         slateData: 'my slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['a', 'b', 'd'],
         slateData: 'competing slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['h', 'i', 'j'],
         slateData: 'yet another slate',
@@ -1974,21 +1943,18 @@ contract('Gatekeeper', (accounts) => {
 
       // create simple ballot with just grants
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['a', 'b', 'c'],
         slateData: 'my slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['a', 'b', 'd'],
         slateData: 'competing slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['h', 'i', 'j'],
         slateData: 'yet another slate',
@@ -2084,7 +2050,6 @@ contract('Gatekeeper', (accounts) => {
       // create simple ballot with just grants
       // contains requests 0, 1, 2
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['a', 'b', 'c'],
         slateData: 'my slate',
@@ -2092,7 +2057,6 @@ contract('Gatekeeper', (accounts) => {
 
       // contains requests 3, 4, 5
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['a', 'b', 'd'],
         slateData: 'competing slate',
@@ -2100,7 +2064,6 @@ contract('Gatekeeper', (accounts) => {
 
       // contains requests 6, 7, 8
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['e', 'f', 'g'],
         slateData: 'competing slate',
@@ -2190,21 +2153,18 @@ contract('Gatekeeper', (accounts) => {
 
       // create simple ballot with just grants
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['a', 'b', 'c'],
         slateData: 'my slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['a', 'b', 'd'],
         slateData: 'competing slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['h', 'i', 'j'],
         slateData: 'yet another slate',
@@ -2457,21 +2417,18 @@ contract('Gatekeeper', (accounts) => {
 
       // create simple ballot with just grants
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['a', 'b', 'c'],
         slateData: 'my slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['a', 'b', 'd'],
         slateData: 'competing slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        batchNumber: ballotID,
         category: GRANT,
         proposalData: ['h', 'i', 'j'],
         slateData: 'yet another slate',
