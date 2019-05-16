@@ -124,6 +124,7 @@ contract Gatekeeper {
 
         // slateIDs
         uint[] slates;
+        uint[] stakedSlates;
 
         // slateID -> tally
         mapping(uint => SlateVotes) votes;
@@ -282,9 +283,9 @@ contract Gatekeeper {
         // Associate the slate with a contest and update the contest status
         // A vote can only happen if there is more than one associated slate
         Contest storage contest = ballots[slate.epochNumber].contests[slate.categoryID];
-        contest.slates.push(slateID);
+        contest.stakedSlates.push(slateID);
 
-        uint256 numSlates = contest.slates.length;
+        uint256 numSlates = contest.stakedSlates.length;
         if (numSlates == 1) {
             contest.status = ContestStatus.NoContest;
         } else {
@@ -532,10 +533,10 @@ contract Gatekeeper {
     function getSecondChoiceVotes(uint ballotID, uint categoryID, uint slateID) public view returns(uint) {
         // for each option that isn't this one, get the second choice votes
         Contest storage contest = ballots[ballotID].contests[categoryID];
-        uint numSlates = contest.slates.length;
+        uint numSlates = contest.stakedSlates.length;
         uint votes = 0;
         for (uint i = 0; i < numSlates; i++) {
-            uint otherSlateID = contest.slates[i];
+            uint otherSlateID = contest.stakedSlates[i];
             if (otherSlateID != slateID) {
                 SlateVotes storage v = contest.votes[otherSlateID];
                 // get second-choice votes for the target slate
@@ -567,18 +568,18 @@ contract Gatekeeper {
         // TODO: revert if categoryID is invalid
 
         // Make sure the ballot has a contest for this category
-        Contest memory contest = ballots[ballotID].contests[categoryID];
+        Contest storage contest = ballots[ballotID].contests[categoryID];
         require(contest.status == ContestStatus.Active || contest.status == ContestStatus.NoContest,
-            "No contest is in progress for this category");
-        assert(contest.slates.length > 0);
+            "Either no contest is in progress for this category, or it has been finalized");
 
-        // Handle the case of a single slate in the contest -- it should automatically win
+        // Handle the case of a single staked slate in the contest -- it should automatically win
         // Finalization should be possible as soon as the slate submission period is over
         if (contest.status == ContestStatus.NoContest) {
-            uint256 winningSlate = contest.slates[0];
-            Contest storage updatedContest = ballots[ballotID].contests[categoryID];
-            updatedContest.winner = winningSlate;
-            updatedContest.status = ContestStatus.Finalized;
+            uint256 winningSlate = contest.stakedSlates[0];
+            assert(slates[winningSlate].status == SlateStatus.Staked);
+
+            contest.winner = winningSlate;
+            contest.status = ContestStatus.Finalized;
 
             acceptWinningSlate(winningSlate);
             emit ContestAutomaticallyFinalized(ballotID, categoryID, winningSlate);
@@ -596,11 +597,13 @@ contract Gatekeeper {
         uint total = 0;
         bool noCount = true;
 
-        for (uint i = 0; i < contest.slates.length; i++) {
-            noCount = false;
+        for (uint i = 0; i < contest.stakedSlates.length; i++) {
+            uint slateID = contest.stakedSlates[i];
+            assert(slates[slateID].status == SlateStatus.Staked);
 
-            uint slateID = contest.slates[i];
-            SlateVotes storage currentSlate = ballots[ballotID].contests[categoryID].votes[slateID];
+            SlateVotes storage currentSlate = contest.votes[slateID];
+
+            noCount = false;
 
             uint votes = currentSlate.firstChoiceVotes;
             total = total.add(votes);
@@ -622,23 +625,22 @@ contract Gatekeeper {
         // TODO: what if no one has voted for anything?
 
         // Update state
-        Contest storage updatedContest = ballots[ballotID].contests[categoryID];
-        updatedContest.confidenceVoteWinner = winner;
-        updatedContest.confidenceVoteRunnerUp = runnerUp;
+        contest.confidenceVoteWinner = winner;
+        contest.confidenceVoteRunnerUp = runnerUp;
         emit ConfidenceVoteCounted(ballotID, categoryID, winner, winnerVotes, total);
 
         // If the winner has more than 50%, we are done
         // Otherwise, trigger a runoff
         uint winnerPercentage = winnerVotes.mul(100).div(total);
         if (winnerPercentage > 50) {
-            updatedContest.winner = winner;
+            contest.winner = winner;
             acceptWinningSlate(winner);
             rejectLosingSlates(ballotID, categoryID);
-            updatedContest.status = ContestStatus.Finalized;
+            contest.status = ContestStatus.Finalized;
             emit ConfidenceVoteFinalized(ballotID, categoryID, winner);
         } else {
             rejectEliminatedSlates(ballotID, categoryID);
-            updatedContest.status = ContestStatus.RunoffPending;
+            contest.status = ContestStatus.RunoffPending;
             emit ConfidenceVoteFailed(ballotID, categoryID);
         }
     }
@@ -678,10 +680,10 @@ contract Gatekeeper {
         emit RunoffStarted(ballotID, categoryID, confidenceVoteWinner, confidenceVoteRunnerUp);
 
         // eliminate all but the winner and the runner-up from the confidence vote
-        uint[] memory eliminated = new uint[](contest.slates.length.sub(2));
+        uint[] memory eliminated = new uint[](contest.stakedSlates.length.sub(2));
         uint index = 0;
-        for (uint i = 0; i < contest.slates.length; i++) {
-            uint slateID = contest.slates[i];
+        for (uint i = 0; i < contest.stakedSlates.length; i++) {
+            uint slateID = contest.stakedSlates[i];
             if (slateID != confidenceVoteWinner && slateID != confidenceVoteRunnerUp) {
                 eliminated[index] = slateID;
                 index = index.add(1);

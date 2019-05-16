@@ -883,7 +883,7 @@ contract('Gatekeeper', (accounts) => {
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        category: GOVERNANCE,
         proposalData: ['g', 'h', 'i'],
         slateData: 'competing slate',
       }, { from: recommender });
@@ -1198,7 +1198,7 @@ contract('Gatekeeper', (accounts) => {
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        category: GOVERNANCE,
         proposalData: ['g', 'h', 'i'],
         slateData: 'competing slate',
       }, { from: recommender });
@@ -1314,7 +1314,7 @@ contract('Gatekeeper', (accounts) => {
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        category: GOVERNANCE,
         proposalData: ['g', 'h', 'i'],
         slateData: 'competing slate',
       }, { from: recommender });
@@ -1537,7 +1537,7 @@ contract('Gatekeeper', (accounts) => {
       assert.fail('Tallied votes for category with no staked slates');
     });
 
-    it('should declare a slate as the winner if it is the only one in the category', async () => {
+    it('should declare a slate as the winner if it is the only staked slate in the category', async () => {
       const slateID = await gatekeeper.slateCount();
 
       // Add a new governance slate
@@ -1583,6 +1583,53 @@ contract('Gatekeeper', (accounts) => {
         contestStatus.toString(),
         ContestStatus.Finalized,
         'Contest should have status Finalized',
+      );
+    });
+
+    it('should ignore votes for unstaked slates', async () => {
+      // Add another grant slate, but don't stake
+      await utils.newSlate(gatekeeper, {
+        category: GRANT,
+        proposalData: ['x', 'y', 'z'],
+        slateData: 'an unstaked slate',
+      }, { from: recommender });
+
+      // David votes for it with lots of power
+      const david = accounts[5];
+      const manyTokens = '10000';
+      await token.transfer(david, manyTokens, { from: creator });
+      await token.approve(gatekeeper.address, manyTokens, { from: david });
+
+      // Commit for voters
+      const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
+      const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 0, 1, '1000', '5678');
+      const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '1000', '9012');
+      const davidReveal = await voteSingle(gatekeeper, david, GRANT, 2, 1, manyTokens, '1337');
+
+      // Reveal all votes
+      await reveal(gatekeeper, aliceReveal);
+      await reveal(gatekeeper, bobReveal);
+      await reveal(gatekeeper, carolReveal);
+      await reveal(gatekeeper, davidReveal);
+
+      // Finalize
+      const receipt = await gatekeeper.countVotes(ballotID, GRANT);
+
+      const expectedWinner = '0';
+      const {
+        winningSlate: emittedWinner,
+        votes: emittedWinnerVotes,
+        totalVotes: emittedTotal,
+      } = receipt.logs[0].args;
+      assert.strictEqual(emittedWinner.toString(), expectedWinner, 'Emitted leader was wrong');
+      assert.strictEqual(emittedWinnerVotes.toString(), '2000', 'Winner had the wrong number of votes');
+      assert.strictEqual(emittedTotal.toString(), '3000', 'Total vote count was wrong');
+
+      const { winningSlate } = receipt.logs[1].args;
+      assert.strictEqual(
+        winningSlate.toString(),
+        expectedWinner,
+        `Slate ${expectedWinner} should have won`,
       );
     });
 
