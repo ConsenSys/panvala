@@ -239,11 +239,14 @@ contract('Gatekeeper', (accounts) => {
       );
       // requestIncluded
       assert.strictEqual(slate.status.toString(), SlateStatus.Unstaked, 'Status should have been `Unstaked`');
+      assert.strictEqual(slate.staker.toString(), utils.zeroAddress(), 'Staker should have been zero');
+      assert.strictEqual(slate.stake.toString(), '0', 'Initial stake should have been zero');
+      assert.strictEqual(slate.epochNumber.toString(), batchNumber.toString(), 'Incorrect epoch number');
+      assert.strictEqual(slate.categoryID.toString(), category.toString(), 'Incorrect category');
 
-
-      // Adding a slate should set contest status to NoContest
+      // Adding a slate without staking it should not change the contest status
       const status = await gatekeeper.contestStatus(batchNumber, category);
-      assert.strictEqual(status.toString(), '1', 'Contest status should be NoContest (1)');
+      assert.strictEqual(status.toString(), ContestStatus.Empty, 'Contest status should be Empty (0)');
     });
 
     it('should allow creation of an empty slate', async () => {
@@ -849,6 +852,11 @@ contract('Gatekeeper', (accounts) => {
       await token.transfer(voter, allocatedTokens, { from: creator });
       await token.approve(gatekeeper.address, allocatedTokens, { from: voter });
 
+      // Make sure the recommender has plenty of tokens
+      const recommenderTokens = '50000';
+      await token.transfer(recommender, recommenderTokens, { from: creator });
+      await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
+
       // New slates 0, 1
       // grant
       await utils.newSlate(gatekeeper, {
@@ -863,6 +871,9 @@ contract('Gatekeeper', (accounts) => {
         slateData: 'competing slate',
       }, { from: recommender });
 
+      await gatekeeper.stakeTokens(0, { from: recommender });
+      await gatekeeper.stakeTokens(1, { from: recommender });
+
       // New slates 2, 3
       // governance
       await utils.newSlate(gatekeeper, {
@@ -876,6 +887,9 @@ contract('Gatekeeper', (accounts) => {
         proposalData: ['g', 'h', 'i'],
         slateData: 'competing slate',
       }, { from: recommender });
+
+      await gatekeeper.stakeTokens(2, { from: recommender });
+      await gatekeeper.stakeTokens(3, { from: recommender });
 
       // Commit a ballot
       votes = {
@@ -1152,6 +1166,11 @@ contract('Gatekeeper', (accounts) => {
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
 
+      // Make sure the recommender has tokens
+      const recommenderTokens = '50000';
+      await token.transfer(recommender, recommenderTokens, { from: creator });
+      await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
+
       // Set up ballot
       // New slates 0, 1
       // grant
@@ -1167,6 +1186,9 @@ contract('Gatekeeper', (accounts) => {
         slateData: 'competing slate',
       }, { from: recommender });
 
+      await gatekeeper.stakeTokens(0, { from: recommender });
+      await gatekeeper.stakeTokens(1, { from: recommender });
+
       // New slates 2, 3
       // governance
       await utils.newSlate(gatekeeper, {
@@ -1180,6 +1202,9 @@ contract('Gatekeeper', (accounts) => {
         proposalData: ['g', 'h', 'i'],
         slateData: 'competing slate',
       }, { from: recommender });
+
+      await gatekeeper.stakeTokens(2, { from: recommender });
+      await gatekeeper.stakeTokens(3, { from: recommender });
 
       // Give everyone tokens
       const allocatedTokens = '1000';
@@ -1260,6 +1285,11 @@ contract('Gatekeeper', (accounts) => {
       await token.transfer(voter, allocatedTokens, { from: creator });
       await token.approve(gatekeeper.address, allocatedTokens, { from: voter });
 
+      // Make sure the recommender has tokens
+      const recommenderTokens = '50000';
+      await token.transfer(recommender, recommenderTokens, { from: creator });
+      await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
+
       // grant - slates 0, 1
       await utils.newSlate(gatekeeper, {
         category: GRANT,
@@ -1273,6 +1303,9 @@ contract('Gatekeeper', (accounts) => {
         slateData: 'competing slate',
       }, { from: recommender });
 
+      await gatekeeper.stakeTokens(0, { from: recommender });
+      await gatekeeper.stakeTokens(1, { from: recommender });
+
       // governance - slates 2, 3
       await utils.newSlate(gatekeeper, {
         category: GOVERNANCE,
@@ -1285,6 +1318,9 @@ contract('Gatekeeper', (accounts) => {
         proposalData: ['g', 'h', 'i'],
         slateData: 'competing slate',
       }, { from: recommender });
+
+      await gatekeeper.stakeTokens(2, { from: recommender });
+      await gatekeeper.stakeTokens(3, { from: recommender });
 
       // Commit a ballot
       votes = {
@@ -1365,6 +1401,11 @@ contract('Gatekeeper', (accounts) => {
       await token.transfer(carol, allocatedTokens, { from: creator });
       await token.approve(gatekeeper.address, allocatedTokens, { from: carol });
 
+      // Make sure the recommender has tokens
+      const recommenderTokens = '50000';
+      await token.transfer(recommender, recommenderTokens, { from: creator });
+      await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
+
       // create simple ballot with just grants
       await utils.newSlate(gatekeeper, {
         category: GRANT,
@@ -1377,6 +1418,9 @@ contract('Gatekeeper', (accounts) => {
         proposalData: ['a', 'b', 'd'],
         slateData: 'competing slate',
       }, { from: recommender });
+
+      await gatekeeper.stakeTokens(0, { from: recommender });
+      await gatekeeper.stakeTokens(1, { from: recommender });
     });
 
     it('should correctly tally the votes and finalize a confidence vote', async () => {
@@ -1487,6 +1531,7 @@ contract('Gatekeeper', (accounts) => {
         proposalData: ['e', 'f', 'g'],
         slateData: 'governance slate',
       }, { from: recommender });
+      await gatekeeper.stakeTokens(slateID, { from: recommender });
 
 
       const receipt = await gatekeeper.countVotes(ballotID, GOVERNANCE);
@@ -1520,12 +1565,14 @@ contract('Gatekeeper', (accounts) => {
     });
 
     it('should wait for a runoff if no slate has more than 50% of the votes', async () => {
+      const slateID = await gatekeeper.slateCount();
       // Add a third slate
       await utils.newSlate(gatekeeper, {
         category: GRANT,
         proposalData: ['h', 'i', 'j'],
         slateData: 'yet another slate',
       }, { from: recommender });
+      await gatekeeper.stakeTokens(slateID, { from: recommender });
 
       // Split the votes among the three slates
       const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
@@ -1599,6 +1646,11 @@ contract('Gatekeeper', (accounts) => {
       await token.transfer(carol, allocatedTokens, { from: creator });
       await token.approve(gatekeeper.address, allocatedTokens, { from: carol });
 
+      // Make sure the recommender has tokens
+      const recommenderTokens = '50000';
+      await token.transfer(recommender, recommenderTokens, { from: creator });
+      await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
+
       // create simple ballot with just grants
       await utils.newSlate(gatekeeper, {
         category: GRANT,
@@ -1617,6 +1669,10 @@ contract('Gatekeeper', (accounts) => {
         proposalData: ['e', 'f', 'g'],
         slateData: 'competing slate',
       }, { from: recommender });
+
+      await gatekeeper.stakeTokens(0, { from: recommender });
+      await gatekeeper.stakeTokens(1, { from: recommender });
+      await gatekeeper.stakeTokens(2, { from: recommender });
     });
 
     it('should correctly get the number of first choice votes for a slate', async () => {
@@ -1652,6 +1708,11 @@ contract('Gatekeeper', (accounts) => {
     beforeEach(async () => {
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+
+      // Make sure the recommender has tokens
+      const recommenderTokens = '50000';
+      await token.transfer(recommender, recommenderTokens, { from: creator });
+      await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
     });
 
     it('should return Empty if the category has no slates', async () => {
@@ -1670,6 +1731,7 @@ contract('Gatekeeper', (accounts) => {
         proposalData: ['a', 'b', 'c'],
         slateData: 'my slate',
       }, { from: recommender });
+      await gatekeeper.stakeTokens(0, { from: recommender });
 
       const status = await gatekeeper.contestStatus(ballotID, GRANT);
 
@@ -1692,6 +1754,9 @@ contract('Gatekeeper', (accounts) => {
         proposalData: ['a', 'b', 'd'],
         slateData: 'competing slate',
       }, { from: recommender });
+
+      await gatekeeper.stakeTokens(0, { from: recommender });
+      await gatekeeper.stakeTokens(1, { from: recommender });
 
 
       const status = await gatekeeper.contestStatus(ballotID, GRANT);
@@ -1719,6 +1784,11 @@ contract('Gatekeeper', (accounts) => {
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
 
+      // Make sure the recommender has tokens
+      const recommenderTokens = '50000';
+      await token.transfer(recommender, recommenderTokens, { from: creator });
+      await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
+
       // create simple ballot with just grants
       await utils.newSlate(gatekeeper, {
         category: GRANT,
@@ -1737,6 +1807,10 @@ contract('Gatekeeper', (accounts) => {
         proposalData: ['h', 'i', 'j'],
         slateData: 'yet another slate',
       }, { from: recommender });
+
+      await gatekeeper.stakeTokens(0, { from: recommender });
+      await gatekeeper.stakeTokens(1, { from: recommender });
+      await gatekeeper.stakeTokens(2, { from: recommender });
 
       const allocatedTokens = '1000';
 
@@ -1941,6 +2015,11 @@ contract('Gatekeeper', (accounts) => {
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
 
+      // Make sure the recommender has tokens
+      const recommenderTokens = '50000';
+      await token.transfer(recommender, recommenderTokens, { from: creator });
+      await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
+
       // create simple ballot with just grants
       await utils.newSlate(gatekeeper, {
         category: GRANT,
@@ -1959,6 +2038,10 @@ contract('Gatekeeper', (accounts) => {
         proposalData: ['h', 'i', 'j'],
         slateData: 'yet another slate',
       }, { from: recommender });
+
+      await gatekeeper.stakeTokens(0, { from: recommender });
+      await gatekeeper.stakeTokens(1, { from: recommender });
+      await gatekeeper.stakeTokens(2, { from: recommender });
 
       const allocatedTokens = '1000';
 
@@ -2047,6 +2130,11 @@ contract('Gatekeeper', (accounts) => {
       await token.transfer(carol, allocatedTokens, { from: creator });
       await token.approve(gatekeeper.address, allocatedTokens, { from: carol });
 
+      // Make sure the recommender has tokens
+      const recommenderTokens = '50000';
+      await token.transfer(recommender, recommenderTokens, { from: creator });
+      await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
+
       // create simple ballot with just grants
       // contains requests 0, 1, 2
       await utils.newSlate(gatekeeper, {
@@ -2068,6 +2156,10 @@ contract('Gatekeeper', (accounts) => {
         proposalData: ['e', 'f', 'g'],
         slateData: 'competing slate',
       }, { from: recommender });
+
+      await gatekeeper.stakeTokens(0, { from: recommender });
+      await gatekeeper.stakeTokens(1, { from: recommender });
+      await gatekeeper.stakeTokens(2, { from: recommender });
     });
 
     it('should return false for a request before votes are counted', async () => {
@@ -2151,6 +2243,11 @@ contract('Gatekeeper', (accounts) => {
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
 
+      // Make sure the recommender has tokens
+      const recommenderTokens = '50000';
+      await token.transfer(recommender, recommenderTokens, { from: creator });
+      await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
+
       // create simple ballot with just grants
       await utils.newSlate(gatekeeper, {
         category: GRANT,
@@ -2187,6 +2284,7 @@ contract('Gatekeeper', (accounts) => {
       // Stake
       await gatekeeper.stakeTokens(0, { from: alice });
       await gatekeeper.stakeTokens(1, { from: carol });
+      await gatekeeper.stakeTokens(2, { from: bob });
     });
 
 
@@ -2449,6 +2547,7 @@ contract('Gatekeeper', (accounts) => {
       // Stake
       await gatekeeper.stakeTokens(0, { from: alice });
       await gatekeeper.stakeTokens(1, { from: carol });
+      await gatekeeper.stakeTokens(2, { from: bob });
     });
 
 

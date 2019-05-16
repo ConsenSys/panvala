@@ -83,6 +83,9 @@ contract Gatekeeper {
         // Staking info
         address staker;
         uint stake;
+        // Ballot info
+        uint256 epochNumber;
+        uint256 categoryID;
     }
     // The slates created by the Gatekeeper. Maps slateID -> Slate.
     mapping(uint => Slate) public slates;
@@ -220,7 +223,9 @@ contract Gatekeeper {
             requests: requestIDs,
             status: SlateStatus.Unstaked,
             staker: address(0),
-            stake: 0
+            stake: 0,
+            epochNumber: epochNumber,
+            categoryID: categoryID
         });
 
         // Record slate and return its ID
@@ -235,19 +240,6 @@ contract Gatekeeper {
 
             require(slates[slateID].requestIncluded[requestID] == false, "Duplicate requests are not allowed");
             slates[slateID].requestIncluded[requestID] = true;
-        }
-
-        // Associate the slate with a contest and update the contest status
-        // A vote can only happen if there is more than one associated slate
-        Contest storage c = ballots[batchNumber].contests[categoryID];
-        c.slates.push(slateID);
-
-        uint numSlates = c.slates.length;
-        assert(numSlates >= 1);
-        if (numSlates == 1) {
-            c.status = ContestStatus.NoContest;
-        } else {
-            c.status = ContestStatus.Active;
         }
 
         emit SlateCreated(slateID, msg.sender, metadataHash);
@@ -286,6 +278,18 @@ contract Gatekeeper {
         slate.status = SlateStatus.Staked;
 
         require(token.transferFrom(staker, address(this), stakeAmount), "Failed to transfer tokens");
+
+        // Associate the slate with a contest and update the contest status
+        // A vote can only happen if there is more than one associated slate
+        Contest storage contest = ballots[slate.epochNumber].contests[slate.categoryID];
+        contest.slates.push(slateID);
+
+        uint256 numSlates = contest.slates.length;
+        if (numSlates == 1) {
+            contest.status = ContestStatus.NoContest;
+        } else {
+            contest.status = ContestStatus.Active;
+        }
 
         emit SlateStaked(slateID, staker, stakeAmount);
         return true;

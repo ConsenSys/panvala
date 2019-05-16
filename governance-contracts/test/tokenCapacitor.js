@@ -242,7 +242,7 @@ contract('TokenCapacitor', (accounts) => {
       await token.transfer(capacitor.address, capacitorSupply, { from: creator });
 
       // Allocate tokens
-      const allocatedTokens = '1000';
+      const allocatedTokens = '10000';
       await token.transfer(alice, allocatedTokens, { from: creator });
       await token.transfer(bob, allocatedTokens, { from: creator });
       await token.transfer(carol, allocatedTokens, { from: creator });
@@ -277,6 +277,13 @@ contract('TokenCapacitor', (accounts) => {
         metadata: 'slate 2',
       });
 
+      await token.transfer(recommender1, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: recommender1 });
+      await token.transfer(recommender2, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: recommender2 });
+
+      await gatekeeper.stakeTokens(0, { from: recommender1 });
+      await gatekeeper.stakeTokens(1, { from: recommender2 });
 
       // Commit ballots
       const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
