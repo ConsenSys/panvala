@@ -1437,6 +1437,14 @@ contract('Gatekeeper', (accounts) => {
       await reveal(gatekeeper, bobReveal);
       await reveal(gatekeeper, carolReveal);
 
+      // status: Active
+      const initialStatus = await gatekeeper.contestStatus(ballotID, GRANT);
+      assert.strictEqual(
+        initialStatus.toString(),
+        ContestStatus.Active,
+        'Contest status should have been Active',
+      );
+
       const receipt = await gatekeeper.countVotes(ballotID, GRANT);
 
       // should emit events
@@ -1510,8 +1518,15 @@ contract('Gatekeeper', (accounts) => {
       });
     });
 
-    it('should revert if the category has no slates', async () => {
-      // Governance has no slates, not in progress
+    it('should revert if the category has no staked slates', async () => {
+      // Add a new governance slate, but don't stake
+      await utils.newSlate(gatekeeper, {
+        category: GOVERNANCE,
+        proposalData: ['e', 'f', 'g'],
+        slateData: 'governance slate',
+      }, { from: recommender });
+
+      // Governance has no staked slates, not in progress
       try {
         await gatekeeper.countVotes(ballotID, GOVERNANCE);
       } catch (error) {
@@ -1519,7 +1534,7 @@ contract('Gatekeeper', (accounts) => {
         return;
       }
 
-      assert.fail('Tallied votes for category with no slates');
+      assert.fail('Tallied votes for category with no staked slates');
     });
 
     it('should declare a slate as the winner if it is the only one in the category', async () => {
@@ -1533,6 +1548,13 @@ contract('Gatekeeper', (accounts) => {
       }, { from: recommender });
       await gatekeeper.stakeTokens(slateID, { from: recommender });
 
+      // status: NoContest
+      const initialStatus = await gatekeeper.contestStatus(ballotID, GOVERNANCE);
+      assert.strictEqual(
+        initialStatus.toString(),
+        ContestStatus.NoContest,
+        'Contest status should have been NoContest',
+      );
 
       const receipt = await gatekeeper.countVotes(ballotID, GOVERNANCE);
 
@@ -1619,6 +1641,30 @@ contract('Gatekeeper', (accounts) => {
         ContestStatus.RunoffPending,
         'Contest status should have been RunoffPending',
       );
+    });
+
+    it('should revert if called more than once', async () => {
+      // Commit for voters
+      const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
+      const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 0, 1, '1000', '5678');
+      const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '1000', '9012');
+
+      // Reveal all votes
+      await reveal(gatekeeper, aliceReveal);
+      await reveal(gatekeeper, bobReveal);
+      await reveal(gatekeeper, carolReveal);
+
+      await gatekeeper.countVotes(ballotID, GRANT);
+
+      try {
+        await gatekeeper.countVotes(ballotID, GRANT);
+      } catch (error) {
+        expectRevert(error);
+        expectErrorLike(error, 'in progress');
+        return;
+      }
+
+      assert.fail('Called countVotes() more than once');
     });
   });
 
@@ -1715,7 +1761,13 @@ contract('Gatekeeper', (accounts) => {
       await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
     });
 
-    it('should return Empty if the category has no slates', async () => {
+    it('should return Empty if the category has no staked slates', async () => {
+      await utils.newSlate(gatekeeper, {
+        category: GRANT,
+        proposalData: ['a', 'b', 'c'],
+        slateData: 'my slate',
+      }, { from: recommender });
+
       const status = await gatekeeper.contestStatus(ballotID, GRANT);
 
       assert.strictEqual(
@@ -1725,12 +1777,20 @@ contract('Gatekeeper', (accounts) => {
       );
     });
 
-    it('should return NoContest if the category has only a single slate', async () => {
+    it('should return NoContest if the category has only a single staked slate', async () => {
       await utils.newSlate(gatekeeper, {
         category: GRANT,
         proposalData: ['a', 'b', 'c'],
         slateData: 'my slate',
       }, { from: recommender });
+
+      await utils.newSlate(gatekeeper, {
+        category: GRANT,
+        proposalData: ['d', 'e', 'f'],
+        slateData: 'another slate',
+      }, { from: recommender });
+
+      // Only stake on one
       await gatekeeper.stakeTokens(0, { from: recommender });
 
       const status = await gatekeeper.contestStatus(ballotID, GRANT);
@@ -1742,7 +1802,7 @@ contract('Gatekeeper', (accounts) => {
       );
     });
 
-    it('should return Active if the category has two or more slates', async () => {
+    it('should return Active if the category has two or more staked slates', async () => {
       await utils.newSlate(gatekeeper, {
         category: GRANT,
         proposalData: ['a', 'b', 'c'],
@@ -1755,6 +1815,7 @@ contract('Gatekeeper', (accounts) => {
         slateData: 'competing slate',
       }, { from: recommender });
 
+      // Stake on two
       await gatekeeper.stakeTokens(0, { from: recommender });
       await gatekeeper.stakeTokens(1, { from: recommender });
 
@@ -1767,8 +1828,6 @@ contract('Gatekeeper', (accounts) => {
         'Contest status should have been Active',
       );
     });
-
-    // VoteFinalized, RunoffComplete
   });
 
   describe('countRunoffVotes', () => {

@@ -565,7 +565,8 @@ contract Gatekeeper {
      */
     function countVotes(uint ballotID, uint categoryID) public {
         // TODO: revert if categoryID is invalid
-        // TODO: revert if the ballot doesn't have a contest for this category
+
+        // Make sure the ballot has a contest for this category
         Contest memory contest = ballots[ballotID].contests[categoryID];
         require(contest.status == ContestStatus.Active || contest.status == ContestStatus.NoContest,
             "No contest is in progress for this category");
@@ -584,7 +585,7 @@ contract Gatekeeper {
             return;
         }
 
-        // TODO: timing: must be after the vote period
+        // TODO: timing: non-automatic finalization must be after the vote period
 
         // Iterate through the slates and get the one with the most votes
         uint winner = 0;
