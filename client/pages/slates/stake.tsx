@@ -70,17 +70,17 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
     }
   }, [slatesByID]);
 
-  const requiredStake = formatPanvalaUnits(utils.bigNumberify(slate.requiredStake));
+  const requiredPAN = formatPanvalaUnits(utils.bigNumberify(slate.requiredStake));
 
   let steps = [
     <StepperDialog>
-      {`By confirming this transaction, you approve to spend ${requiredStake} tokens to stake for this slate.`}
+      {`By confirming this transaction, you approve to spend ${requiredPAN} tokens to stake for this slate.`}
       {/* To prove you are the account owner, please sign this message. This is similar to signing in
       with a password. */}
     </StepperDialog>,
     <StepperDialog>
       {`Waiting to confirm in MetaMask. By confirming this transaction, you are spending
-      ${requiredStake} tokens to stake for this slate.`}
+      ${requiredPAN} tokens to stake for this slate.`}
     </StepperDialog>,
   ];
 
@@ -150,7 +150,7 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
         <StepperMetamaskDialog />
         <MetamaskButton
           handleClick={approveOrStakeTokens}
-          text={approved ? 'Stake Tokens' : `Approve ${requiredStake}`}
+          text={approved ? 'Stake Tokens' : `Approve ${requiredPAN}`}
         />
       </Stepper>
 
@@ -186,19 +186,19 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
           <CenteredSection>
             <SectionLabel>TOKEN DEPOSIT</SectionLabel>
             <SectionStatement>
-              A deposit of <strong>{`${requiredStake}`}</strong> tokens is required.
+              A deposit of <strong>{`${requiredPAN}`}</strong> tokens is required.
             </SectionStatement>
             <P>
               {`After a slate has tokens staked, the Panvala token holding community will have the
               ability to vote for or against the slate when the voting period begins. If the slate
               that you stake tokens on is successful, you will receive a supporter reward of
-              ${requiredStake}. If the slate that you stake tokens on is unsuccessful, you will lose your token
+              ${requiredPAN}. If the slate that you stake tokens on is unsuccessful, you will lose your token
               deposit.`}
             </P>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '5rem' }}>
               <div>Total token deposit</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{`${requiredStake}`}</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{`${requiredPAN}`}</div>
             </div>
             <BlackSeparator />
           </CenteredSection>
