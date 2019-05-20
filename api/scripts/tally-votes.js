@@ -19,8 +19,16 @@ async function tally(gatekeeper, ballotID, categoryID) {
   let status = await gatekeeper.functions.contestStatus(ballotID, categoryID);
   // console.log('status', status);
 
-  if (status.toString() === ContestStatus.Started) {
-    console.log('counting votes for ballotID, categoryID, status', ballotID, categoryID, status);
+  if (status.toString() === ContestStatus.NoContest) {
+    console.log(`No challenger for categoryID ${categoryID} -- automatically finalizing`);
+    await gatekeeper.functions.countVotes(ballotID, categoryID);
+
+    status = await gatekeeper.functions.contestStatus(ballotID, categoryID);
+    console.log('new status', status);
+  }
+
+  if (status.toString() === ContestStatus.Active) {
+    console.log('Counting votes for ballotID, categoryID, status', ballotID, categoryID, status);
     await gatekeeper.functions.countVotes(ballotID, categoryID);
     console.log('counted votes!');
 
@@ -29,6 +37,7 @@ async function tally(gatekeeper, ballotID, categoryID) {
   }
 
   if (status.toString() === ContestStatus.RunoffPending) {
+    console.log(`Counting runoff votes for category ${categoryID}`);
     await gatekeeper.functions.countRunoffVotes(ballotID, categoryID);
   }
 }
