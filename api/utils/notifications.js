@@ -53,7 +53,7 @@ const notifications = {
 // NOTE: this function makes a lot of queries and will likely be changed
 // the next time the contracts are updated (w/ more event emission args)
 // & when we implement an events db
-async function getNormalizedNotificationByEvents(events, address) {
+async function getNormalizedNotificationsByEvents(events, address) {
   // this would be useful for saving in the db
   // const eventsByName = groupBy(events, 'name');
 
@@ -93,7 +93,10 @@ async function getNormalizedNotificationByEvents(events, address) {
 
         let withdrawStakeNotification = [];
         const slate = await gatekeeper.slates(winningSlate);
-        if (utils.getAddress(slate.staker) === utils.getAddress(address)) {
+        if (
+          utils.getAddress(slate.staker) === utils.getAddress(address) &&
+          utils.bigNumberify(slate.stake).gt(utils.bigNumberify('0'))
+        ) {
           withdrawStakeNotification = [
             {
               ...notifications.WITHDRAW_STAKE,
@@ -143,5 +146,5 @@ async function getNormalizedNotificationByEvents(events, address) {
 }
 
 module.exports = {
-  getNormalizedNotificationByEvents,
+  getNormalizedNotificationsByEvents,
 };

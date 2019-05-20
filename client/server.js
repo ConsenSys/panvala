@@ -42,11 +42,11 @@ app.prepare().then(() => {
     const requestParams = setIdParamsByRequestQuery(req);
     return app.render(req, res, '/slates/stake', requestParams);
   });
-  server.get('/withdraw/:id/stake', (req, res) => {
+  server.get('/withdraw/stake/:id', (req, res) => {
     const requestParams = setIdParamsByRequestQuery(req);
     return app.render(req, res, '/Withdraw', requestParams);
   });
-  server.get('/withdraw/:id/grant', (req, res) => {
+  server.get('/withdraw/grant/:id', (req, res) => {
     const requestParams = setIdParamsByRequestQuery(req);
     return app.render(req, res, '/Withdraw', requestParams);
   });

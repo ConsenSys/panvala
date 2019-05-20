@@ -21,6 +21,7 @@ import StepperMetamaskDialog from '../../components/StepperMetamaskDialog';
 import { sendAndWaitForTransaction } from '../../utils/transaction';
 import { COLORS } from '../../styles';
 import { formatPanvalaUnits } from '../../utils/format';
+import { utils } from 'ethers';
 
 const Wrapper = styled.div`
   font-family: 'Roboto';
@@ -50,6 +51,9 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
   const [modalIsOpen, toggleOpenModal] = React.useState(false);
   const [txPending, setTxPending] = React.useState(false);
   const [stepperIsOpen, toggleOpenStepper] = React.useState(false);
+  const [slate, setSlate] = React.useState({
+    requiredStake: '0',
+  });
   const {
     account,
     contracts,
@@ -57,27 +61,31 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
     onRefreshBalances,
     panBalance,
     gkAllowance,
-    slateStakeAmount,
   }: IEthereumContext = React.useContext(EthereumContext);
-  const { onRefreshSlates } = React.useContext(MainContext);
-  console.log('contracts:', contracts);
+  const { slatesByID, onRefreshSlates } = React.useContext(MainContext);
+
+  React.useEffect(() => {
+    if (slatesByID[query.id]) {
+      setSlate(slatesByID[query.id]);
+    }
+  }, [slatesByID]);
+
+  const requiredStake = formatPanvalaUnits(utils.bigNumberify(slate.requiredStake));
 
   let steps = [
     <StepperDialog>
-      {`By confirming this transaction, you approve to spend ${formatPanvalaUnits(
-        slateStakeAmount
-      )} PAN tokens to stake for this slate.`}
+      {`By confirming this transaction, you approve to spend ${requiredStake} tokens to stake for this slate.`}
       {/* To prove you are the account owner, please sign this message. This is similar to signing in
       with a password. */}
     </StepperDialog>,
     <StepperDialog>
       {`Waiting to confirm in MetaMask. By confirming this transaction, you are spending
-      ${formatPanvalaUnits(slateStakeAmount)} tokens to stake for this slate.`}
+      ${requiredStake} tokens to stake for this slate.`}
     </StepperDialog>,
   ];
 
   // check if the user has approved the gatekeeper for the slate staking requirement
-  const initialApproved: boolean = gkAllowance.gte(slateStakeAmount);
+  const initialApproved: boolean = gkAllowance.gte(slate.requiredStake);
   const [approved, setApproved] = React.useState(initialApproved);
 
   // if approved, current step is to stake
@@ -142,7 +150,7 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
         <StepperMetamaskDialog />
         <MetamaskButton
           handleClick={approveOrStakeTokens}
-          text={approved ? 'Stake Tokens' : `Approve ${formatPanvalaUnits(slateStakeAmount)}`}
+          text={approved ? 'Stake Tokens' : `Approve ${requiredStake}`}
         />
       </Stepper>
 
@@ -178,24 +186,19 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
           <CenteredSection>
             <SectionLabel>TOKEN DEPOSIT</SectionLabel>
             <SectionStatement>
-              A deposit of <strong>{`${formatPanvalaUnits(slateStakeAmount)}`}</strong> tokens is
-              required.
+              A deposit of <strong>{`${requiredStake}`}</strong> tokens is required.
             </SectionStatement>
             <P>
               {`After a slate has tokens staked, the Panvala token holding community will have the
               ability to vote for or against the slate when the voting period begins. If the slate
               that you stake tokens on is successful, you will receive a supporter reward of
-              ${formatPanvalaUnits(
-                slateStakeAmount
-              )}. If the slate that you stake tokens on is unsuccessful, you will lose your token
+              ${requiredStake}. If the slate that you stake tokens on is unsuccessful, you will lose your token
               deposit.`}
             </P>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '5rem' }}>
               <div>Total token deposit</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{`${formatPanvalaUnits(
-                slateStakeAmount
-              )}`}</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{`${requiredStake}`}</div>
             </div>
             <BlackSeparator />
           </CenteredSection>

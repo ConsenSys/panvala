@@ -137,7 +137,6 @@ export interface IEthereumContext {
   gkAllowance: utils.BigNumber;
   tcAllowance: utils.BigNumber;
   votingRights: utils.BigNumber;
-  slateStakeAmount: utils.BigNumberish;
   onRefreshBalances(): any;
 }
 

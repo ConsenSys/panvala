@@ -18,7 +18,6 @@ async function get(multihash, options) {
   return new Promise((resolve, reject) => {
     ipfs.cat(multihash, (err, result) => {
       if (err) reject(new Error(err));
-      console.log('typeof result:', typeof result);
       let data;
       if (json) {
         try {

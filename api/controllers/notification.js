@@ -1,6 +1,6 @@
 const { utils } = require('ethers');
 const { getAllEvents } = require('../utils/transactions');
-const { getNormalizedNotificationByEvents } = require('../utils/notifications');
+const { getNormalizedNotificationsByEvents } = require('../utils/notifications');
 
 module.exports = {
   /**
@@ -23,7 +23,7 @@ module.exports = {
         console.log('');
         console.log('events:', events.length);
         console.log('');
-        getNormalizedNotificationByEvents(events, address).then(notifications => {
+        getNormalizedNotificationsByEvents(events, address).then(notifications => {
           // console.log('notifications:', notifications);
           res.json(notifications);
         });

@@ -132,12 +132,12 @@ const CreateSlate: React.FunctionComponent<{ router: SingletonRouter }> = ({ rou
    * @param requestIDs
    * @param metadataHash
    */
-  function submitGrantSlate(requestIDs: any[], metadataHash: string): Promise<any> {
-    // these are placeholders for now
-    const epochNumber = 0;
-    const category = 0; // Grant
-
+  async function submitGrantSlate(requestIDs: any[], metadataHash: string): Promise<any> {
     if (contracts) {
+      const epochNumber = await contracts.gatekeeper.functions.currentEpochNumber();
+      // placeholder
+      const category = 0; // Grant
+
       return contracts.gatekeeper.functions
         .recommendSlate(epochNumber, category, requestIDs, Buffer.from(metadataHash))
         .then((response: TransactionResponse) => {

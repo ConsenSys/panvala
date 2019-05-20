@@ -176,7 +176,6 @@ interface IProps {
 
 const Slate: StatelessPage<IProps> = ({ query: { id } }) => {
   const { slates, currentBallot }: IMainContext = React.useContext(MainContext);
-  const { slateStakeAmount }: IEthereumContext = React.useContext(EthereumContext);
   // parse the slate id from query
   const slateID: number = parseInt(id);
   // find slate
@@ -198,7 +197,7 @@ const Slate: StatelessPage<IProps> = ({ query: { id } }) => {
 
       <Container>
         <MetaColumn>
-          <SlateSidebar slate={slate} requiredStake={slateStakeAmount} />
+          <SlateSidebar slate={slate} requiredStake={slate.requiredStake} />
         </MetaColumn>
         <MainColumn>
           <SectionLabel>DESCRIPTION</SectionLabel>

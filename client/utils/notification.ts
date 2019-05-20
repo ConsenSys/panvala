@@ -99,7 +99,7 @@ export function normalizeNotifications(
             slate.title
           } you previously supported has been accepted. Please withdraw your tokens.`,
           href: `/Withdraw/stake?id=${slateID}`,
-          asPath: `/withdraw/${slateID}/stake`,
+          asPath: `/withdraw/stake/${slateID}`,
         };
       }
       case NotificationTypes.WITHDRAW_GRANT: {
@@ -107,7 +107,7 @@ export function normalizeNotifications(
           action: 'Action Required: Withdraw Grant Proposal Tokens',
           text: `Congratulations! Your grant proposal (name) has been accepted. Please withdraw your tokens.`,
           href: `/Withdraw/grant?id=${proposalID}`,
-          asPath: `/withdraw/${proposalID}/grant`,
+          asPath: `/withdraw/grant/${proposalID}`,
         };
       }
       default:
