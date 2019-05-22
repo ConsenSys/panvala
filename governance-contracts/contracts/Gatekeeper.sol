@@ -47,9 +47,9 @@ contract Gatekeeper {
 
     uint constant ONE_WEEK = 604800;
 
-    // The timestamp of the start of the first batch
+    // The timestamp of the start of the first epoch
     uint public startTime;
-    uint public batchLength = ONE_WEEK * 13; // 13 weeks
+    uint public epochLength = ONE_WEEK * 13; // 13 weeks
 
     // Parameters
     ParameterStore public parameters;
@@ -125,6 +125,7 @@ contract Gatekeeper {
         // slateIDs
         uint[] slates;
         uint[] stakedSlates;
+        uint256 lastStaked;
 
         // slateID -> tally
         mapping(uint => SlateVotes) votes;
@@ -175,7 +176,7 @@ contract Gatekeeper {
     */
     function currentEpochNumber() public pure returns(uint) {
         // uint elapsed = now.sub(startTime);
-        // uint epoch = elapsed.div(batchLength);
+        // uint epoch = elapsed.div(epochLength);
 
         // return epoch;
         return 0;
@@ -186,15 +187,9 @@ contract Gatekeeper {
     */
     function currentEpochStart() public view returns(uint) {
         uint epoch = currentEpochNumber();
-        return startTime.add(batchLength.mul(epoch));
+        return startTime.add(epochLength.mul(epoch));
     }
 
-    /**
-    * @dev Get the number of the current batch.
-    */
-    function currentBatchNumber() public view returns(uint) {
-        return currentEpochNumber();
-    }
 
 
     // SLATE GOVERNANCE
@@ -264,6 +259,8 @@ contract Gatekeeper {
         require(slateID < slateCount, "No slate exists with that slateID");
         require(slates[slateID].status == SlateStatus.Unstaked, "Slate has already been staked");
 
+        // TODO: timing: must be during the slate submission period
+        uint256 stakeTime = now;
         address staker = msg.sender;
         IERC20 token = token();
 
@@ -284,6 +281,7 @@ contract Gatekeeper {
         // A vote can only happen if there is more than one associated slate
         Contest storage contest = ballots[slate.epochNumber].contests[slate.categoryID];
         contest.stakedSlates.push(slateID);
+        contest.lastStaked = stakeTime.sub(startTime);
 
         uint256 numSlates = contest.stakedSlates.length;
         if (numSlates == 1) {
@@ -884,5 +882,17 @@ contract Gatekeeper {
     // MISCELLANEOUS GETTERS
     function token() public view returns(IERC20) {
         return IERC20(parameters.getAsAddress("tokenAddress"));
+    }
+
+    /**
+    @dev Return the slate submission deadline for the given category
+    @param categoryID The ID of the category
+     */
+    function slateSubmissionDeadline(uint256 categoryID) public view returns(uint256) {
+        Contest memory contest = ballots[currentEpochNumber()].contests[categoryID];
+        uint256 votingStart = ONE_WEEK.mul(11);
+        uint256 offset = (contest.lastStaked.add(votingStart)).div(2);
+
+        return currentEpochStart().add(offset);
     }
 }

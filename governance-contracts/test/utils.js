@@ -21,6 +21,8 @@ const {
   sha256,
 } = require('../utils');
 
+const testProvider = new ethers.providers.JsonRpcProvider('http://localhost:8545');
+
 /**
  * Check that the error is an EVM `revert`
  * @param {Error} error The error to check
@@ -56,6 +58,30 @@ function expectErrorLike(error, substring) {
   assert(error.toString().includes(substring), msg);
 }
 
+/**
+ * Increase the EVM time by `seconds` seconds
+ * @param {BN} seconds
+ */
+async function increaseTime(seconds) {
+  await testProvider.send('evm_increaseTime', [seconds.toNumber()]);
+  await testProvider.send('evm_mine', []);
+}
+
+/**
+ * Save a snapshot of the current EVM state
+ */
+async function evmSnapshot() {
+  const id = await testProvider.send('evm_snapshot');
+  return id;
+}
+
+/**
+ * Revert to a saved EVM snapshot state
+ * @param {Number} snapshotID
+ */
+async function evmRevert(snapshotID) {
+  await testProvider.send('evm_revert', [snapshotID]);
+}
 
 function createMultihash(data) {
   const digest = sha256(data);
@@ -138,8 +164,8 @@ async function newGatekeeper(options) {
     { from: creator },
   );
 
-  // deploy a Gatekeeeper
-  const startTime = '6000';
+  // deploy a Gatekeeper
+  const startTime = Math.floor((new Date()).getTime() / 1000);
   const gatekeeper = await Gatekeeper.new(startTime, parameters.address, { from: creator });
   await parameters.setInitialValue(
     'gatekeeperAddress',
@@ -416,7 +442,8 @@ const utils = {
   expectEvents,
   expectErrorLike,
   zeroAddress: ethUtils.zeroAddress,
-  BN: ethUtils.BN,
+  BN,
+  evm: { increaseTime, snapshot: evmSnapshot, revert: evmRevert },
   createMultihash,
   newGatekeeper,
   newPanvala,

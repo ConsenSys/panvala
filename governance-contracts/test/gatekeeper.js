@@ -20,8 +20,18 @@ const {
   abiCoder,
 } = utils;
 
+const { increaseTime } = utils.evm;
+
 const { GRANT, GOVERNANCE } = utils.categories;
 
+const ONE_WEEK = new BN('604800');
+
+const timing = {
+  EPOCH_LENGTH: ONE_WEEK.mul(new BN(13)),
+  VOTING_PERIOD_START: ONE_WEEK.mul(new BN(11)),
+  COMMIT_PERIOD_LENGTH: ONE_WEEK.mul(new BN(2)),
+  REVEAL_PERIOD_LENGTH: ONE_WEEK.mul(new BN(2)),
+};
 
 async function doRunoff(gatekeeper, ballotID, voters, options) {
   const { finalize = true } = options || {};
@@ -104,10 +114,9 @@ contract('Gatekeeper', (accounts) => {
       const actualStartTime = await gatekeeper.startTime({ from: creator });
       assert.strictEqual(actualStartTime.toString(), startTime.toString());
 
-      // batch length
-      const batchLength = await gatekeeper.batchLength();
-      const expected = 604800 * 13;
-      assert.strictEqual(batchLength.toString(), expected.toString());
+      // epoch length
+      const epochLength = await gatekeeper.epochLength();
+      assert.strictEqual(epochLength.toString(), timing.EPOCH_LENGTH.toString());
     });
 
     it('should fail if the parameter store address is zero', async () => {
@@ -165,6 +174,33 @@ contract('Gatekeeper', (accounts) => {
 
       const pa = await gatekeeper.parameters();
       assert.strictEqual(pa, createdParameters.address);
+    });
+  });
+
+  describe('timing', () => {
+    const [creator] = accounts;
+    let gatekeeper;
+    const startTime = '6000';
+    const votingPeriodLength = timing.VOTING_PERIOD_START;
+
+    beforeEach(async () => {
+      // gatekeeper = await utils.newGatekeeper({ from: creator });
+      gatekeeper = await Gatekeeper.new(
+        startTime,
+        parameters.address,
+        { from: creator },
+      );
+    });
+
+    it('should initialize the slate submission deadline', async () => {
+      const halfVotingPeriod = votingPeriodLength.div(new BN(2));
+      const slateSubmissionDeadline = await gatekeeper.slateSubmissionDeadline(GRANT);
+      const expectedDeadline = new BN(startTime).add(halfVotingPeriod);
+      assert.strictEqual(
+        slateSubmissionDeadline.toString(),
+        expectedDeadline.toString(),
+        'Initial deadline should be 5.5 weeks in',
+      );
     });
   });
 
@@ -322,6 +358,7 @@ contract('Gatekeeper', (accounts) => {
       assert.fail('Recommended a slate with duplicate requestIDs');
     });
 
+    it('should revert if the slate submission period is not active');
     it('should revert if the category is invalid');
   });
 
@@ -355,6 +392,17 @@ contract('Gatekeeper', (accounts) => {
     });
 
     it('should allow a user to stake tokens on a slate', async () => {
+      const snapshotID = await utils.evm.snapshot();
+      const votingLength = timing.VOTING_PERIOD_START;
+      const halfVoting = votingLength.div(new BN(2));
+
+      const epochStart = await gatekeeper.currentEpochStart();
+
+      // move forward in the slate submission period
+      const offset = halfVoting.sub(ONE_WEEK);
+      const stakingTime = epochStart.add(offset);
+      await increaseTime(offset);
+
       // Stake tokens
       const initialBalance = await token.balanceOf(staker);
       const receipt = await gatekeeper.stakeTokens(slateID, { from: staker });
@@ -387,6 +435,20 @@ contract('Gatekeeper', (accounts) => {
         stakeAmount.toString(),
         'Gatekeeper did not get the tokens',
       );
+
+      // Should extend the slate submission deadline
+      const finalSlateDeadline = await gatekeeper.slateSubmissionDeadline(GRANT);
+
+      const votingStart = epochStart.add(votingLength);
+      const timeLeft = votingStart.sub(stakingTime);
+      const expectedDeadline = stakingTime.add(timeLeft.div(new BN(2)));
+      assert.strictEqual(
+        finalSlateDeadline.toString(),
+        expectedDeadline.toString(),
+        'Wrong deadline',
+      );
+
+      await utils.evm.revert(snapshotID);
     });
 
     it('should revert if the slate does not exist', async () => {
