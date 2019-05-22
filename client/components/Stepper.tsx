@@ -61,7 +61,7 @@ interface IProps {
   handleClose?(): void;
   handleClick?(): any;
   handleCancel?(): any;
-  step: number;
+  currentStep: number;
   steps: any[];
 }
 const Stepper: React.SFC<IProps> = props => {
@@ -71,9 +71,11 @@ const Stepper: React.SFC<IProps> = props => {
         <Wrapper>
           <Overlay onClick={props.handleCancel} className="Stepper-overlay" />
           <StepperBody {...props}>
-            <StepperTitle>{`Step ${props.step || 1} of ${props.steps.length}`}</StepperTitle>
+            <StepperTitle>{`Step ${props.currentStep + 1 || 1} of ${
+              props.steps.length
+            }`}</StepperTitle>
             <CancelButton onClick={props.handleCancel}>Cancel</CancelButton>
-            {props.children}
+            {props.steps[props.currentStep]}
           </StepperBody>
         </Wrapper>
       )}

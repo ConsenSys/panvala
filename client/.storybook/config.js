@@ -3,6 +3,7 @@ import { configure, addParameters } from '@storybook/react';
 addParameters({
   options: {
     panelPosition: 'right',
+    showPanel: false,
   },
 });
 

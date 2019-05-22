@@ -1,5 +1,6 @@
 import * as React from 'react';
 import * as yup from 'yup';
+import styled from 'styled-components';
 import { Formik, Form } from 'formik';
 import { Separator } from '../components/Separator';
 import Label from './Label';
@@ -87,7 +88,7 @@ const ProposalForm: React.SFC<IProps> = ({ onHandleSubmit }) => {
       >
         {({ isSubmitting, setFieldValue }) => (
           <Form>
-            <div className="pa4">
+            <PaddedDiv>
               <SectionLabel>{'PERSONAL INFORMATION'}</SectionLabel>
 
               <FieldText
@@ -99,11 +100,11 @@ const ProposalForm: React.SFC<IProps> = ({ onHandleSubmit }) => {
               <FieldText label={'Last Name'} name="lastName" placeholder="Enter your last name" />
               <FieldText required label={'Email'} name="email" placeholder="Enter your email" />
               <FieldText label={'Github'} name="github" placeholder="Enter your github username" />
-            </div>
+            </PaddedDiv>
 
             <Separator />
 
-            <div className="pa4">
+            <PaddedDiv>
               <SectionLabel>{'PROJECT DETAILS'}</SectionLabel>
 
               <FieldText
@@ -156,11 +157,11 @@ const ProposalForm: React.SFC<IProps> = ({ onHandleSubmit }) => {
                   placeholder="Choose file"
                 />
               </div>
-            </div>
+            </PaddedDiv>
 
             <Separator />
 
-            <div className="pa4">
+            <PaddedDiv>
               <SectionLabel>{'FINANCIAL DETAILS'}</SectionLabel>
 
               <FieldTextarea
@@ -188,25 +189,33 @@ const ProposalForm: React.SFC<IProps> = ({ onHandleSubmit }) => {
                 name="otherFunding"
                 placeholder="Enter any other funding you have received"
               />
-            </div>
+            </PaddedDiv>
 
             <Separator />
 
-            <div className="flex flex-column pv2 ph4 items-end">
-              <div className="flex">
-                <Button type="default" large disabled={true}>
-                  {'Back'}
-                </Button>
-                <Button type="submit" large primary disabled={isSubmitting}>
-                  {'Confirm and Submit'}
-                </Button>
-              </div>
-            </div>
+            <FormActions>
+              <Button type="default" large disabled={true}>
+                {'Back'}
+              </Button>
+              <Button type="submit" large primary disabled={isSubmitting}>
+                {'Confirm and Submit'}
+              </Button>
+            </FormActions>
           </Form>
         )}
       </Formik>
     </div>
   );
 };
+
+const PaddedDiv = styled.div`
+  padding: 2rem;
+`;
+
+const FormActions = styled.div`
+  display: flex;
+  padding: 2rem;
+  justify-content: flex-end;
+`;
 
 export default ProposalForm;

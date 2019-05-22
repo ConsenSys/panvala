@@ -12,14 +12,7 @@ import RouteTitle from '../../components/RouteTitle';
 import SectionLabel from '../../components/SectionLabel';
 import Tag from '../../components/Tag';
 import { splitAddressHumanReadable, formatPanvalaUnits } from '../../utils/format';
-import {
-  StatelessPage,
-  IMainContext,
-  ISlate,
-  IBallotDates,
-  IProposal,
-  IEthereumContext,
-} from '../../interfaces';
+import { StatelessPage, IMainContext, ISlate, IBallotDates, IProposal } from '../../interfaces';
 import { convertEVMSlateStatus, statuses } from '../../utils/status';
 
 const Incumbent = styled.div`
@@ -233,6 +226,7 @@ const Slate: StatelessPage<IProps> = ({ query: { id } }) => {
 const FlexColumn = styled.div`
   display: flex;
   flex-direction: column;
+  font-family: 'Roboto';
 `;
 const HeaderWrapper = styled.div`
   display: flex;

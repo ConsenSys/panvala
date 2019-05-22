@@ -199,6 +199,7 @@ const Proposal: StatelessPage<IProps> = ({ query: { id } }) => {
 const FlexColumn = styled.div`
   display: flex;
   flex-direction: column;
+  font-family: 'Roboto';
 `;
 const HeaderWrapper = styled.div`
   display: flex;
