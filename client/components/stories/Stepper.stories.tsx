@@ -13,7 +13,7 @@ const StepperDialog = styled.div`
   line-height: 2rem;
 `;
 
-const requiredStake = '400';
+const requiredStake = '5000.0 PAN';
 
 const stories = storiesOf('Stepper Knobs', module);
 stories.addDecorator(withKnobs);
@@ -24,8 +24,25 @@ stories.add('Step 1/2: sign message', () => {
     'Text',
     'To prove you are the account owner, please sign this message. This is similar to signing in with a password.'
   );
+  const steps = [
+    <div>
+      <StepperDialog>
+        {`By confirming this transaction, you approve to spend ${requiredStake} tokens to stake for this slate.`}
+      </StepperDialog>
+      <StepperMetamaskDialog />
+      <MetamaskButton handleClick={() => null} text={`Approve ${requiredStake}`} />
+    </div>,
+    <div>
+      <StepperDialog>
+        {`By confirming this transaction, you are spending ${requiredStake} tokens to stake for this slate.`}
+      </StepperDialog>
+      <StepperMetamaskDialog />
+      <MetamaskButton handleClick={() => null} text={`Stake ${requiredStake}`} />
+    </div>,
+  ];
+
   return (
-    <Stepper isOpen={isOpen} steps={2} handleCancel={action('button-cancel')}>
+    <Stepper isOpen={isOpen} steps={steps} currentStep={1} handleCancel={action('button-cancel')}>
       <StepperDialog>{dialogText}</StepperDialog>
       <StepperMetamaskDialog />
 
@@ -35,17 +52,17 @@ stories.add('Step 1/2: sign message', () => {
   );
 });
 
-stories.add(`Step 2/2: approve ${requiredStake} pan`, () => {
+stories.add(`Step 2/2: approve ${requiredStake}`, () => {
   return (
-    <Stepper isOpen={true} step={2} steps={2} handleCancel={action('button-cancel')}>
+    <Stepper isOpen={true} currentStep={2} steps={[1, 2]} handleCancel={action('button-cancel')}>
       <StepperDialog>
         Waiting to confirm in MetaMask. By confirming this transaction, you approve to spend{' '}
-        {requiredStake} PAN tokens to stake for this slate.
+        {requiredStake} tokens to stake for this slate.
       </StepperDialog>
       <StepperMetamaskDialog />
 
       <Image src="/static/signature-request-tip.svg" alt="signature request tip" wide />
-      <MetamaskButton handleClick={action('button-click')} text={`Approve ${requiredStake} PAN`} />
+      <MetamaskButton handleClick={action('button-click')} text={`Approve ${requiredStake}`} />
     </Stepper>
   );
 });
@@ -54,7 +71,7 @@ stories.add('Step 2/2: approve all tokens', () => {
   const numTokens = 6789;
   const step = 2;
   return (
-    <Stepper isOpen={true} step={step} steps={2} handleCancel={action('button-cancel')}>
+    <Stepper isOpen={true} currentStep={step} steps={[1, 2]} handleCancel={action('button-cancel')}>
       <StepperDialog>
         Waiting to confirm in MetaMask. By confirming this transaction, you approve to vote with all
         your PAN tokens. You will not lose or gain any tokens regardless of outcome.
@@ -62,7 +79,7 @@ stories.add('Step 2/2: approve all tokens', () => {
       <StepperMetamaskDialog />
 
       <Image src="/static/signature-request-tip.svg" alt="signature request tip" wide />
-      <MetamaskButton handleClick={action('button-click')} text={`Approve ${numTokens} PAN`} />
+      <MetamaskButton handleClick={action('button-click')} text={`Approve ${requiredStake}`} />
     </Stepper>
   );
 });

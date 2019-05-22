@@ -1,6 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
 import { toast } from 'react-toastify';
+import { utils } from 'ethers';
+import { TransactionResponse } from 'ethers/providers';
 import { withStyles } from '@material-ui/core/styles';
 import CircularProgress from '@material-ui/core/CircularProgress';
 
@@ -18,10 +20,9 @@ import { Separator } from '../../components/Separator';
 import { IEthereumContext, StatelessPage } from '../../interfaces';
 import Stepper, { StepperDialog } from '../../components/Stepper';
 import StepperMetamaskDialog from '../../components/StepperMetamaskDialog';
-import { sendAndWaitForTransaction } from '../../utils/transaction';
 import { COLORS } from '../../styles';
 import { formatPanvalaUnits } from '../../utils/format';
-import { utils } from 'ethers';
+import { sendApproveTransaction, sendStakeTokensTransaction } from '../../utils/transaction';
 
 const Wrapper = styled.div`
   font-family: 'Roboto';
@@ -47,114 +48,128 @@ const BlackSeparator = styled.div`
 `;
 
 const Stake: StatelessPage<any> = ({ query, classes }) => {
-  // modal opener
-  const [modalIsOpen, toggleOpenModal] = React.useState(false);
-  const [txPending, setTxPending] = React.useState(false);
-  const [stepperIsOpen, toggleOpenStepper] = React.useState(false);
-  const [slate, setSlate] = React.useState({
-    requiredStake: '0',
-  });
   const {
     account,
     contracts,
-    ethProvider,
     onRefreshBalances,
     panBalance,
     gkAllowance,
   }: IEthereumContext = React.useContext(EthereumContext);
-  const { slatesByID, onRefreshSlates } = React.useContext(MainContext);
+  const { onRefreshSlates, slatesByID } = React.useContext(MainContext);
 
+  // stepper/modal opener
+  const [stepperIsOpen, toggleOpenStepper] = React.useState(false);
+  // pending tx loader
+  const [txPending, setTxPending] = React.useState(false);
+  const [staked, setStaked] = React.useState(false);
+  // slate user is staking on
+  const [slate, setSlate] = React.useState({ requiredStake: '0' });
+
+  // check if the user has approved the gatekeeper for the slate staking requirement
+  const initialApproved: boolean =
+    slate.requiredStake.toString() !== '0' && gkAllowance.gte(slate.requiredStake);
+  const [approved, setApproved] = React.useState(initialApproved);
+  console.log('approved:', approved);
+
+  // set slate and approved once slatesByID exists
   React.useEffect(() => {
     if (slatesByID[query.id]) {
       setSlate(slatesByID[query.id]);
     }
-  }, [slatesByID]);
+    if (slate.requiredStake.toString() !== '0' && gkAllowance.gte(slate.requiredStake)) {
+      setApproved(true);
+    }
+  }, [slatesByID, slate]);
+
+  // step 1: approve
+  async function handleApproveTokens() {
+    if (!account || approved) {
+      console.log('no account or already approved');
+      return false;
+    }
+
+    if (contracts) {
+      const numTokens = panBalance;
+      // send tx (pending)
+      const response: TransactionResponse = await sendApproveTransaction(
+        contracts.token,
+        contracts.gatekeeper.address,
+        numTokens
+      );
+      setTxPending(true);
+
+      // wait for tx to get mined
+      await response.wait();
+      setTxPending(false);
+
+      // set approved
+      toast.success('approve tx mined');
+      setApproved(true);
+    }
+  }
+
+  // step 2: stakeTokens
+  async function handleStakeTokens() {
+    // check (again) if the user has approved the gatekeeper for the slate staking requirement
+    const isApproved: boolean = gkAllowance.gte(slate.requiredStake);
+    if (!account || !isApproved) {
+      console.log('no account or not approved');
+      return false;
+    }
+
+    if (contracts) {
+      const slateID = parseInt(query.id);
+      // send tx (pending)
+      const response = await sendStakeTokensTransaction(contracts.gatekeeper, slateID);
+      setTxPending(true);
+
+      // wait for tx to get mined
+      await response.wait();
+      setTxPending(false);
+      setStaked(true);
+
+      // tx mined
+      toast.success(`stakeTokens tx mined.`);
+
+      // refresh balances, refresh slates
+      onRefreshBalances();
+      onRefreshSlates();
+      toggleOpenStepper(false);
+    }
+  }
 
   const requiredPAN = formatPanvalaUnits(utils.bigNumberify(slate.requiredStake));
 
   let steps = [
-    <StepperDialog>
-      {`By confirming this transaction, you approve to spend ${requiredPAN} tokens to stake for this slate.`}
-      {/* To prove you are the account owner, please sign this message. This is similar to signing in
-      with a password. */}
-    </StepperDialog>,
-    <StepperDialog>
-      {`Waiting to confirm in MetaMask. By confirming this transaction, you are spending
-      ${requiredPAN} tokens to stake for this slate.`}
-    </StepperDialog>,
+    <div>
+      <StepperDialog>
+        {`By confirming this transaction, you approve to spend ${requiredPAN} tokens to stake for this slate.`}
+      </StepperDialog>
+      <StepperMetamaskDialog />
+      <MetamaskButton handleClick={handleApproveTokens} text={`Approve ${requiredPAN}`} />
+    </div>,
+    <div>
+      <StepperDialog>
+        {`By confirming this transaction, you are spending ${requiredPAN} tokens to stake for this slate.`}
+      </StepperDialog>
+      <StepperMetamaskDialog />
+      <MetamaskButton handleClick={handleStakeTokens} text={`Stake ${requiredPAN}`} />
+    </div>,
   ];
 
-  // check if the user has approved the gatekeeper for the slate staking requirement
-  const initialApproved: boolean = gkAllowance.gte(slate.requiredStake);
-  const [approved, setApproved] = React.useState(initialApproved);
-
-  // if approved, current step is to stake
+  // if approved, stake. otherwise, approve + stake
   const currentStep = approved ? 1 : 0;
-  // otherwise, display both approve and stake steps
-  steps = initialApproved ? [steps[1]] : steps;
-
-  // TODO: separate into 2 function calls
-  // -> return if !approved
-  async function approveOrStakeTokens() {
-    if (!account) {
-      return false;
-    }
-
-    // TODO: handle errors gracefully
-
-    // if gatekeeper allowance is less that the staking requirement, send approve tx first
-    // step 1: approve
-    if (!approved) {
-      // TODO: customize numTokens
-      const numTokens = panBalance;
-
-      // TODO: should this transaction also display a 'pending transaction modal'?
-
-      await sendAndWaitForTransaction(ethProvider, contracts.token, 'approve', [
-        contracts.gatekeeper.address,
-        numTokens,
-      ]);
-      toast.success('approve tx mined');
-      // refresh balances, increment the step, exit out of function
-      onRefreshBalances();
-      return setApproved(true);
-    }
-
-    // step 2: stakeTokens
-    // tx pending
-    setTxPending(true);
-    const txResponse = await contracts.gatekeeper.functions.stakeTokens(parseInt(query.id));
-    // change from stepper -> modal
-    toggleOpenStepper(false);
-    toggleOpenModal(true);
-
-    await ethProvider.waitForTransaction(txResponse.hash);
-    // tx mined
-    setTxPending(false);
-    toast.success(`stakeTokens tx mined.`);
-
-    // refresh balances, refresh slates, change -> Success Modal
-    onRefreshBalances();
-    onRefreshSlates();
-  }
 
   return (
     <>
       <Stepper
-        isOpen={stepperIsOpen}
-        step={currentStep}
+        isOpen={stepperIsOpen && !txPending}
+        currentStep={currentStep}
         steps={steps}
         handleCancel={() => toggleOpenStepper(false)}
-      >
-        {steps[currentStep]}
-        <StepperMetamaskDialog />
-        <MetamaskButton
-          handleClick={approveOrStakeTokens}
-          text={approved ? 'Stake Tokens' : `Approve ${requiredPAN}`}
-        />
-      </Stepper>
+      />
 
-      <Modal handleClick={() => toggleOpenModal(false)} isOpen={modalIsOpen}>
+      <Modal handleClick={() => setTxPending(false)} isOpen={txPending || staked}>
         {txPending ? (
           <>
             <Image src="/static/metamask-fox.svg" alt="metamask logo" />
@@ -173,7 +188,7 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
               Now that you have staked tokens on this slate the Panvala token holding community will
               have the ability to vote for or against the slate when the voting period begins.
             </ModalDescription>
-            <Button type="default" onClick={() => toggleOpenModal(false)}>
+            <Button type="default" onClick={() => setTxPending(false)}>
               {'Done'}
             </Button>
           </>
@@ -219,7 +234,7 @@ Stake.getInitialProps = async ({ query }) => {
   return { query };
 };
 
-const styles = theme => ({
+const styles = (theme: any) => ({
   progress: {
     margin: theme.spacing.unit * 2,
     color: COLORS.primary,

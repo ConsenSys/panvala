@@ -2,9 +2,9 @@ import * as React from 'react';
 import styled from 'styled-components';
 import { Formik, Form, FormikContext } from 'formik';
 import { TransactionResponse, TransactionReceipt } from 'ethers/providers';
-import { withRouter, SingletonRouter } from 'next/router';
 import { toast } from 'react-toastify';
 import * as yup from 'yup';
+import { CircularProgress, withStyles } from '@material-ui/core';
 
 import { COLORS } from '../../styles';
 import CenteredTitle from '../../components/CenteredTitle';
@@ -19,6 +19,8 @@ import CenteredWrapper from '../../components/CenteredWrapper';
 import Label from '../../components/Label';
 import SectionLabel from '../../components/SectionLabel';
 import Modal, { ModalTitle, ModalDescription } from '../../components/Modal';
+import Image from '../../components/Image';
+import RouterLink from '../../components/RouterLink';
 import {
   IMainContext,
   IProposal,
@@ -26,12 +28,21 @@ import {
   ISlateMetadata,
   ISaveSlate,
   IEthereumContext,
+  StatelessPage,
 } from '../../interfaces';
 import { ipfsAddObject } from '../../utils/ipfs';
-import { LogDescription } from 'ethers/utils';
 import { convertedToBaseUnits } from '../../utils/format';
 import { postSlate } from '../../utils/api';
-import Image from '../../components/Image';
+import { TokenCapacitor } from '../../types';
+import {
+  sendCreateManyProposalsTransaction,
+  sendStakeTokensTransaction,
+} from '../../utils/transaction';
+
+interface IProposalInfo {
+  metadata: IProposalMetadata[];
+  multihashes: Buffer[];
+}
 
 const Separator = styled.div`
   border: 1px solid ${COLORS.grey5};
@@ -52,6 +63,7 @@ const FormSchema = yup.object().shape({
     .max(5000, 'Too Long!')
     .required('Required'),
   recommendation: yup.string().required('Required'),
+  stake: yup.string().required('Required'),
 });
 
 interface IProposalsObject {
@@ -68,30 +80,28 @@ interface IFormValues {
   recommendation: string;
   proposals: IProposalsObject;
   selectedProposals: IProposal[];
+  stake: string;
 }
 
-interface IProposalInfo {
-  metadata: IProposalMetadata[];
-  multihashes: Buffer[];
+interface IProps {
+  query: any;
+  classes: any;
 }
 
-const CreateSlate: React.FunctionComponent<{ router: SingletonRouter }> = ({ router }) => {
-  const query = router.query;
-
-  // modal opener
-  const [isOpen, setOpenModal] = React.useState(false);
+const CreateSlate: StatelessPage<IProps> = ({ query, classes }) => {
   // get proposals and eth context
   const { proposals, onRefreshSlates }: IMainContext = React.useContext(MainContext);
   const { account, contracts, onRefreshBalances }: IEthereumContext = React.useContext(
     EthereumContext
   );
 
-  /**
-   * getRequestIDs
-   * Submit proposals to the token capacitor and get corresponding request IDs
-   * @param proposalInfo
-   */
-  function getRequestIDs(proposalInfo: IProposalInfo) {
+  // modal opener
+  const [isOpen, setOpenModal] = React.useState(false);
+  // pending tx loader
+  const [txPending, setTxPending] = React.useState(false);
+
+  //  Submit proposals to the token capacitor and get corresponding request IDs
+  async function getRequestIDs(proposalInfo: IProposalInfo, tokenCapacitor: TokenCapacitor) {
     const { metadata, multihashes: proposalMultihashes } = proposalInfo;
     // submit to the capacitor, get requestIDs
     // token distribution details
@@ -99,70 +109,62 @@ const CreateSlate: React.FunctionComponent<{ router: SingletonRouter }> = ({ rou
     const tokenAmounts: string[] = metadata.map(p => convertedToBaseUnits(p.tokensRequested, 18));
     console.log('tokenAmounts:', tokenAmounts);
 
-    if (contracts) {
-      return contracts.tokenCapacitor.functions
-        .createManyProposals(beneficiaries, tokenAmounts, proposalMultihashes)
-        .then((response: TransactionResponse) => {
-          return response.wait();
-        })
-        .then((receipt: TransactionReceipt) => {
-          if (receipt.logs && contracts && contracts.tokenCapacitor) {
-            // console.log('Transaction Mined: ' + receipt);
-            // console.log('logs:', receipt.logs);
+    try {
+      // send tx (pending)
+      const response: TransactionResponse = await sendCreateManyProposalsTransaction(
+        tokenCapacitor,
+        beneficiaries,
+        tokenAmounts,
+        proposalMultihashes
+      );
+      setTxPending(true);
 
-            // Get the ProposalCreated logs from the receipt
-            const decoded: LogDescription[] = receipt.logs
-              .map(log => {
-                return contracts.tokenCapacitor.interface.parseLog(log);
-              })
-              .filter(d => d !== null)
-              .filter(d => d.name == 'ProposalCreated');
+      // wait for tx to get mined
+      const receipt: TransactionReceipt = await response.wait();
+      setTxPending(false);
 
-            // Extract the requestIDs
-            const requestIDs = decoded.map(d => d.values.requestID);
-
-            return requestIDs;
-          }
-        });
+      if ('events' in receipt) {
+        // Get the ProposalCreated logs from the receipt
+        // Extract the requestIDs
+        const requestIDs = receipt.events
+          .filter(event => event.event === 'ProposalCreated')
+          .map(e => e.args.requestID);
+        return requestIDs;
+      }
+      throw new Error('receipt did not contain any events');
+    } catch (error) {
+      throw error;
     }
   }
 
-  /**
-   * Submit requestIDs and metadataHash to the Gatekeeper.
-   * @param requestIDs
-   * @param metadataHash
-   */
+  // Submit requestIDs and metadataHash to the Gatekeeper.
   async function submitGrantSlate(requestIDs: any[], metadataHash: string): Promise<any> {
     if (contracts) {
       const epochNumber = await contracts.gatekeeper.functions.currentEpochNumber();
       // placeholder
       const category = 0; // Grant
 
-      return contracts.gatekeeper.functions
-        .recommendSlate(epochNumber, category, requestIDs, Buffer.from(metadataHash))
-        .then((response: TransactionResponse) => {
-          return response.wait();
-        })
-        .then((receipt: TransactionReceipt) => {
-          if (receipt.logs) {
-            // console.log('Transaction Mined: ' + receipt);
-            // console.log('logs:', receipt.logs);
+      const response = await contracts.gatekeeper.functions.recommendSlate(
+        epochNumber,
+        category,
+        requestIDs,
+        Buffer.from(metadataHash)
+      );
+      setTxPending(true);
 
-            // Get the SlateCreated logs from the receipt
-            const decoded: LogDescription[] = receipt.logs
-              .map(log => {
-                return contracts.gatekeeper.interface.parseLog(log);
-              })
-              .filter(d => d !== null)
-              .filter(d => d.name == 'SlateCreated');
+      const receipt = await response.wait();
+      setTxPending(false);
 
-            // Extract the slateID
-            const slateID: string = decoded[0].values.slateID.toString();
-            const slate: any = { slateID, metadataHash };
-            console.log('Created slate', slate);
-            return slate;
-          }
-        });
+      if ('events' in receipt) {
+        // Get the SlateCreated logs from the receipt
+        // Extract the slateID
+        const slateID = receipt.events
+          .filter(event => event.event === 'SlateCreated')
+          .map(e => e.args.slateID.toString());
+        const slate: any = { slateID, metadataHash };
+        console.log('Created slate', slate);
+        return slate;
+      }
     }
   }
 
@@ -176,11 +178,9 @@ const CreateSlate: React.FunctionComponent<{ router: SingletonRouter }> = ({ rou
    * send tx to gate_keeper: recommendSlate (with requestIDs & slate multihash)
    * get slateID from event
    * add slate to db: slateID, multihash
-   * @param values Form values
-   * @param selectedProposals
    */
   async function handleSubmitSlate(values: IFormValues, selectedProposals: IProposal[]) {
-    if (!account || !onRefreshSlates) {
+    if (!account || !onRefreshSlates || !contracts) {
       const msg =
         'To create a slate, you must first log into MetaMask and switch to the Rinkeby Test Network.';
       toast.error(msg);
@@ -233,7 +233,9 @@ const CreateSlate: React.FunctionComponent<{ router: SingletonRouter }> = ({ rou
       multihashes: proposalMultihashes,
     };
 
-    const getRequests = emptySlate ? Promise.resolve([]) : getRequestIDs(proposalInfo);
+    const getRequests = emptySlate
+      ? Promise.resolve([])
+      : await getRequestIDs(proposalInfo, contracts.tokenCapacitor);
 
     try {
       // console.log('creating proposals...');
@@ -266,10 +268,21 @@ const CreateSlate: React.FunctionComponent<{ router: SingletonRouter }> = ({ rou
             email: values.email,
           };
 
+          // api should handle updating, not just adding
           const response = await postSlate(slateToSave);
           if (response.status === 200) {
             console.log('Saved slate info');
             toast.success('Saved slate');
+
+            // stake immediately after creating slate
+            if (values.stake === 'yes') {
+              const res = await sendStakeTokensTransaction(contracts.gatekeeper, slate.slateID);
+              setTxPending(true);
+
+              await res.wait();
+              setTxPending(false);
+            }
+
             setOpenModal(true);
             onRefreshSlates();
             onRefreshBalances();
@@ -298,43 +311,50 @@ const CreateSlate: React.FunctionComponent<{ router: SingletonRouter }> = ({ rou
 
   return (
     <div>
-      <Modal handleClick={() => setOpenModal(false)} isOpen={isOpen}>
-        <Image src="/static/check.svg" alt="slate submitted" />
-        <ModalTitle>{'Slate submitted.'}</ModalTitle>
-        <ModalDescription className="flex flex-wrap">
-          Now that your slate has been created you and others have the ability to stake tokens on it
-          to propose it to token holders. Once there are tokens staked on the slate it will be
-          eligible for a vote.
-        </ModalDescription>
-        <Button
-          type="default"
-          onClick={() => {
-            setOpenModal(false);
-            router.push('/slates');
-          }}
-        >
-          {'Done'}
-        </Button>
+      <Modal handleClick={() => setOpenModal(false)} isOpen={txPending || isOpen}>
+        {txPending ? (
+          <>
+            <Image src="/static/metamask-fox.svg" alt="metamask logo" />
+            <ModalTitle>{'Transaction Processing'}</ModalTitle>
+            <ModalDescription className="flex flex-wrap">
+              Please wait a few moments while MetaMask processes your transaction. This will only
+              take a few moments.
+            </ModalDescription>
+            <CircularProgress className={classes.progress} />
+          </>
+        ) : (
+          <>
+            <Image src="/static/check.svg" alt="slate submitted" />
+            <ModalTitle>{'Slate submitted.'}</ModalTitle>
+            <ModalDescription className="flex flex-wrap">
+              Now that your slate has been created you and others have the ability to stake tokens
+              on it to propose it to token holders. Once there are tokens staked on the slate it
+              will be eligible for a vote.
+            </ModalDescription>
+            <RouterLink href="/slates" as="/slates">
+              <Button type="default">{'Done'}</Button>
+            </RouterLink>
+          </>
+        )}
       </Modal>
 
       <CenteredTitle title="Create a Grant Slate" />
       <CenteredWrapper>
         <Formik
           initialValues={{
-            email: '',
-            firstName: '',
-            lastName: '',
-            organization: '',
-            title: '',
-            description: '',
+            email: 'email@email.com',
+            firstName: 'Guy',
+            lastName: 'Reid',
+            organization: 'Panvala',
+            title: 'Test Slate',
+            description: 'Only the best proposals',
             recommendation: query && query.id ? 'grant' : '',
             proposals: query && query.id ? { [query.id.toString()]: true } : {},
             selectedProposals: [],
+            stake: 'no',
           }}
           validationSchema={FormSchema}
           onSubmit={async (values: IFormValues, { setSubmitting, setFieldError }: any) => {
-            // console.log('form values:', values);
-
             const emptySlate = values.recommendation === 'noAction';
 
             if (emptySlate) {
@@ -365,7 +385,7 @@ const CreateSlate: React.FunctionComponent<{ router: SingletonRouter }> = ({ rou
         >
           {({ isSubmitting, setFieldValue, values }: FormikContext<IFormValues>) => (
             <Form>
-              <div className="pa4">
+              <PaddedDiv>
                 <SectionLabel>{'ABOUT'}</SectionLabel>
 
                 <FieldText required label={'Email'} name="email" placeholder="Enter your email" />
@@ -390,9 +410,9 @@ const CreateSlate: React.FunctionComponent<{ router: SingletonRouter }> = ({ rou
                   name="description"
                   placeholder="Enter a description for your slate"
                 />
-              </div>
+              </PaddedDiv>
               <Separator />
-              <div className="pa4">
+              <PaddedDiv>
                 <SectionLabel>{'RECOMMENDATION'}</SectionLabel>
                 <Label htmlFor="recommendation" required>
                   {'What type of recommendation would you like to make?'}
@@ -402,21 +422,20 @@ const CreateSlate: React.FunctionComponent<{ router: SingletonRouter }> = ({ rou
                   <Checkbox name="recommendation" value="grant" label="Recommend grant proposals" />
                   <Checkbox name="recommendation" value="noAction" label="Recommend no action" />
                 </div>
-                <div>
-                  {
-                    'By recommending no action you are opposing any current or future slates for this batch.'
-                  }
-                </div>
-              </div>
+                <RadioSubText>
+                  By recommending no action you are opposing any current or future slates for this
+                  batch.
+                </RadioSubText>
+              </PaddedDiv>
               {values.recommendation === 'grant' && (
                 <>
                   <Separator />
-                  <div className="pa4">
+                  <PaddedDiv>
                     <SectionLabel>{'GRANTS'}</SectionLabel>
                     <div className="mv3 f7 black-50">
                       {'Select the grants that you would like to add to your slate'}
                     </div>
-                    <div className="flex flex-wrap">
+                    <FlexContainer>
                       {proposals &&
                         proposals.map((proposal: IProposal) => (
                           <Card
@@ -438,17 +457,37 @@ const CreateSlate: React.FunctionComponent<{ router: SingletonRouter }> = ({ rou
                             isActive={values.proposals[proposal.id]}
                           />
                         ))}
-                    </div>
-                  </div>
+                    </FlexContainer>
+                  </PaddedDiv>
                 </>
               )}
               <Separator />
-              <div className="flex pa4 justify-end">
+              <PaddedDiv>
+                <SectionLabel>STAKE</SectionLabel>
+                <Label htmlFor="stake" required>
+                  {`Would you like to stake 5000 PAN tokens for this slate? This makes your slate eligible for the current batch.`}
+                </Label>
+                <ErrorMessage name="stake" component="span" />
+                <div>
+                  <Checkbox name="stake" value="yes" label="Yes" />
+                  <RadioSubText>
+                    By selecting yes, you will stake tokens for your own slate and not have to rely
+                    on others to stake tokens for you.
+                  </RadioSubText>
+                  <Checkbox name="stake" value="no" label="No" />
+                  <RadioSubText>
+                    By selecting no, you will have to wait for others to stake tokens for your slate
+                    or you can stake tokens after you have created the slate.
+                  </RadioSubText>
+                </div>
+              </PaddedDiv>
+              <Separator />
+              <FormActions>
                 <Button large>{'Back'}</Button>
                 <Button type="submit" large primary disabled={isSubmitting}>
                   {'Create Slate'}
                 </Button>
-              </div>
+              </FormActions>
             </Form>
           )}
         </Formik>
@@ -457,4 +496,36 @@ const CreateSlate: React.FunctionComponent<{ router: SingletonRouter }> = ({ rou
   );
 };
 
-export default withRouter(CreateSlate);
+const RadioSubText = styled.div`
+  margin-left: 2.5rem;
+  font-size: 0.75rem;
+  color: ${COLORS.grey3};
+`;
+
+const FlexContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+`;
+
+const PaddedDiv = styled.div`
+  padding: 2rem;
+`;
+
+const FormActions = styled.div`
+  display: flex;
+  padding: 2rem;
+  justify-content: flex-end;
+`;
+
+CreateSlate.getInitialProps = async ({ query, classes }) => {
+  return { query, classes };
+};
+
+const styles = (theme: any) => ({
+  progress: {
+    margin: theme.spacing.unit * 2,
+    color: COLORS.primary,
+  },
+});
+
+export default withStyles(styles)(CreateSlate);

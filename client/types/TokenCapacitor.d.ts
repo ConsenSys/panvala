@@ -31,7 +31,7 @@ export class TokenCapacitor extends Contract {
     createManyProposals(
       beneficiaries: (string)[],
       tokenAmounts: (number | string | BigNumber)[],
-      metadataHashes: ((string)[])[],
+      metadataHashes: (Buffer)[],
       overrides?: TransactionOverrides
     ): Promise<ContractTransaction>;
 

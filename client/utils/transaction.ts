@@ -1,10 +1,39 @@
 import { TransactionReceipt, TransactionResponse, Web3Provider } from 'ethers/providers';
 import { LogDescription } from 'ethers/utils';
-import { Contract } from 'ethers';
+import { Contract, utils } from 'ethers';
+import { BasicToken, Gatekeeper, TokenCapacitor } from '../types';
 
 export interface IMinedTransaction {
   receipt: TransactionReceipt;
   decodedLogs?: LogDescription[];
+}
+
+export async function sendApproveTransaction(
+  token: BasicToken,
+  address: string,
+  numTokens: utils.BigNumberish
+): Promise<TransactionResponse> {
+  return token.functions.approve(address, numTokens.toString());
+}
+
+export async function sendStakeTokensTransaction(
+  gatekeeper: Gatekeeper,
+  slateID: number
+): Promise<TransactionResponse> {
+  return gatekeeper.functions.stakeTokens(slateID);
+}
+
+export async function sendCreateManyProposalsTransaction(
+  tokenCapacitor: TokenCapacitor,
+  beneficiaries: string[],
+  tokenAmounts: string[],
+  proposalMultihashes: Buffer[]
+): Promise<TransactionResponse> {
+  return tokenCapacitor.functions.createManyProposals(
+    beneficiaries,
+    tokenAmounts,
+    proposalMultihashes
+  );
 }
 
 /**
