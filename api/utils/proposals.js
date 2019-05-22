@@ -36,7 +36,7 @@ module.exports = {
         options: value => {
           // validate type: string
           if (typeof value !== 'string') {
-            throw new Error('value should be a string')
+            throw new Error('value should be a string');
           }
 
           // minimum: 1,000,000,000,000,000,000 (1 token)
@@ -107,25 +107,13 @@ module.exports = {
     },
     totalBudget: {
       in: ['body'],
-      optional: false,
+      optional: true,
       trim: true,
-      isEmpty: false,
-      isLength: {
-        options: {
-          min: 1,
-        },
-      },
     },
     otherFunding: {
       in: ['body'],
-      optional: false,
+      optional: true,
       trim: true,
-      isEmpty: false,
-      isLength: {
-        options: {
-          min: 1,
-        },
-      },
     },
     awardAddress: {
       in: ['body'],

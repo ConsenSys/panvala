@@ -156,8 +156,6 @@ describe('POST /api/proposals', () => {
       'tokensRequested',
       'firstName',
       'email',
-      'totalBudget',
-      'otherFunding',
       'awardAddress',
     ];
 

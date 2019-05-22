@@ -36,8 +36,8 @@ const FormSchema = yup.object().shape({
     .string()
     .matches(/^[0-9]+\.?[0-9]{0,18}$/, 'Must be a number with no more than 18 decimals')
     .required('Required'),
-  totalBudget: yup.string().required('Required'),
-  otherFunding: yup.string().required('Required'),
+  totalBudget: yup.string(),
+  otherFunding: yup.string(),
   awardAddress: yup.string().required('Required'),
 });
 
@@ -164,7 +164,6 @@ const ProposalForm: React.SFC<IProps> = ({ onHandleSubmit }) => {
               <SectionLabel>{'FINANCIAL DETAILS'}</SectionLabel>
 
               <FieldTextarea
-                required
                 label={'What is the total budget of your project (in USD)?'}
                 name="totalBudget"
                 placeholder="Enter the total budget of your project"
@@ -185,7 +184,6 @@ const ProposalForm: React.SFC<IProps> = ({ onHandleSubmit }) => {
               />
 
               <FieldTextarea
-                required
                 label={'Have you applied/received other funding?'}
                 name="otherFunding"
                 placeholder="Enter any other funding you have received"

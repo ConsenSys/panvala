@@ -55,11 +55,11 @@ module.exports = (Sequelize, DataTypes) => {
     },
     totalBudget: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
     otherFunding: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
     awardAddress: {
       type: DataTypes.STRING,
