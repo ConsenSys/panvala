@@ -20,24 +20,45 @@ async function getBalances(account: string, contracts: IContracts): Promise<any[
     contracts.token.functions.allowance(account, contracts.gatekeeper.address),
     contracts.token.functions.allowance(account, contracts.tokenCapacitor.address),
     contracts.gatekeeper.functions.voteTokenBalance(account),
-    contracts.parameterStore.functions.get('slateStakeAmount'), // TODO: move to /stake route
     contracts.token.functions.balanceOf(contracts.tokenCapacitor.address),
     contracts.token.functions.balanceOf(contracts.gatekeeper.address),
   ]);
 }
+function reducer(state: any, action: any) {
+  switch (action.type) {
+    // case 'all':
+    //   return action.payload;
+    case 'eth_state':
+      return {
+        ...state,
+        ethProvider: action.ethProvider,
+        contracts: action.contracts,
+        account: action.account,
+      };
+    case 'account':
+      return {
+        ...state,
+        account: action.payload,
+      };
+    case 'balances':
+      return {
+        ...state,
+        ...action.payload,
+      };
+    default:
+      throw new Error();
+  }
+}
 
 export default function EthereumProvider(props: any) {
-  const [ethState, setEthState] = React.useState({
+  const [state, dispatch] = React.useReducer(reducer, {
     ethProvider: {},
     contracts: {},
     account: '',
-  });
-  const [balances, setBalances] = React.useState({
     panBalance: utils.bigNumberify('0'),
     gkAllowance: utils.bigNumberify('0'),
     tcAllowance: utils.bigNumberify('0'),
     votingRights: utils.bigNumberify('0'),
-    slateStakeAmount: utils.bigNumberify('0'),
     tcBalance: utils.bigNumberify('0'),
     gkBalance: utils.bigNumberify('0'),
   });
@@ -56,27 +77,37 @@ export default function EthereumProvider(props: any) {
           // wrap MetaMask with ethers
           const ethProvider: providers.Web3Provider = await connectProvider(ethereum);
           // contract abstractions (w/ metamask signer)
-          const contracts: IContracts = await connectContracts(ethProvider);
+          let contracts: IContracts | {} = {};
+          try {
+            contracts = await connectContracts(ethProvider);
+          } catch (error) {
+            if (error.message.includes('contract not deployed')) {
+              toast.error(`Contracts not deployed on current network`);
+            }
+          }
 
           // set state
-          if (account && ethProvider && contracts) {
-            setEthState({
+          if (account && ethProvider) {
+            dispatch({
+              type: 'eth_state',
               ethProvider,
               contracts,
               account,
             });
-            toast.success('MetaMask successfully connected!');
+            if ('token' in contracts) {
+              toast.success('MetaMask successfully connected!');
+            }
           }
 
           // register an event listener to handle account-switching in metamask
           ethereum.on('accountsChanged', (accounts: string[]) => {
-            console.log('account:', accounts);
+            console.log('MetaMask account changed:', accounts[0]);
             // set state, triggers useEffect -> refreshes balances
-            setEthState({
-              ethProvider,
-              contracts,
-              account: accounts[0],
-            });
+            handleConnectEthereum();
+            // dispatch({
+            //   type: 'account',
+            //   payload: accounts[0],
+            // });
           });
         }
       } catch (error) {
@@ -89,40 +120,40 @@ export default function EthereumProvider(props: any) {
   }, []);
 
   async function handleRefreshBalances(address: string) {
-    if (address && !isEmpty(ethState.contracts)) {
+    if (address && !isEmpty(state.contracts)) {
       const [
         panBalance,
         gkAllowance,
         tcAllowance,
         votingRights,
-        slateStakeAmount,
         tcBalance,
         gkBalance,
-      ] = await getBalances(address, ethState.contracts);
-      setBalances({
-        panBalance,
-        gkAllowance,
-        tcAllowance,
-        votingRights,
-        slateStakeAmount,
-        tcBalance,
-        gkBalance,
+      ] = await getBalances(address, state.contracts);
+      dispatch({
+        type: 'balances',
+        payload: {
+          panBalance,
+          gkAllowance,
+          tcAllowance,
+          votingRights,
+          tcBalance,
+          gkBalance,
+        },
       });
     }
   }
 
   // runs whenever account changes
   React.useEffect(() => {
-    console.log('account changed:', ethState.account);
-    if (ethState.account && !isEmpty(ethState.contracts)) {
-      handleRefreshBalances(ethState.account);
+    if (state.account && !isEmpty(state.contracts)) {
+      console.log('account change detected. refreshing balances:', state.account);
+      handleRefreshBalances(state.account);
     }
-  }, [ethState.account]);
+  }, [state.account]);
 
   const ethContext: IEthereumContext = {
-    ...ethState,
-    ...balances,
-    onRefreshBalances: () => handleRefreshBalances(ethState.account),
+    ...state,
+    onRefreshBalances: () => handleRefreshBalances(state.account),
   };
   console.log('Eth context:', ethContext);
 
