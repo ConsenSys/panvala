@@ -13,25 +13,23 @@ const ipfs = new IPFS({ host: ipfsHost, port: ipfsPort, protocol: 'https' });
  * @param {Object} options
  */
 async function get(multihash, options) {
-  const json = options.json || false;
-
-  return new Promise((resolve, reject) => {
-    ipfs.cat(multihash, (err, result) => {
-      if (err) reject(new Error(err));
-      let data;
-      if (json) {
-        try {
-          data = JSON.parse(result);
-        } catch (error) {
-          console.log("error.message:", error.message);
-          reject(new Error(`error while trying to parse result: ${error.message}`));
-        }
-      } else {
-        data = result;
+  try {
+    const result = await ipfs.cat(multihash);
+    console.log('');
+    console.log('result:', result);
+    if (options.json) {
+      try {
+        const data = JSON.parse(result);
+        return data;
+      } catch (error) {
+        console.log(`ERROR: while JSON.parse result: ${error.message}`);
+        throw error;
       }
-      resolve(data);
-    });
-  });
+    }
+  } catch (error) {
+    console.log('ERROR: while retrieving an object from ipfs:', error.message);
+    throw error;
+  }
 }
 
 module.exports = {

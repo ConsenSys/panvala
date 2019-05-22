@@ -1,5 +1,6 @@
 const ethers = require('ethers');
 const ipfs = require('./ipfs');
+const range = require('lodash/range')
 
 const { Slate } = require('../models');
 
@@ -34,7 +35,7 @@ async function getAllSlates() {
   console.log(`fetching ${slateCount} slates`);
 
   // 0..slateCount
-  const ids = Array.from(Array(slateCount.toNumber()).keys());
+  const ids = range(0, slateCount);
   // console.log('IDs', ids);
 
   const slatePromises = ids.map(slateID => {
@@ -97,6 +98,7 @@ async function getSlateWithMetadata(slate, metadataHash, requiredStake) {
       proposalMultihashes,
     } = slateMetadata;
     console.log('proposalMultihashes:', proposalMultihashes);
+    console.log('');
 
     // TODO: rehydrate proposals
 
@@ -128,7 +130,7 @@ async function getSlateWithMetadata(slate, metadataHash, requiredStake) {
     };
     return slateData;
   } catch (error) {
-    console.log('error while combining slate with metadata', error);
+    console.log('ERROR: while combining slate with metadata: ', error.message);
     throw error;
   }
 }
