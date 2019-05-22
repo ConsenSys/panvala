@@ -7,7 +7,6 @@ import { BasicToken, Gatekeeper, TokenCapacitor, ParameterStore } from '../types
 export interface IProposal {
   firstName: string;
   lastName: string;
-  email: string;
   title: string;
   summary: string;
   tokensRequested: string;
@@ -75,7 +74,6 @@ export interface ISlateMetadata {
   firstName: string;
   lastName?: string;
   organization?: string;
-  // do not include email
   title: string;
   description: string;
   proposalMultihashes: string[];

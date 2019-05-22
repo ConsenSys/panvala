@@ -18,7 +18,6 @@ export const proposals: IProposal[] = [
     id: 0,
     firstName: 'Amanda',
     lastName: 'Crypto',
-    email: 'amanda.crypto@example.com',
     title: 'A great project',
     tokensRequested: '5000000000',
     summary: 'All sorts of amazing things',

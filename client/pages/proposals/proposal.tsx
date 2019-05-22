@@ -132,8 +132,6 @@ export const ProposalSidebar = ({ proposal, includedInSlates }: IProposalSidebar
         <TokensSection>
           <SectionLabel lessMargin>{'CREATED BY'}</SectionLabel>
           <DarkText>{proposal.firstName + ' ' + proposal.lastName}</DarkText>
-          <SectionLabel lessMargin>{'EMAIL ADDRESS'}</SectionLabel>
-          <DarkText>{proposal.email}</DarkText>
 
           <SectionLabel lessMargin>{'INCLUDED IN SLATES'}</SectionLabel>
           {slates}
