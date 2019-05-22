@@ -180,8 +180,11 @@ contract('Gatekeeper', (accounts) => {
   describe('timing', () => {
     const [creator] = accounts;
     let gatekeeper;
-    const startTime = '6000';
+
+    const firstEpochTime = new Date();
+    const startTime = Math.floor(firstEpochTime / 1000);
     const votingPeriodLength = timing.VOTING_PERIOD_START;
+    const halfVotingPeriod = votingPeriodLength.div(new BN(2));
 
     beforeEach(async () => {
       // gatekeeper = await utils.newGatekeeper({ from: creator });
@@ -192,26 +195,88 @@ contract('Gatekeeper', (accounts) => {
       );
     });
 
-    it('should initialize the slate submission deadline', async () => {
-      const halfVotingPeriod = votingPeriodLength.div(new BN(2));
-      const slateSubmissionDeadline = await gatekeeper.slateSubmissionDeadline(GRANT);
-      const expectedDeadline = new BN(startTime).add(halfVotingPeriod);
-      assert.strictEqual(
-        slateSubmissionDeadline.toString(),
-        expectedDeadline.toString(),
-        'Initial deadline should be 5.5 weeks in',
-      );
+    describe('initial epoch', () => {
+      it('should correctly calculate the initial epoch number', async () => {
+        const expected = 0;
+        const epochNumber = await gatekeeper.currentEpochNumber();
+        assert.strictEqual(
+          epochNumber.toString(),
+          expected.toString(),
+          `Initial epoch number should have been ${expected}`,
+        );
+      });
+
+      it('should calculate the start of the initial epoch as the system start time', async () => {
+        const expected = startTime;
+        const epochStart = await gatekeeper.currentEpochStart();
+        assert.strictEqual(
+          epochStart.toString(),
+          expected.toString(),
+          'Initial epoch start should have been equal to system start time',
+        );
+      });
+      it('should initialize the slate submission deadline', async () => {
+        const slateSubmissionDeadline = await gatekeeper.slateSubmissionDeadline(GRANT);
+        const expectedDeadline = new BN(startTime).add(halfVotingPeriod);
+        assert.strictEqual(
+          slateSubmissionDeadline.toString(),
+          expectedDeadline.toString(),
+          'Initial deadline should be 5.5 weeks in',
+        );
+      });
     });
-  });
 
-  describe('currentBatchNumber', () => {
-    it('should correctly calculate the initial batch number');
-    it('should correctly calculate a subsequent batch number');
-  });
+    describe('future epoch', () => {
+      let snapshotID;
+      const numEpochs = new BN(3.5);
+      // let epochStart;
 
-  describe('currentBatchStart', () => {
-    it('should calculate the start of the initial batch as the start time');
-    it('should correctly calculate the batch start time');
+      beforeEach(async () => {
+        snapshotID = await utils.evm.snapshot();
+        // epochStart = await gatekeeper.currentEpochStart();
+
+        // Go forward in time
+        const offset = timing.EPOCH_LENGTH.mul(numEpochs);
+        await increaseTime(offset);
+      });
+
+      it('should correctly calculate the epoch start time', async () => {
+        const epochStart = await gatekeeper.currentEpochStart();
+        const epochLength = await gatekeeper.epochLength();
+        const expected = (new BN(startTime)).add(epochLength.mul(numEpochs));
+        assert.strictEqual(
+          epochStart.toString(),
+          expected.toString(),
+          `Epoch start time should have been ${expected}`,
+        );
+      });
+
+      it('should correctly calculate a subsequent epoch number', async () => {
+        const expected = 3;
+
+        const epochNumber = await gatekeeper.currentEpochNumber();
+        assert.strictEqual(
+          epochNumber.toString(),
+          expected.toString(),
+          `Epoch number should have been ${expected}`,
+        );
+      });
+
+      it('should initialize the slate submission deadline', async () => {
+        const epochStart = await gatekeeper.currentEpochStart();
+        const slateSubmissionDeadline = await gatekeeper.slateSubmissionDeadline(GRANT);
+        const expectedDeadline = new BN(epochStart).add(halfVotingPeriod);
+        assert.strictEqual(
+          slateSubmissionDeadline.toString(),
+          expectedDeadline.toString(),
+          'Initial deadline should be 5.5 weeks in',
+        );
+      });
+
+      afterEach(async () => {
+        await utils.evm.revert(snapshotID);
+      });
+    });
   });
 
   describe('recommendSlate', () => {
@@ -219,10 +284,11 @@ contract('Gatekeeper', (accounts) => {
     let gatekeeper;
     let requestIDs;
     const metadataHash = utils.createMultihash('my slate');
-    const batchNumber = 0;
+    let batchNumber;
 
     beforeEach(async () => {
       gatekeeper = await utils.newGatekeeper({ from: creator });
+      batchNumber = await gatekeeper.currentEpochNumber();
 
       // Get requestIDs for the slate
       requestIDs = await utils.getRequestIDs(gatekeeper, [
@@ -717,11 +783,12 @@ contract('Gatekeeper', (accounts) => {
     let gatekeeper;
     let token;
     const initialTokens = '20000000';
-    const ballotID = 0;
+    let ballotID;
 
     beforeEach(async () => {
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+      ballotID = await gatekeeper.currentEpochNumber();
 
       const allocatedTokens = '1000';
 
@@ -811,13 +878,14 @@ contract('Gatekeeper', (accounts) => {
   describe('didCommit', () => {
     const [creator, voter] = accounts;
     let gatekeeper;
-    const ballotID = 0;
+    let ballotID;
 
     beforeEach(async () => {
       gatekeeper = await utils.newGatekeeper({
         // parameterStoreAddress: parameters.address,
         from: creator,
       });
+      ballotID = await gatekeeper.currentEpochNumber();
 
       const allocatedTokens = '1000';
 
@@ -849,10 +917,11 @@ contract('Gatekeeper', (accounts) => {
   describe('getCommitHash', () => {
     const [creator, voter] = accounts;
     let gatekeeper;
-    const ballotID = 0;
+    let ballotID;
 
     beforeEach(async () => {
       gatekeeper = await utils.newGatekeeper({ from: creator });
+      ballotID = await gatekeeper.currentEpochNumber();
 
       const allocatedTokens = '1000';
 
@@ -898,7 +967,7 @@ contract('Gatekeeper', (accounts) => {
     let token;
     const initialTokens = '20000000';
 
-    const ballotID = 0;
+    let ballotID;
     let votes;
     let numTokens;
     let commitHash;
@@ -907,6 +976,7 @@ contract('Gatekeeper', (accounts) => {
     beforeEach(async () => {
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+      ballotID = await gatekeeper.currentEpochNumber();
 
       const allocatedTokens = '1000';
 
@@ -1005,7 +1075,11 @@ contract('Gatekeeper', (accounts) => {
         numTokens: emittedTokens,
       } = receipt.logs[0].args;
 
-      assert.strictEqual(emittedBallotID.toString(), '0');
+      assert.strictEqual(
+        emittedBallotID.toString(),
+        ballotID.toString(),
+        'Emitted ballot ID was incorrect',
+      );
       assert.strictEqual(emittedVoter, voter, 'Emitted voter address was incorrect');
       assert.strictEqual(emittedTokens.toString(), numTokens, 'Emitted num tokens was incorrect');
 
@@ -1222,11 +1296,12 @@ contract('Gatekeeper', (accounts) => {
     let gatekeeper;
     let token;
     const initialTokens = '20000000';
-    const ballotID = 0;
+    let ballotID;
 
     beforeEach(async () => {
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+      ballotID = await gatekeeper.currentEpochNumber();
 
       // Make sure the recommender has tokens
       const recommenderTokens = '50000';
@@ -1331,7 +1406,7 @@ contract('Gatekeeper', (accounts) => {
     let token;
     const initialTokens = '20000000';
 
-    const ballotID = 0;
+    let ballotID;
     let votes;
     let numTokens;
     let commitHash;
@@ -1340,6 +1415,7 @@ contract('Gatekeeper', (accounts) => {
     beforeEach(async () => {
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+      ballotID = await gatekeeper.currentEpochNumber();
 
       const allocatedTokens = '1000';
 
@@ -1445,11 +1521,12 @@ contract('Gatekeeper', (accounts) => {
     let gatekeeper;
     let token;
     const initialTokens = '20000000';
-    const ballotID = 0;
+    let ballotID;
 
     beforeEach(async () => {
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+      ballotID = await gatekeeper.currentEpochNumber();
 
       const allocatedTokens = '1000';
 
@@ -1783,11 +1860,12 @@ contract('Gatekeeper', (accounts) => {
     let gatekeeper;
     let token;
     const initialTokens = '20000000';
-    const ballotID = 0;
+    let ballotID;
 
     beforeEach(async () => {
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+      ballotID = await gatekeeper.currentEpochNumber();
 
       const allocatedTokens = '1000';
 
@@ -1858,11 +1936,12 @@ contract('Gatekeeper', (accounts) => {
     let token;
 
     const initialTokens = '20000000';
-    const ballotID = 0;
+    let ballotID;
 
     beforeEach(async () => {
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+      ballotID = await gatekeeper.currentEpochNumber();
 
       // Make sure the recommender has tokens
       const recommenderTokens = '50000';
@@ -1946,11 +2025,12 @@ contract('Gatekeeper', (accounts) => {
     let token;
 
     const initialTokens = '20000000';
-    const ballotID = 0;
+    let ballotID;
 
     beforeEach(async () => {
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+      ballotID = await gatekeeper.currentEpochNumber();
 
       // Make sure the recommender has tokens
       const recommenderTokens = '50000';
@@ -2177,11 +2257,12 @@ contract('Gatekeeper', (accounts) => {
     let token;
 
     const initialTokens = '20000000';
-    const ballotID = 0;
+    let ballotID;
 
     beforeEach(async () => {
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+      ballotID = await gatekeeper.currentEpochNumber();
 
       // Make sure the recommender has tokens
       const recommenderTokens = '50000';
@@ -2280,11 +2361,12 @@ contract('Gatekeeper', (accounts) => {
     let gatekeeper;
     let token;
     const initialTokens = '20000000';
-    const ballotID = 0;
+    let ballotID;
 
     beforeEach(async () => {
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+      ballotID = await gatekeeper.currentEpochNumber();
 
       const allocatedTokens = '1000';
 
@@ -2405,11 +2487,12 @@ contract('Gatekeeper', (accounts) => {
     let stakeAmount;
 
     const initialTokens = '20000000';
-    const ballotID = 0;
+    let ballotID;
 
     beforeEach(async () => {
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+      ballotID = await gatekeeper.currentEpochNumber();
 
       // Make sure the recommender has tokens
       const recommenderTokens = '50000';
@@ -2676,10 +2759,11 @@ contract('Gatekeeper', (accounts) => {
     let capacitor;
 
     const initialTokens = '20000000';
-    const ballotID = 0;
+    let ballotID;
 
     beforeEach(async () => {
       ({ gatekeeper, token, capacitor } = await utils.newPanvala({ initialTokens, from: creator }));
+      ballotID = await gatekeeper.currentEpochNumber();
 
       // create simple ballot with just grants
       await utils.newSlate(gatekeeper, {

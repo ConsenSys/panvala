@@ -227,7 +227,7 @@ contract('TokenCapacitor', (accounts) => {
 
     const initialTokens = '100000000';
     const capacitorSupply = '50000000';
-    const ballotID = 0;
+    let ballotID;
 
     let proposals1;
     let proposals2;
@@ -237,6 +237,7 @@ contract('TokenCapacitor', (accounts) => {
 
     beforeEach(async () => {
       ({ gatekeeper, token, capacitor } = await utils.newPanvala({ initialTokens, from: creator }));
+      ballotID = await gatekeeper.currentEpochNumber();
 
       // Charge the capacitor
       await token.transfer(capacitor.address, capacitorSupply, { from: creator });

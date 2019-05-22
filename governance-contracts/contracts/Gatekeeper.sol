@@ -174,12 +174,11 @@ contract Gatekeeper {
     /**
     * @dev Get the number of the current epoch.
     */
-    function currentEpochNumber() public pure returns(uint) {
-        // uint elapsed = now.sub(startTime);
-        // uint epoch = elapsed.div(epochLength);
+    function currentEpochNumber() public view returns(uint) {
+        uint elapsed = now.sub(startTime);
+        uint epoch = elapsed.div(epochLength);
 
-        // return epoch;
-        return 0;
+        return epoch;
     }
 
     /**
