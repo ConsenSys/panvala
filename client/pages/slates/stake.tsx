@@ -204,11 +204,9 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
               A deposit of <strong>{`${requiredPAN}`}</strong> tokens is required.
             </SectionStatement>
             <P>
-              {`After a slate has tokens staked, the Panvala token holding community will have the
+              After a slate has tokens staked, the Panvala token holding community will have the
               ability to vote for or against the slate when the voting period begins. If the slate
-              that you stake tokens on is successful, you will receive a supporter reward of
-              ${requiredPAN}. If the slate that you stake tokens on is unsuccessful, you will lose your token
-              deposit.`}
+              that you stake tokens on is unsuccessful, you will lose your token deposit.
             </P>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '5rem' }}>
