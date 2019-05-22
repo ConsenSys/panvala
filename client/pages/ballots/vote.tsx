@@ -20,7 +20,7 @@ import { ISlate, IMainContext, IEthereumContext, ISubmitBallot, IChoices } from 
 import { randomSalt, generateCommitHash, generateCommitMessage } from '../../utils/voting';
 import { baseToConvertedUnits } from '../../utils/format';
 import { postBallot } from '../../utils/api';
-import { convertEVMSlateStatus } from '../../utils/status';
+import { convertEVMSlateStatus, SlateStatus } from '../../utils/status';
 import Actions from '../../components/Actions';
 
 type IProps = {
@@ -44,8 +44,6 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
     votingRights,
     ethProvider,
   }: IEthereumContext = React.useContext(EthereumContext);
-
-  console.log('slates:', slates);
 
   // component state
   // choice selector
@@ -223,22 +221,24 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
           <Label required>{'Select your first and second choice slate'}</Label>
           <div className="flex flex-wrap mt3">
             {slates && slates.length > 0
-              ? slates.map((slate: ISlate) => (
-                  <Card
-                    key={slate.id}
-                    title={slate.title}
-                    subtitle={slate.proposals.length + ' Grants Included'}
-                    description={slate.description}
-                    category={slate.category}
-                    status={convertEVMSlateStatus(slate.status)}
-                    choices={choices}
-                    address={slate.recommenderAddress}
-                    onSetChoice={handleSetChoice}
-                    proposals={slate.proposals}
-                    slateID={slate.id.toString()}
-                    asPath={'/ballots/vote'}
-                  />
-                ))
+              ? slates
+                  .filter(s => s.status === SlateStatus.Staked)
+                  .map((slate: ISlate) => (
+                    <Card
+                      key={slate.id}
+                      title={slate.title}
+                      subtitle={slate.proposals.length + ' Grants Included'}
+                      description={slate.description}
+                      category={slate.category}
+                      status={convertEVMSlateStatus(slate.status)}
+                      choices={choices}
+                      address={slate.recommenderAddress}
+                      onSetChoice={handleSetChoice}
+                      proposals={slate.proposals}
+                      slateID={slate.id.toString()}
+                      asPath={'/ballots/vote'}
+                    />
+                  ))
               : null}
           </div>
         </div>
