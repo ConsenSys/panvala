@@ -7,7 +7,42 @@ module.exports = {
    */
   getAll(req, res) {
     Proposal.findAll().then(proposals => {
-      res.send(proposals);
+      const cleaned = proposals.map(
+        ({
+          id,
+          title,
+          summary,
+          tokensRequested,
+          firstName,
+          lastName,
+          github,
+          website,
+          projectPlan,
+          projectTimeline,
+          teamBackgrounds,
+          totalBudget,
+          otherFunding,
+          awardAddress,
+        }) => {
+          return {
+            id,
+            title,
+            summary,
+            tokensRequested,
+            firstName,
+            lastName,
+            github,
+            website,
+            projectPlan,
+            projectTimeline,
+            teamBackgrounds,
+            totalBudget,
+            otherFunding,
+            awardAddress,
+          };
+        }
+      );
+      res.send(cleaned);
     });
   },
 
