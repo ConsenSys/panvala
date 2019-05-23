@@ -22,7 +22,7 @@ const ActionHelpMessage = styled.div`
   color: ${COLORS.grey3};
 `;
 
-const Actions = ({ handleClick, actionText, handleBack }): any => (
+const Actions = ({ handleClick, actionText, handleBack }: any) => (
   <ActionsWrapper>
     <FlexWrapper>
       <Button large onClick={handleBack}>

@@ -32,6 +32,7 @@
     "react-dom": "16.8.6",
     "react-toastify": "4.5.2",
     "styled-components": "4.2.0",
+    "styled-system": "^4.2.2",
     "yup": "0.26.10"
   },
   "devDependencies": {
@@ -51,6 +52,7 @@
     "@types/storybook__addon-knobs": "^5.0.0",
     "@types/storybook__react": "4.0.1",
     "@types/styled-components": "4.1.14",
+    "@types/styled-system": "^4.2.1",
     "@types/yup": "0.26.9",
     "babel-jest": "24.1.0",
     "babel-loader": "8.0.5",

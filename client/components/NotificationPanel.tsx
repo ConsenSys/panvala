@@ -11,6 +11,7 @@ const Wrapper = styled.div`
   flex-direction: column;
   justify-content: center;
   align-items: flex-end;
+  z-index: 25;
 `;
 
 const IconWrapper = styled.div`
@@ -23,7 +24,7 @@ const IconWrapper = styled.div`
 const PanelWrapper = styled.div`
   width: 344px;
   position: absolute;
-  background: #ffffff;
+  background-color: #ffffff;
   border: 2px solid ${COLORS.grey5};
   box-shadow: 0px 5px 5px ${COLORS.grey5};
   margin-top: 1rem;

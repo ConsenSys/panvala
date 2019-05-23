@@ -34,12 +34,15 @@ app.prepare().then(() => {
   // FORMS / TRANSACTIONS
   // ----------------------------------------------
 
-  server.get('/slates/create', (req, res) => {
-    // NOTE: in order to do this, change the RouterLink asPath to `/slates/create/${proposal.id}`
-    // proposal id (if refreshing after coming from 'Add To Slate')
+  server.get('/slates/create', (req, res) => app.render(req, res, '/slates/create'));
+  server.get('/slates/create/grant/:id', (req, res) => {
+    // this is to handle query params: proposalID (coming from /proposals/:id)
     const requestParams = setIdParamsByRequestQuery(req);
-    return app.render(req, res, '/slates/create', requestParams);
+    return app.render(req, res, '/slates/create/grant', requestParams);
   });
+  // prettier-ignore
+  server.get('/slates/create/governance', (req, res) => app.render(req, res, '/slates/create/governance'));
+
   server.get('/proposals/create', (req, res) => app.render(req, res, '/proposals/create'));
 
   // ----------------------------------------------

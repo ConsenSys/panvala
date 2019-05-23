@@ -1,5 +1,5 @@
 import React, { Children } from 'react';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 import { COLORS, BUTTON_COLORS } from '../styles';
 import { IButton } from '../interfaces';
 
@@ -15,10 +15,20 @@ const BaseButton = styled.button`
 
 const StyledButton: any = styled(BaseButton)`
   height: 2rem;
-  background-color: ${({ type }: any) =>
-    type && (BUTTON_COLORS as any)[type] ? (BUTTON_COLORS as any)[type] : COLORS.white};
+  background-color: ${({ type }: any) => {
+    if (type && (BUTTON_COLORS as any)[type]) return (BUTTON_COLORS as any)[type];
+    return COLORS.white;
+  }};
   color: ${({ active }: any) => (active ? COLORS.primary : COLORS.text)};
-  ${({ active }: any) => active && 'box-shadow: 0px 3px 10px rgba(83, 172, 217, 0.16)'};
+
+  ${({ active }: any) => {
+    return (
+      active &&
+      css`
+        box-shadow: 0px 3px 10px rgba(83, 172, 217, 0.16);
+      `
+    );
+  }};
   padding: 0 0.6rem;
   margin: 0;
   border: 1px solid transparent;

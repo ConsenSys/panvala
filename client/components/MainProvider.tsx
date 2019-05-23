@@ -110,9 +110,7 @@ export default function MainProvider(props: any) {
       }
 
       const slatesByID = keyBy(slates, 'id');
-      console.log('slatesByID:', slatesByID);
       const proposalsByID = keyBy(proposalData, 'id');
-      console.log('proposalsByID:', proposalsByID);
 
       const oneWeekSeconds: number = 604800;
       // Epoch 3
@@ -162,6 +160,8 @@ export default function MainProvider(props: any) {
     onRefreshProposals: handleRefreshProposals,
     onRefreshSlates: handleRefreshSlates,
   };
+
+  console.log('Main Context:', state);
 
   return <MainContext.Provider value={value}>{props.children}</MainContext.Provider>;
 }

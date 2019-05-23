@@ -21,3 +21,9 @@ export function loadState() {
     return undefined;
   }
 }
+
+// // save logs in local storage
+// const persistedState = loadState();
+// const log = { error: error.message };
+// const newLogs = persistedState && persistedState.logs ? persistedState.logs.concat(log) : [log];
+// saveState({ logs: newLogs });

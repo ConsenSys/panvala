@@ -1,24 +1,21 @@
 import * as React from 'react';
 import App, { Container } from 'next/app';
-import { SingletonRouter } from 'next/router';
 import ErrorPage from 'next/error';
 import { ToastContainer } from 'react-toastify';
-// required: import css at top-level
-// Note: CSS files can not be imported into your _document.js. You can use the _app.js instead or any other page.
-// https://github.com/zeit/next-plugins/tree/master/packages/next-css#without-css-modules
+import { ThemeProvider } from 'styled-components';
+import { theme } from '../styles';
 import '../globalStyles.css';
 import '../ReactToastify.css';
 import Layout from '../components/Layout';
-import EthereumProvider from '../components/EthereumProvider';
 import MainProvider from '../components/MainProvider';
+import EthereumProvider from '../components/EthereumProvider';
 import NotificationsProvider from '../components/NotificationsProvider';
 
-type IProps = {
+interface IProps {
   Component: any;
-  router: SingletonRouter;
   ctx: any;
-  pageProps: any;
-};
+  pageProps?: any;
+}
 
 interface IState {
   hasError: boolean;
@@ -27,7 +24,7 @@ interface IState {
 }
 
 export default class MyApp extends App<IProps, IState> {
-  state: IState = {
+  readonly state: IState = {
     hasError: false,
   };
 
@@ -51,21 +48,9 @@ export default class MyApp extends App<IProps, IState> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    this.props.router.push('/', '/');
     console.log('CUSTOM ERROR', error);
     console.log('errorInfo:', errorInfo);
-    // this.setState({
-    //   hasError: true,
-    //   error,
-    // });
-
-    // // TODO: log error to reporting service
-
-    // // save logs in local storage
-    // const persistedState = loadState();
-    // const log = { error: error.message };
-    // const newLogs = persistedState && persistedState.logs ? persistedState.logs.concat(log) : [log];
-    // saveState({ logs: newLogs });
+    // TODO: log error to reporting service
   }
 
   render() {
@@ -81,9 +66,11 @@ export default class MyApp extends App<IProps, IState> {
         <EthereumProvider>
           <MainProvider>
             <NotificationsProvider>
-              <Layout title={pageProps.title || 'Panvala'}>
-                <Component {...pageProps} />
-              </Layout>
+              <ThemeProvider theme={theme}>
+                <Layout title={pageProps.title || 'Panvala'}>
+                  <Component {...pageProps} />
+                </Layout>
+              </ThemeProvider>
             </NotificationsProvider>
           </MainProvider>
         </EthereumProvider>

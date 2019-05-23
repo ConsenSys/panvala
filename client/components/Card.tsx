@@ -1,5 +1,5 @@
 import * as React from 'react';
-import styled from 'styled-components';
+import styled, { css, keyframes } from 'styled-components';
 import { COLORS, BUTTON_COLORS } from '../styles';
 import Tag from './Tag';
 import { splitAddressHumanReadable } from '../utils/format';
@@ -8,20 +8,29 @@ import { Separator } from './Separator';
 import { IChoices, IProposal } from '../interfaces';
 import RouterLink from './RouterLink';
 
-const Wrapper = styled.div<{ isActive?: boolean; asPath?: string }>`
+const animatedCss = css`
+  opacity: 1;
+  transform: translateY(0);
+`;
+
+const Wrapper = styled.div<{ isActive?: boolean; asPath?: string; animated: boolean }>`
   width: 300px;
   display: flex;
   flex-direction: column;
   padding: 1rem;
   overflow: hidden;
   border: ${({ isActive }) => (isActive ? '3px solid #59B6E6' : '2px solid ' + COLORS.grey5)};
-  /* border: 2px solid ${COLORS.grey5}; */
   box-shadow: 0px 5px 5px ${COLORS.grey5};
   margin-bottom: 1rem;
   margin-right: 1rem;
-  ${({ asPath }) => !asPath && 'cursor: pointer;'}
   max-height: 100%;
-  ${({ asPath }) => asPath && asPath.startsWith('/ballots') && 'height: 100%;'}
+  ${({ asPath }) => asPath && asPath.startsWith('/ballots') && 'height: 100%'};
+  ${({ asPath }) => !asPath && 'cursor: pointer'};
+
+  opacity: 0;
+  transform: translateY(10px);
+  transition: 500ms all ease-in-out;
+  ${props => props.animated && animatedCss};
 `;
 const CardTitle = styled.div`
   font-size: 1.5rem;
@@ -100,7 +109,7 @@ interface ICardProps {
   // /slates
   onClick?: any;
   verifiedRecommender?: boolean;
-  // /slates/create
+  // /slates/create/grant
   isActive?: boolean;
 }
 
@@ -123,8 +132,20 @@ const ChoiceButton: any = styled(Button)`
 `;
 
 const Card: React.FunctionComponent<ICardProps> = props => {
+  const [animated, setAnimated] = React.useState(false);
+  React.useEffect(() => {
+    setTimeout(() => {
+      setAnimated(true);
+    }, 100);
+  }, []);
+
   return (
-    <Wrapper onClick={props.onClick} isActive={props.isActive} asPath={props.asPath}>
+    <Wrapper
+      onClick={props.onClick}
+      isActive={props.isActive}
+      asPath={props.asPath}
+      animated={animated}
+    >
       <div className="flex">
         {/* GRANT | PENDING TOKENS */}
         <Tag status={''}>{props.category.toUpperCase()}</Tag>

@@ -31,7 +31,7 @@ const ModalBody = styled.div`
   color: ${COLORS.grey2};
   border-radius: 10px;
   box-shadow: 0px 5px 20px rgba(0, 0, 0, 0.1);
-  z-index: 50;
+  z-index: 100;
 `;
 
 const ModalOverlay = styled.div`
@@ -41,7 +41,7 @@ const ModalOverlay = styled.div`
   right: 0;
   bottom: 0;
   background-color: rgba(255, 255, 255, 0.9);
-  z-index: 15;
+  z-index: 50;
   display: block;
 `;
 
