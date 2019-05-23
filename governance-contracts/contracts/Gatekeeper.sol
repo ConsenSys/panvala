@@ -205,11 +205,11 @@ contract Gatekeeper {
     )
         public returns(uint)
     {
-        uint256 epochNumber = currentEpochNumber();
-
         // TODO: category must be valid
-        // TODO: timing: the slate submission period must be active for the given epoch
+        require(now < slateSubmissionDeadline(categoryID), "Submission deadline passed");
         require(metadataHash.length > 0, "metadataHash cannot be empty");
+
+        uint256 epochNumber = currentEpochNumber();
 
         // create slate
         Slate memory s = Slate({
@@ -258,8 +258,6 @@ contract Gatekeeper {
         require(slateID < slateCount, "No slate exists with that slateID");
         require(slates[slateID].status == SlateStatus.Unstaked, "Slate has already been staked");
 
-        // TODO: timing: must be during the slate submission period
-        uint256 stakeTime = now;
         address staker = msg.sender;
         IERC20 token = token();
 
@@ -267,20 +265,23 @@ contract Gatekeeper {
         uint stakeAmount = parameters.getAsUint("slateStakeAmount");
         require(token.balanceOf(staker) >= stakeAmount, "Insufficient token balance");
 
+        Slate storage slate = slates[slateID];
+
+        // Submission period must be active
+        require(now < slateSubmissionDeadline(slate.categoryID), "deadline passed");
+
         // Transfer tokens and update the slate's staking info
         // Must successfully transfer tokens from staker to this contract
-        Slate storage slate = slates[slateID];
         slate.staker = staker;
         slate.stake = stakeAmount;
         slate.status = SlateStatus.Staked;
-
         require(token.transferFrom(staker, address(this), stakeAmount), "Failed to transfer tokens");
 
         // Associate the slate with a contest and update the contest status
         // A vote can only happen if there is more than one associated slate
         Contest storage contest = ballots[slate.epochNumber].contests[slate.categoryID];
         contest.stakedSlates.push(slateID);
-        contest.lastStaked = stakeTime.sub(startTime);
+        contest.lastStaked = now.sub(startTime);
 
         uint256 numSlates = contest.stakedSlates.length;
         if (numSlates == 1) {

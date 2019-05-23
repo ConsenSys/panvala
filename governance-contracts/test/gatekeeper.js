@@ -423,8 +423,42 @@ contract('Gatekeeper', (accounts) => {
       assert.fail('Recommended a slate with duplicate requestIDs');
     });
 
-    it('should revert if the slate submission period is not active');
     it('should revert if the category is invalid');
+
+    describe('after submission deadline', () => {
+      let snapshotID;
+
+      beforeEach(async () => {
+        snapshotID = await utils.evm.snapshot();
+      });
+
+      it('should revert if the slate submission period is not active', async () => {
+        const category = GRANT;
+        const deadline = await gatekeeper.slateSubmissionDeadline(category);
+
+        // move forward
+        const offset = ONE_WEEK.mul(new BN(6));
+        await increaseTime(offset);
+        const now = await utils.evm.timestamp();
+        const submissionTime = new BN(now);
+        assert(submissionTime.gt(deadline), 'Time is not after deadline');
+
+        try {
+          await gatekeeper.recommendSlate(category, requestIDs, utils.asBytes(metadataHash), {
+            from: recommender,
+          });
+        } catch (error) {
+          expectRevert(error);
+          expectErrorLike(error, 'deadline passed');
+          return;
+        }
+        assert.fail('Allowed slate submission after the slate submission deadline');
+      });
+
+      afterEach(async () => {
+        await utils.evm.revert(snapshotID);
+      });
+    });
   });
 
   describe('stakeTokens', () => {
@@ -580,6 +614,29 @@ contract('Gatekeeper', (accounts) => {
         return;
       }
       assert.fail('Allowed a slate to be staked multiple times');
+    });
+
+    it('should revert if the slate submission period is not active', async () => {
+      const category = GRANT;
+      const deadline = await gatekeeper.slateSubmissionDeadline(category);
+
+      // move forward
+      const offset = ONE_WEEK.mul(new BN(6));
+      await increaseTime(offset);
+      const now = await utils.evm.timestamp();
+      const submissionTime = new BN(now);
+      assert(submissionTime.gt(deadline), 'Time is not after deadline');
+
+      try {
+        await gatekeeper.stakeTokens(slateID, {
+          from: staker,
+        });
+      } catch (error) {
+        expectRevert(error);
+        expectErrorLike(error, 'deadline passed');
+        return;
+      }
+      assert.fail('Allowed slate staking after the slate submission deadline');
     });
 
     afterEach(async () => {
