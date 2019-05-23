@@ -5,7 +5,6 @@ import { COLORS } from '../../styles';
 import Button from '../../components/Button';
 import Card, { CardAddress } from '../../components/Card';
 import Deadline from '../../components/Deadline';
-import { EthereumContext } from '../../components/EthereumProvider';
 import { MainContext } from '../../components/MainProvider';
 import RouterLink from '../../components/RouterLink';
 import RouteTitle from '../../components/RouteTitle';

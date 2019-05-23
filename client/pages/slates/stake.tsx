@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { toast } from 'react-toastify';
-import { utils } from 'ethers';
+import { utils, ethers } from 'ethers';
 import { TransactionResponse } from 'ethers/providers';
 import { withStyles } from '@material-ui/core/styles';
 import CircularProgress from '@material-ui/core/CircularProgress';
@@ -48,13 +48,9 @@ const BlackSeparator = styled.div`
 `;
 
 const Stake: StatelessPage<any> = ({ query, classes }) => {
-  const {
-    account,
-    contracts,
-    onRefreshBalances,
-    panBalance,
-    gkAllowance,
-  }: IEthereumContext = React.useContext(EthereumContext);
+  const { account, contracts, onRefreshBalances, gkAllowance }: IEthereumContext = React.useContext(
+    EthereumContext
+  );
   const { onRefreshSlates, slatesByID } = React.useContext(MainContext);
 
   // stepper/modal opener
@@ -69,17 +65,17 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
   const initialApproved: boolean =
     slate.requiredStake.toString() !== '0' && gkAllowance.gte(slate.requiredStake);
   const [approved, setApproved] = React.useState(initialApproved);
-  console.log('approved:', approved);
 
-  // set slate and approved once slatesByID exists
+  // set slate and approved once slatesByID exists or when requiredStake changes
   React.useEffect(() => {
     if (slatesByID[query.id]) {
       setSlate(slatesByID[query.id]);
     }
-    if (slate.requiredStake.toString() !== '0' && gkAllowance.gte(slate.requiredStake)) {
+    // prettier-ignore
+    if (slate.requiredStake.toString() !== '0' && gkAllowance.gte(slate.requiredStake) && !approved) {
       setApproved(true);
     }
-  }, [slatesByID, slate]);
+  }, [slatesByID, slate.requiredStake]);
 
   // step 1: approve
   async function handleApproveTokens() {
@@ -89,12 +85,11 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
     }
 
     if (contracts) {
-      const numTokens = panBalance;
       // send tx (pending)
       const response: TransactionResponse = await sendApproveTransaction(
         contracts.token,
         contracts.gatekeeper.address,
-        numTokens
+        ethers.constants.MaxUint256
       );
       setTxPending(true);
 
@@ -105,6 +100,7 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
       // set approved
       toast.success('approve tx mined');
       setApproved(true);
+      onRefreshBalances();
     }
   }
 
@@ -146,7 +142,7 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
         {`By confirming this transaction, you approve to spend ${requiredPAN} tokens to stake for this slate.`}
       </StepperDialog>
       <StepperMetamaskDialog />
-      <MetamaskButton handleClick={handleApproveTokens} text={`Approve ${requiredPAN}`} />
+      <MetamaskButton handleClick={handleApproveTokens} text={`Approve`} />
     </div>,
     <div>
       <StepperDialog>
