@@ -2,7 +2,7 @@
 const ethUtils = require('ethereumjs-util');
 const bs58 = require('bs58');
 const ethers = require('ethers');
-
+const moment = require('moment');
 
 const Gatekeeper = artifacts.require('Gatekeeper');
 const BasicToken = artifacts.require('BasicToken');
@@ -63,8 +63,9 @@ function expectErrorLike(error, substring) {
  * @param {BN} seconds
  */
 async function increaseTime(seconds) {
-  await testProvider.send('evm_increaseTime', [seconds.toNumber()]);
+  const adjustment = await testProvider.send('evm_increaseTime', [seconds.toNumber()]);
   await testProvider.send('evm_mine', []);
+  return adjustment;
 }
 
 /**
@@ -72,6 +73,7 @@ async function increaseTime(seconds) {
  */
 async function evmSnapshot() {
   const id = await testProvider.send('evm_snapshot');
+  // console.log('Saving snapshot', id);
   return id;
 }
 
@@ -80,7 +82,33 @@ async function evmSnapshot() {
  * @param {Number} snapshotID
  */
 async function evmRevert(snapshotID) {
+  // console.log('Reverting to snapshot', snapshotID);
   await testProvider.send('evm_revert', [snapshotID]);
+}
+
+/**
+ * Get the timestamp of the given block
+ * @param {Number} blockNumber
+ */
+async function blockTime(blockNumber) {
+  if (typeof blockNumber !== 'undefined') {
+    return testProvider.getBlock(blockNumber)
+      .then(block => block.timestamp);
+  }
+
+  return testProvider
+    .getBlockNumber()
+    .then(number => testProvider.getBlock(number))
+    .then(block => block.timestamp);
+}
+
+/**
+ * Print a BN date nicely
+ * @param {BN} bn
+ */
+function printDate(bn) {
+  const dt = bn.toString();
+  return `${moment(dt, 'X')} ${dt}`;
 }
 
 function createMultihash(data) {
@@ -128,7 +156,9 @@ async function newToken(params) {
  * @param {*} options from, parameterStoreAddress, tokenAddress, init
  */
 async function newGatekeeper(options) {
-  const { from: creator, parameterStoreAddress, init = true } = options;
+  const {
+    from: creator, parameterStoreAddress, startTime, init = true,
+  } = options;
   let { tokenAddress } = options;
   let parameters;
 
@@ -165,8 +195,12 @@ async function newGatekeeper(options) {
   );
 
   // deploy a Gatekeeper
-  const startTime = Math.floor((new Date()).getTime() / 1000);
-  const gatekeeper = await Gatekeeper.new(startTime, parameters.address, { from: creator });
+  let systemStart = startTime;
+  // Default start time is now
+  if (typeof systemStart === 'undefined') {
+    systemStart = Math.floor((new Date()).getTime() / 1000);
+  }
+  const gatekeeper = await Gatekeeper.new(systemStart, parameters.address, { from: creator });
   await parameters.setInitialValue(
     'gatekeeperAddress',
     abiCoder.encode(['address'], [gatekeeper.address]),
@@ -214,6 +248,18 @@ async function newPanvala(options) {
   };
 }
 
+/**
+ * Get the number of weeks into the current epoch
+ * @param {Gatekeeper} gatekeeper
+ * @param {*} dt
+ */
+async function epochTime(gatekeeper, dt) {
+  const start = await gatekeeper.currentEpochStart();
+  const s = moment(start.toString(), 'X');
+  const now = moment(dt.toString(), 'X');
+  const elapsed = moment.duration(now.diff(s));
+  return elapsed.as('weeks');
+}
 
 /**
  * generateCommitHash
@@ -298,6 +344,7 @@ async function getRequestIDs(gatekeeper, proposalData, options) {
 
   const receipts = await Promise.all(requests);
   const requestIDs = receipts.map((receipt) => {
+    // console.log(receipt);
     const { requestID } = receipt.logs[0].args;
     return requestID;
   });
@@ -443,10 +490,14 @@ const utils = {
   expectErrorLike,
   zeroAddress: ethUtils.zeroAddress,
   BN,
-  evm: { increaseTime, snapshot: evmSnapshot, revert: evmRevert },
+  evm: {
+    increaseTime, snapshot: evmSnapshot, revert: evmRevert, timestamp: blockTime,
+  },
   createMultihash,
   newGatekeeper,
   newPanvala,
+  epochTime,
+  printDate,
   asBytes,
   stripHexPrefix,
   bytesAsString,

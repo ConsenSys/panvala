@@ -18,6 +18,7 @@ const {
   commitBallot,
   BN,
   abiCoder,
+  // printDate,
 } = utils;
 
 const { increaseTime } = utils.evm;
@@ -32,6 +33,7 @@ const timing = {
   COMMIT_PERIOD_LENGTH: ONE_WEEK.mul(new BN(2)),
   REVEAL_PERIOD_LENGTH: ONE_WEEK.mul(new BN(2)),
 };
+
 
 async function doRunoff(gatekeeper, ballotID, voters, options) {
   const { finalize = true } = options || {};
@@ -187,7 +189,6 @@ contract('Gatekeeper', (accounts) => {
     const halfVotingPeriod = votingPeriodLength.div(new BN(2));
 
     beforeEach(async () => {
-      // gatekeeper = await utils.newGatekeeper({ from: creator });
       gatekeeper = await Gatekeeper.new(
         startTime,
         parameters.address,
@@ -229,11 +230,9 @@ contract('Gatekeeper', (accounts) => {
     describe('future epoch', () => {
       let snapshotID;
       const numEpochs = new BN(3.5);
-      // let epochStart;
 
-      beforeEach(async () => {
+      before(async () => {
         snapshotID = await utils.evm.snapshot();
-        // epochStart = await gatekeeper.currentEpochStart();
 
         // Go forward in time
         const offset = timing.EPOCH_LENGTH.mul(numEpochs);
@@ -273,7 +272,7 @@ contract('Gatekeeper', (accounts) => {
         );
       });
 
-      afterEach(async () => {
+      after(async () => {
         await utils.evm.revert(snapshotID);
       });
     });
@@ -437,10 +436,12 @@ contract('Gatekeeper', (accounts) => {
     const batchNumber = 0;
     const slateID = 0;
     let stakeAmount;
+    let snapshotID;
 
     beforeEach(async () => {
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+      snapshotID = await utils.evm.snapshot();
 
       await utils.newSlate(gatekeeper, {
         batchNumber,
@@ -458,20 +459,24 @@ contract('Gatekeeper', (accounts) => {
     });
 
     it('should allow a user to stake tokens on a slate', async () => {
-      const snapshotID = await utils.evm.snapshot();
       const votingLength = timing.VOTING_PERIOD_START;
-      const halfVoting = votingLength.div(new BN(2));
 
       const epochStart = await gatekeeper.currentEpochStart();
+      // const epochNumber = await gatekeeper.currentEpochNumber();
+      // console.log('epoch', epochNumber.toString());
+      // console.log('start', printDate(epochStart));
 
       // move forward in the slate submission period
-      const offset = halfVoting.sub(ONE_WEEK);
-      const stakingTime = epochStart.add(offset);
+      const offset = ONE_WEEK;
       await increaseTime(offset);
 
       // Stake tokens
       const initialBalance = await token.balanceOf(staker);
       const receipt = await gatekeeper.stakeTokens(slateID, { from: staker });
+      const { blockNumber: stakingBlock } = receipt.receipt;
+      const stakingTime = new BN(await utils.evm.timestamp(stakingBlock));
+      // console.log('stake', printDate(stakingTime));
+      // console.log('WEEK', await utils.epochTime(gatekeeper, stakingTime));
 
       // Check logs
       const {
@@ -513,8 +518,6 @@ contract('Gatekeeper', (accounts) => {
         expectedDeadline.toString(),
         'Wrong deadline',
       );
-
-      await utils.evm.revert(snapshotID);
     });
 
     it('should revert if the slate does not exist', async () => {
@@ -577,6 +580,10 @@ contract('Gatekeeper', (accounts) => {
         return;
       }
       assert.fail('Allowed a slate to be staked multiple times');
+    });
+
+    afterEach(async () => {
+      await utils.evm.revert(snapshotID);
     });
   });
 
