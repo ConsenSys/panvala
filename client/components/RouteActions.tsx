@@ -7,7 +7,7 @@ export default ({ href, asPath, text, disabled }: any) => (
   <Flex p={4} justifyEnd>
     <Button large>{'Back'}</Button>
     <RouterLink href={href} as={asPath} disabled={disabled}>
-      <Button large type="default">
+      <Button large type="default" disabled={disabled}>
         {text}
       </Button>
     </RouterLink>

@@ -2,47 +2,43 @@ import * as React from 'react';
 import styled from 'styled-components';
 import { Formik, Form, FormikContext } from 'formik';
 import { TransactionResponse, TransactionReceipt } from 'ethers/providers';
+import { LogDescription } from 'ethers/utils';
 import { toast } from 'react-toastify';
 import * as yup from 'yup';
 import { CircularProgress, withStyles } from '@material-ui/core';
 
-import { COLORS } from '../../styles';
-import CenteredTitle from '../../components/CenteredTitle';
-import Checkbox from '../../components/Checkbox';
-import { MainContext } from '../../components/MainProvider';
-import Button from '../../components/Button';
-import Card from '../../components/Card';
-import { EthereumContext } from '../../components/EthereumProvider';
-import FieldText, { ErrorMessage } from '../../components/FieldText';
-import FieldTextarea from '../../components/FieldTextarea';
-import CenteredWrapper from '../../components/CenteredWrapper';
-import Label from '../../components/Label';
-import SectionLabel from '../../components/SectionLabel';
-import Modal, { ModalTitle, ModalDescription } from '../../components/Modal';
-import Image from '../../components/Image';
-import RouterLink from '../../components/RouterLink';
+import { COLORS } from '../../../styles';
+import CenteredTitle from '../../../components/CenteredTitle';
+import Checkbox from '../../../components/Checkbox';
+import { MainContext } from '../../../components/MainProvider';
+import Button from '../../../components/Button';
+import Card from '../../../components/Card';
+import { EthereumContext } from '../../../components/EthereumProvider';
+import FieldText, { ErrorMessage } from '../../../components/FieldText';
+import FieldTextarea from '../../../components/FieldTextarea';
+import CenteredWrapper from '../../../components/CenteredWrapper';
+import Label from '../../../components/Label';
+import SectionLabel from '../../../components/SectionLabel';
+import Modal, { ModalTitle, ModalDescription } from '../../../components/Modal';
+import Image from '../../../components/Image';
+import RouterLink from '../../../components/RouterLink';
 import {
   IMainContext,
   IProposal,
-  IProposalMetadata,
+  IGrantProposalMetadata,
   ISlateMetadata,
   ISaveSlate,
   IEthereumContext,
   StatelessPage,
-} from '../../interfaces';
-import { ipfsAddObject } from '../../utils/ipfs';
-import { convertedToBaseUnits } from '../../utils/format';
-import { postSlate } from '../../utils/api';
-import { TokenCapacitor } from '../../types';
+} from '../../../interfaces';
+import { TokenCapacitor } from '../../../types';
 import {
   sendCreateManyProposalsTransaction,
   sendStakeTokensTransaction,
-} from '../../utils/transaction';
-
-interface IProposalInfo {
-  metadata: IProposalMetadata[];
-  multihashes: Buffer[];
-}
+} from '../../../utils/transaction';
+import { ipfsAddObject } from '../../../utils/ipfs';
+import { convertedToBaseUnits } from '../../../utils/format';
+import { postSlate } from '../../../utils/api';
 
 const Separator = styled.div`
   border: 1px solid ${COLORS.grey5};
@@ -66,10 +62,13 @@ const FormSchema = yup.object().shape({
   stake: yup.string().required('Required'),
 });
 
+interface IProposalInfo {
+  metadata: IGrantProposalMetadata[];
+  multihashes: Buffer[];
+}
 interface IProposalsObject {
   [key: string]: boolean;
 }
-
 interface IFormValues {
   email: string;
   title: string;
@@ -82,13 +81,12 @@ interface IFormValues {
   selectedProposals: IProposal[];
   stake: string;
 }
-
 interface IProps {
   query: any;
   classes: any;
 }
 
-const CreateSlate: StatelessPage<IProps> = ({ query, classes }) => {
+const CreateGrantSlate: StatelessPage<IProps> = ({ query, classes }) => {
   // get proposals and eth context
   const { proposals, onRefreshSlates }: IMainContext = React.useContext(MainContext);
   const { account, contracts, onRefreshBalances }: IEthereumContext = React.useContext(
@@ -191,7 +189,7 @@ const CreateSlate: StatelessPage<IProps> = ({ query, classes }) => {
     console.log('preparing proposals...');
 
     const proposalMultihashes: Buffer[] = await Promise.all(
-      selectedProposals.map(async (metadata: IProposalMetadata) => {
+      selectedProposals.map(async (metadata: IGrantProposalMetadata) => {
         try {
           const multihash: string = await ipfsAddObject(metadata);
           // we need a buffer of the multihash for the transaction
@@ -204,7 +202,7 @@ const CreateSlate: StatelessPage<IProps> = ({ query, classes }) => {
     // TODO: add proposal multihashes to db
 
     // Only use the metadata from here forward - do not expose private information
-    const proposalMetadatas: IProposalMetadata[] = selectedProposals.map(proposal => {
+    const proposalMetadatas: IGrantProposalMetadata[] = selectedProposals.map(proposal => {
       return {
         firstName: proposal.firstName,
         lastName: proposal.lastName,
@@ -544,4 +542,4 @@ const styles = (theme: any) => ({
   },
 });
 
-export default withStyles(styles)(CreateSlate);
+export default withStyles(styles)(CreateGrantSlate);

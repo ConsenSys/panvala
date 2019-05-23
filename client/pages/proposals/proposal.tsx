@@ -98,7 +98,7 @@ export const ProposalSidebar = ({ proposal, includedInSlates }: IProposalSidebar
       </Button>
     </RouterLink>
   ) : (
-    <RouterLink href={`/slates/create?id=${proposal.id}`} as={`/slates/create`}>
+    <RouterLink href={`/slates/create/grant?id=${proposal.id}`} as={`/slates/create/grant`}>
       <Button large type="default">
         {'Add to a New Slate'}
       </Button>

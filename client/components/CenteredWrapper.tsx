@@ -22,7 +22,6 @@ export default (props: any) => (
       {...props}
     >
       {props.children}
-      {console.log(props)}
     </CenteredWrapper>
   </Flex>
 );
