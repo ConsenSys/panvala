@@ -253,12 +253,12 @@ async function newPanvala(options) {
  * @param {Gatekeeper} gatekeeper
  * @param {*} dt
  */
-async function epochTime(gatekeeper, dt) {
+async function epochTime(gatekeeper, dt, units) {
   const start = await gatekeeper.currentEpochStart();
   const s = moment(start.toString(), 'X');
   const now = moment(dt.toString(), 'X');
   const elapsed = moment.duration(now.diff(s));
-  return elapsed.as('weeks');
+  return elapsed.as(units || 'weeks');
 }
 
 /**

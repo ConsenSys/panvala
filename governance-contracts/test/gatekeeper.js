@@ -276,6 +276,99 @@ contract('Gatekeeper', (accounts) => {
         await utils.evm.revert(snapshotID);
       });
     });
+
+    describe('timeTravel', () => {
+      const [, alice] = accounts;
+      let snapshotID;
+      const getTime = () => Math.floor((new Date()).getTime() / 1000);
+
+      beforeEach(async () => {
+        snapshotID = await utils.evm.snapshot();
+      });
+
+      it('should go forward in time', async () => {
+        const now = getTime();
+        const initialTime = await utils.epochTime(gatekeeper, now, 'seconds');
+
+        // Go forward
+        const timeJump = ONE_WEEK;
+        const receipt = await gatekeeper.timeTravel(timeJump, { from: creator });
+        const { amount } = receipt.logs[0].args;
+        assert.strictEqual(amount.toString(), timeJump.toString(), 'Emitted time jump was wrong');
+
+        const finalTime = await utils.epochTime(gatekeeper, now, 'seconds');
+        assert(finalTime > initialTime, 'Should have moved forward in time');
+        const expectedTime = new BN(initialTime).add(timeJump);
+        assert.strictEqual(finalTime.toString(), expectedTime.toString());
+      });
+
+      it('should go backward in time', async () => {
+        // Go forward into the epoch
+        const offset = ONE_WEEK.mul(new BN(10));
+        await increaseTime(offset);
+
+        // Get the initial timings
+        const now = getTime();
+        const initialTime = await utils.epochTime(gatekeeper, now, 'seconds');
+
+        // Now go back again
+        const timeJump = ONE_WEEK.neg();
+        const receipt = await gatekeeper.timeTravel(timeJump, { from: creator });
+        const { amount } = receipt.logs[0].args;
+        assert.strictEqual(amount.toString(), timeJump.toString(), 'Emitted time jump was wrong');
+
+        const finalTime = await utils.epochTime(gatekeeper, now, 'seconds');
+        assert(finalTime < initialTime, 'Should have moved backward in time');
+        const expectedTime = new BN(initialTime).add(timeJump);
+        assert.strictEqual(finalTime.toString(), expectedTime.toString());
+      });
+
+      it('should revert if someone other than the owner tries to time travel', async () => {
+        try {
+          await gatekeeper.timeTravel(ONE_WEEK, { from: alice });
+        } catch (error) {
+          expectRevert(error);
+          expectErrorLike(error, 'Only the owner');
+          return;
+        }
+        assert.fail('Allowed someone other than the owner to time travel');
+      });
+
+      it('should go back before a deadline', async () => {
+        const category = GRANT;
+        // move forward to after the deadline
+        const deadline = await gatekeeper.slateSubmissionDeadline(category);
+        const offset = ONE_WEEK.mul(new BN(6));
+
+        await increaseTime(offset);
+        const now = await utils.evm.timestamp();
+        const submissionTime = new BN(now);
+        assert(submissionTime.gt(deadline), 'Time is not after deadline');
+
+        const metadataHash = utils.createMultihash('some slate');
+        // Should not let submission
+        try {
+          await gatekeeper.recommendSlate(category, [], utils.asBytes(metadataHash), {
+            from: alice,
+          });
+        } catch (error) {
+          expectRevert(error);
+          expectErrorLike(error, 'deadline passed');
+        }
+
+        // time travel
+        await gatekeeper.timeTravel(ONE_WEEK.neg(), { from: creator });
+
+        // Should now be able to submit
+        await gatekeeper.recommendSlate(category, [], utils.asBytes(metadataHash), {
+          from: alice,
+        });
+      });
+
+      afterEach(async () => {
+        await utils.evm.revert(snapshotID);
+      });
+    });
   });
 
   describe('recommendSlate', () => {

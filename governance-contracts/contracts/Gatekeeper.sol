@@ -154,6 +154,9 @@ contract Gatekeeper {
     // epoch number -> Ballot
     mapping(uint => Ballot) public ballots;
 
+    // TEMP allow the contract creator to time travel
+    address owner;
+    int256 timeOffset;
 
     // IMPLEMENTATION
     /**
@@ -162,6 +165,8 @@ contract Gatekeeper {
      @param _parameters The parameter store to use
     */
     constructor(uint _startTime, ParameterStore _parameters) public {
+        owner = msg.sender; // TEMP
+
         parameters = _parameters;
 
         address tokenAddress = parameters.getAsAddress("tokenAddress");
@@ -190,6 +195,24 @@ contract Gatekeeper {
     }
 
 
+    // TEMP ADMIN
+    event TimeTraveled(int256 amount, uint256 startTime);
+
+    /**
+    * @dev Move forward or backward in the epoch by adjusting the start time. Positive numbers move
+    * into the future, while negative numbers move into the past. Only the owner can call this.
+    * @param amount The number of seconds to shift by
+     */
+    function timeTravel(int256 amount) public {
+        require(msg.sender == owner, "Only the owner");
+
+        if (amount > 0) {
+            startTime = startTime.sub(uint256(amount));
+        } else {
+            startTime = startTime.add(uint256(-amount));
+        }
+        emit TimeTraveled(amount, startTime);
+    }
 
     // SLATE GOVERNANCE
     /**
