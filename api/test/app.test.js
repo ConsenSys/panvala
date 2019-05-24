@@ -202,6 +202,8 @@ describe('POST /api/proposals', () => {
       'projectPlan',
       'projectTimeline',
       'teamBackgrounds',
+      'totalBudget',
+      'otherFunding',
     ];
 
     test.each(optionalFields)('it should accept a missing `%s`', async field => {
