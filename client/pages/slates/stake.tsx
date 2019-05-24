@@ -167,7 +167,7 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
         handleCancel={() => toggleOpenStepper(false)}
       />
 
-      <Modal handleClick={() => setTxPending(false)} isOpen={txPending || modalIsOpen}>
+      <Modal handleClick={() => setOpenModal(false)} isOpen={txPending || modalIsOpen}>
         {txPending ? (
           <>
             <Image src="/static/metamask-fox.svg" alt="metamask logo" />

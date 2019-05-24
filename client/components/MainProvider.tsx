@@ -59,12 +59,14 @@ function reducer(state: any, action: any) {
     case 'slates':
       return {
         ...state,
-        slates: action.payload,
+        slates: action.slates,
+        slatesByID: action.slatesByID,
       };
     case 'proposals':
       return {
         ...state,
-        proposals: action.payload,
+        proposals: action.proposals,
+        proposalsByID: action.proposalsByID,
       };
     default:
       throw new Error();
@@ -139,11 +141,13 @@ export default function MainProvider(props: any) {
 
   async function handleRefreshProposals() {
     const proposals: IProposal[] = await handleGetAllProposals();
-    return dispatch({ type: 'proposals', payload: proposals });
+    const proposalsByID = keyBy(proposals, 'id');
+    return dispatch({ type: 'proposals', proposals, proposalsByID });
   }
   async function handleRefreshSlates() {
     const slates: ISlate[] = await handleGetAllSlates();
-    return dispatch({ type: 'slates', payload: slates });
+    const slatesByID = keyBy(slates, 'id');
+    return dispatch({ type: 'slates', slates, slatesByID });
   }
 
   const value: IMainContext = {
