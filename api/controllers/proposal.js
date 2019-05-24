@@ -6,43 +6,25 @@ module.exports = {
    * Get the list of proposals
    */
   getAll(req, res) {
-    Proposal.findAll().then(proposals => {
-      const cleaned = proposals.map(
-        ({
-          id,
-          title,
-          summary,
-          tokensRequested,
-          firstName,
-          lastName,
-          github,
-          website,
-          projectPlan,
-          projectTimeline,
-          teamBackgrounds,
-          totalBudget,
-          otherFunding,
-          awardAddress,
-        }) => {
-          return {
-            id,
-            title,
-            summary,
-            tokensRequested,
-            firstName,
-            lastName,
-            github,
-            website,
-            projectPlan,
-            projectTimeline,
-            teamBackgrounds,
-            totalBudget,
-            otherFunding,
-            awardAddress,
-          };
-        }
-      );
-      res.send(cleaned);
+    Proposal.findAll({
+      attributes: [
+        'id',
+        'title',
+        'summary',
+        'tokensRequested',
+        'firstName',
+        'lastName',
+        'github',
+        'website',
+        'projectPlan',
+        'projectTimeline',
+        'teamBackgrounds',
+        'totalBudget',
+        'otherFunding',
+        'awardAddress',
+      ],
+    }).then(proposals => {
+      res.send(proposals);
     });
   },
 
