@@ -69,7 +69,7 @@ const Slates: React.FunctionComponent<Props> = props => {
                   <Card
                     key={slate.id}
                     title={slate.title}
-                    subtitle={slate.proposals.length + ' Grants Included'}
+                    subtitle={slate.proposals && slate.proposals.length + ' Grants Included'}
                     description={slate.description}
                     category={slate.category}
                     status={convertEVMSlateStatus(slate.status)}

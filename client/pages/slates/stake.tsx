@@ -55,6 +55,7 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
 
   // stepper/modal opener
   const [stepperIsOpen, toggleOpenStepper] = React.useState(false);
+  const [modalIsOpen, setOpenModal] = React.useState(false);
   // pending tx loader
   const [txPending, setTxPending] = React.useState(false);
   const [staked, setStaked] = React.useState(false);
@@ -131,6 +132,7 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
       onRefreshBalances();
       onRefreshSlates();
       toggleOpenStepper(false);
+      setOpenModal(true);
     }
   }
 
@@ -165,7 +167,7 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
         handleCancel={() => toggleOpenStepper(false)}
       />
 
-      <Modal handleClick={() => setTxPending(false)} isOpen={txPending || staked}>
+      <Modal handleClick={() => setTxPending(false)} isOpen={txPending || modalIsOpen}>
         {txPending ? (
           <>
             <Image src="/static/metamask-fox.svg" alt="metamask logo" />
@@ -184,7 +186,7 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
               Now that you have staked tokens on this slate the Panvala token holding community will
               have the ability to vote for or against the slate when the voting period begins.
             </ModalDescription>
-            <Button type="default" onClick={() => setTxPending(false)}>
+            <Button type="default" onClick={() => setOpenModal(false)}>
               {'Done'}
             </Button>
           </>

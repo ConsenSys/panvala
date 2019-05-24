@@ -309,6 +309,33 @@ const CreateSlate: StatelessPage<IProps> = ({ query, classes }) => {
     // TODO: Should take us to all slates view after successful submission
   }
 
+  const initialValues =
+    process.env.NODE_ENV === 'development'
+      ? {
+          email: 'email@email.com',
+          firstName: 'Guy',
+          lastName: 'Reid',
+          organization: 'Panvala',
+          title: 'Test Slate',
+          description: 'Only the best proposals',
+          recommendation: query && query.id ? 'grant' : '',
+          proposals: query && query.id ? { [query.id.toString()]: true } : {},
+          selectedProposals: [],
+          stake: 'no',
+        }
+      : {
+          email: '',
+          firstName: '',
+          lastName: '',
+          organization: '',
+          title: '',
+          description: '',
+          recommendation: query && query.id ? 'grant' : '',
+          proposals: query && query.id ? { [query.id.toString()]: true } : {},
+          selectedProposals: [],
+          stake: 'no',
+        };
+
   return (
     <div>
       <Modal handleClick={() => setOpenModal(false)} isOpen={txPending || isOpen}>
@@ -341,18 +368,7 @@ const CreateSlate: StatelessPage<IProps> = ({ query, classes }) => {
       <CenteredTitle title="Create a Grant Slate" />
       <CenteredWrapper>
         <Formik
-          initialValues={{
-            email: 'email@email.com',
-            firstName: 'Guy',
-            lastName: 'Reid',
-            organization: 'Panvala',
-            title: 'Test Slate',
-            description: 'Only the best proposals',
-            recommendation: query && query.id ? 'grant' : '',
-            proposals: query && query.id ? { [query.id.toString()]: true } : {},
-            selectedProposals: [],
-            stake: 'no',
-          }}
+          initialValues={initialValues}
           validationSchema={FormSchema}
           onSubmit={async (values: IFormValues, { setSubmitting, setFieldError }: any) => {
             const emptySlate = values.recommendation === 'noAction';

@@ -45,8 +45,10 @@ function reducer(state: any, action: any) {
         ...state,
         ...action.payload,
       };
-    default:
-      throw new Error();
+    default: {
+      console.error('Unknown action type provided to Eth Provider', action);
+      return state;
+    }
   }
 }
 
