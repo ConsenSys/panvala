@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import isEmpty from 'lodash/isEmpty';
 import { connectProvider, connectContracts } from '../utils/provider';
 import { IContracts, IEthereumContext } from '../interfaces';
+import { baseToConvertedUnits } from '../utils/format';
 
 export const EthereumContext: React.Context<IEthereumContext> = React.createContext<any>({});
 
@@ -24,6 +25,7 @@ async function getBalances(account: string, contracts: IContracts): Promise<any[
     contracts.token.functions.balanceOf(contracts.gatekeeper.address),
   ]);
 }
+
 function reducer(state: any, action: any) {
   switch (action.type) {
     // case 'all':
@@ -63,6 +65,9 @@ export default function EthereumProvider(props: any) {
     votingRights: utils.bigNumberify('0'),
     tcBalance: utils.bigNumberify('0'),
     gkBalance: utils.bigNumberify('0'),
+    panHuman: utils.bigNumberify('0'),
+    gkHuman: utils.bigNumberify('0'),
+    tcHuman: utils.bigNumberify('0'),
   });
 
   // runs once, on-load
@@ -96,24 +101,19 @@ export default function EthereumProvider(props: any) {
               contracts,
               account,
             });
-            if ('token' in contracts) {
+            if (contracts.hasOwnProperty('token')) {
               toast.success('MetaMask successfully connected!');
             }
           }
 
           // register an event listener to handle account-switching in metamask
-          ethereum.on('accountsChanged', (accounts: string[]) => {
+          ethereum.once('accountsChanged', (accounts: string[]) => {
             console.log('MetaMask account changed:', accounts[0]);
-            // set state, triggers useEffect -> refreshes balances
             handleConnectEthereum();
-            // dispatch({
-            //   type: 'account',
-            //   payload: accounts[0],
-            // });
           });
         }
       } catch (error) {
-        console.log(error);
+        console.error(error);
         toast.error('Error while attempting to connect to Ethereum.');
       }
     }
@@ -135,11 +135,14 @@ export default function EthereumProvider(props: any) {
         type: 'balances',
         payload: {
           panBalance,
+          gkBalance,
+          tcBalance,
           gkAllowance,
           tcAllowance,
           votingRights,
-          tcBalance,
-          gkBalance,
+          panHuman: baseToConvertedUnits(panBalance),
+          gkHuman: baseToConvertedUnits(gkBalance),
+          tcHuman: baseToConvertedUnits(tcBalance),
         },
       });
     }
