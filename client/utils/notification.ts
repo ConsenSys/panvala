@@ -42,8 +42,6 @@ export function normalizeNotifications(
           text: `The grant proposal ${proposal.title} you created has been included in slate ${
             slate.title
           }. Token holders can vote for this slate to fund your proposal.`,
-          href: `/slates/slate?id=${slateID}`,
-          asPath: `/slates/${slateID}`,
         };
       }
       case NotificationTypes.PROPOSAL_REJECTED: {
@@ -56,16 +54,12 @@ export function normalizeNotifications(
         return {
           action: 'Slate Adopted',
           text: `Congratulations! The slate (name) you recommended has been adopted successfully. Feel free to contact grant recipients and congratulate them.`,
-          href: `/slates/slate?id=${slateID}`,
-          asPath: `/slates/${slateID}`,
         };
       }
       case NotificationTypes.SLATE_REJECTED: {
         return {
           action: 'Slate Not Adopted',
           text: `Unfortunately, the slate (name) you supported was not the winning slate. Your tokens have been contributed to Panvala’s donation smart contract to fund future work to build the Ethereum ecosystem.`,
-          href: `/slates/slate?id=${slateID}`,
-          asPath: `/slates/${slateID}`,
         };
       }
       case NotificationTypes.BALLOT_OPEN: {

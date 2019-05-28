@@ -2,6 +2,7 @@ import * as React from 'react';
 import styled from 'styled-components';
 import { BigNumberish } from 'ethers/utils';
 import { COLORS } from '../../styles';
+import Box from '../../components/system/Box';
 import Button from '../../components/Button';
 import Card, { CardAddress } from '../../components/Card';
 import Deadline from '../../components/Deadline';
@@ -42,13 +43,6 @@ const TokensSection = styled.div`
   padding: 0 1.25rem 1rem;
   color: ${COLORS.grey3};
   margin-top: 1em;
-`;
-const StakingRequirement = styled.div`
-  font-size: 1.6rem;
-  color: ${COLORS.grey1};
-`;
-const DarkText = styled.div`
-  color: ${COLORS.grey1};
 `;
 
 const MainColumn = styled.div`
@@ -95,7 +89,9 @@ export const SlateSidebar = ({ slate, requiredStake, currentBallot }: IStakeSide
     status === statuses.PENDING_TOKENS ? (
       <>
         <SectionLabel>{'STAKING REQUIREMENT'}</SectionLabel>
-        <StakingRequirement>{formatPanvalaUnits(requiredStake)}</StakingRequirement>
+        <Box fontSize="1.6rem" color="black">
+          {formatPanvalaUnits(requiredStake)}
+        </Box>
       </>
     ) : null;
 
@@ -140,13 +136,13 @@ export const SlateSidebar = ({ slate, requiredStake, currentBallot }: IStakeSide
 
         <TokensSection>
           <SectionLabel lessMargin>{'CREATED BY'}</SectionLabel>
-          <DarkText>{slate.owner}</DarkText>
+          <Box color="black">{slate.owner}</Box>
           <CardAddress>{splitAddressHumanReadable(slate.recommenderAddress)}</CardAddress>
 
           {slate.verifiedRecommender ? (
             <>
               <SectionLabel lessMargin>{'ORGANIZATION'}</SectionLabel>
-              <DarkText>{slate.organization}</DarkText>
+              <Box color="black">{slate.organization}</Box>
             </>
           ) : null}
         </TokensSection>
@@ -211,8 +207,8 @@ const Slate: StatelessPage<IProps> = ({ query: { id } }) => {
         </MetaColumn>
         <MainColumn>
           <SectionLabel>DESCRIPTION</SectionLabel>
-          <DarkText>{slate.description}</DarkText>
-          {slate.proposals.length ? (
+          <Box color="black">{slate.description}</Box>
+          {slate.proposals && slate.proposals.length ? (
             <>
               <SectionLabel>{'GRANTS'}</SectionLabel>
               <SlateProposals>

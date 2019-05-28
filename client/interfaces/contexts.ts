@@ -29,7 +29,7 @@ export interface IProposal {
 /**
  * Public proposal metadata that gets saved to IPFS
  */
-export interface IProposalMetadata {
+export interface IGrantProposalMetadata {
   firstName: string;
   lastName: string;
   title: string;
@@ -77,7 +77,7 @@ export interface ISlateMetadata {
   title: string;
   description: string;
   proposalMultihashes: string[];
-  proposals: IProposalMetadata[];
+  proposals: IGrantProposalMetadata[];
 }
 
 /**

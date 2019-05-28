@@ -531,7 +531,7 @@ const FormActions = styled.div`
   justify-content: flex-end;
 `;
 
-CreateSlate.getInitialProps = async ({ query, classes }) => {
+CreateGrantSlate.getInitialProps = async ({ query, classes }) => {
   return { query, classes };
 };
 

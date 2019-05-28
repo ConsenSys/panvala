@@ -123,7 +123,9 @@ async function getNormalizedNotificationsByEvents(events, address) {
 
   // this is hacky. should compare against SlateCreated events
   const proposalCreatedEvents = events.filter(
-    event => event.name === 'ProposalCreated' && event.values.recipient === address
+    event =>
+      event.name === 'ProposalCreated' &&
+      utils.getAddress(event.values.recipient) === utils.getAddress(address)
   );
   const proposalIncludedInSlateNotifications = await Promise.all(
     proposalCreatedEvents.map(async event => {
