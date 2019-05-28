@@ -31,7 +31,7 @@ export class TokenCapacitor extends Contract {
     createManyProposals(
       beneficiaries: (string)[],
       tokenAmounts: (number | string | BigNumber)[],
-      metadataHashes: (Buffer)[],
+      metadataHashes: ((string)[])[],
       overrides?: TransactionOverrides
     ): Promise<ContractTransaction>;
 
@@ -54,7 +54,7 @@ export class TokenCapacitor extends Contract {
     ProposalCreated(
       proposer: string | null,
       requestID: number | string | BigNumber | null,
-      to: string | null,
+      recipient: string | null,
       tokens: null,
       metadataHash: null
     ): EventFilter;

@@ -36,11 +36,15 @@ export class Gatekeeper extends Contract {
       status: number;
       staker: string;
       stake: BigNumber;
+      epochNumber: BigNumber;
+      categoryID: BigNumber;
       0: string;
       1: (string)[];
       2: number;
       3: string;
       4: BigNumber;
+      5: BigNumber;
+      6: BigNumber;
     }>;
 
     slateRequests(slateID: number | string | BigNumber): Promise<(BigNumber)[]>;
@@ -81,7 +85,6 @@ export class Gatekeeper extends Contract {
     hasPermission(requestID: number | string | BigNumber): Promise<boolean>;
 
     recommendSlate(
-      batchNumber: number | string | BigNumber,
       categoryID: number | string | BigNumber,
       requestIDs: (number | string | BigNumber)[],
       metadataHash: (string)[],
@@ -187,6 +190,12 @@ export class Gatekeeper extends Contract {
       numTokens: null
     ): EventFilter;
 
+    ContestAutomaticallyFinalized(
+      ballotID: number | string | BigNumber | null,
+      categoryID: number | string | BigNumber | null,
+      winningSlate: null
+    ): EventFilter;
+
     ConfidenceVoteCounted(
       ballotID: number | string | BigNumber | null,
       categoryID: number | string | BigNumber | null,
@@ -224,7 +233,7 @@ export class Gatekeeper extends Contract {
 
     RunoffFinalized(
       ballotID: number | string | BigNumber | null,
-      category: number | string | BigNumber | null,
+      categoryID: number | string | BigNumber | null,
       winningSlate: null
     ): EventFilter;
 

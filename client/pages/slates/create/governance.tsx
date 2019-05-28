@@ -98,12 +98,10 @@ async function submitGovernanceSlate(
   metadataHash: string,
   setTxPending: any
 ): Promise<any> {
-  const epochNumber = await gatekeeper.functions.currentEpochNumber();
   // placeholder
   const category = 0; // Grant
 
   const response = await gatekeeper.functions.recommendSlate(
-    epochNumber,
     category,
     requestIDs,
     Buffer.from(metadataHash)

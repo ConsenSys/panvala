@@ -2,7 +2,6 @@ import * as React from 'react';
 import styled from 'styled-components';
 import { Formik, Form, FormikContext } from 'formik';
 import { TransactionResponse, TransactionReceipt } from 'ethers/providers';
-import { LogDescription } from 'ethers/utils';
 import { toast } from 'react-toastify';
 import * as yup from 'yup';
 import { CircularProgress, withStyles } from '@material-ui/core';
@@ -138,12 +137,10 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, classes }) => {
   // Submit requestIDs and metadataHash to the Gatekeeper.
   async function submitGrantSlate(requestIDs: any[], metadataHash: string): Promise<any> {
     if (contracts) {
-      const epochNumber = await contracts.gatekeeper.functions.currentEpochNumber();
       // placeholder
       const category = 0; // Grant
 
       const response = await contracts.gatekeeper.functions.recommendSlate(
-        epochNumber,
         category,
         requestIDs,
         Buffer.from(metadataHash)
