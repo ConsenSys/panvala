@@ -6,7 +6,10 @@ import { handleApiError } from './errors';
 // Defaults are a workaround for https://github.com/zeit/next.js/issues/4024
 const { publicRuntimeConfig = {} } = getConfig() || {};
 
-const apiHost = publicRuntimeConfig.apiHost || 'http://localhost:5000';
+const apiHost =
+  publicRuntimeConfig.apiHost || process.env.NODE_ENV === 'development'
+    ? 'http://localhost:5001'
+    : 'http://localhost:5000';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': `${apiHost}`,

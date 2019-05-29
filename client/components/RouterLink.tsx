@@ -1,10 +1,6 @@
 import * as React from 'react';
 import Link from 'next/link';
-import styled from 'styled-components';
-
-const A = styled.a`
-  color: inherit;
-`;
+import A from './A';
 
 interface IProps {
   children: any;
