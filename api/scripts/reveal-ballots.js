@@ -101,7 +101,12 @@ async function run() {
     console.log(`Revealing ${voters.length} ballot(s)...`);
 
     try {
-      const tx = await gatekeeper.functions.revealManyBallots(voters, encodedBallots, salts);
+      const tx = await gatekeeper.functions.revealManyBallots(
+        batchNumber,
+        voters,
+        encodedBallots,
+        salts
+      );
       console.log(tx);
 
       console.log('DONE');

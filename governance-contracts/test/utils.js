@@ -23,6 +23,15 @@ const {
 
 const testProvider = new ethers.providers.JsonRpcProvider('http://localhost:8545');
 
+const ONE_WEEK = new BN('604800');
+const timing = {
+  ONE_WEEK,
+  EPOCH_LENGTH: ONE_WEEK.mul(new BN(13)),
+  VOTING_PERIOD_START: ONE_WEEK.mul(new BN(11)),
+  COMMIT_PERIOD_LENGTH: ONE_WEEK,
+  REVEAL_PERIOD_LENGTH: ONE_WEEK,
+};
+
 /**
  * Check that the error is an EVM `revert`
  * @param {Error} error The error to check
@@ -254,7 +263,8 @@ async function newPanvala(options) {
  * @param {*} dt
  */
 async function epochTime(gatekeeper, dt, units) {
-  const start = await gatekeeper.currentEpochStart();
+  const epoch = await gatekeeper.currentEpochNumber();
+  const start = await gatekeeper.epochStart(epoch);
   const s = moment(start.toString(), 'X');
   const now = moment(dt.toString(), 'X');
   const elapsed = moment.duration(now.diff(s));
@@ -423,12 +433,12 @@ async function commitBallot(gatekeeper, voter, ballot, numTokens, salt) {
  * @param {Gatekeeper} gatekeeper
  * @param {*} revealData
  */
-async function revealVote(gatekeeper, revealData) {
+async function revealVote(ballotID, gatekeeper, revealData) {
   const {
     voter, categories, firstChoices, secondChoices, salt,
   } = revealData;
   await gatekeeper.revealBallot(
-    voter, categories, firstChoices, secondChoices, salt, { from: voter },
+    ballotID, voter, categories, firstChoices, secondChoices, salt, { from: voter },
   );
 }
 
@@ -519,6 +529,7 @@ const utils = {
   getVotes,
   categories: proposalCategories,
   getLosingSlates,
+  timing,
 };
 
 module.exports = utils;

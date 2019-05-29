@@ -49,7 +49,9 @@ contract Gatekeeper {
 
     // The timestamp of the start of the first epoch
     uint public startTime;
-    uint public epochLength = ONE_WEEK * 13; // 13 weeks
+    uint public constant EPOCH_LENGTH = ONE_WEEK * 13;
+    uint public constant COMMIT_PERIOD_START = ONE_WEEK * 11;
+    uint public constant REVEAL_PERIOD_START = ONE_WEEK * 12;
 
     // Parameters
     ParameterStore public parameters;
@@ -181,17 +183,16 @@ contract Gatekeeper {
     */
     function currentEpochNumber() public view returns(uint) {
         uint elapsed = now.sub(startTime);
-        uint epoch = elapsed.div(epochLength);
+        uint epoch = elapsed.div(EPOCH_LENGTH);
 
         return epoch;
     }
 
     /**
-    * @dev Get the start of the current epoch.
+    * @dev Get the start of the given epoch.
     */
-    function currentEpochStart() public view returns(uint) {
-        uint epoch = currentEpochNumber();
-        return startTime.add(epochLength.mul(epoch));
+    function epochStart(uint256 epoch) public view returns(uint) {
+        return startTime.add(EPOCH_LENGTH.mul(epoch));
     }
 
 
@@ -228,11 +229,11 @@ contract Gatekeeper {
     )
         public returns(uint)
     {
-        // TODO: category must be valid
-        require(now < slateSubmissionDeadline(categoryID), "Submission deadline passed");
-        require(metadataHash.length > 0, "metadataHash cannot be empty");
-
         uint256 epochNumber = currentEpochNumber();
+
+        // TODO: category must be valid
+        require(now < slateSubmissionDeadline(epochNumber, categoryID), "Submission deadline passed");
+        require(metadataHash.length > 0, "metadataHash cannot be empty");
 
         // create slate
         Slate memory s = Slate({
@@ -291,7 +292,7 @@ contract Gatekeeper {
         Slate storage slate = slates[slateID];
 
         // Submission period must be active
-        require(now < slateSubmissionDeadline(slate.categoryID), "deadline passed");
+        require(now < slateSubmissionDeadline(slate.epochNumber, slate.categoryID), "deadline passed");
 
         // Transfer tokens and update the slate's staking info
         // Must successfully transfer tokens from staker to this contract
@@ -369,6 +370,8 @@ contract Gatekeeper {
     @param numTokens The number of tokens to withdraw
      */
     function withdrawVoteTokens(uint numTokens) public returns(bool) {
+        require(commitPeriodActive() == false, "Tokens locked during voting");
+
         address voter = msg.sender;
 
         uint votingRights = voteTokenBalance[voter];
@@ -391,11 +394,13 @@ contract Gatekeeper {
      @param numTokens The number of vote tokens to use
      */
     function commitBallot(bytes32 commitHash, uint numTokens) public {
-        address voter = msg.sender;
-
         uint ballotID = currentEpochNumber();
 
-        // TODO: timing: commit period must be active for the given epoch
+        uint256 epochTime = now.sub(epochStart(ballotID));
+        require(commitPeriodActive(), "Commit period not active");
+
+        address voter = msg.sender;
+
         require(didCommit(ballotID, voter) == false, "Voter has already committed for this ballot");
         require(commitHash != 0, "Cannot commit zero hash");
 
@@ -443,7 +448,6 @@ contract Gatekeeper {
         return v.commitHash;
     }
 
-
     /**
      @dev Reveal a given voter's choices for the current ballot and record their choices
      @param voter The voter's address
@@ -453,22 +457,27 @@ contract Gatekeeper {
      @param salt The salt used to generate the original commitment
      */
     function revealBallot(
+        uint256 epochNumber,
         address voter,
         uint[] memory categories,
         uint[] memory firstChoices,
         uint[] memory secondChoices,
         uint salt
     ) public {
-        uint ballotID = currentEpochNumber();
+        uint256 epochTime = now.sub(epochStart(epochNumber));
+        require(
+            (REVEAL_PERIOD_START <= epochTime) && (epochTime < EPOCH_LENGTH),
+            "Reveal period not active"
+        );
 
         require(voter != address(0), "Voter address cannot be zero");
         require(categories.length == firstChoices.length, "All inputs must have the same length");
         require(firstChoices.length == secondChoices.length, "All inputs must have the same length");
 
+        uint256 ballotID = epochNumber;
         require(didCommit(ballotID, voter), "Voter has not committed for this ballot");
         require(didReveal(ballotID, voter) == false, "Voter has already revealed for this ballot");
 
-        // TODO: timing: must be in reveal period
 
         // calculate the hash
         bytes memory buf;
@@ -516,6 +525,7 @@ contract Gatekeeper {
     @dev Reveal ballots for multiple voters
      */
     function revealManyBallots(
+        uint256 epochNumber,
         address[] memory _voters,
         bytes[] memory _ballots,
         uint[] memory _salts
@@ -530,7 +540,7 @@ contract Gatekeeper {
                 uint[] memory secondChoices
             ) = abi.decode(_ballots[i], (uint[], uint[], uint[]));
 
-            revealBallot(_voters[i], categories, firstChoices, secondChoices, _salts[i]);
+            revealBallot(epochNumber, _voters[i], categories, firstChoices, secondChoices, _salts[i]);
         }
     }
 
@@ -596,6 +606,8 @@ contract Gatekeeper {
         // Handle the case of a single staked slate in the contest -- it should automatically win
         // Finalization should be possible as soon as the slate submission period is over
         if (contest.status == ContestStatus.NoContest) {
+            require(now > slateSubmissionDeadline(ballotID, categoryID), "Slate submission still active");
+
             uint256 winningSlate = contest.stakedSlates[0];
             assert(slates[winningSlate].status == SlateStatus.Staked);
 
@@ -608,6 +620,8 @@ contract Gatekeeper {
         }
 
         // TODO: timing: non-automatic finalization must be after the vote period
+        // The given epoch is over
+        require(currentEpochNumber() > ballotID, "Reveal period still active");
 
         // Iterate through the slates and get the one with the most votes
         uint winner = 0;
@@ -909,13 +923,21 @@ contract Gatekeeper {
 
     /**
     @dev Return the slate submission deadline for the given category
+    @param epochNumber The epoch
     @param categoryID The ID of the category
      */
-    function slateSubmissionDeadline(uint256 categoryID) public view returns(uint256) {
-        Contest memory contest = ballots[currentEpochNumber()].contests[categoryID];
-        uint256 votingStart = ONE_WEEK.mul(11);
-        uint256 offset = (contest.lastStaked.add(votingStart)).div(2);
+    function slateSubmissionDeadline(uint256 epochNumber, uint256 categoryID) public view returns(uint256) {
+        Contest memory contest = ballots[epochNumber].contests[categoryID];
+        uint256 offset = (contest.lastStaked.add(COMMIT_PERIOD_START)).div(2);
 
-        return currentEpochStart().add(offset);
+        return epochStart(epochNumber).add(offset);
+    }
+
+    /**
+    @dev Return true if the commit period is active for the current epoch
+     */
+    function commitPeriodActive() private view returns(bool) {
+        uint256 epochTime = now.sub(epochStart(currentEpochNumber()));
+        return (COMMIT_PERIOD_START <= epochTime) && (epochTime < REVEAL_PERIOD_START);
     }
 }

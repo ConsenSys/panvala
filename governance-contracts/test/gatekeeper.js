@@ -19,20 +19,14 @@ const {
   BN,
   abiCoder,
   // printDate,
+  timing,
 } = utils;
 
 const { increaseTime } = utils.evm;
 
 const { GRANT, GOVERNANCE } = utils.categories;
 
-const ONE_WEEK = new BN('604800');
-
-const timing = {
-  EPOCH_LENGTH: ONE_WEEK.mul(new BN(13)),
-  VOTING_PERIOD_START: ONE_WEEK.mul(new BN(11)),
-  COMMIT_PERIOD_LENGTH: ONE_WEEK.mul(new BN(2)),
-  REVEAL_PERIOD_LENGTH: ONE_WEEK.mul(new BN(2)),
-};
+const { ONE_WEEK } = timing;
 
 
 async function doRunoff(gatekeeper, ballotID, voters, options) {
@@ -40,17 +34,20 @@ async function doRunoff(gatekeeper, ballotID, voters, options) {
   const [alice, bob, carol] = voters;
 
   // Run a vote that triggers a runoff
+  await increaseTime(timing.VOTING_PERIOD_START);
   const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '800', '1234');
   const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 1, 2, '900', '5678');
   const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 2, 0, '1000', '9012');
 
   // Reveal all votes
-  await reveal(gatekeeper, aliceReveal);
-  await reveal(gatekeeper, bobReveal);
-  await reveal(gatekeeper, carolReveal);
+  await increaseTime(timing.COMMIT_PERIOD_LENGTH);
+  await reveal(ballotID, gatekeeper, aliceReveal);
+  await reveal(ballotID, gatekeeper, bobReveal);
+  await reveal(ballotID, gatekeeper, carolReveal);
 
   // Run -- slate 1 wins
   if (finalize) {
+    await increaseTime(timing.REVEAL_PERIOD_LENGTH);
     await gatekeeper.countVotes(ballotID, GRANT);
     await gatekeeper.countRunoffVotes(ballotID, GRANT);
   }
@@ -60,21 +57,29 @@ async function doConfidenceVote(gatekeeper, ballotID, voters, options) {
   const { finalize = true } = options || {};
   const [alice, bob, carol] = voters;
 
+  await increaseTime(timing.VOTING_PERIOD_START);
   const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
   const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 0, 1, '1000', '5678');
   const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '1000', '9012');
 
   // Reveal all votes
-  await reveal(gatekeeper, aliceReveal);
-  await reveal(gatekeeper, bobReveal);
-  await reveal(gatekeeper, carolReveal);
+  await increaseTime(timing.COMMIT_PERIOD_LENGTH);
+  await reveal(ballotID, gatekeeper, aliceReveal);
+  await reveal(ballotID, gatekeeper, bobReveal);
+  await reveal(ballotID, gatekeeper, carolReveal);
 
   // Run - slate 0 wins
   if (finalize) {
+    await increaseTime(timing.REVEAL_PERIOD_LENGTH);
     await gatekeeper.countVotes(ballotID, GRANT);
   }
 }
 
+async function currentEpochStart(gatekeeper) {
+  const epochNumber = await gatekeeper.currentEpochNumber();
+  const epochStart = await gatekeeper.epochStart(epochNumber);
+  return epochStart;
+}
 
 contract('Gatekeeper', (accounts) => {
   let parameters;
@@ -117,7 +122,7 @@ contract('Gatekeeper', (accounts) => {
       assert.strictEqual(actualStartTime.toString(), startTime.toString());
 
       // epoch length
-      const epochLength = await gatekeeper.epochLength();
+      const epochLength = await gatekeeper.EPOCH_LENGTH();
       assert.strictEqual(epochLength.toString(), timing.EPOCH_LENGTH.toString());
     });
 
@@ -209,7 +214,8 @@ contract('Gatekeeper', (accounts) => {
 
       it('should calculate the start of the initial epoch as the system start time', async () => {
         const expected = startTime;
-        const epochStart = await gatekeeper.currentEpochStart();
+        const epochNumber = await gatekeeper.currentEpochNumber();
+        const epochStart = await gatekeeper.epochStart(epochNumber);
         assert.strictEqual(
           epochStart.toString(),
           expected.toString(),
@@ -217,7 +223,11 @@ contract('Gatekeeper', (accounts) => {
         );
       });
       it('should initialize the slate submission deadline', async () => {
-        const slateSubmissionDeadline = await gatekeeper.slateSubmissionDeadline(GRANT);
+        const epochNumber = await gatekeeper.currentEpochNumber();
+        const slateSubmissionDeadline = await gatekeeper.slateSubmissionDeadline(
+          epochNumber,
+          GRANT,
+        );
         const expectedDeadline = new BN(startTime).add(halfVotingPeriod);
         assert.strictEqual(
           slateSubmissionDeadline.toString(),
@@ -240,8 +250,9 @@ contract('Gatekeeper', (accounts) => {
       });
 
       it('should correctly calculate the epoch start time', async () => {
-        const epochStart = await gatekeeper.currentEpochStart();
-        const epochLength = await gatekeeper.epochLength();
+        const epochNumber = await gatekeeper.currentEpochNumber();
+        const epochStart = await gatekeeper.epochStart(epochNumber);
+        const epochLength = await gatekeeper.EPOCH_LENGTH();
         const expected = (new BN(startTime)).add(epochLength.mul(numEpochs));
         assert.strictEqual(
           epochStart.toString(),
@@ -262,8 +273,12 @@ contract('Gatekeeper', (accounts) => {
       });
 
       it('should initialize the slate submission deadline', async () => {
-        const epochStart = await gatekeeper.currentEpochStart();
-        const slateSubmissionDeadline = await gatekeeper.slateSubmissionDeadline(GRANT);
+        const epochNumber = await gatekeeper.currentEpochNumber();
+        const epochStart = await gatekeeper.epochStart(epochNumber);
+        const slateSubmissionDeadline = await gatekeeper.slateSubmissionDeadline(
+          epochNumber,
+          GRANT,
+        );
         const expectedDeadline = new BN(epochStart).add(halfVotingPeriod);
         assert.strictEqual(
           slateSubmissionDeadline.toString(),
@@ -337,7 +352,8 @@ contract('Gatekeeper', (accounts) => {
       it('should go back before a deadline', async () => {
         const category = GRANT;
         // move forward to after the deadline
-        const deadline = await gatekeeper.slateSubmissionDeadline(category);
+        const epochNumber = await gatekeeper.currentEpochNumber();
+        const deadline = await gatekeeper.slateSubmissionDeadline(epochNumber, category);
         const offset = ONE_WEEK.mul(new BN(6));
 
         await increaseTime(offset);
@@ -376,11 +392,11 @@ contract('Gatekeeper', (accounts) => {
     let gatekeeper;
     let requestIDs;
     const metadataHash = utils.createMultihash('my slate');
-    let batchNumber;
+    let epochNumber;
 
     beforeEach(async () => {
       gatekeeper = await utils.newGatekeeper({ from: creator });
-      batchNumber = await gatekeeper.currentEpochNumber();
+      epochNumber = await gatekeeper.currentEpochNumber();
 
       // Get requestIDs for the slate
       requestIDs = await utils.getRequestIDs(gatekeeper, [
@@ -395,7 +411,7 @@ contract('Gatekeeper', (accounts) => {
       const category = GRANT;
 
       // Initial status should be Empty
-      const initialStatus = await gatekeeper.contestStatus(batchNumber, category);
+      const initialStatus = await gatekeeper.contestStatus(epochNumber, category);
       assert.strictEqual(initialStatus.toString(), '0', 'Initial contest status should be Empty (0)');
 
       // Create a slate
@@ -435,11 +451,11 @@ contract('Gatekeeper', (accounts) => {
       assert.strictEqual(slate.status.toString(), SlateStatus.Unstaked, 'Status should have been `Unstaked`');
       assert.strictEqual(slate.staker.toString(), utils.zeroAddress(), 'Staker should have been zero');
       assert.strictEqual(slate.stake.toString(), '0', 'Initial stake should have been zero');
-      assert.strictEqual(slate.epochNumber.toString(), batchNumber.toString(), 'Incorrect epoch number');
+      assert.strictEqual(slate.epochNumber.toString(), epochNumber.toString(), 'Incorrect epoch number');
       assert.strictEqual(slate.categoryID.toString(), category.toString(), 'Incorrect category');
 
       // Adding a slate without staking it should not change the contest status
-      const status = await gatekeeper.contestStatus(batchNumber, category);
+      const status = await gatekeeper.contestStatus(epochNumber, category);
       assert.strictEqual(status.toString(), ContestStatus.Empty, 'Contest status should be Empty (0)');
     });
 
@@ -518,7 +534,7 @@ contract('Gatekeeper', (accounts) => {
 
     it('should revert if the category is invalid');
 
-    describe('after submission deadline', () => {
+    describe('timing', () => {
       let snapshotID;
 
       beforeEach(async () => {
@@ -527,7 +543,7 @@ contract('Gatekeeper', (accounts) => {
 
       it('should revert if the slate submission period is not active', async () => {
         const category = GRANT;
-        const deadline = await gatekeeper.slateSubmissionDeadline(category);
+        const deadline = await gatekeeper.slateSubmissionDeadline(epochNumber, category);
 
         // move forward
         const offset = ONE_WEEK.mul(new BN(6));
@@ -560,7 +576,7 @@ contract('Gatekeeper', (accounts) => {
     let token;
     const initialTokens = '20000000';
 
-    const batchNumber = 0;
+    let epochNumber;
     const slateID = 0;
     let stakeAmount;
     let snapshotID;
@@ -570,8 +586,10 @@ contract('Gatekeeper', (accounts) => {
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
       snapshotID = await utils.evm.snapshot();
 
+      epochNumber = await gatekeeper.currentEpochNumber();
+
       await utils.newSlate(gatekeeper, {
-        batchNumber,
+        epochNumber,
         category: GRANT,
         proposalData: ['a', 'b', 'c'],
         slateData: 'grant slate',
@@ -588,10 +606,7 @@ contract('Gatekeeper', (accounts) => {
     it('should allow a user to stake tokens on a slate', async () => {
       const votingLength = timing.VOTING_PERIOD_START;
 
-      const epochStart = await gatekeeper.currentEpochStart();
-      // const epochNumber = await gatekeeper.currentEpochNumber();
-      // console.log('epoch', epochNumber.toString());
-      // console.log('start', printDate(epochStart));
+      const epochStart = await currentEpochStart(gatekeeper);
 
       // move forward in the slate submission period
       const offset = ONE_WEEK;
@@ -602,8 +617,6 @@ contract('Gatekeeper', (accounts) => {
       const receipt = await gatekeeper.stakeTokens(slateID, { from: staker });
       const { blockNumber: stakingBlock } = receipt.receipt;
       const stakingTime = new BN(await utils.evm.timestamp(stakingBlock));
-      // console.log('stake', printDate(stakingTime));
-      // console.log('WEEK', await utils.epochTime(gatekeeper, stakingTime));
 
       // Check logs
       const {
@@ -635,7 +648,7 @@ contract('Gatekeeper', (accounts) => {
       );
 
       // Should extend the slate submission deadline
-      const finalSlateDeadline = await gatekeeper.slateSubmissionDeadline(GRANT);
+      const finalSlateDeadline = await gatekeeper.slateSubmissionDeadline(epochNumber, GRANT);
 
       const votingStart = epochStart.add(votingLength);
       const timeLeft = votingStart.sub(stakingTime);
@@ -711,7 +724,7 @@ contract('Gatekeeper', (accounts) => {
 
     it('should revert if the slate submission period is not active', async () => {
       const category = GRANT;
-      const deadline = await gatekeeper.slateSubmissionDeadline(category);
+      const deadline = await gatekeeper.slateSubmissionDeadline(epochNumber, category);
 
       // move forward
       const offset = ONE_WEEK.mul(new BN(6));
@@ -933,6 +946,43 @@ contract('Gatekeeper', (accounts) => {
     });
 
     it('should fail if the token transfer fails');
+
+    describe('timing', () => {
+      let snapshotID;
+      const numTokens = '1000';
+
+      beforeEach(async () => {
+        snapshotID = await utils.evm.snapshot();
+      });
+
+      it('should revert if the commit period is active (and the user has committed?)', async () => {
+        // Go to the commit period
+        const offset = timing.VOTING_PERIOD_START;
+        await increaseTime(offset);
+
+        // Try to withdraw
+        try {
+          await gatekeeper.withdrawVoteTokens(numTokens, { from: voter });
+        } catch (error) {
+          expectRevert(error);
+          expectErrorLike(error, 'locked');
+          return;
+        }
+        assert.fail('Allowed vote token withdrawal during commit period');
+      });
+
+      it('should allow withdrawal after the commit period', async () => {
+        // Go after the commit period
+        const offset = timing.VOTING_PERIOD_START.add(timing.COMMIT_PERIOD_LENGTH);
+        await increaseTime(offset);
+
+        await gatekeeper.withdrawVoteTokens(numTokens, { from: voter });
+      });
+
+      afterEach(async () => {
+        await utils.evm.revert(snapshotID);
+      });
+    });
   });
 
   describe('commitBallot', () => {
@@ -941,8 +991,11 @@ contract('Gatekeeper', (accounts) => {
     let token;
     const initialTokens = '20000000';
     let ballotID;
+    let snapshotID;
 
     beforeEach(async () => {
+      snapshotID = await utils.evm.snapshot();
+
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
       ballotID = await gatekeeper.currentEpochNumber();
@@ -960,6 +1013,7 @@ contract('Gatekeeper', (accounts) => {
 
       await gatekeeper.depositVoteTokens(numTokens, { from: voter });
 
+      await increaseTime(timing.VOTING_PERIOD_START);
       const receipt = await gatekeeper.commitBallot(commitHash, numTokens, { from: voter });
 
       // Emit an event with the correct values
@@ -987,6 +1041,9 @@ contract('Gatekeeper', (accounts) => {
       const initialVotingBalance = await gatekeeper.voteTokenBalance(voter);
       assert.strictEqual(initialVotingBalance.toString(), '0');
 
+      // Advance to commit period
+      await increaseTime(timing.VOTING_PERIOD_START);
+
       // Do not deposit any vote tokens, but commit anyway
       await gatekeeper.commitBallot(commitHash, numTokens, { from: voter });
 
@@ -999,11 +1056,47 @@ contract('Gatekeeper', (accounts) => {
       assert.strictEqual(utils.stripHexPrefix(storedCommitHash.toString()), commitHash.toString('hex'), 'Stored commit hash is wrong');
     });
 
-    it('should fail if the commit period is not active');
+    it('should fail if the commit period has not started', async () => {
+      const commitHash = utils.keccak('data');
+      const numTokens = '1000';
+
+      await gatekeeper.depositVoteTokens(numTokens, { from: voter });
+
+      try {
+        await gatekeeper.commitBallot(commitHash, numTokens, { from: voter });
+      } catch (error) {
+        expectRevert(error);
+        expectErrorLike(error, 'not active');
+        return;
+      }
+      assert.fail('Committed ballot before commit period');
+    });
+
+    it('should fail if the commit period has ended', async () => {
+      const commitHash = utils.keccak('data');
+      const numTokens = '1000';
+
+      await gatekeeper.depositVoteTokens(numTokens, { from: voter });
+
+      // Advance to reveal period
+      await increaseTime(timing.VOTING_PERIOD_START.add(timing.COMMIT_PERIOD_LENGTH));
+
+      try {
+        await gatekeeper.commitBallot(commitHash, numTokens, { from: voter });
+      } catch (error) {
+        expectRevert(error);
+        expectErrorLike(error, 'not active');
+        return;
+      }
+      assert.fail('Committed ballot after commit period');
+    });
 
     it('should fail if the voter has already committed for this ballot', async () => {
       const commitHash = utils.keccak('data');
       const numTokens = '1000';
+
+      // Advance to commit period
+      await increaseTime(timing.VOTING_PERIOD_START);
 
       // commit
       await gatekeeper.commitBallot(commitHash, numTokens, { from: voter });
@@ -1022,13 +1115,21 @@ contract('Gatekeeper', (accounts) => {
       const commitHash = utils.zeroHash();
       const numTokens = '1000';
 
+      // Advance to commit period
+      await increaseTime(timing.VOTING_PERIOD_START);
+
       try {
         await gatekeeper.commitBallot(commitHash, numTokens, { from: voter });
       } catch (error) {
         expectRevert(error);
+        expectErrorLike(error, 'zero hash');
         return;
       }
       assert.fail('Committed a ballot with a zero commit hash');
+    });
+
+    afterEach(async () => {
+      await utils.evm.revert(snapshotID);
     });
   });
 
@@ -1036,8 +1137,11 @@ contract('Gatekeeper', (accounts) => {
     const [creator, voter] = accounts;
     let gatekeeper;
     let ballotID;
+    let snapshotID;
 
     beforeEach(async () => {
+      snapshotID = await utils.evm.snapshot();
+
       gatekeeper = await utils.newGatekeeper({
         // parameterStoreAddress: parameters.address,
         from: creator,
@@ -1058,6 +1162,9 @@ contract('Gatekeeper', (accounts) => {
       const commitHash = utils.keccak('data');
       const numTokens = '1000';
 
+      // Advance to commit period
+      await increaseTime(timing.VOTING_PERIOD_START);
+
       // commit
       await gatekeeper.commitBallot(commitHash, numTokens, { from: voter });
 
@@ -1069,14 +1176,19 @@ contract('Gatekeeper', (accounts) => {
       const didCommit = await gatekeeper.didCommit(ballotID, voter);
       assert.strictEqual(didCommit, false, 'Voter did not commit, but didCommit returned true');
     });
+
+    afterEach(async () => utils.evm.revert(snapshotID));
   });
 
   describe('getCommitHash', () => {
     const [creator, voter] = accounts;
     let gatekeeper;
     let ballotID;
+    let snapshotID;
 
     beforeEach(async () => {
+      snapshotID = await utils.evm.snapshot();
+
       gatekeeper = await utils.newGatekeeper({ from: creator });
       ballotID = await gatekeeper.currentEpochNumber();
 
@@ -1094,6 +1206,9 @@ contract('Gatekeeper', (accounts) => {
       const commitHash = utils.keccak('data');
       const numTokens = '1000';
 
+      // Advance to commit period
+      await increaseTime(timing.VOTING_PERIOD_START);
+
       // commit
       await gatekeeper.commitBallot(commitHash, numTokens, { from: voter });
 
@@ -1110,10 +1225,13 @@ contract('Gatekeeper', (accounts) => {
         await gatekeeper.getCommitHash(ballotID, voter);
       } catch (error) {
         expectRevert(error);
+        expectErrorLike(error, 'not committed');
         return;
       }
       assert.fail('Voter did not commit for the given ballot');
     });
+
+    afterEach(async () => utils.evm.revert(snapshotID));
   });
 
 
@@ -1123,6 +1241,7 @@ contract('Gatekeeper', (accounts) => {
     let gatekeeper;
     let token;
     const initialTokens = '20000000';
+    let snapshotID;
 
     let ballotID;
     let votes;
@@ -1131,6 +1250,8 @@ contract('Gatekeeper', (accounts) => {
     let revealData;
 
     beforeEach(async () => {
+      snapshotID = await utils.evm.snapshot();
+
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
       ballotID = await gatekeeper.currentEpochNumber();
@@ -1192,6 +1313,7 @@ contract('Gatekeeper', (accounts) => {
       commitHash = utils.generateCommitHash(votes, salt);
 
       // commit here
+      await increaseTime(timing.VOTING_PERIOD_START);
       await gatekeeper.commitBallot(commitHash, numTokens, { from: voter });
 
       // set up reveal data
@@ -1212,12 +1334,16 @@ contract('Gatekeeper', (accounts) => {
       const initialDidReveal = await gatekeeper.didReveal(ballotID, voter);
       assert.strictEqual(initialDidReveal, false, 'didReveal should have been false before reveal');
 
+      // Advance to reveal period
+      await increaseTime(timing.COMMIT_PERIOD_LENGTH);
+
       // Reveal
       const {
         categories, firstChoices, secondChoices, salt,
       } = revealData;
 
       const receipt = await gatekeeper.revealBallot(
+        ballotID,
         voter,
         categories,
         firstChoices,
@@ -1282,8 +1408,12 @@ contract('Gatekeeper', (accounts) => {
       const { categories, firstChoices, secondChoices } = revealData;
       const salt = '9999';
 
+      // Advance to reveal period
+      await increaseTime(timing.COMMIT_PERIOD_LENGTH);
+
       try {
         await gatekeeper.revealBallot(
+          ballotID,
           voter,
           categories,
           firstChoices,
@@ -1292,7 +1422,7 @@ contract('Gatekeeper', (accounts) => {
         );
       } catch (error) {
         expectRevert(error);
-        assert(error.toString().includes('ballot does not match commitment'));
+        expectErrorLike(error, 'ballot does not match commitment');
         return;
       }
       assert.fail('Revealed ballot with different data from what was committed');
@@ -1302,6 +1432,9 @@ contract('Gatekeeper', (accounts) => {
     it('should fail if the supplied voter address is zero', async () => {
       const badVoter = utils.zeroAddress();
 
+      // Advance to reveal period
+      await increaseTime(timing.COMMIT_PERIOD_LENGTH);
+
       // Reveal
       const {
         categories, firstChoices, secondChoices, salt,
@@ -1309,6 +1442,7 @@ contract('Gatekeeper', (accounts) => {
 
       try {
         await gatekeeper.revealBallot(
+          ballotID,
           badVoter,
           categories,
           firstChoices,
@@ -1318,7 +1452,7 @@ contract('Gatekeeper', (accounts) => {
         );
       } catch (error) {
         expectRevert(error);
-        assert(error.toString().includes('Voter address cannot be zero'));
+        expectErrorLike(error, 'Voter address cannot be zero');
         return;
       }
       assert.fail('Revealed with zero address');
@@ -1328,8 +1462,12 @@ contract('Gatekeeper', (accounts) => {
       const { categories, firstChoices, secondChoices } = revealData;
       const salt = '9999';
 
+      // Advance to reveal period
+      await increaseTime(timing.COMMIT_PERIOD_LENGTH);
+
       try {
         await gatekeeper.revealBallot(
+          ballotID,
           voter,
           categories.slice(0, 1),
           firstChoices,
@@ -1338,7 +1476,7 @@ contract('Gatekeeper', (accounts) => {
         );
       } catch (error) {
         expectRevert(error);
-        assert(error.toString().includes('inputs must have the same length'));
+        expectErrorLike(error, 'inputs must have the same length');
         return;
       }
       assert.fail('Revealed ballot with wrong number of categories');
@@ -1348,8 +1486,12 @@ contract('Gatekeeper', (accounts) => {
       const { categories, firstChoices, secondChoices } = revealData;
       const salt = '9999';
 
+      // Advance to reveal period
+      await increaseTime(timing.COMMIT_PERIOD_LENGTH);
+
       try {
         await gatekeeper.revealBallot(
+          ballotID,
           voter,
           categories,
           firstChoices.slice(0, 1),
@@ -1358,7 +1500,7 @@ contract('Gatekeeper', (accounts) => {
         );
       } catch (error) {
         expectRevert(error);
-        assert(error.toString().includes('inputs must have the same length'));
+        expectErrorLike(error, 'inputs must have the same length');
         return;
       }
       assert.fail('Revealed ballot with wrong number of firstChoices');
@@ -1368,8 +1510,12 @@ contract('Gatekeeper', (accounts) => {
       const { categories, firstChoices, secondChoices } = revealData;
       const salt = '9999';
 
+      // Advance to reveal period
+      await increaseTime(timing.COMMIT_PERIOD_LENGTH);
+
       try {
         await gatekeeper.revealBallot(
+          ballotID,
           voter,
           categories,
           firstChoices,
@@ -1378,7 +1524,7 @@ contract('Gatekeeper', (accounts) => {
         );
       } catch (error) {
         expectRevert(error);
-        assert(error.toString().includes('inputs must have the same length'));
+        expectErrorLike(error, 'inputs must have the same length');
         return;
       }
       assert.fail('Revealed ballot with wrong number of secondChoices');
@@ -1389,6 +1535,9 @@ contract('Gatekeeper', (accounts) => {
 
     // State
     it('should fail if the voter has not committed for the ballot', async () => {
+      // Advance to reveal period
+      await increaseTime(timing.COMMIT_PERIOD_LENGTH);
+
       // Reveal for a non-voter
       const {
         categories, firstChoices, secondChoices, salt,
@@ -1396,6 +1545,7 @@ contract('Gatekeeper', (accounts) => {
 
       try {
         await gatekeeper.revealBallot(
+          ballotID,
           nonvoter,
           categories,
           firstChoices,
@@ -1405,19 +1555,23 @@ contract('Gatekeeper', (accounts) => {
         );
       } catch (error) {
         expectRevert(error);
-        assert(error.toString().includes('Voter has not committed'));
+        expectErrorLike(error, 'Voter has not committed');
         return;
       }
       assert.fail('Revealed for a voter who has not committed for the ballot');
     });
 
     it('should fail if the voter has already revealed for the ballot', async () => {
+      // Advance to reveal period
+      await increaseTime(timing.COMMIT_PERIOD_LENGTH);
+
       // Reveal
       const {
         categories, firstChoices, secondChoices, salt,
       } = revealData;
 
       await gatekeeper.revealBallot(
+        ballotID,
         voter,
         categories,
         firstChoices,
@@ -1428,6 +1582,7 @@ contract('Gatekeeper', (accounts) => {
 
       try {
         await gatekeeper.revealBallot(
+          ballotID,
           voter,
           categories,
           firstChoices,
@@ -1437,14 +1592,66 @@ contract('Gatekeeper', (accounts) => {
         );
       } catch (error) {
         expectRevert(error);
-        assert(error.toString().includes('Voter has already revealed'));
+        expectErrorLike(error, 'Voter has already revealed');
         return;
       }
       assert.fail('Revealed for a voter who has already revealed for the ballot');
     });
 
-    it('should fail if the reveal period has not started');
-    it('should fail if the reveal period has ended');
+    it('should fail if the reveal period has not started', async () => {
+      // Reveal
+      const {
+        categories, firstChoices, secondChoices, salt,
+      } = revealData;
+
+      try {
+        await gatekeeper.revealBallot(
+          ballotID,
+          voter,
+          categories,
+          firstChoices,
+          secondChoices,
+          salt,
+          { from: voter },
+        );
+      } catch (error) {
+        expectRevert(error);
+        expectErrorLike(error, 'Reveal period not active');
+        return;
+      }
+      assert.fail('Revealed ballot before the reveal period');
+    });
+
+    it('should fail if the reveal period has ended', async () => {
+      const offset = timing.COMMIT_PERIOD_LENGTH.add(timing.REVEAL_PERIOD_LENGTH);
+      await increaseTime(offset);
+
+      // Reveal
+      const {
+        categories, firstChoices, secondChoices, salt,
+      } = revealData;
+
+      try {
+        await gatekeeper.revealBallot(
+          ballotID,
+          voter,
+          categories,
+          firstChoices,
+          secondChoices,
+          salt,
+          { from: voter },
+        );
+      } catch (error) {
+        expectRevert(error);
+        expectErrorLike(error, 'Reveal period not active');
+        return;
+      }
+      assert.fail('Revealed ballot after the reveal period');
+    });
+
+    afterEach(async () => {
+      await utils.evm.revert(snapshotID);
+    });
   });
 
   describe('revealManyBallots', () => {
@@ -1454,8 +1661,11 @@ contract('Gatekeeper', (accounts) => {
     let token;
     const initialTokens = '20000000';
     let ballotID;
+    let snapshotID;
 
     beforeEach(async () => {
+      snapshotID = await utils.evm.snapshot();
+
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
       ballotID = await gatekeeper.currentEpochNumber();
@@ -1513,6 +1723,9 @@ contract('Gatekeeper', (accounts) => {
     });
 
     it('should correctly reveal multiple ballots', async () => {
+      // Advance to commit period
+      await increaseTime(timing.VOTING_PERIOD_START);
+
       const [aliceSalt, bobSalt, carolSalt] = ['1234', '5678', '9012'];
 
       const aliceReveal = await commitBallot(gatekeeper, alice, [[GRANT, 0, 1], [GOVERNANCE, 2, 3]], '1000', aliceSalt);
@@ -1528,8 +1741,11 @@ contract('Gatekeeper', (accounts) => {
       ));
       const salts = [aliceSalt, bobSalt, carolSalt];
 
+      // Advance to reveal period
+      await increaseTime(timing.COMMIT_PERIOD_LENGTH);
+
       // Reveal
-      const receipt = await gatekeeper.revealManyBallots(voters, ballots, salts);
+      const receipt = await gatekeeper.revealManyBallots(ballotID, voters, ballots, salts);
 
       // should have emitted 3 BallotRevealed events
       assert.strictEqual(receipt.logs.length, 3);
@@ -1554,6 +1770,8 @@ contract('Gatekeeper', (accounts) => {
       const didReveal = await Promise.all(voters.map(v => gatekeeper.didReveal(ballotID, v)));
       didReveal.forEach(revealed => assert.strictEqual(revealed, true, 'Voter should have revealed'));
     });
+
+    afterEach(async () => utils.evm.revert(snapshotID));
   });
 
   describe('didReveal', () => {
@@ -1562,6 +1780,7 @@ contract('Gatekeeper', (accounts) => {
     let gatekeeper;
     let token;
     const initialTokens = '20000000';
+    let snapshotID;
 
     let ballotID;
     let votes;
@@ -1570,6 +1789,8 @@ contract('Gatekeeper', (accounts) => {
     let revealData;
 
     beforeEach(async () => {
+      snapshotID = await utils.evm.snapshot();
+
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
       ballotID = await gatekeeper.currentEpochNumber();
@@ -1627,6 +1848,9 @@ contract('Gatekeeper', (accounts) => {
       numTokens = '1000';
       commitHash = utils.generateCommitHash(votes, salt);
 
+      // Advance to commit period
+      await increaseTime(timing.VOTING_PERIOD_START);
+
       // commit
       await gatekeeper.commitBallot(commitHash, numTokens, { from: voter });
 
@@ -1641,6 +1865,9 @@ contract('Gatekeeper', (accounts) => {
         secondChoices,
         salt,
       };
+
+      // Advance to reveal period
+      await increaseTime(timing.COMMIT_PERIOD_LENGTH);
     });
 
     it('should return true if the voter has revealed for the ballot', async () => {
@@ -1649,6 +1876,7 @@ contract('Gatekeeper', (accounts) => {
       } = revealData;
 
       await gatekeeper.revealBallot(
+        ballotID,
         voter,
         categories,
         firstChoices,
@@ -1670,6 +1898,8 @@ contract('Gatekeeper', (accounts) => {
       const didReveal = await gatekeeper.didReveal(ballotID, nonvoter);
       assert.strictEqual(didReveal, false, 'didReveal returned true when the voter has NOT COMMITTED');
     });
+
+    afterEach(async () => utils.evm.revert(snapshotID));
   });
 
   describe('countVotes', () => {
@@ -1679,8 +1909,12 @@ contract('Gatekeeper', (accounts) => {
     let token;
     const initialTokens = '20000000';
     let ballotID;
+    let snapshotID;
+
 
     beforeEach(async () => {
+      snapshotID = await utils.evm.snapshot();
+
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
       ballotID = await gatekeeper.currentEpochNumber();
@@ -1724,14 +1958,20 @@ contract('Gatekeeper', (accounts) => {
       // slate 0 should win
 
       // Commit for voters
+      await increaseTime(timing.VOTING_PERIOD_START);
+
       const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
       const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 0, 1, '1000', '5678');
       const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '1000', '9012');
 
       // Reveal all votes
-      await reveal(gatekeeper, aliceReveal);
-      await reveal(gatekeeper, bobReveal);
-      await reveal(gatekeeper, carolReveal);
+      await increaseTime(timing.COMMIT_PERIOD_LENGTH);
+      await reveal(ballotID, gatekeeper, aliceReveal);
+      await reveal(ballotID, gatekeeper, bobReveal);
+      await reveal(ballotID, gatekeeper, carolReveal);
+
+      // Advance past reveal period
+      await increaseTime(timing.REVEAL_PERIOD_LENGTH);
 
       // status: Active
       const initialStatus = await gatekeeper.contestStatus(ballotID, GRANT);
@@ -1822,6 +2062,9 @@ contract('Gatekeeper', (accounts) => {
         slateData: 'governance slate',
       }, { from: recommender });
 
+      // Advance past reveal period
+      await increaseTime(timing.EPOCH_LENGTH);
+
       // Governance has no staked slates, not in progress
       try {
         await gatekeeper.countVotes(ballotID, GOVERNANCE);
@@ -1852,6 +2095,7 @@ contract('Gatekeeper', (accounts) => {
         'Contest status should have been NoContest',
       );
 
+      await increaseTime(timing.EPOCH_LENGTH);
       const receipt = await gatekeeper.countVotes(ballotID, GOVERNANCE);
 
       // Check events
@@ -1897,18 +2141,21 @@ contract('Gatekeeper', (accounts) => {
       await token.approve(gatekeeper.address, manyTokens, { from: david });
 
       // Commit for voters
+      await increaseTime(timing.VOTING_PERIOD_START);
       const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
       const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 0, 1, '1000', '5678');
       const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '1000', '9012');
       const davidReveal = await voteSingle(gatekeeper, david, GRANT, 2, 1, manyTokens, '1337');
 
       // Reveal all votes
-      await reveal(gatekeeper, aliceReveal);
-      await reveal(gatekeeper, bobReveal);
-      await reveal(gatekeeper, carolReveal);
-      await reveal(gatekeeper, davidReveal);
+      await increaseTime(timing.COMMIT_PERIOD_LENGTH);
+      await reveal(ballotID, gatekeeper, aliceReveal);
+      await reveal(ballotID, gatekeeper, bobReveal);
+      await reveal(ballotID, gatekeeper, carolReveal);
+      await reveal(ballotID, gatekeeper, davidReveal);
 
       // Finalize
+      await increaseTime(timing.REVEAL_PERIOD_LENGTH);
       const receipt = await gatekeeper.countVotes(ballotID, GRANT);
 
       const expectedWinner = '0';
@@ -1940,14 +2187,19 @@ contract('Gatekeeper', (accounts) => {
       await gatekeeper.stakeTokens(slateID, { from: recommender });
 
       // Split the votes among the three slates
+      await increaseTime(timing.VOTING_PERIOD_START);
       const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
       const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 1, 2, '1000', '5678');
       const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 2, 1, '1000', '9012');
 
       // Reveal all votes
-      await reveal(gatekeeper, aliceReveal);
-      await reveal(gatekeeper, bobReveal);
-      await reveal(gatekeeper, carolReveal);
+      await increaseTime(timing.COMMIT_PERIOD_LENGTH);
+      await reveal(ballotID, gatekeeper, aliceReveal);
+      await reveal(ballotID, gatekeeper, bobReveal);
+      await reveal(ballotID, gatekeeper, carolReveal);
+
+      // Advance past reveal period
+      await increaseTime(timing.REVEAL_PERIOD_LENGTH);
 
       // Check logs
       const receipt = await gatekeeper.countVotes(ballotID, GRANT);
@@ -1964,14 +2216,19 @@ contract('Gatekeeper', (accounts) => {
 
     it('should wait for a runoff if the lead slate has exactly 50% of the votes', async () => {
       // Split the votes evenly
+      await increaseTime(timing.VOTING_PERIOD_START);
       const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
       const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 1, 2, '500', '5678');
       const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '500', '9012');
 
       // Reveal all votes
-      await reveal(gatekeeper, aliceReveal);
-      await reveal(gatekeeper, bobReveal);
-      await reveal(gatekeeper, carolReveal);
+      await increaseTime(timing.COMMIT_PERIOD_LENGTH);
+      await reveal(ballotID, gatekeeper, aliceReveal);
+      await reveal(ballotID, gatekeeper, bobReveal);
+      await reveal(ballotID, gatekeeper, carolReveal);
+
+      // Advance past reveal period
+      await increaseTime(timing.REVEAL_PERIOD_LENGTH);
 
       // Check logs
       const receipt = await gatekeeper.countVotes(ballotID, GRANT);
@@ -1988,14 +2245,19 @@ contract('Gatekeeper', (accounts) => {
 
     it('should revert if called more than once', async () => {
       // Commit for voters
+      await increaseTime(timing.VOTING_PERIOD_START);
       const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
       const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 0, 1, '1000', '5678');
       const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '1000', '9012');
 
       // Reveal all votes
-      await reveal(gatekeeper, aliceReveal);
-      await reveal(gatekeeper, bobReveal);
-      await reveal(gatekeeper, carolReveal);
+      await increaseTime(timing.COMMIT_PERIOD_LENGTH);
+      await reveal(ballotID, gatekeeper, aliceReveal);
+      await reveal(ballotID, gatekeeper, bobReveal);
+      await reveal(ballotID, gatekeeper, carolReveal);
+
+      // Advance past reveal period
+      await increaseTime(timing.REVEAL_PERIOD_LENGTH);
 
       await gatekeeper.countVotes(ballotID, GRANT);
 
@@ -2009,6 +2271,43 @@ contract('Gatekeeper', (accounts) => {
 
       assert.fail('Called countVotes() more than once');
     });
+
+    it('should revert if the contest has multiple slates and the reveal period is still active', async () => {
+      // Advance to reveal period
+      await increaseTime(timing.VOTING_PERIOD_START);
+
+      try {
+        await gatekeeper.countVotes(ballotID, GRANT);
+      } catch (error) {
+        expectRevert(error);
+        expectErrorLike(error, 'Reveal period still active');
+        return;
+      }
+
+      assert.fail('Counted votes while reveal period was still active');
+    });
+
+    it('should allow finalization during the reveal period if the contest has an unopposed slate', async () => {
+      const slateID = await gatekeeper.slateCount();
+
+      // Add a new governance slate
+      await utils.newSlate(gatekeeper, {
+        category: GOVERNANCE,
+        proposalData: ['e', 'f', 'g'],
+        slateData: 'governance slate',
+      }, { from: recommender });
+      await gatekeeper.stakeTokens(slateID, { from: recommender });
+
+      // Advance to reveal period
+      await increaseTime(timing.VOTING_PERIOD_START);
+
+      // Finalize
+      await gatekeeper.countVotes(ballotID, GOVERNANCE);
+      const status = await gatekeeper.contestStatus(ballotID, GOVERNANCE);
+      assert.strictEqual(status.toString(), ContestStatus.Finalized);
+    });
+
+    afterEach(async () => utils.evm.revert(snapshotID));
   });
 
   describe('getFirstChoiceVotes', () => {
@@ -2018,8 +2317,11 @@ contract('Gatekeeper', (accounts) => {
     let token;
     const initialTokens = '20000000';
     let ballotID;
+    let snapshotID;
 
     beforeEach(async () => {
+      snapshotID = await utils.evm.snapshot();
+
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
       ballotID = await gatekeeper.currentEpochNumber();
@@ -2067,14 +2369,16 @@ contract('Gatekeeper', (accounts) => {
 
     it('should correctly get the number of first choice votes for a slate', async () => {
       // Commit for voters
+      await increaseTime(timing.VOTING_PERIOD_START);
       const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
       const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 0, 1, '1000', '5678');
       const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '1000', '9012');
 
       // Reveal all votes
-      await reveal(gatekeeper, aliceReveal);
-      await reveal(gatekeeper, bobReveal);
-      await reveal(gatekeeper, carolReveal);
+      await increaseTime(timing.COMMIT_PERIOD_LENGTH);
+      await reveal(ballotID, gatekeeper, aliceReveal);
+      await reveal(ballotID, gatekeeper, bobReveal);
+      await reveal(ballotID, gatekeeper, carolReveal);
 
       // expect 2000, 1000, 0
       const slate0Votes = await gatekeeper.getFirstChoiceVotes(ballotID, GRANT, 0);
@@ -2084,6 +2388,8 @@ contract('Gatekeeper', (accounts) => {
       const slate2Votes = await gatekeeper.getFirstChoiceVotes(ballotID, GRANT, 2);
       assert.strictEqual(slate2Votes.toString(), '0');
     });
+
+    afterEach(async () => utils.evm.revert(snapshotID));
   });
 
   describe('contestStatus', () => {
@@ -2180,11 +2486,14 @@ contract('Gatekeeper', (accounts) => {
 
     let gatekeeper;
     let token;
+    let snapshotID;
 
     const initialTokens = '20000000';
     let ballotID;
 
     beforeEach(async () => {
+      snapshotID = await utils.evm.snapshot();
+
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
       ballotID = await gatekeeper.currentEpochNumber();
@@ -2231,14 +2540,19 @@ contract('Gatekeeper', (accounts) => {
     });
 
     it('should correctly tally and finalize a runoff vote', async () => {
+      await increaseTime(timing.VOTING_PERIOD_START);
       const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '800', '1234');
       const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 1, 2, '900', '5678');
       const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 2, 0, '1000', '9012');
 
       // Reveal all votes
-      await reveal(gatekeeper, aliceReveal);
-      await reveal(gatekeeper, bobReveal);
-      await reveal(gatekeeper, carolReveal);
+      await increaseTime(timing.COMMIT_PERIOD_LENGTH);
+      await reveal(ballotID, gatekeeper, aliceReveal);
+      await reveal(ballotID, gatekeeper, bobReveal);
+      await reveal(ballotID, gatekeeper, carolReveal);
+
+      // Advance past reveal period
+      await increaseTime(timing.REVEAL_PERIOD_LENGTH);
 
       // Confidence vote
       await gatekeeper.countVotes(ballotID, GRANT);
@@ -2321,14 +2635,19 @@ contract('Gatekeeper', (accounts) => {
     });
 
     it('should count correctly if the original leader wins the runoff', async () => {
+      await increaseTime(timing.VOTING_PERIOD_START);
       const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '99', '1234');
       const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 1, 2, '900', '5678');
       const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 2, 0, '1000', '9012');
 
       // Reveal all votes
-      await reveal(gatekeeper, aliceReveal);
-      await reveal(gatekeeper, bobReveal);
-      await reveal(gatekeeper, carolReveal);
+      await increaseTime(timing.COMMIT_PERIOD_LENGTH);
+      await reveal(ballotID, gatekeeper, aliceReveal);
+      await reveal(ballotID, gatekeeper, bobReveal);
+      await reveal(ballotID, gatekeeper, carolReveal);
+
+      // Advance past reveal period
+      await increaseTime(timing.REVEAL_PERIOD_LENGTH);
 
       // Confidence vote
       await gatekeeper.countVotes(ballotID, GRANT);
@@ -2356,14 +2675,19 @@ contract('Gatekeeper', (accounts) => {
     });
 
     it('should assign the slate with the lowest ID if the runoff ends in a tie', async () => {
+      await increaseTime(timing.VOTING_PERIOD_START);
       const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '400', '1234');
       const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 1, 2, '600', '5678');
       const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 2, 0, '1000', '9012');
 
       // Reveal all votes
-      await reveal(gatekeeper, aliceReveal);
-      await reveal(gatekeeper, bobReveal);
-      await reveal(gatekeeper, carolReveal);
+      await increaseTime(timing.COMMIT_PERIOD_LENGTH);
+      await reveal(ballotID, gatekeeper, aliceReveal);
+      await reveal(ballotID, gatekeeper, bobReveal);
+      await reveal(ballotID, gatekeeper, carolReveal);
+
+      // Advance past reveal period
+      await increaseTime(timing.REVEAL_PERIOD_LENGTH);
 
       // Confidence vote
       await gatekeeper.countVotes(ballotID, GRANT);
@@ -2381,14 +2705,19 @@ contract('Gatekeeper', (accounts) => {
 
     it('should revert if a runoff is not pending', async () => {
       // Run a straight-forward confidence vote
+      await increaseTime(timing.VOTING_PERIOD_START);
       const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '800', '1234');
       const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 1, 2, '900', '5678');
       const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '1000', '9012');
 
       // Reveal all votes
-      await reveal(gatekeeper, aliceReveal);
-      await reveal(gatekeeper, bobReveal);
-      await reveal(gatekeeper, carolReveal);
+      await increaseTime(timing.COMMIT_PERIOD_LENGTH);
+      await reveal(ballotID, gatekeeper, aliceReveal);
+      await reveal(ballotID, gatekeeper, bobReveal);
+      await reveal(ballotID, gatekeeper, carolReveal);
+
+      // Advance past reveal period
+      await increaseTime(timing.REVEAL_PERIOD_LENGTH);
 
       // Confidence vote
       await gatekeeper.countVotes(ballotID, GRANT);
@@ -2405,6 +2734,8 @@ contract('Gatekeeper', (accounts) => {
       }
       assert.fail('Ran runoff even though none was pending');
     });
+
+    afterEach(async () => utils.evm.revert(snapshotID));
   });
 
   describe('getWinningSlate', () => {
@@ -2412,11 +2743,14 @@ contract('Gatekeeper', (accounts) => {
 
     let gatekeeper;
     let token;
+    let snapshotID;
 
     const initialTokens = '20000000';
     let ballotID;
 
     beforeEach(async () => {
+      snapshotID = await utils.evm.snapshot();
+
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
       ballotID = await gatekeeper.currentEpochNumber();
@@ -2463,14 +2797,8 @@ contract('Gatekeeper', (accounts) => {
     });
 
     it('should correctly get the winning slate after a finalized confidence vote', async () => {
-      const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
-      const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 0, 1, '1000', '5678');
-      const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '1000', '9012');
-
-      // Reveal all votes
-      await reveal(gatekeeper, aliceReveal);
-      await reveal(gatekeeper, bobReveal);
-      await reveal(gatekeeper, carolReveal);
+      await doConfidenceVote(gatekeeper, ballotID, [alice, bob, carol], { finalize: false });
+      await increaseTime(timing.REVEAL_PERIOD_LENGTH);
 
       // Confidence vote
       await gatekeeper.countVotes(ballotID, GRANT);
@@ -2481,14 +2809,8 @@ contract('Gatekeeper', (accounts) => {
     });
 
     it('should correctly get the winning slate after a finalized runoff', async () => {
-      const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '800', '1234');
-      const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 1, 2, '900', '5678');
-      const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 2, 0, '1000', '9012');
-
-      // Reveal all votes
-      await reveal(gatekeeper, aliceReveal);
-      await reveal(gatekeeper, bobReveal);
-      await reveal(gatekeeper, carolReveal);
+      await doRunoff(gatekeeper, ballotID, [alice, bob, carol], { finalize: false });
+      await increaseTime(timing.REVEAL_PERIOD_LENGTH);
 
       // Confidence vote
       await gatekeeper.countVotes(ballotID, GRANT);
@@ -2510,6 +2832,8 @@ contract('Gatekeeper', (accounts) => {
       }
       assert.fail('Returned a winner even though the contest has not been finalized');
     });
+
+    afterEach(async () => utils.evm.revert(snapshotID));
   });
 
   describe('hasPermission', () => {
@@ -2519,8 +2843,12 @@ contract('Gatekeeper', (accounts) => {
     let token;
     const initialTokens = '20000000';
     let ballotID;
+    let snapshotID;
+
 
     beforeEach(async () => {
+      snapshotID = await utils.evm.snapshot();
+
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
       ballotID = await gatekeeper.currentEpochNumber();
@@ -2578,14 +2906,19 @@ contract('Gatekeeper', (accounts) => {
     describe('simple vote', () => {
       beforeEach(async () => {
         // Run a simple vote
+        await increaseTime(timing.VOTING_PERIOD_START);
         const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
         const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 0, 1, '1000', '5678');
         const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '1000', '9012');
 
         // Reveal all votes
-        await reveal(gatekeeper, aliceReveal);
-        await reveal(gatekeeper, bobReveal);
-        await reveal(gatekeeper, carolReveal);
+        await increaseTime(timing.COMMIT_PERIOD_LENGTH);
+        await reveal(ballotID, gatekeeper, aliceReveal);
+        await reveal(ballotID, gatekeeper, bobReveal);
+        await reveal(ballotID, gatekeeper, carolReveal);
+
+        // Advance past reveal period
+        await increaseTime(timing.REVEAL_PERIOD_LENGTH);
       });
 
       it('should return true for a request that was included in an accepted slate', async () => {
@@ -2608,14 +2941,19 @@ contract('Gatekeeper', (accounts) => {
     describe('runoff', () => {
       beforeEach(async () => {
         // Run a vote that triggers a runoff
+        await increaseTime(timing.VOTING_PERIOD_START);
         const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '800', '1234');
         const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 1, 2, '900', '5678');
         const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 2, 0, '1000', '9012');
 
         // Reveal all votes
-        await reveal(gatekeeper, aliceReveal);
-        await reveal(gatekeeper, bobReveal);
-        await reveal(gatekeeper, carolReveal);
+        await increaseTime(timing.COMMIT_PERIOD_LENGTH);
+        await reveal(ballotID, gatekeeper, aliceReveal);
+        await reveal(ballotID, gatekeeper, bobReveal);
+        await reveal(ballotID, gatekeeper, carolReveal);
+
+        // Advance past reveal period
+        await increaseTime(timing.REVEAL_PERIOD_LENGTH);
 
         // Run -- slate 1 wins
         await gatekeeper.countVotes(ballotID, GRANT);
@@ -2634,6 +2972,8 @@ contract('Gatekeeper', (accounts) => {
         assert.strictEqual(hasPermission, false, 'Request should NOT have been approved');
       });
     });
+
+    afterEach(async () => utils.evm.revert(snapshotID));
   });
 
   describe('withdrawStake', () => {
@@ -2642,11 +2982,14 @@ contract('Gatekeeper', (accounts) => {
     let gatekeeper;
     let token;
     let stakeAmount;
+    let snapshotID;
 
     const initialTokens = '20000000';
     let ballotID;
 
     beforeEach(async () => {
+      snapshotID = await utils.evm.snapshot();
+
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
       ballotID = await gatekeeper.currentEpochNumber();
@@ -2698,14 +3041,19 @@ contract('Gatekeeper', (accounts) => {
 
     describe('confidence vote', () => {
       beforeEach(async () => {
+        await increaseTime(timing.VOTING_PERIOD_START);
         const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
         const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 0, 1, '1000', '5678');
         const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '1000', '9012');
 
         // Reveal all votes
-        await reveal(gatekeeper, aliceReveal);
-        await reveal(gatekeeper, bobReveal);
-        await reveal(gatekeeper, carolReveal);
+        await increaseTime(timing.COMMIT_PERIOD_LENGTH);
+        await reveal(ballotID, gatekeeper, aliceReveal);
+        await reveal(ballotID, gatekeeper, bobReveal);
+        await reveal(ballotID, gatekeeper, carolReveal);
+
+        // Advance past reveal period
+        await increaseTime(timing.REVEAL_PERIOD_LENGTH);
       });
 
       it('should withdraw tokens after a finalized confidence vote', async () => {
@@ -2831,14 +3179,19 @@ contract('Gatekeeper', (accounts) => {
     describe('runoff vote', () => {
       beforeEach(async () => {
         // Run a vote that triggers a runoff
+        await increaseTime(timing.VOTING_PERIOD_START);
         const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '800', '1234');
         const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 1, 2, '900', '5678');
         const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 2, 0, '1000', '9012');
 
         // Reveal all votes
-        await reveal(gatekeeper, aliceReveal);
-        await reveal(gatekeeper, bobReveal);
-        await reveal(gatekeeper, carolReveal);
+        await increaseTime(timing.COMMIT_PERIOD_LENGTH);
+        await reveal(ballotID, gatekeeper, aliceReveal);
+        await reveal(ballotID, gatekeeper, bobReveal);
+        await reveal(ballotID, gatekeeper, carolReveal);
+
+        // Advance past reveal period
+        await increaseTime(timing.REVEAL_PERIOD_LENGTH);
 
         // Run -- slate 1 wins
         await gatekeeper.countVotes(ballotID, GRANT);
@@ -2906,6 +3259,8 @@ contract('Gatekeeper', (accounts) => {
         assert.fail('Allowed withdrawal from a slate that has not been accepted');
       });
     });
+
+    afterEach(async () => utils.evm.revert(snapshotID));
   });
 
   describe('donateChallengerStakes', () => {
@@ -2914,11 +3269,14 @@ contract('Gatekeeper', (accounts) => {
     let gatekeeper;
     let token;
     let capacitor;
+    let snapshotID;
 
     const initialTokens = '20000000';
     let ballotID;
 
     beforeEach(async () => {
+      snapshotID = await utils.evm.snapshot();
+
       ({ gatekeeper, token, capacitor } = await utils.newPanvala({ initialTokens, from: creator }));
       ballotID = await gatekeeper.currentEpochNumber();
 
@@ -3082,5 +3440,7 @@ contract('Gatekeeper', (accounts) => {
         assert.fail('Allowed donation of challenger stakes for an unfinalized contest');
       });
     });
+
+    afterEach(async () => utils.evm.revert(snapshotID));
   });
 });

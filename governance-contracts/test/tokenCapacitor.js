@@ -7,9 +7,18 @@ const TokenCapacitor = artifacts.require('TokenCapacitor');
 const ParameterStore = artifacts.require('ParameterStore');
 
 const {
-  expectRevert, expectErrorLike, voteSingle, revealVote, grantSlateFromProposals, BN, abiCoder,
+  expectRevert,
+  expectErrorLike,
+  voteSingle,
+  revealVote,
+  grantSlateFromProposals,
+  BN,
+  abiCoder,
+  timing,
 } = utils;
 const { GRANT } = utils.categories;
+
+const { increaseTime } = utils.evm;
 
 
 contract('TokenCapacitor', (accounts) => {
@@ -224,6 +233,7 @@ contract('TokenCapacitor', (accounts) => {
     let gatekeeper;
     let token;
     let capacitor;
+    let snapshotID;
 
     const initialTokens = '100000000';
     const capacitorSupply = '50000000';
@@ -236,6 +246,8 @@ contract('TokenCapacitor', (accounts) => {
     let losingSlate;
 
     beforeEach(async () => {
+      snapshotID = await utils.evm.snapshot();
+
       ({ gatekeeper, token, capacitor } = await utils.newPanvala({ initialTokens, from: creator }));
       ballotID = await gatekeeper.currentEpochNumber();
 
@@ -287,16 +299,19 @@ contract('TokenCapacitor', (accounts) => {
       await gatekeeper.stakeTokens(1, { from: recommender2 });
 
       // Commit ballots
+      await increaseTime(timing.VOTING_PERIOD_START);
       const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
       const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 0, 1, '1000', '5678');
       const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '1000', '9012');
 
       // Reveal all votes
-      await revealVote(gatekeeper, aliceReveal);
-      await revealVote(gatekeeper, bobReveal);
-      await revealVote(gatekeeper, carolReveal);
+      await increaseTime(timing.COMMIT_PERIOD_LENGTH);
+      await revealVote(ballotID, gatekeeper, aliceReveal);
+      await revealVote(ballotID, gatekeeper, bobReveal);
+      await revealVote(ballotID, gatekeeper, carolReveal);
 
       // count votes
+      await increaseTime(timing.REVEAL_PERIOD_LENGTH);
       await gatekeeper.countVotes(ballotID, GRANT);
       winningSlate = await gatekeeper.getWinningSlate(ballotID, GRANT);
       approvedRequests = await gatekeeper.slateRequests(winningSlate);
@@ -408,6 +423,8 @@ contract('TokenCapacitor', (accounts) => {
       }
       assert.fail('Allowed withdrawal for an invalid proposalID');
     });
+
+    afterEach(async () => utils.evm.revert(snapshotID));
   });
 
   describe('donate', () => {
