@@ -6,6 +6,8 @@ import keyBy from 'lodash/keyBy';
 import { IProposal, ISlate, IMainContext } from '../interfaces';
 import { getAllProposals, getAllSlates } from '../utils/api';
 import { baseToConvertedUnits } from '../utils/format';
+import { slateSubmissionDeadline } from '../utils/status';
+
 
 export const MainContext: React.Context<IMainContext> = React.createContext<IMainContext>({
   slates: [],
@@ -17,6 +19,8 @@ export const MainContext: React.Context<IMainContext> = React.createContext<IMai
     votingOpenDate: 0,
     votingCloseDate: 0,
     finalityDate: 0,
+    initialSlateSubmissionDeadline: 0,
+    slateSubmissionDeadline: {},
   },
 });
 
@@ -120,11 +124,14 @@ export default function MainProvider(props: any) {
       const week12EndDate: number = week11EndDate + oneWeekSeconds;
       // end of week 13 (5/3)
       const week13EndDate: number = week12EndDate + oneWeekSeconds;
+      const initialSlateSubmissionDeadline: number = slateSubmissionDeadline(week11EndDate, epochStartDate);
       const currentBallot = {
         startDate: epochStartDate,
         votingOpenDate: week11EndDate,
         votingCloseDate: week12EndDate,
         finalityDate: week13EndDate,
+        initialSlateSubmissionDeadline,
+        slateSubmissionDeadline: {},
       };
 
       dispatch({

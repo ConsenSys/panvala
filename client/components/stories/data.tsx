@@ -11,7 +11,7 @@ import '../../globalStyles.css';
 };
 
 export const epochStartDate = 1549040401;
-export const currentBallot = ballotDates(15499990);
+export const currentBallot = ballotDates(epochStartDate);
 
 export const proposals: IProposal[] = [
   {

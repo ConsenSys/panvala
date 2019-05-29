@@ -110,6 +110,11 @@ export interface IBallotDates {
   votingOpenDate: number;
   votingCloseDate: number;
   finalityDate: number;
+  initialSlateSubmissionDeadline: number;
+  // category -> timestamp
+  slateSubmissionDeadline: {
+    [key: string]: number;
+  };
 }
 
 export interface IContracts {

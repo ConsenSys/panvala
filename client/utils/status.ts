@@ -90,18 +90,29 @@ export function getPrefixAndDeadline(
   return { deadline, prefix };
 }
 
+/**
+ * Calculate the next slate submission deadline as halfway between now and the close of the
+ * commit period.
+ */
+export function slateSubmissionDeadline(votingCloseDate: number, lastStaked: number) {
+  return lastStaked + (votingCloseDate - lastStaked) / 2;
+}
+
 export function ballotDates(startDate: number): IBallotDates {
   const oneWeekSeconds = 604800;
   const epochStartDate = startDate;
   const week11EndDate = epochStartDate + oneWeekSeconds * 11;
   const week12EndDate = week11EndDate + oneWeekSeconds;
   const week13EndDate = week12EndDate + oneWeekSeconds;
+  const initialSlateSubmissionDeadline = slateSubmissionDeadline(week11EndDate, startDate);
 
   return {
     startDate,
     votingOpenDate: week11EndDate,
     votingCloseDate: week12EndDate,
     finalityDate: week13EndDate,
+    initialSlateSubmissionDeadline,
+    slateSubmissionDeadline: {},
   };
 }
 

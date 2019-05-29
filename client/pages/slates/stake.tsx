@@ -131,6 +131,7 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
       // refresh balances, refresh slates
       onRefreshBalances();
       onRefreshSlates();
+      // TODO: refresh slate submission deadline on ballot
       toggleOpenStepper(false);
       setOpenModal(true);
     }

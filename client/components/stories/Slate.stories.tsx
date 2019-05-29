@@ -48,18 +48,35 @@ const rejectedSlate: ISlate = {
 
 const requiredStake = convertedToBaseUnits('5000', 18);
 
+
 storiesOf('SlateHeader', module)
   .add('unstaked', () => <SlateHeader slate={unstakedSlate} currentBallot={currentBallot} />)
   .add('staked', () => <SlateHeader slate={stakedSlate} currentBallot={currentBallot} />);
 
 storiesOf('SlateSidebar', module)
-  .add('unstaked', () => <SlateSidebar slate={unstakedSlate} requiredStake={requiredStake} />)
-  .add('unstaked verified', () => (
-    <SlateSidebar slate={unstakedVerified} requiredStake={requiredStake} />
+  .add('unstaked', () => (
+    <SlateSidebar
+      slate={unstakedSlate}
+      requiredStake={requiredStake}
+      currentBallot={currentBallot}
+    />
   ))
-  .add('staked', () => <SlateSidebar slate={stakedSlate} requiredStake={requiredStake} />)
+  .add('unstaked verified', () => (
+    <SlateSidebar
+      slate={unstakedVerified}
+      requiredStake={requiredStake}
+      currentBallot={currentBallot}
+    />
+  ))
+  .add('staked', () => (
+    <SlateSidebar slate={stakedSlate} requiredStake={requiredStake} currentBallot={currentBallot} />
+  ))
   .add('staked verified', () => (
-    <SlateSidebar slate={stakedVerified} requiredStake={requiredStake} />
+    <SlateSidebar
+      slate={stakedVerified}
+      requiredStake={requiredStake}
+      currentBallot={currentBallot}
+    />
   ));
 
 storiesOf('Slate with contexts', module)

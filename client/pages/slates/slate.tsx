@@ -12,7 +12,8 @@ import SectionLabel from '../../components/SectionLabel';
 import Tag from '../../components/Tag';
 import { splitAddressHumanReadable, formatPanvalaUnits } from '../../utils/format';
 import { StatelessPage, IMainContext, ISlate, IBallotDates, IProposal } from '../../interfaces';
-import { convertEVMSlateStatus, statuses } from '../../utils/status';
+import { convertEVMSlateStatus, statuses, slateSubmissionDeadline } from '../../utils/status';
+import { tsToDeadline, timestamp } from '../../utils/datetime';
 
 const Incumbent = styled.div`
   color: ${COLORS.primary};
@@ -58,17 +59,21 @@ const SlateProposals = styled.div`
   display: flex;
   flex-flow: row wrap;
 `;
+const Wrapper = styled.div`
+  margin: 0 1rem 1rem 1rem;
+`;
 
 interface IStakeSidebarProps {
   slate: ISlate;
   requiredStake: BigNumberish;
+  currentBallot: IBallotDates;
 }
 interface IStakeHeaderProps {
   slate: ISlate;
   currentBallot: IBallotDates;
 }
 
-export const SlateSidebar = ({ slate, requiredStake }: IStakeSidebarProps): any => {
+export const SlateSidebar = ({ slate, requiredStake, currentBallot }: IStakeSidebarProps): any => {
   const status = convertEVMSlateStatus(slate.status);
   // button: 'Stake Tokens' or 'View Ballot' or null
   const button =
@@ -100,9 +105,22 @@ export const SlateSidebar = ({ slate, requiredStake }: IStakeSidebarProps): any 
     status === statuses.SLATE_REJECTED;
   console.log('slate:', slate);
 
+  // Calculate the extended deadline from now and the start of the commit period,
+  // assuming you were to stake right now
+  const now = timestamp();
+  const newDeadline = slateSubmissionDeadline(currentBallot.votingOpenDate, now);
+
   return (
     <>
       {button}
+      <Wrapper>
+        {status === statuses.PENDING_TOKENS ? (
+          <div>
+            {`By staking on a slate, the slate submission period will be extended to
+            ${tsToDeadline(newDeadline)} so that others have time to respond.`}
+          </div>
+        ) : null}
+      </Wrapper>
       <TokensBorder>
         <TokensSection>
           <div>{instructions}</div>
@@ -189,7 +207,7 @@ const Slate: StatelessPage<IProps> = ({ query: { id } }) => {
 
       <Container>
         <MetaColumn>
-          <SlateSidebar slate={slate} requiredStake={slate.requiredStake} />
+          <SlateSidebar slate={slate} requiredStake={slate.requiredStake} currentBallot={currentBallot} />
         </MetaColumn>
         <MainColumn>
           <SectionLabel>DESCRIPTION</SectionLabel>
