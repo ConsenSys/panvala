@@ -78,15 +78,15 @@ async function getRequestIDs(
   setTxPending(true);
 
   // wait for tx to get mined
-  const receipt: TransactionReceipt = await response.wait();
+  const receipt: any = await response.wait();
   setTxPending(false);
 
   if ('events' in receipt) {
     // Get the ProposalCreated logs from the receipt
     // Extract the requestID
     const requestIDs = receipt.events
-      .filter(event => event.event === 'ProposalCreated')
-      .map(e => utils.bigNumberify(e.args.requestID).toString());
+      .filter((event: any) => event.event === 'ProposalCreated')
+      .map((event: any) => utils.bigNumberify(event.args.requestID).toString());
     return requestIDs;
   }
 }
@@ -117,8 +117,8 @@ async function submitGovernanceSlate(
     // Get the SlateCreated logs from the receipt
     // Extract the slateID
     const slateID = receipt.events
-      .filter(event => event.event === 'SlateCreated')
-      .map(e => e.args.slateID.toString());
+      .filter((event: any) => event.event === 'SlateCreated')
+      .map((event: any) => event.args.slateID.toString());
 
     const slate: any = { slateID: utils.bigNumberify(slateID).toString(), metadataHash };
     return slate;
