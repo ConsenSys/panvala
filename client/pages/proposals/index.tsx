@@ -35,7 +35,7 @@ const Proposals: React.SFC<any> = () => {
       </div>
 
       <CardsWrapper>
-        {proposals && proposals.length
+        {proposals && proposals.length > 0
           ? proposals.map((proposal: IProposal) => (
               <div key={proposal.id}>
                 <RouterLink

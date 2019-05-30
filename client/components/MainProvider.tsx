@@ -3,26 +3,13 @@ import { format } from 'date-fns';
 import { AxiosResponse } from 'axios';
 import keyBy from 'lodash/keyBy';
 
+import { EthereumContext } from './EthereumProvider';
 import { IProposal, ISlate, IMainContext } from '../interfaces';
 import { getAllProposals, getAllSlates } from '../utils/api';
 import { baseToConvertedUnits } from '../utils/format';
 import { slateSubmissionDeadline } from '../utils/status';
 
-
-export const MainContext: React.Context<IMainContext> = React.createContext<IMainContext>({
-  slates: [],
-  proposals: [],
-  slatesByID: {},
-  proposalsByID: {},
-  currentBallot: {
-    startDate: 0,
-    votingOpenDate: 0,
-    votingCloseDate: 0,
-    finalityDate: 0,
-    initialSlateSubmissionDeadline: 0,
-    slateSubmissionDeadline: {},
-  },
-});
+export const MainContext: React.Context<IMainContext> = React.createContext<any>({});
 
 async function handleGetAllProposals() {
   // TODO: get or sort proposals by category
@@ -51,6 +38,7 @@ async function handleGetAllSlates() {
 }
 
 function reducer(state: any, action: any) {
+  console.info(`Main state change (${action.type})`, state, action);
   switch (action.type) {
     case 'all':
       return {
@@ -90,6 +78,9 @@ export default function MainProvider(props: any) {
       finalityDate: 0,
     },
   });
+  const {
+    contracts: { gatekeeper },
+  } = React.useContext(EthereumContext);
 
   React.useEffect(() => {
     async function setInitialState() {
@@ -113,16 +104,28 @@ export default function MainProvider(props: any) {
       const proposalsByID = keyBy(proposalData, 'id');
 
       const oneWeekSeconds: number = 604800;
-      // Epoch 3
-      // beginning of week 1 (2/1)
-      const epochStartDate: number = 1549040400; // gatekeeper.functions.currentBatchStart()
+      const epochLength = 13 * oneWeekSeconds;
+
+      // // Epoch 1 (Nov 3, 2018 12:00:00pm EST)
+      // const novThird = 1541260800;
+      // // Epoch 2 (Feb 1, 2019 12:00:01pm EST)
+      // const febFirst = 1549040401;
+      // // Epoch 3 (May 3, 2019 12:00:02pm EDT)
+      const mayThird = 1556902802;
+
+      const epochStartDate = mayThird;
+      const currentEpochStart = (await gatekeeper.functions.currentEpochStart()).toNumber();
+      console.log('currentEpochStart:', currentEpochStart);
       // end of week 11 (4/19)
       const week11EndDate: number = epochStartDate + oneWeekSeconds * 11; // 1555689601
       // end of week 12 (4/26)
       const week12EndDate: number = week11EndDate + oneWeekSeconds;
       // end of week 13 (5/3)
       const week13EndDate: number = week12EndDate + oneWeekSeconds;
-      const initialSlateSubmissionDeadline: number = slateSubmissionDeadline(week11EndDate, epochStartDate);
+      const initialSlateSubmissionDeadline: number = slateSubmissionDeadline(
+        week11EndDate,
+        epochStartDate
+      );
       const currentBallot = {
         startDate: epochStartDate,
         votingOpenDate: week11EndDate,
@@ -141,8 +144,10 @@ export default function MainProvider(props: any) {
         currentBallot,
       });
     }
-    setInitialState();
-  }, []);
+    if (gatekeeper) {
+      setInitialState();
+    }
+  }, [gatekeeper]);
 
   async function handleRefreshProposals() {
     const proposals: IProposal[] = await handleGetAllProposals();
@@ -160,8 +165,6 @@ export default function MainProvider(props: any) {
     onRefreshProposals: handleRefreshProposals,
     onRefreshSlates: handleRefreshSlates,
   };
-
-  console.log('Main Context:', state);
 
   return <MainContext.Provider value={value}>{props.children}</MainContext.Provider>;
 }

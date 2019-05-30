@@ -26,7 +26,6 @@ import { sendApproveTransaction, sendStakeTokensTransaction } from '../../utils/
 
 const Wrapper = styled.div`
   font-family: 'Roboto';
-  /* margin: 2rem 10rem; */
 `;
 
 const CenteredSection = styled.div`
@@ -58,7 +57,6 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
   const [modalIsOpen, setOpenModal] = React.useState(false);
   // pending tx loader
   const [txPending, setTxPending] = React.useState(false);
-  const [staked, setStaked] = React.useState(false);
   // slate user is staking on
   const [slate, setSlate] = React.useState({ requiredStake: '0' });
 
@@ -114,7 +112,7 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
       return false;
     }
 
-    if (contracts) {
+    if (contracts && contracts.hasOwnProperty('gatekeeper')) {
       const slateID = parseInt(query.id);
       // send tx (pending)
       const response = await sendStakeTokensTransaction(contracts.gatekeeper, slateID);
@@ -123,11 +121,9 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
       // wait for tx to get mined
       await response.wait();
       setTxPending(false);
-      setStaked(true);
 
       // tx mined
       toast.success(`stakeTokens tx mined.`);
-
       // refresh balances, refresh slates
       onRefreshBalances();
       onRefreshSlates();

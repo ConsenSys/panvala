@@ -16,17 +16,19 @@
   - *commit vote period*
 - batch 2 wk12: 1556298001  (04/26/19 01:00:01pm) -- end of week 12   (votingCloseDate)
   - *reveal vote period*
-- batch 2 wk13: 1556985601  (05/03/19 01:00:01pm) -- second release   (finalityDate)
+- batch 2 wk13: 1556902801  (05/03/19 01:00:01pm) -- second release   (finalityDate)
   - *grant distribution*
 
-- batch 3 init: 1556985602  (05/03/19 01:00:02pm)
-- batch 3 wk13: 1564848002  (08/03/19 01:00:02pm) -- third release
+- batch 3 init: 1556902802  (05/03/19 01:00:02pm) -- start of week 01 (startDate)
+- batch 3 wk11: 1563555602  (07/19/19 01:00:02pm) -- end of week 11   (votingOpenDate)
+- batch 3 wk12: 1564160402  (07/26/19 01:00:02pm) -- end of week 12   (votingCloseDate)
+- batch 3 wk13: 1564765202  (08/02/19 01:00:02pm) -- third release
 
 ## Constants/calculations
 
+- EPOCH_DURATION: gateKeeper.epochLength = 13 weeks || 604800 x 13
 - FIRST_EPOCH_STATE_DATE = gateKeeper.startTime() = (1541260800 || feb 2 - 13 weeks || 1549040400 - EPOCH_DURATION)
   - start time of the first batch/epoch
-- EPOCH_DURATION: gateKeeper.batchLength = 13 weeks || 604800 x 13
 - CURRENT_EPOCH_NUMBER: gateKeeper.currentBatchNumber = `(now - FIRST_EPOCH_STATE_DATE) / EPOCH_DURATION`
 - CURRENT_EPOCH_START_DATE: gateKeeper.currentBatchStart = `FIRST_EPOCH_START_DATE + (EPOCH_DURATION x CURRENT_EPOCH_NUMBER)`
 - EPOCH_START_DATE: gateKeeper.getEpochStart = `FIRST_EPOCH_START_DATE + (EPOCH_NUMBER x EPOCH_DURATION)`

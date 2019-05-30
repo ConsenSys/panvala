@@ -189,7 +189,7 @@ const Slate: StatelessPage<IProps> = ({ query: { id } }) => {
     (slate: ISlate) => slate.id === slateID
   );
 
-  if (!slate) {
+  if (slate == null) {
     return <div>Loading...</div>;
   }
 

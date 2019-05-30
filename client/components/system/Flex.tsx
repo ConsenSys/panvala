@@ -1,7 +1,19 @@
 import styled from 'styled-components';
-import { space } from 'styled-system';
+import {
+  space,
+  width,
+  borders,
+  boxShadow,
+  position,
+  zIndex,
+  top,
+  right,
+  bottom,
+  left,
+} from 'styled-system';
 
 const Flex: any = styled.div`
+  box-sizing: 'border-box';
   display: flex;
   flex-wrap: ${(props: any) => {
     if (props.wrapReverse) return 'wrap-reverse';
@@ -34,7 +46,18 @@ const Flex: any = styled.div`
     return 'stretch';
   }};
   flex-direction: ${(props: any) => (props.column ? 'column' : 'row')};
+
   ${space}
+  ${width};
+  ${borders};
+  ${boxShadow};
+
+  ${position};
+  ${zIndex};
+  ${top};
+  ${right};
+  ${bottom};
+  ${left};
 `;
 
 export const Column = styled.div`

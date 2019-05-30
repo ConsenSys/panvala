@@ -3,9 +3,19 @@ import { utils, providers } from 'ethers';
 import { toast } from 'react-toastify';
 import isEmpty from 'lodash/isEmpty';
 import { connectProvider, connectContracts } from '../utils/provider';
-import { IContracts, IEthereumContext } from '../interfaces';
+import { IContracts } from '../interfaces';
 import { baseToConvertedUnits } from '../utils/format';
 
+export interface IEthereumContext {
+  account: string;
+  ethProvider: providers.Web3Provider;
+  contracts: IContracts;
+  panBalance: utils.BigNumber;
+  gkAllowance: utils.BigNumber;
+  tcAllowance: utils.BigNumber;
+  votingRights: utils.BigNumber;
+  onRefreshBalances(): any;
+}
 export const EthereumContext: React.Context<IEthereumContext> = React.createContext<any>({});
 
 // extend the global object to include ethereum (metamask ethereum provider)
@@ -27,6 +37,7 @@ async function getBalances(account: string, contracts: IContracts): Promise<any[
 }
 
 function reducer(state: any, action: any) {
+  console.info(`Eth state change (${action.type})`, state, action);
   switch (action.type) {
     // case 'all':
     //   return action.payload;
@@ -94,7 +105,7 @@ export default function EthereumProvider(props: any) {
           }
 
           // set state
-          if (account && ethProvider) {
+          if (account && !isEmpty(ethProvider)) {
             dispatch({
               type: 'eth_state',
               ethProvider,
@@ -151,7 +162,7 @@ export default function EthereumProvider(props: any) {
   // runs whenever account changes
   React.useEffect(() => {
     if (state.account && !isEmpty(state.contracts)) {
-      console.log('account change detected. refreshing balances:', state.account);
+      console.info('Refreshing balances for:', state.account.slice(0, 10));
       handleRefreshBalances(state.account);
     }
   }, [state.account]);
@@ -160,7 +171,6 @@ export default function EthereumProvider(props: any) {
     ...state,
     onRefreshBalances: () => handleRefreshBalances(state.account),
   };
-  console.log('Eth context:', ethContext);
 
   return <EthereumContext.Provider value={ethContext}>{props.children}</EthereumContext.Provider>;
 }

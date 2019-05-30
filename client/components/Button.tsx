@@ -3,7 +3,7 @@ import styled, { css } from 'styled-components';
 import { COLORS, BUTTON_COLORS } from '../styles';
 import { IButton } from '../interfaces';
 
-const BaseButton = styled.button`
+const BaseButton: any = styled.button`
   display: flex;
   justify-content: center;
   align-items: center;
@@ -42,13 +42,13 @@ const StyledButton: any = styled(BaseButton)`
 `;
 
 const LargeButton: any = styled(BaseButton)`
-  width: 100%;
+  width: ${({ width }) => (width ? width : '100%')};
   background-color: ${({ type }: any) => (type ? (BUTTON_COLORS as any)[type] : COLORS.white)};
-  padding: 0.8rem 1.5rem;
+  padding: 0.8rem 1rem;
   margin: 0 0.5rem 1rem;
   border: 2px solid ${COLORS.grey5};
   border-radius: 7px;
-  font-size: 1.2rem;
+  font-size: 1rem;
 `;
 
 const Button: React.FunctionComponent<IButton> = props => {
