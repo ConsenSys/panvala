@@ -99,6 +99,7 @@ export default function EthereumProvider(props: any) {
           try {
             contracts = await connectContracts(ethProvider);
           } catch (error) {
+            console.error(`ERROR failed to connect contracts: ${error.message}`);
             if (error.message.includes('contract not deployed')) {
               toast.error(`Contracts not deployed on current network`);
             }

@@ -25,6 +25,11 @@ export async function connectContracts(provider: providers.Web3Provider): Promis
   const tcAddress: string =
     publicRuntimeConfig.tokenCapacitorAddress || process.env.STORYBOOK_TOKEN_CAPACITOR_ADDRESS;
 
+  try {
+    await provider.getCode(tcAddress);
+  } catch (error) {
+    throw new Error(`ERROR no code at: ${tcAddress}`);
+  }
   // init ethers contract abstractions
   const tc: ethers.Contract = new ethers.Contract(tcAddress, tcAbi, provider);
   const gc: ethers.Contract = new ethers.Contract(gcAddress, gcAbi, provider);
@@ -50,6 +55,7 @@ export async function connectContracts(provider: providers.Web3Provider): Promis
 
     return { tokenCapacitor, gatekeeper, token, parameterStore };
   } catch (error) {
+    console.error(`ERROR while attempting to connect token or parameter store: ${error.message}`);
     throw error;
   }
 }
