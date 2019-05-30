@@ -3,11 +3,14 @@
 const utils = require('./utils');
 
 const {
-  abiCoder, abiEncode, expectErrorLike, expectRevert,
+  abiCoder, abiEncode, expectErrorLike, expectRevert, governanceSlateFromProposals,
+  voteSingle, timing, revealVote, BN,
 } = utils;
 
+const { GOVERNANCE } = utils.categories;
+const { increaseTime } = utils.evm;
+
 const ParameterStore = artifacts.require('ParameterStore');
-const Gatekeeper = artifacts.require('Gatekeeper');
 
 
 contract('ParameterStore', (accounts) => {
@@ -273,5 +276,194 @@ contract('ParameterStore', (accounts) => {
         }
       });
     });
+  });
+
+  describe('setValue', () => {
+    const [creator, recommender1, recommender2, alice, bob, carol] = accounts;
+
+    let snapshotID;
+    let gatekeeper;
+    let parameters;
+    let token;
+    const initialTokens = '100000000';
+
+    let ballotID;
+
+    let proposals1;
+    let proposals2;
+    let winningSlate;
+    let approvedRequests;
+    let losingSlate;
+
+    beforeEach(async () => {
+      snapshotID = await utils.evm.snapshot();
+
+      ({ gatekeeper, token, parameters } = await utils.newPanvala({
+        initialTokens,
+        from: creator,
+      }));
+
+      ballotID = await gatekeeper.currentEpochNumber();
+
+      // Allocate tokens
+      const allocatedTokens = '10000';
+      await token.transfer(alice, allocatedTokens, { from: creator });
+      await token.transfer(bob, allocatedTokens, { from: creator });
+      await token.transfer(carol, allocatedTokens, { from: creator });
+
+      await token.approve(gatekeeper.address, allocatedTokens, { from: alice });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: bob });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: carol });
+
+      // create simple ballot with just governance proposals
+      proposals1 = [
+        {
+          key: 'param',
+          value: abiEncode('uint256', '1000'),
+          metadataHash: utils.createMultihash('important parameter'),
+        },
+        {
+          key: 'param2',
+          value: abiEncode('uint256', '1000'),
+          metadataHash: utils.createMultihash('another important parameter'),
+        },
+      ];
+
+      await governanceSlateFromProposals({
+        gatekeeper,
+        proposals: proposals1,
+        parameterStore: parameters,
+        recommender: recommender1,
+        metadata: 'slate 1',
+      });
+
+      proposals2 = [
+        {
+          key: 'param',
+          value: abiEncode('uint256', '0'),
+          metadataHash: utils.createMultihash('this is totally safe'),
+        },
+      ];
+
+      await governanceSlateFromProposals({
+        gatekeeper,
+        proposals: proposals2,
+        parameterStore: parameters,
+        recommender: recommender2,
+        metadata: 'slate 2',
+      });
+
+      await token.transfer(recommender1, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: recommender1 });
+      await token.transfer(recommender2, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: recommender2 });
+
+      await gatekeeper.stakeTokens(0, { from: recommender1 });
+      await gatekeeper.stakeTokens(1, { from: recommender2 });
+
+      // Commit ballots
+      await increaseTime(timing.VOTING_PERIOD_START);
+      const aliceReveal = await voteSingle(gatekeeper, alice, GOVERNANCE, 0, 1, '1000', '1234');
+      const bobReveal = await voteSingle(gatekeeper, bob, GOVERNANCE, 0, 1, '1000', '5678');
+      const carolReveal = await voteSingle(gatekeeper, carol, GOVERNANCE, 1, 0, '1000', '9012');
+
+      // Reveal all votes
+      await increaseTime(timing.COMMIT_PERIOD_LENGTH);
+      await revealVote(ballotID, gatekeeper, aliceReveal);
+      await revealVote(ballotID, gatekeeper, bobReveal);
+      await revealVote(ballotID, gatekeeper, carolReveal);
+
+      // count votes
+      await increaseTime(timing.REVEAL_PERIOD_LENGTH);
+      await gatekeeper.countVotes(ballotID, GOVERNANCE);
+      winningSlate = await gatekeeper.getWinningSlate(ballotID, GOVERNANCE);
+      approvedRequests = await gatekeeper.slateRequests(winningSlate);
+
+      losingSlate = new BN('1');
+      assert(losingSlate.toString() !== winningSlate.toString());
+    });
+
+    it('should set the value if the request has been approved', async () => {
+      const proposalID = approvedRequests[0];
+      const { key, value } = await parameters.proposals(proposalID);
+
+      // const initialValue = await parameters.get(key);
+      // console.log(key, initialValue, '->', value);
+
+      // Set the value
+      const receipt = await parameters.setValue(proposalID, { from: alice });
+
+      // Check logs
+      utils.expectEvents(receipt, ['ParameterInitialized', 'ParameterSet']);
+
+      const {
+        proposalID: emittedProposalID,
+        key: emittedKey,
+        value: emittedValue,
+      } = receipt.logs[1].args;
+
+      assert.strictEqual(
+        emittedProposalID.toString(),
+        proposalID.toString(),
+        'Emitted wrong proposalID',
+      );
+      assert.strictEqual(emittedKey, key, 'Emitted wrong key');
+      assert.strictEqual(emittedValue.toString(), value.toString(), 'Emitted wrong key');
+
+      // Value should have been set
+      const newValue = await parameters.get(key);
+      assert.strictEqual(
+        newValue.toString(),
+        value.toString(),
+        'Value was not set',
+      );
+    });
+
+    it('should not allow multiple executions for the same proposal ID', async () => {
+      const proposalID = approvedRequests[0];
+      // const { key } = await capacitor.proposals(proposalID);
+
+      // Execute proposal
+      await parameters.setValue(proposalID, { from: alice });
+
+      // Try to execute again
+      try {
+        await parameters.setValue(proposalID, { from: alice });
+      } catch (error) {
+        expectRevert(error);
+        expectErrorLike(error, 'already executed');
+        return;
+      }
+      assert.fail('Allowed multiple executions for the same request ID');
+    });
+
+    it('should revert if the proposal has not been approved by the gatekeeper', async () => {
+      const rejectedRequests = await gatekeeper.slateRequests(losingSlate);
+      const proposalID = rejectedRequests[0];
+      // const { to: beneficiary } = await capacitor.proposals(proposalID);
+
+      try {
+        await parameters.setValue(proposalID, { from: alice });
+      } catch (error) {
+        expectRevert(error);
+        expectErrorLike(error, 'Proposal has not been approved');
+        return;
+      }
+      assert.fail('Allowed execution for a rejected request');
+    });
+
+    it('should revert if the proposal ID is invalid', async () => {
+      const proposalID = '9999';
+      try {
+        await parameters.setValue(proposalID, { from: alice });
+      } catch (error) {
+        expectRevert(error);
+        expectErrorLike(error, 'Invalid proposalID');
+        return;
+      }
+      assert.fail('Allowed execution for an invalid proposalID');
+    });
+
+    afterEach(async () => utils.evm.revert(snapshotID));
   });
 });

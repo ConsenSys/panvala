@@ -337,6 +337,44 @@ async function grantSlateFromProposals(options) {
 }
 
 /**
+ * Create a governance proposal slate from proposal info
+ * options include: gatekeeper, parameterStore, proposals, recommender, metadata
+ * @param {*} options
+ */
+async function governanceSlateFromProposals(options) {
+  const {
+    gatekeeper, parameterStore, proposals, recommender, metadata,
+  } = options;
+
+  const keys = [];
+  const values = [];
+  const metadataHashes = [];
+  proposals.forEach((p) => {
+    keys.push(p.key);
+    values.push(p.value);
+    metadataHashes.push(asBytes(p.metadataHash));
+  });
+
+  const receipt = await parameterStore.createManyProposals(
+    keys,
+    values,
+    metadataHashes,
+    { from: recommender },
+  );
+
+  const requestIDs = receipt.logs.map(l => l.args.requestID);
+
+  await gatekeeper.recommendSlate(
+    proposalCategories.GOVERNANCE,
+    requestIDs,
+    asBytes(metadata),
+    { from: recommender },
+  );
+
+  return requestIDs;
+}
+
+/**
  * Ask the Gatekeeper for permission and get back the requestIDs
  * @param {*} gatekeeper
  * @param {*} proposalData
@@ -518,6 +556,7 @@ const utils = {
   zeroHash,
   generateCommitHash,
   grantSlateFromProposals,
+  governanceSlateFromProposals,
   getRequestIDs,
   newSlate,
   voteSingle,

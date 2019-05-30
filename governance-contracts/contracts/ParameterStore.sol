@@ -7,7 +7,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 contract ParameterStore {
     // EVENTS
-    event ParameterSet(bytes32 key, bytes32 value);
+    event ParameterInitialized(bytes32 key, bytes32 value);
     event ProposalCreated(
         address indexed proposer,
         uint256 requestID,
@@ -15,6 +15,8 @@ contract ParameterStore {
         bytes32 value,
         bytes metadataHash
     );
+    event ParameterSet(uint256 proposalID, string key, bytes32 value);
+
 
     // STATE
     using SafeMath for uint256;
@@ -100,7 +102,7 @@ contract ParameterStore {
     function set(string memory _name, bytes32 _value) private {
         bytes32 key = keccak256(abi.encodePacked(_name));
         params[key] = _value;
-        emit ParameterSet(key, _value);
+        emit ParameterInitialized(key, _value);
     }
 
     /**
@@ -163,6 +165,29 @@ contract ParameterStore {
             createProposal(key, value, metadataHash);
         }
     }
+
+    /**
+     @dev Execute a proposal to set a parameter. The proposal must have been included in an
+     accepted governance slate.
+     @param proposalID The proposal
+     */
+    function setValue(uint256 proposalID) public returns(bool) {
+        require(proposalID < proposalCount, "Invalid proposalID");
+
+        Gatekeeper gatekeeper = _gatekeeper();
+        require(gatekeeper.hasPermission(proposalID), "Proposal has not been approved");
+
+        Proposal memory p = proposals[proposalID];
+        require(p.executed == false, "Proposal already executed");
+
+        proposals[proposalID].executed = true;
+
+        set(p.key, p.value);
+
+        emit ParameterSet(proposalID, p.key, p.value);
+        return true;
+    }
+
     function _gatekeeper() private view returns(Gatekeeper) {
         address gatekeeperAddress = getAsAddress("gatekeeperAddress");
         require(gatekeeperAddress != address(0), "Missing gatekeeper");
