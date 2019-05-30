@@ -2,24 +2,17 @@ import * as React from 'react';
 import isEmpty from 'lodash/isEmpty';
 import { getNotificationsByAddress } from '../utils/api';
 import { normalizeNotifications } from '../utils/notification';
-import {
-  INotificationsContext,
-  INotification,
-  IEthereumContext,
-  IMainContext,
-} from '../interfaces/contexts';
+import { INotificationsContext, INotification } from '../interfaces/contexts';
 import { EthereumContext } from './EthereumProvider';
 import { MainContext } from './MainProvider';
 
 // prettier-ignore
-export const NotificationsContext: React.Context<INotificationsContext> = React.createContext<INotificationsContext>({
-  notifications: [],
-});
+export const NotificationsContext: React.Context<INotificationsContext> = React.createContext<any>({});
 
 export default function NotificationsProvider(props: any) {
   const [notifications, setNotifications] = React.useState<INotification[]>([]);
-  const { account } = React.useContext<IEthereumContext>(EthereumContext);
-  const { proposalsByID, slatesByID }: IMainContext = React.useContext<IMainContext>(MainContext);
+  const { account } = React.useContext(EthereumContext);
+  const { proposalsByID, slatesByID } = React.useContext(MainContext);
 
   /**
    * Handler for getting all notifications for an address

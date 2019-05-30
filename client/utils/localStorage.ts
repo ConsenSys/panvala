@@ -1,18 +1,18 @@
-const LOCAL_STATE = 'LOCAL_STATE';
+export const PANVALA_STATE = 'PANVALA_STATE';
 
-export function saveState(state: any) {
+export function saveState(store: string, state: any) {
   try {
     const serializedState = JSON.stringify(state);
-    localStorage.setItem(LOCAL_STATE, serializedState);
+    localStorage.setItem(store, serializedState);
   } catch (error) {
     console.warn('Warning: failed to set to local storage', state);
     // Ignore write errors.
   }
 }
 
-export function loadState() {
+export function loadState(store: string) {
   try {
-    const serializedState = localStorage.getItem(LOCAL_STATE);
+    const serializedState = localStorage.getItem(store);
     if (serializedState === null) {
       return undefined;
     }
@@ -21,9 +21,3 @@ export function loadState() {
     return undefined;
   }
 }
-
-// // save logs in local storage
-// const persistedState = loadState();
-// const log = { error: error.message };
-// const newLogs = persistedState && persistedState.logs ? persistedState.logs.concat(log) : [log];
-// saveState({ logs: newLogs });

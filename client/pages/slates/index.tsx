@@ -62,7 +62,7 @@ const Slates: React.FunctionComponent<Props> = props => {
       </VisibilityFilterContainer>
 
       <CardsWrapper>
-        {slates && slates.length
+        {slates && slates.length > 0
           ? slates.map((slate: ISlate) => (
               <div key={slate.id}>
                 <RouterLink href={`/slates/slate?id=${slate.id}`} as={`/slates/${slate.id}`}>
