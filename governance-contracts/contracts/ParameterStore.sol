@@ -1,16 +1,40 @@
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
+import "./Gatekeeper.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+
 
 contract ParameterStore {
     // EVENTS
     event ParameterSet(bytes32 key, bytes32 value);
-
+    event ProposalCreated(
+        address indexed proposer,
+        uint256 requestID,
+        string key,
+        bytes32 value,
+        bytes metadataHash
+    );
 
     // STATE
+    using SafeMath for uint256;
+
     address owner;
     bool initialized;
     mapping(bytes32 => bytes32) public params;
+
+    // A proposal to change a value
+    struct Proposal {
+        string key;
+        bytes32 value;
+        bytes metadataHash;
+        bool executed;
+    }
+
+    mapping(uint => Proposal) public proposals;
+
+    // The total number of proposals
+    uint public proposalCount;
 
     // IMPLEMENTATION
     /**
@@ -89,5 +113,59 @@ contract ParameterStore {
         require(initialized == false, "Cannot set values after initialization");
 
         set(_name, _value);
+    }
+
+    /**
+     @dev Create a proposal to set a value.
+     @param key The key to set
+     @param value The value to set
+     @param metadataHash A reference to metadata describing the proposal
+     */
+    function createProposal(string memory key, bytes32 value, bytes memory metadataHash) public returns(uint256) {
+        require(metadataHash.length > 0, "metadataHash cannot be empty");
+
+        Proposal memory p = Proposal({
+            key: key,
+            value: value,
+            metadataHash: metadataHash,
+            executed: false
+        });
+
+        // Request permission from the Gatekeeper and store the proposal data for later.
+        // If the request is approved, a user can execute the proposal by providing the
+        // requestID.
+        uint requestID = _gatekeeper().requestPermission(metadataHash);
+        proposals[requestID] = p;
+        proposalCount = proposalCount.add(1);
+
+        emit ProposalCreated(msg.sender, requestID, key, value, metadataHash);
+        return requestID;
+    }
+
+    /**
+     @dev Create multiple proposals to set values.
+     @param keys The keys to set
+     @param values The values to set for the keys
+     @param metadataHashes Metadata hashes describing the proposals
+    */
+    function createManyProposals(
+        string[] memory keys,
+        bytes32[] memory values,
+        bytes[] memory metadataHashes
+    ) public {
+        require(keys.length == values.length, "All inputs must have the same length");
+        require(values.length == metadataHashes.length, "All inputs must have the same length");
+
+        for (uint i = 0; i < keys.length; i++) {
+            string memory key = keys[i];
+            bytes32 value = values[i];
+            bytes memory metadataHash = metadataHashes[i];
+            createProposal(key, value, metadataHash);
+        }
+    }
+    function _gatekeeper() private view returns(Gatekeeper) {
+        address gatekeeperAddress = getAsAddress("gatekeeperAddress");
+        require(gatekeeperAddress != address(0), "Missing gatekeeper");
+        return Gatekeeper(gatekeeperAddress);
     }
 }

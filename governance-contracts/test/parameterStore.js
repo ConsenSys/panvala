@@ -1,10 +1,13 @@
 /* eslint-env mocha */
 /* global assert artifacts contract */
+const utils = require('./utils');
+
 const {
   abiCoder, abiEncode, expectErrorLike, expectRevert,
-} = require('./utils');
+} = utils;
 
 const ParameterStore = artifacts.require('ParameterStore');
+const Gatekeeper = artifacts.require('Gatekeeper');
 
 
 contract('ParameterStore', (accounts) => {
@@ -135,6 +138,139 @@ contract('ParameterStore', (accounts) => {
 
         const retrievedValue = await parameters.getAsAddress(key);
         assert.strictEqual(retrievedValue, creator);
+      });
+    });
+  });
+
+  describe('createProposal', () => {
+    const [creator, proposer] = accounts;
+    // let gatekeeper;
+    let parameters;
+
+    beforeEach(async () => {
+      // deploy
+      ({ parameters } = await utils.newPanvala({ from: creator }));
+    });
+
+    it('it should create a proposal to change a parameter', async () => {
+      const key = 'someKey';
+      const value = 5;
+      const encodedValue = abiEncode('uint256', value);
+      const metadataHash = utils.createMultihash('my request data');
+
+      const receipt = await parameters.createProposal(
+        key,
+        encodedValue,
+        utils.asBytes(metadataHash),
+        { from: proposer },
+      );
+
+      // Should emit event with requestID and other data
+      assert.strictEqual(receipt.logs[0].event, 'ProposalCreated');
+      const {
+        proposer: emittedProposer,
+        requestID,
+        key: emittedKey,
+        value: emittedValue,
+        metadataHash: emittedHash,
+      } = receipt.logs[0].args;
+
+      assert.strictEqual(requestID.toString(), '0');
+      assert.strictEqual(emittedProposer, proposer, 'Emitted wrong proposer');
+      assert.strictEqual(emittedKey, key, 'Emitted wrong key');
+      assert.strictEqual(emittedValue.toString(), encodedValue, 'Emitted wrong value');
+      assert.strictEqual(
+        utils.bytesAsString(emittedHash),
+        metadataHash,
+        'Emitted wrong metadataHash',
+      );
+
+      // should increment proposal count
+      const proposalCount = await parameters.proposalCount();
+      assert.strictEqual(proposalCount.toString(), '1', 'Should have incremented proposalCount');
+
+      // should save proposal with values
+      const proposal = await parameters.proposals(requestID);
+      assert.strictEqual(proposal.key, key, 'Proposal has wrong key');
+      assert.strictEqual(proposal.value, encodedValue, 'Proposal has wrong value');
+      assert.strictEqual(
+        utils.bytesAsString(proposal.metadataHash),
+        metadataHash,
+        'Proposal has wrong metadataHash',
+      );
+
+      // proposal should not be marked as executed
+      assert.strictEqual(proposal.executed, false, 'Proposal should not be executed');
+    });
+
+    // rejection criteria
+    it('should not allow creation of a proposal with an empty metadataHash', async () => {
+      const key = 'someKey';
+      const value = 5;
+      const encodedValue = abiEncode('uint256', value);
+      const emptyHash = '';
+
+      try {
+        await parameters.createProposal(
+          key,
+          encodedValue,
+          utils.asBytes(emptyHash),
+          { from: creator },
+        );
+      } catch (error) {
+        expectRevert(error);
+        expectErrorLike(error, 'empty');
+        return;
+      }
+      assert.fail('allowed creation of a proposal with an empty metadataHash');
+    });
+
+    describe('createManyProposals', () => {
+      it('should create proposals and emit an event for each', async () => {
+        const keys = ['number1', 'number2', 'address'];
+        const values = [
+          abiEncode('uint256', 5),
+          abiEncode('uint256', 10),
+          abiEncode('address', utils.zeroAddress()),
+        ];
+        const metadataHashes = ['request1', 'request2', 'request3'].map(utils.createMultihash);
+
+        const receipt = await parameters.createManyProposals(
+          keys,
+          values,
+          metadataHashes.map(utils.asBytes),
+          { from: proposer },
+        );
+
+        assert.strictEqual(receipt.logs.length, keys.length, 'Wrong number of events');
+
+        // eslint-disable-next-line
+        for (let i = 0; i < keys.length; i++) {
+          const log = receipt.logs[i];
+          const key = keys[i];
+          const value = values[i];
+          const metadataHash = metadataHashes[i];
+
+          const {
+            proposer: emittedProposer,
+            requestID,
+            key: emittedKey,
+            value: emittedValue,
+            metadataHash: emittedHash,
+          } = log.args;
+
+          // should emit event with requestID and other data
+          const index = i.toString();
+          assert.strictEqual(requestID.toString(), index);
+          assert.strictEqual(emittedProposer, proposer, 'Emitted wrong proposer');
+          assert.strictEqual(emittedKey, key, 'Emitted wrong key');
+          assert.strictEqual(emittedValue.toString(), value, 'Emitted wrong value');
+          assert.strictEqual(
+            utils.bytesAsString(emittedHash),
+            metadataHash,
+            'Emitted wrong metadataHash',
+          );
+        }
       });
     });
   });
