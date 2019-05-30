@@ -91,11 +91,11 @@ export function getPrefixAndDeadline(
 }
 
 /**
- * Calculate the next slate submission deadline as halfway between now and the close of the
+ * Calculate the next slate submission deadline as halfway between now and the start of the
  * commit period.
  */
-export function slateSubmissionDeadline(votingCloseDate: number, lastStaked: number) {
-  return lastStaked + (votingCloseDate - lastStaked) / 2;
+export function slateSubmissionDeadline(votingOpenDate: number, lastStaked: number) {
+  return lastStaked + (votingOpenDate - lastStaked) / 2;
 }
 
 export function ballotDates(startDate: number): IBallotDates {
