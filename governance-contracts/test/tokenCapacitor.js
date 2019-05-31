@@ -16,7 +16,6 @@ const {
   abiCoder,
   timing,
 } = utils;
-const { GRANT } = utils.categories;
 
 const { increaseTime } = utils.evm;
 
@@ -250,6 +249,7 @@ contract('TokenCapacitor', (accounts) => {
 
       ({ gatekeeper, token, capacitor } = await utils.newPanvala({ initialTokens, from: creator }));
       ballotID = await gatekeeper.currentEpochNumber();
+      const GRANT = await utils.getResource(gatekeeper, 'GRANT');
 
       // Charge the capacitor
       await token.transfer(capacitor.address, capacitorSupply, { from: creator });

@@ -20,12 +20,10 @@ const {
   abiCoder,
   // printDate,
   timing,
+  getResource,
 } = utils;
 
 const { increaseTime } = utils.evm;
-
-const { GRANT, GOVERNANCE } = utils.categories;
-
 const { ONE_WEEK } = timing;
 
 
@@ -33,11 +31,13 @@ async function doRunoff(gatekeeper, ballotID, voters, options) {
   const { finalize = true } = options || {};
   const [alice, bob, carol] = voters;
 
+  const resource = await getResource(gatekeeper, 'GRANT');
+
   // Run a vote that triggers a runoff
   await increaseTime(timing.VOTING_PERIOD_START);
-  const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '800', '1234');
-  const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 1, 2, '900', '5678');
-  const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 2, 0, '1000', '9012');
+  const aliceReveal = await voteSingle(gatekeeper, alice, resource, 0, 1, '800', '1234');
+  const bobReveal = await voteSingle(gatekeeper, bob, resource, 1, 2, '900', '5678');
+  const carolReveal = await voteSingle(gatekeeper, carol, resource, 2, 0, '1000', '9012');
 
   // Reveal all votes
   await increaseTime(timing.COMMIT_PERIOD_LENGTH);
@@ -48,8 +48,8 @@ async function doRunoff(gatekeeper, ballotID, voters, options) {
   // Run -- slate 1 wins
   if (finalize) {
     await increaseTime(timing.REVEAL_PERIOD_LENGTH);
-    await gatekeeper.countVotes(ballotID, GRANT);
-    await gatekeeper.countRunoffVotes(ballotID, GRANT);
+    await gatekeeper.countVotes(ballotID, resource);
+    await gatekeeper.countRunoffVotes(ballotID, resource);
   }
 }
 
@@ -57,10 +57,12 @@ async function doConfidenceVote(gatekeeper, ballotID, voters, options) {
   const { finalize = true } = options || {};
   const [alice, bob, carol] = voters;
 
+  const resource = await getResource(gatekeeper, 'GRANT');
+
   await increaseTime(timing.VOTING_PERIOD_START);
-  const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
-  const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 0, 1, '1000', '5678');
-  const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '1000', '9012');
+  const aliceReveal = await voteSingle(gatekeeper, alice, resource, 0, 1, '1000', '1234');
+  const bobReveal = await voteSingle(gatekeeper, bob, resource, 0, 1, '1000', '5678');
+  const carolReveal = await voteSingle(gatekeeper, carol, resource, 1, 0, '1000', '9012');
 
   // Reveal all votes
   await increaseTime(timing.COMMIT_PERIOD_LENGTH);
@@ -71,7 +73,7 @@ async function doConfidenceVote(gatekeeper, ballotID, voters, options) {
   // Run - slate 0 wins
   if (finalize) {
     await increaseTime(timing.REVEAL_PERIOD_LENGTH);
-    await gatekeeper.countVotes(ballotID, GRANT);
+    await gatekeeper.countVotes(ballotID, resource);
   }
 }
 
@@ -187,6 +189,7 @@ contract('Gatekeeper', (accounts) => {
   describe('timing', () => {
     const [creator] = accounts;
     let gatekeeper;
+    let GRANT;
 
     const firstEpochTime = new Date();
     const startTime = Math.floor(firstEpochTime / 1000);
@@ -199,6 +202,8 @@ contract('Gatekeeper', (accounts) => {
         parameters.address,
         { from: creator },
       );
+
+      GRANT = await getResource(gatekeeper, 'GRANT');
     });
 
     describe('initial epoch', () => {
@@ -350,10 +355,10 @@ contract('Gatekeeper', (accounts) => {
       });
 
       it('should go back before a deadline', async () => {
-        const category = GRANT;
+        const resource = GRANT;
         // move forward to after the deadline
         const epochNumber = await gatekeeper.currentEpochNumber();
-        const deadline = await gatekeeper.slateSubmissionDeadline(epochNumber, category);
+        const deadline = await gatekeeper.slateSubmissionDeadline(epochNumber, resource);
         const offset = ONE_WEEK.mul(new BN(6));
 
         await increaseTime(offset);
@@ -364,7 +369,7 @@ contract('Gatekeeper', (accounts) => {
         const metadataHash = utils.createMultihash('some slate');
         // Should not let submission
         try {
-          await gatekeeper.recommendSlate(category, [], utils.asBytes(metadataHash), {
+          await gatekeeper.recommendSlate(resource, [], utils.asBytes(metadataHash), {
             from: alice,
           });
         } catch (error) {
@@ -376,7 +381,7 @@ contract('Gatekeeper', (accounts) => {
         await gatekeeper.timeTravel(ONE_WEEK.neg(), { from: creator });
 
         // Should now be able to submit
-        await gatekeeper.recommendSlate(category, [], utils.asBytes(metadataHash), {
+        await gatekeeper.recommendSlate(resource, [], utils.asBytes(metadataHash), {
           from: alice,
         });
       });
@@ -394,9 +399,13 @@ contract('Gatekeeper', (accounts) => {
     const metadataHash = utils.createMultihash('my slate');
     let epochNumber;
 
+    let GRANT;
+
     beforeEach(async () => {
       gatekeeper = await utils.newGatekeeper({ from: creator });
       epochNumber = await gatekeeper.currentEpochNumber();
+
+      GRANT = await getResource(gatekeeper, 'GRANT');
 
       // Get requestIDs for the slate
       requestIDs = await utils.getRequestIDs(gatekeeper, [
@@ -408,15 +417,15 @@ contract('Gatekeeper', (accounts) => {
     });
 
     it('should create a new slate with the provided data', async () => {
-      const category = GRANT;
+      const resource = GRANT;
 
       // Initial status should be Empty
-      const initialStatus = await gatekeeper.contestStatus(epochNumber, category);
+      const initialStatus = await gatekeeper.contestStatus(epochNumber, resource);
       assert.strictEqual(initialStatus.toString(), '0', 'Initial contest status should be Empty (0)');
 
       // Create a slate
       const receipt = await gatekeeper.recommendSlate(
-        category,
+        resource,
         requestIDs,
         utils.asBytes(metadataHash),
         { from: recommender },
@@ -452,20 +461,20 @@ contract('Gatekeeper', (accounts) => {
       assert.strictEqual(slate.staker.toString(), utils.zeroAddress(), 'Staker should have been zero');
       assert.strictEqual(slate.stake.toString(), '0', 'Initial stake should have been zero');
       assert.strictEqual(slate.epochNumber.toString(), epochNumber.toString(), 'Incorrect epoch number');
-      assert.strictEqual(slate.categoryID.toString(), category.toString(), 'Incorrect category');
+      assert.strictEqual(slate.resource.toString(), resource.toString(), 'Incorrect resource');
 
       // Adding a slate without staking it should not change the contest status
-      const status = await gatekeeper.contestStatus(epochNumber, category);
+      const status = await gatekeeper.contestStatus(epochNumber, resource);
       assert.strictEqual(status.toString(), ContestStatus.Empty, 'Contest status should be Empty (0)');
     });
 
     it('should allow creation of an empty slate', async () => {
-      const category = GRANT;
+      const resource = GRANT;
       const noRequests = [];
 
       // Create a slate
       const receipt = await gatekeeper.recommendSlate(
-        category,
+        resource,
         noRequests,
         utils.asBytes(metadataHash),
         { from: recommender },
@@ -477,12 +486,12 @@ contract('Gatekeeper', (accounts) => {
     });
 
     it('should revert if the metadataHash is empty', async () => {
-      const category = GRANT;
+      const resource = GRANT;
       const emptyHash = '';
 
       try {
         await gatekeeper.recommendSlate(
-          category,
+          resource,
           requestIDs,
           utils.asBytes(emptyHash),
           { from: recommender },
@@ -495,12 +504,12 @@ contract('Gatekeeper', (accounts) => {
     });
 
     it('should revert if any of the requestIDs is invalid', async () => {
-      const category = GRANT;
+      const resource = GRANT;
       const invalidRequestIDs = [...requestIDs, requestIDs.length];
 
       try {
         await gatekeeper.recommendSlate(
-          category,
+          resource,
           invalidRequestIDs,
           utils.asBytes(metadataHash),
           { from: recommender },
@@ -514,12 +523,12 @@ contract('Gatekeeper', (accounts) => {
     });
 
     it('should revert if there are duplicate requestIDs', async () => {
-      const category = GRANT;
+      const resource = GRANT;
       const invalidRequestIDs = [...requestIDs, requestIDs[0]];
 
       try {
         await gatekeeper.recommendSlate(
-          category,
+          resource,
           invalidRequestIDs,
           utils.asBytes(metadataHash),
           { from: recommender },
@@ -532,7 +541,7 @@ contract('Gatekeeper', (accounts) => {
       assert.fail('Recommended a slate with duplicate requestIDs');
     });
 
-    it('should revert if the category is invalid');
+    it('should revert if the resource is invalid');
 
     describe('timing', () => {
       let snapshotID;
@@ -542,8 +551,8 @@ contract('Gatekeeper', (accounts) => {
       });
 
       it('should revert if the slate submission period is not active', async () => {
-        const category = GRANT;
-        const deadline = await gatekeeper.slateSubmissionDeadline(epochNumber, category);
+        const resource = GRANT;
+        const deadline = await gatekeeper.slateSubmissionDeadline(epochNumber, resource);
 
         // move forward
         const offset = ONE_WEEK.mul(new BN(6));
@@ -553,7 +562,7 @@ contract('Gatekeeper', (accounts) => {
         assert(submissionTime.gt(deadline), 'Time is not after deadline');
 
         try {
-          await gatekeeper.recommendSlate(category, requestIDs, utils.asBytes(metadataHash), {
+          await gatekeeper.recommendSlate(resource, requestIDs, utils.asBytes(metadataHash), {
             from: recommender,
           });
         } catch (error) {
@@ -575,6 +584,7 @@ contract('Gatekeeper', (accounts) => {
     let gatekeeper;
     let token;
     const initialTokens = '20000000';
+    let GRANT;
 
     let epochNumber;
     const slateID = 0;
@@ -584,13 +594,15 @@ contract('Gatekeeper', (accounts) => {
     beforeEach(async () => {
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+      GRANT = await getResource(gatekeeper, 'GRANT');
+
       snapshotID = await utils.evm.snapshot();
 
       epochNumber = await gatekeeper.currentEpochNumber();
 
       await utils.newSlate(gatekeeper, {
         epochNumber,
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['a', 'b', 'c'],
         slateData: 'grant slate',
       }, { from: recommender });
@@ -723,8 +735,8 @@ contract('Gatekeeper', (accounts) => {
     });
 
     it('should revert if the slate submission period is not active', async () => {
-      const category = GRANT;
-      const deadline = await gatekeeper.slateSubmissionDeadline(epochNumber, category);
+      const resource = GRANT;
+      const deadline = await gatekeeper.slateSubmissionDeadline(epochNumber, resource);
 
       // move forward
       const offset = ONE_WEEK.mul(new BN(6));
@@ -767,14 +779,22 @@ contract('Gatekeeper', (accounts) => {
       );
 
       // Check log values
-      const { requestID, metadataHash: emittedHash } = receipt.logs[0].args;
+      const {
+        resource: emittedResource,
+        requestID,
+        metadataHash: emittedHash,
+      } = receipt.logs[0].args;
       // console.log(emittedHash, metadataHash);
       assert.strictEqual(decode(emittedHash), metadataHash, 'Metadata hash is incorrect');
+      assert.strictEqual(emittedResource, requestor, 'Emitted resource should match caller address');
 
       // Check Request
-      const { metadataHash: requestHash, approved } = await gatekeeper.requests(requestID);
+      const { metadataHash: requestHash, resource, approved } = await gatekeeper.requests(
+        requestID,
+      );
       assert.strictEqual(decode(requestHash), metadataHash, 'Metadata hash is incorrect');
       assert.strictEqual(approved, false);
+      assert.strictEqual(resource, requestor, 'Requestor is incorrect');
 
       // Request count was incremented
       const requestCount = await gatekeeper.requestCount();
@@ -1242,6 +1262,8 @@ contract('Gatekeeper', (accounts) => {
     let token;
     const initialTokens = '20000000';
     let snapshotID;
+    let GRANT;
+    let GOVERNANCE;
 
     let ballotID;
     let votes;
@@ -1255,6 +1277,8 @@ contract('Gatekeeper', (accounts) => {
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
       ballotID = await gatekeeper.currentEpochNumber();
+      GRANT = await getResource(gatekeeper, 'GRANT');
+      GOVERNANCE = await getResource(gatekeeper, 'GOVERNANCE');
 
       const allocatedTokens = '1000';
 
@@ -1270,13 +1294,13 @@ contract('Gatekeeper', (accounts) => {
       // New slates 0, 1
       // grant
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['a', 'b', 'c'],
         slateData: 'my slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['a', 'b', 'd'],
         slateData: 'competing slate',
       }, { from: recommender });
@@ -1287,13 +1311,13 @@ contract('Gatekeeper', (accounts) => {
       // New slates 2, 3
       // governance
       await utils.newSlate(gatekeeper, {
-        category: GOVERNANCE,
+        resource: GOVERNANCE,
         proposalData: ['e', 'f', 'g'],
         slateData: 'governance slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        category: GOVERNANCE,
+        resource: GOVERNANCE,
         proposalData: ['g', 'h', 'i'],
         slateData: 'competing slate',
       }, { from: recommender });
@@ -1317,12 +1341,12 @@ contract('Gatekeeper', (accounts) => {
       await gatekeeper.commitBallot(commitHash, numTokens, { from: voter });
 
       // set up reveal data
-      const categories = Object.keys(votes);
-      const firstChoices = categories.map(cat => votes[cat].firstChoice);
-      const secondChoices = categories.map(cat => votes[cat].secondChoice);
+      const resources = Object.keys(votes);
+      const firstChoices = resources.map(cat => votes[cat].firstChoice);
+      const secondChoices = resources.map(cat => votes[cat].secondChoice);
 
       revealData = {
-        categories,
+        resources,
         firstChoices,
         secondChoices,
         salt,
@@ -1339,13 +1363,13 @@ contract('Gatekeeper', (accounts) => {
 
       // Reveal
       const {
-        categories, firstChoices, secondChoices, salt,
+        resources, firstChoices, secondChoices, salt,
       } = revealData;
 
       const receipt = await gatekeeper.revealBallot(
         ballotID,
         voter,
-        categories,
+        resources,
         firstChoices,
         secondChoices,
         salt,
@@ -1405,7 +1429,7 @@ contract('Gatekeeper', (accounts) => {
     });
 
     it('should revert if the submitted data does not match the committed ballot', async () => {
-      const { categories, firstChoices, secondChoices } = revealData;
+      const { resources, firstChoices, secondChoices } = revealData;
       const salt = '9999';
 
       // Advance to reveal period
@@ -1415,7 +1439,7 @@ contract('Gatekeeper', (accounts) => {
         await gatekeeper.revealBallot(
           ballotID,
           voter,
-          categories,
+          resources,
           firstChoices,
           secondChoices,
           salt,
@@ -1437,14 +1461,14 @@ contract('Gatekeeper', (accounts) => {
 
       // Reveal
       const {
-        categories, firstChoices, secondChoices, salt,
+        resources, firstChoices, secondChoices, salt,
       } = revealData;
 
       try {
         await gatekeeper.revealBallot(
           ballotID,
           badVoter,
-          categories,
+          resources,
           firstChoices,
           secondChoices,
           salt,
@@ -1458,8 +1482,8 @@ contract('Gatekeeper', (accounts) => {
       assert.fail('Revealed with zero address');
     });
 
-    it('should fail if the number of categories does not match', async () => {
-      const { categories, firstChoices, secondChoices } = revealData;
+    it('should fail if the number of resources does not match', async () => {
+      const { resources, firstChoices, secondChoices } = revealData;
       const salt = '9999';
 
       // Advance to reveal period
@@ -1469,7 +1493,7 @@ contract('Gatekeeper', (accounts) => {
         await gatekeeper.revealBallot(
           ballotID,
           voter,
-          categories.slice(0, 1),
+          resources.slice(0, 1),
           firstChoices,
           secondChoices,
           salt,
@@ -1479,11 +1503,11 @@ contract('Gatekeeper', (accounts) => {
         expectErrorLike(error, 'inputs must have the same length');
         return;
       }
-      assert.fail('Revealed ballot with wrong number of categories');
+      assert.fail('Revealed ballot with wrong number of resources');
     });
 
     it('should fail if the number of firstChoices does not match', async () => {
-      const { categories, firstChoices, secondChoices } = revealData;
+      const { resources, firstChoices, secondChoices } = revealData;
       const salt = '9999';
 
       // Advance to reveal period
@@ -1493,7 +1517,7 @@ contract('Gatekeeper', (accounts) => {
         await gatekeeper.revealBallot(
           ballotID,
           voter,
-          categories,
+          resources,
           firstChoices.slice(0, 1),
           secondChoices,
           salt,
@@ -1507,7 +1531,7 @@ contract('Gatekeeper', (accounts) => {
     });
 
     it('should fail if the number of secondChoices does not match', async () => {
-      const { categories, firstChoices, secondChoices } = revealData;
+      const { resources, firstChoices, secondChoices } = revealData;
       const salt = '9999';
 
       // Advance to reveal period
@@ -1517,7 +1541,7 @@ contract('Gatekeeper', (accounts) => {
         await gatekeeper.revealBallot(
           ballotID,
           voter,
-          categories,
+          resources,
           firstChoices,
           secondChoices.slice(0, 1),
           salt,
@@ -1531,7 +1555,6 @@ contract('Gatekeeper', (accounts) => {
     });
 
     it('should fail if any of the choices do not correspond to valid slates');
-    it('should fail if any of the categories are invalid');
 
     // State
     it('should fail if the voter has not committed for the ballot', async () => {
@@ -1540,14 +1563,14 @@ contract('Gatekeeper', (accounts) => {
 
       // Reveal for a non-voter
       const {
-        categories, firstChoices, secondChoices, salt,
+        resources, firstChoices, secondChoices, salt,
       } = revealData;
 
       try {
         await gatekeeper.revealBallot(
           ballotID,
           nonvoter,
-          categories,
+          resources,
           firstChoices,
           secondChoices,
           salt,
@@ -1567,13 +1590,13 @@ contract('Gatekeeper', (accounts) => {
 
       // Reveal
       const {
-        categories, firstChoices, secondChoices, salt,
+        resources, firstChoices, secondChoices, salt,
       } = revealData;
 
       await gatekeeper.revealBallot(
         ballotID,
         voter,
-        categories,
+        resources,
         firstChoices,
         secondChoices,
         salt,
@@ -1584,7 +1607,7 @@ contract('Gatekeeper', (accounts) => {
         await gatekeeper.revealBallot(
           ballotID,
           voter,
-          categories,
+          resources,
           firstChoices,
           secondChoices,
           salt,
@@ -1601,14 +1624,14 @@ contract('Gatekeeper', (accounts) => {
     it('should fail if the reveal period has not started', async () => {
       // Reveal
       const {
-        categories, firstChoices, secondChoices, salt,
+        resources, firstChoices, secondChoices, salt,
       } = revealData;
 
       try {
         await gatekeeper.revealBallot(
           ballotID,
           voter,
-          categories,
+          resources,
           firstChoices,
           secondChoices,
           salt,
@@ -1628,14 +1651,14 @@ contract('Gatekeeper', (accounts) => {
 
       // Reveal
       const {
-        categories, firstChoices, secondChoices, salt,
+        resources, firstChoices, secondChoices, salt,
       } = revealData;
 
       try {
         await gatekeeper.revealBallot(
           ballotID,
           voter,
-          categories,
+          resources,
           firstChoices,
           secondChoices,
           salt,
@@ -1662,6 +1685,8 @@ contract('Gatekeeper', (accounts) => {
     const initialTokens = '20000000';
     let ballotID;
     let snapshotID;
+    let GRANT;
+    let GOVERNANCE;
 
     beforeEach(async () => {
       snapshotID = await utils.evm.snapshot();
@@ -1669,6 +1694,8 @@ contract('Gatekeeper', (accounts) => {
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
       ballotID = await gatekeeper.currentEpochNumber();
+      GRANT = await getResource(gatekeeper, 'GRANT');
+      GOVERNANCE = await getResource(gatekeeper, 'GOVERNANCE');
 
       // Make sure the recommender has tokens
       const recommenderTokens = '50000';
@@ -1679,13 +1706,13 @@ contract('Gatekeeper', (accounts) => {
       // New slates 0, 1
       // grant
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['a', 'b', 'c'],
         slateData: 'grant slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['a', 'b', 'd'],
         slateData: 'competing slate',
       }, { from: recommender });
@@ -1696,13 +1723,13 @@ contract('Gatekeeper', (accounts) => {
       // New slates 2, 3
       // governance
       await utils.newSlate(gatekeeper, {
-        category: GOVERNANCE,
+        resource: GOVERNANCE,
         proposalData: ['e', 'f', 'g'],
         slateData: 'governance slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        category: GOVERNANCE,
+        resource: GOVERNANCE,
         proposalData: ['g', 'h', 'i'],
         slateData: 'competing slate',
       }, { from: recommender });
@@ -1735,7 +1762,7 @@ contract('Gatekeeper', (accounts) => {
       // Prepare data
       const voters = [alice, bob, carol];
       const ballots = [aliceReveal, bobReveal, carolReveal].map(_reveal => utils.encodeBallot(
-        _reveal.categories,
+        _reveal.resources,
         _reveal.firstChoices,
         _reveal.secondChoices,
       ));
@@ -1781,6 +1808,8 @@ contract('Gatekeeper', (accounts) => {
     let token;
     const initialTokens = '20000000';
     let snapshotID;
+    let GRANT;
+    let GOVERNANCE;
 
     let ballotID;
     let votes;
@@ -1795,6 +1824,9 @@ contract('Gatekeeper', (accounts) => {
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
       ballotID = await gatekeeper.currentEpochNumber();
 
+      GRANT = await getResource(gatekeeper, 'GRANT');
+      GOVERNANCE = await getResource(gatekeeper, 'GOVERNANCE');
+
       const allocatedTokens = '1000';
 
       // Make sure the voter has available tokens and the gatekeeper is approved to spend them
@@ -1808,13 +1840,13 @@ contract('Gatekeeper', (accounts) => {
 
       // grant - slates 0, 1
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['a', 'b', 'c'],
         slateData: 'my slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['a', 'b', 'd'],
         slateData: 'competing slate',
       }, { from: recommender });
@@ -1824,13 +1856,13 @@ contract('Gatekeeper', (accounts) => {
 
       // governance - slates 2, 3
       await utils.newSlate(gatekeeper, {
-        category: GOVERNANCE,
+        resource: GOVERNANCE,
         proposalData: ['e', 'f', 'g'],
         slateData: 'governance slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        category: GOVERNANCE,
+        resource: GOVERNANCE,
         proposalData: ['g', 'h', 'i'],
         slateData: 'competing slate',
       }, { from: recommender });
@@ -1855,12 +1887,12 @@ contract('Gatekeeper', (accounts) => {
       await gatekeeper.commitBallot(commitHash, numTokens, { from: voter });
 
       // set up reveal data
-      const categories = Object.keys(votes);
-      const firstChoices = categories.map(cat => votes[cat].firstChoice);
-      const secondChoices = categories.map(cat => votes[cat].secondChoice);
+      const resources = Object.keys(votes);
+      const firstChoices = resources.map(cat => votes[cat].firstChoice);
+      const secondChoices = resources.map(cat => votes[cat].secondChoice);
 
       revealData = {
-        categories,
+        resources,
         firstChoices,
         secondChoices,
         salt,
@@ -1872,13 +1904,13 @@ contract('Gatekeeper', (accounts) => {
 
     it('should return true if the voter has revealed for the ballot', async () => {
       const {
-        categories, firstChoices, secondChoices, salt,
+        resources, firstChoices, secondChoices, salt,
       } = revealData;
 
       await gatekeeper.revealBallot(
         ballotID,
         voter,
-        categories,
+        resources,
         firstChoices,
         secondChoices,
         salt,
@@ -1910,6 +1942,8 @@ contract('Gatekeeper', (accounts) => {
     const initialTokens = '20000000';
     let ballotID;
     let snapshotID;
+    let GRANT;
+    let GOVERNANCE;
 
 
     beforeEach(async () => {
@@ -1918,6 +1952,9 @@ contract('Gatekeeper', (accounts) => {
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
       ballotID = await gatekeeper.currentEpochNumber();
+
+      GRANT = await getResource(gatekeeper, 'GRANT');
+      GOVERNANCE = await getResource(gatekeeper, 'GOVERNANCE');
 
       const allocatedTokens = '1000';
 
@@ -1938,13 +1975,13 @@ contract('Gatekeeper', (accounts) => {
 
       // create simple ballot with just grants
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['a', 'b', 'c'],
         slateData: 'my slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['a', 'b', 'd'],
         slateData: 'competing slate',
       }, { from: recommender });
@@ -1990,14 +2027,14 @@ contract('Gatekeeper', (accounts) => {
       assert.strictEqual(receipt.logs[0].event, 'ConfidenceVoteCounted');
       const {
         ballotID: ballotID0,
-        categoryID: categoryID0,
+        resource: resource0,
         winningSlate: emittedWinner,
         votes: emittedWinnerVotes,
         totalVotes: emittedTotal,
       } = receipt.logs[0].args;
 
       assert.strictEqual(ballotID0.toString(), ballotID.toString(), 'Emitted ballotID did not match');
-      assert.strictEqual(categoryID0.toString(), GRANT.toString(), 'Emitted categoryID did not match');
+      assert.strictEqual(resource0.toString(), GRANT.toString(), 'Emitted resource did not match');
       assert.strictEqual(emittedWinner.toString(), '0', 'Slate 0 should have won');
       assert.strictEqual(emittedWinnerVotes.toString(), '2000', 'Winner had the wrong number of votes');
       assert.strictEqual(emittedTotal.toString(), '3000', 'Total vote count was wrong');
@@ -2006,12 +2043,12 @@ contract('Gatekeeper', (accounts) => {
       assert.strictEqual(receipt.logs[1].event, 'ConfidenceVoteFinalized');
       const {
         ballotID: ballotID1,
-        categoryID: categoryID1,
+        resource: resource1,
         winningSlate,
       } = receipt.logs[1].args;
 
       assert.strictEqual(ballotID1.toString(), ballotID.toString(), 'Emitted ballotID did not match');
-      assert.strictEqual(categoryID1.toString(), GRANT.toString(), 'Emitted categoryID did not match');
+      assert.strictEqual(resource1.toString(), GRANT.toString(), 'Emitted resource did not match');
       assert.strictEqual(winningSlate.toString(), '0', 'Slate 0 should have won');
 
       // Status should be updated
@@ -2054,10 +2091,10 @@ contract('Gatekeeper', (accounts) => {
       });
     });
 
-    it('should revert if the category has no staked slates', async () => {
+    it('should revert if the resource has no staked slates', async () => {
       // Add a new governance slate, but don't stake
       await utils.newSlate(gatekeeper, {
-        category: GOVERNANCE,
+        resource: GOVERNANCE,
         proposalData: ['e', 'f', 'g'],
         slateData: 'governance slate',
       }, { from: recommender });
@@ -2073,15 +2110,15 @@ contract('Gatekeeper', (accounts) => {
         return;
       }
 
-      assert.fail('Tallied votes for category with no staked slates');
+      assert.fail('Tallied votes for resource with no staked slates');
     });
 
-    it('should declare a slate as the winner if it is the only staked slate in the category', async () => {
+    it('should declare a slate as the winner if it is the only staked slate in the resource', async () => {
       const slateID = await gatekeeper.slateCount();
 
       // Add a new governance slate
       await utils.newSlate(gatekeeper, {
-        category: GOVERNANCE,
+        resource: GOVERNANCE,
         proposalData: ['e', 'f', 'g'],
         slateData: 'governance slate',
       }, { from: recommender });
@@ -2102,11 +2139,11 @@ contract('Gatekeeper', (accounts) => {
       assert.strictEqual(receipt.logs[0].event, 'ContestAutomaticallyFinalized');
       const {
         ballotID: emittedBallotID,
-        categoryID: emittedCategoryID,
+        resource: emittedResource,
         winningSlate: emittedWinner,
       } = receipt.logs[0].args;
       assert.strictEqual(emittedBallotID.toString(), ballotID.toString(), 'Wrong ballotID emitted');
-      assert.strictEqual(emittedCategoryID.toString(), GOVERNANCE.toString(), 'Wrong categoryID emitted');
+      assert.strictEqual(emittedResource.toString(), GOVERNANCE.toString(), 'Wrong resource emitted');
       assert.strictEqual(emittedWinner.toString(), slateID.toString(), 'Wrong winner emitted');
 
       // Slate should be Accepted
@@ -2129,7 +2166,7 @@ contract('Gatekeeper', (accounts) => {
     it('should ignore votes for unstaked slates', async () => {
       // Add another grant slate, but don't stake
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['x', 'y', 'z'],
         slateData: 'an unstaked slate',
       }, { from: recommender });
@@ -2180,7 +2217,7 @@ contract('Gatekeeper', (accounts) => {
       const slateID = await gatekeeper.slateCount();
       // Add a third slate
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['h', 'i', 'j'],
         slateData: 'yet another slate',
       }, { from: recommender });
@@ -2292,7 +2329,7 @@ contract('Gatekeeper', (accounts) => {
 
       // Add a new governance slate
       await utils.newSlate(gatekeeper, {
-        category: GOVERNANCE,
+        resource: GOVERNANCE,
         proposalData: ['e', 'f', 'g'],
         slateData: 'governance slate',
       }, { from: recommender });
@@ -2318,6 +2355,8 @@ contract('Gatekeeper', (accounts) => {
     const initialTokens = '20000000';
     let ballotID;
     let snapshotID;
+    let GRANT;
+
 
     beforeEach(async () => {
       snapshotID = await utils.evm.snapshot();
@@ -2325,6 +2364,8 @@ contract('Gatekeeper', (accounts) => {
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
       ballotID = await gatekeeper.currentEpochNumber();
+
+      GRANT = await getResource(gatekeeper, 'GRANT');
 
       const allocatedTokens = '1000';
 
@@ -2345,19 +2386,19 @@ contract('Gatekeeper', (accounts) => {
 
       // create simple ballot with just grants
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['a', 'b', 'c'],
         slateData: 'my slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['a', 'b', 'd'],
         slateData: 'competing slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['e', 'f', 'g'],
         slateData: 'competing slate',
       }, { from: recommender });
@@ -2400,11 +2441,15 @@ contract('Gatekeeper', (accounts) => {
 
     const initialTokens = '20000000';
     let ballotID;
+    let GRANT;
+
 
     beforeEach(async () => {
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
       ballotID = await gatekeeper.currentEpochNumber();
+
+      GRANT = await getResource(gatekeeper, 'GRANT');
 
       // Make sure the recommender has tokens
       const recommenderTokens = '50000';
@@ -2412,9 +2457,9 @@ contract('Gatekeeper', (accounts) => {
       await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
     });
 
-    it('should return Empty if the category has no staked slates', async () => {
+    it('should return Empty if the resource has no staked slates', async () => {
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['a', 'b', 'c'],
         slateData: 'my slate',
       }, { from: recommender });
@@ -2428,15 +2473,15 @@ contract('Gatekeeper', (accounts) => {
       );
     });
 
-    it('should return NoContest if the category has only a single staked slate', async () => {
+    it('should return NoContest if the resource has only a single staked slate', async () => {
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['a', 'b', 'c'],
         slateData: 'my slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['d', 'e', 'f'],
         slateData: 'another slate',
       }, { from: recommender });
@@ -2453,15 +2498,15 @@ contract('Gatekeeper', (accounts) => {
       );
     });
 
-    it('should return Active if the category has two or more staked slates', async () => {
+    it('should return Active if the resource has two or more staked slates', async () => {
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['a', 'b', 'c'],
         slateData: 'my slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['a', 'b', 'd'],
         slateData: 'competing slate',
       }, { from: recommender });
@@ -2490,6 +2535,8 @@ contract('Gatekeeper', (accounts) => {
 
     const initialTokens = '20000000';
     let ballotID;
+    let GRANT;
+
 
     beforeEach(async () => {
       snapshotID = await utils.evm.snapshot();
@@ -2498,6 +2545,8 @@ contract('Gatekeeper', (accounts) => {
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
       ballotID = await gatekeeper.currentEpochNumber();
 
+      GRANT = await getResource(gatekeeper, 'GRANT');
+
       // Make sure the recommender has tokens
       const recommenderTokens = '50000';
       await token.transfer(recommender, recommenderTokens, { from: creator });
@@ -2505,19 +2554,19 @@ contract('Gatekeeper', (accounts) => {
 
       // create simple ballot with just grants
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['a', 'b', 'c'],
         slateData: 'my slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['a', 'b', 'd'],
         slateData: 'competing slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['h', 'i', 'j'],
         slateData: 'yet another slate',
       }, { from: recommender });
@@ -2747,6 +2796,8 @@ contract('Gatekeeper', (accounts) => {
 
     const initialTokens = '20000000';
     let ballotID;
+    let GRANT;
+
 
     beforeEach(async () => {
       snapshotID = await utils.evm.snapshot();
@@ -2755,6 +2806,8 @@ contract('Gatekeeper', (accounts) => {
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
       ballotID = await gatekeeper.currentEpochNumber();
 
+      GRANT = await getResource(gatekeeper, 'GRANT');
+
       // Make sure the recommender has tokens
       const recommenderTokens = '50000';
       await token.transfer(recommender, recommenderTokens, { from: creator });
@@ -2762,19 +2815,19 @@ contract('Gatekeeper', (accounts) => {
 
       // create simple ballot with just grants
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['a', 'b', 'c'],
         slateData: 'my slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['a', 'b', 'd'],
         slateData: 'competing slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['h', 'i', 'j'],
         slateData: 'yet another slate',
       }, { from: recommender });
@@ -2844,14 +2897,18 @@ contract('Gatekeeper', (accounts) => {
     const initialTokens = '20000000';
     let ballotID;
     let snapshotID;
+    let GRANT;
 
 
     beforeEach(async () => {
       snapshotID = await utils.evm.snapshot();
 
-      token = await utils.newToken({ initialTokens, from: creator });
-      gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+      ({ token, gatekeeper } = await utils.newPanvala({ initialTokens, from: creator }));
+      // token = await utils.newToken({ initialTokens, from: creator });
+      // gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
       ballotID = await gatekeeper.currentEpochNumber();
+
+      GRANT = await getResource(gatekeeper, 'GRANT');
 
       const allocatedTokens = '1000';
 
@@ -2873,21 +2930,21 @@ contract('Gatekeeper', (accounts) => {
       // create simple ballot with just grants
       // contains requests 0, 1, 2
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['a', 'b', 'c'],
         slateData: 'my slate',
       }, { from: recommender });
 
       // contains requests 3, 4, 5
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['a', 'b', 'd'],
         slateData: 'competing slate',
       }, { from: recommender });
 
       // contains requests 6, 7, 8
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['e', 'f', 'g'],
         slateData: 'competing slate',
       }, { from: recommender });
@@ -2986,6 +3043,7 @@ contract('Gatekeeper', (accounts) => {
 
     const initialTokens = '20000000';
     let ballotID;
+    let GRANT;
 
     beforeEach(async () => {
       snapshotID = await utils.evm.snapshot();
@@ -2994,6 +3052,8 @@ contract('Gatekeeper', (accounts) => {
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
       ballotID = await gatekeeper.currentEpochNumber();
 
+      GRANT = await getResource(gatekeeper, 'GRANT');
+
       // Make sure the recommender has tokens
       const recommenderTokens = '50000';
       await token.transfer(recommender, recommenderTokens, { from: creator });
@@ -3001,19 +3061,19 @@ contract('Gatekeeper', (accounts) => {
 
       // create simple ballot with just grants
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['a', 'b', 'c'],
         slateData: 'my slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['a', 'b', 'd'],
         slateData: 'competing slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['h', 'i', 'j'],
         slateData: 'yet another slate',
       }, { from: recommender });
@@ -3273,6 +3333,7 @@ contract('Gatekeeper', (accounts) => {
 
     const initialTokens = '20000000';
     let ballotID;
+    let GRANT;
 
     beforeEach(async () => {
       snapshotID = await utils.evm.snapshot();
@@ -3280,21 +3341,23 @@ contract('Gatekeeper', (accounts) => {
       ({ gatekeeper, token, capacitor } = await utils.newPanvala({ initialTokens, from: creator }));
       ballotID = await gatekeeper.currentEpochNumber();
 
+      GRANT = await getResource(gatekeeper, 'GRANT');
+
       // create simple ballot with just grants
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['a', 'b', 'c'],
         slateData: 'my slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['a', 'b', 'd'],
         slateData: 'competing slate',
       }, { from: recommender });
 
       await utils.newSlate(gatekeeper, {
-        category: GRANT,
+        resource: GRANT,
         proposalData: ['h', 'i', 'j'],
         slateData: 'yet another slate',
       }, { from: recommender });

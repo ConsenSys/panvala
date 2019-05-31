@@ -9,7 +9,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
 contract Gatekeeper {
     // EVENTS
-    event PermissionRequested(uint requestID, bytes metadataHash);
+    event PermissionRequested(address resource, uint requestID, bytes metadataHash);
     event SlateCreated(uint slateID, address indexed recommender, bytes metadataHash);
     event SlateStaked(uint slateID, address indexed staker, uint numTokens);
     event VotingTokensDeposited(address indexed voter, uint numTokens);
@@ -18,28 +18,28 @@ contract Gatekeeper {
     event BallotRevealed(uint indexed ballotID, address indexed voter, uint numTokens);
     event ContestAutomaticallyFinalized(
         uint256 indexed ballotID,
-        uint256 indexed categoryID,
+        address indexed resource,
         uint256 winningSlate
     );
     event ConfidenceVoteCounted(
         uint indexed ballotID,
-        uint indexed categoryID,
+        address indexed resource,
         uint winningSlate,
         uint votes,
         uint totalVotes
     );
-    event ConfidenceVoteFinalized(uint indexed ballotID, uint indexed categoryID, uint winningSlate);
-    event ConfidenceVoteFailed(uint indexed ballotID, uint categoryID);
-    event RunoffStarted(uint indexed ballotID, uint indexed categoryID, uint winningSlate, uint runnerUpSlate);
+    event ConfidenceVoteFinalized(uint indexed ballotID, address indexed resource, uint winningSlate);
+    event ConfidenceVoteFailed(uint indexed ballotID, address resource);
+    event RunoffStarted(uint indexed ballotID, address indexed resource, uint winningSlate, uint runnerUpSlate);
     event RunoffCounted(
         uint indexed ballotID,
-        uint indexed categoryID,
+        address indexed resource,
         uint winningSlate,
         uint winnerVotes,
         uint losingSlate,
         uint loserVotes
     );
-    event RunoffFinalized(uint indexed ballotID, uint indexed categoryID, uint winningSlate);
+    event RunoffFinalized(uint indexed ballotID, address indexed resource, uint winningSlate);
     event StakeWithdrawn(uint slateID, address indexed staker, uint numTokens);
 
     // STATE
@@ -59,6 +59,8 @@ contract Gatekeeper {
     // Requests
     struct Request {
         bytes metadataHash;
+        // The resource (contract) the permission is being requested for
+        address resource;
         bool approved;
     }
 
@@ -87,7 +89,7 @@ contract Gatekeeper {
         uint stake;
         // Ballot info
         uint256 epochNumber;
-        uint256 categoryID;
+        address resource;
     }
     // The slates created by the Gatekeeper. Maps slateID -> Slate.
     mapping(uint => Slate) public slates;
@@ -144,8 +146,8 @@ contract Gatekeeper {
     struct Ballot {
         // status: Unopened, Open, Closed
         uint contestCount;
-        // categoryID -> Contest
-        mapping(uint => Contest) contests;
+        // resource -> Contest
+        mapping(address => Contest) contests;
         bool created;
 
         // commitments for each voter
@@ -218,12 +220,12 @@ contract Gatekeeper {
     // SLATE GOVERNANCE
     /**
     * @dev Create a new slate with the associated requestIds and metadata hash.
-    * @param categoryID The category to submit the slate for
+    * @param resource The resource to submit the slate for
     * @param requestIDs A list of request IDs to include in the slate
     * @param metadataHash A reference to metadata about the slate
     */
     function recommendSlate(
-        uint categoryID,
+        address resource,
         uint[] memory requestIDs,
         bytes memory metadataHash
     )
@@ -231,8 +233,7 @@ contract Gatekeeper {
     {
         uint256 epochNumber = currentEpochNumber();
 
-        // TODO: category must be valid
-        require(now < slateSubmissionDeadline(epochNumber, categoryID), "Submission deadline passed");
+        require(now < slateSubmissionDeadline(epochNumber, resource), "Submission deadline passed");
         require(metadataHash.length > 0, "metadataHash cannot be empty");
 
         // create slate
@@ -244,7 +245,7 @@ contract Gatekeeper {
             staker: address(0),
             stake: 0,
             epochNumber: epochNumber,
-            categoryID: categoryID
+            resource: resource
         });
 
         // Record slate and return its ID
@@ -256,6 +257,8 @@ contract Gatekeeper {
         for (uint i = 0; i < requestIDs.length; i++) {
             uint requestID = requestIDs[i];
             require(requestID < requestCount, "Invalid requestID");
+
+            // TODO: request's resource must match the one passed in
 
             require(slates[slateID].requestIncluded[requestID] == false, "Duplicate requests are not allowed");
             slates[slateID].requestIncluded[requestID] = true;
@@ -292,7 +295,7 @@ contract Gatekeeper {
         Slate storage slate = slates[slateID];
 
         // Submission period must be active
-        require(now < slateSubmissionDeadline(slate.epochNumber, slate.categoryID), "deadline passed");
+        require(now < slateSubmissionDeadline(slate.epochNumber, slate.resource), "deadline passed");
 
         // Transfer tokens and update the slate's staking info
         // Must successfully transfer tokens from staker to this contract
@@ -303,7 +306,7 @@ contract Gatekeeper {
 
         // Associate the slate with a contest and update the contest status
         // A vote can only happen if there is more than one associated slate
-        Contest storage contest = ballots[slate.epochNumber].contests[slate.categoryID];
+        Contest storage contest = ballots[slate.epochNumber].contests[slate.resource];
         contest.stakedSlates.push(slateID);
         contest.lastStaked = now.sub(startTime);
 
@@ -451,7 +454,7 @@ contract Gatekeeper {
     /**
      @dev Reveal a given voter's choices for the current ballot and record their choices
      @param voter The voter's address
-     @param categories The contests to vote on
+     @param resources The contests to vote on
      @param firstChoices The corresponding first choices
      @param secondChoices The corresponding second choices
      @param salt The salt used to generate the original commitment
@@ -459,7 +462,7 @@ contract Gatekeeper {
     function revealBallot(
         uint256 epochNumber,
         address voter,
-        uint[] memory categories,
+        address[] memory resources,
         uint[] memory firstChoices,
         uint[] memory secondChoices,
         uint salt
@@ -471,7 +474,7 @@ contract Gatekeeper {
         );
 
         require(voter != address(0), "Voter address cannot be zero");
-        require(categories.length == firstChoices.length, "All inputs must have the same length");
+        require(resources.length == firstChoices.length, "All inputs must have the same length");
         require(firstChoices.length == secondChoices.length, "All inputs must have the same length");
 
         uint256 ballotID = epochNumber;
@@ -481,11 +484,11 @@ contract Gatekeeper {
 
         // calculate the hash
         bytes memory buf;
-        uint votes = categories.length;
+        uint votes = resources.length;
         for (uint i = 0; i < votes; i++) {
             buf = abi.encodePacked(
                 buf,
-                categories[i],
+                resources[i],
                 firstChoices[i],
                 secondChoices[i]
             );
@@ -501,10 +504,10 @@ contract Gatekeeper {
 
         // Update tally for each contest
         for (uint i = 0; i < votes; i++) {
-            uint category = categories[i];
+            address resource = resources[i];
 
-            // get the contest for the current category
-            Contest storage contest = ballot.contests[category];
+            // get the contest for the current resource
+            Contest storage contest = ballot.contests[resource];
 
             // Increment totals for first and second choice slates
             uint firstChoice = firstChoices[i];
@@ -533,37 +536,37 @@ contract Gatekeeper {
         uint numBallots = _voters.length;
 
         for (uint i = 0; i < numBallots; i++) {
-            // extract categories, firstChoices, secondChoices from the ballot
+            // extract resources, firstChoices, secondChoices from the ballot
             (
-                uint[] memory categories,
+                address[] memory resources,
                 uint[] memory firstChoices,
                 uint[] memory secondChoices
-            ) = abi.decode(_ballots[i], (uint[], uint[], uint[]));
+            ) = abi.decode(_ballots[i], (address[], uint[], uint[]));
 
-            revealBallot(epochNumber, _voters[i], categories, firstChoices, secondChoices, _salts[i]);
+            revealBallot(epochNumber, _voters[i], resources, firstChoices, secondChoices, _salts[i]);
         }
     }
 
     /**
-     @dev Get the number of first-choice votes cast for the given slate and category
+     @dev Get the number of first-choice votes cast for the given slate and resource
      @param ballotID The ballot
-     @param categoryID The category
+     @param resource The resource
      @param slateID The slate
      */
-    function getFirstChoiceVotes(uint ballotID, uint categoryID, uint slateID) public view returns(uint) {
-        SlateVotes storage v = ballots[ballotID].contests[categoryID].votes[slateID];
+    function getFirstChoiceVotes(uint ballotID, address resource, uint slateID) public view returns(uint) {
+        SlateVotes storage v = ballots[ballotID].contests[resource].votes[slateID];
         return v.firstChoiceVotes;
     }
 
     /**
-     @dev Get the number of second-choice votes cast for the given slate and category
+     @dev Get the number of second-choice votes cast for the given slate and resource
      @param ballotID The ballot
-     @param categoryID The category
+     @param resource The resource
      @param slateID The slate
      */
-    function getSecondChoiceVotes(uint ballotID, uint categoryID, uint slateID) public view returns(uint) {
+    function getSecondChoiceVotes(uint ballotID, address resource, uint slateID) public view returns(uint) {
         // for each option that isn't this one, get the second choice votes
-        Contest storage contest = ballots[ballotID].contests[categoryID];
+        Contest storage contest = ballots[ballotID].contests[resource];
         uint numSlates = contest.stakedSlates.length;
         uint votes = 0;
         for (uint i = 0; i < numSlates; i++) {
@@ -593,20 +596,18 @@ contract Gatekeeper {
      then it wins and the vote is finalized. Otherwise, wait for a runoff.
 
      @param ballotID The ballot
-     @param categoryID The category to count votes for
+     @param resource The resource to count votes for
      */
-    function countVotes(uint ballotID, uint categoryID) public {
-        // TODO: revert if categoryID is invalid
-
-        // Make sure the ballot has a contest for this category
-        Contest storage contest = ballots[ballotID].contests[categoryID];
+    function countVotes(uint ballotID, address resource) public {
+        // Make sure the ballot has a contest for this resource
+        Contest storage contest = ballots[ballotID].contests[resource];
         require(contest.status == ContestStatus.Active || contest.status == ContestStatus.NoContest,
-            "Either no contest is in progress for this category, or it has been finalized");
+            "Either no contest is in progress for this resource, or it has been finalized");
 
         // Handle the case of a single staked slate in the contest -- it should automatically win
         // Finalization should be possible as soon as the slate submission period is over
         if (contest.status == ContestStatus.NoContest) {
-            require(now > slateSubmissionDeadline(ballotID, categoryID), "Slate submission still active");
+            require(now > slateSubmissionDeadline(ballotID, resource), "Slate submission still active");
 
             uint256 winningSlate = contest.stakedSlates[0];
             assert(slates[winningSlate].status == SlateStatus.Staked);
@@ -615,12 +616,12 @@ contract Gatekeeper {
             contest.status = ContestStatus.Finalized;
 
             acceptWinningSlate(winningSlate);
-            emit ContestAutomaticallyFinalized(ballotID, categoryID, winningSlate);
+            emit ContestAutomaticallyFinalized(ballotID, resource, winningSlate);
             return;
         }
 
-        // TODO: timing: non-automatic finalization must be after the vote period
-        // The given epoch is over
+        // Non-automatic finalization must be after the vote period (i.e when the given epoch
+        // is over)
         require(currentEpochNumber() > ballotID, "Reveal period still active");
 
         // Iterate through the slates and get the one with the most votes
@@ -662,7 +663,7 @@ contract Gatekeeper {
         // Update state
         contest.confidenceVoteWinner = winner;
         contest.confidenceVoteRunnerUp = runnerUp;
-        emit ConfidenceVoteCounted(ballotID, categoryID, winner, winnerVotes, total);
+        emit ConfidenceVoteCounted(ballotID, resource, winner, winnerVotes, total);
 
         // If the winner has more than 50%, we are done
         // Otherwise, trigger a runoff
@@ -670,28 +671,28 @@ contract Gatekeeper {
         if (winnerPercentage > 50) {
             contest.winner = winner;
             acceptWinningSlate(winner);
-            rejectLosingSlates(ballotID, categoryID);
+            rejectLosingSlates(ballotID, resource);
             contest.status = ContestStatus.Finalized;
-            emit ConfidenceVoteFinalized(ballotID, categoryID, winner);
+            emit ConfidenceVoteFinalized(ballotID, resource, winner);
         } else {
-            rejectEliminatedSlates(ballotID, categoryID);
+            rejectEliminatedSlates(ballotID, resource);
             contest.status = ContestStatus.RunoffPending;
-            emit ConfidenceVoteFailed(ballotID, categoryID);
+            emit ConfidenceVoteFailed(ballotID, resource);
         }
     }
 
     /**
      @dev Return the status of the specified contest
      */
-    function contestStatus(uint ballotID, uint categoryID) public view returns(ContestStatus) {
-        return ballots[ballotID].contests[categoryID].status;
+    function contestStatus(uint ballotID, address resource) public view returns(ContestStatus) {
+        return ballots[ballotID].contests[resource].status;
     }
 
     /**
      @dev Return the IDs of the slates associated with the contest
      */
-    function contestSlates(uint ballotID, uint categoryID) public view returns(uint[] memory) {
-        return ballots[ballotID].contests[categoryID].slates;
+    function contestSlates(uint ballotID, address resource) public view returns(uint[] memory) {
+        return ballots[ballotID].contests[resource].slates;
     }
 
     /**
@@ -703,16 +704,16 @@ contract Gatekeeper {
      of a tie, the earliest slate submitted (slate with the lowest ID) wins.
 
      @param ballotID The ballot
-     @param categoryID The category to count votes for
+     @param resource The resource to count votes for
      */
-    function countRunoffVotes(uint ballotID, uint categoryID) public {
-        Contest memory contest = ballots[ballotID].contests[categoryID];
+    function countRunoffVotes(uint ballotID, address resource) public {
+        Contest memory contest = ballots[ballotID].contests[resource];
         require(contest.status == ContestStatus.RunoffPending, "Runoff is not pending");
 
         uint confidenceVoteWinner = contest.confidenceVoteWinner;
         uint confidenceVoteRunnerUp = contest.confidenceVoteRunnerUp;
 
-        emit RunoffStarted(ballotID, categoryID, confidenceVoteWinner, confidenceVoteRunnerUp);
+        emit RunoffStarted(ballotID, resource, confidenceVoteWinner, confidenceVoteRunnerUp);
 
         // eliminate all but the winner and the runner-up from the confidence vote
         uint[] memory eliminated = new uint[](contest.stakedSlates.length.sub(2));
@@ -726,13 +727,13 @@ contract Gatekeeper {
         }
 
         // Get the number of first-choice votes for the top choices
-        uint confidenceWinnerVotes = getFirstChoiceVotes(ballotID, categoryID, confidenceVoteWinner);
-        uint confidenceRunnerUpVotes = getFirstChoiceVotes(ballotID, categoryID, confidenceVoteRunnerUp);
+        uint confidenceWinnerVotes = getFirstChoiceVotes(ballotID, resource, confidenceVoteWinner);
+        uint confidenceRunnerUpVotes = getFirstChoiceVotes(ballotID, resource, confidenceVoteRunnerUp);
 
         // Count second-choice votes for the top two slates
         for (uint i = 0; i < eliminated.length; i++) {
             uint slateID = eliminated[i];
-            SlateVotes storage currentSlate = ballots[ballotID].contests[categoryID].votes[slateID];
+            SlateVotes storage currentSlate = ballots[ballotID].contests[resource].votes[slateID];
 
             // Second-choice votes for the winning slate
             uint votesForWinner = currentSlate.secondChoiceVotes[confidenceVoteWinner];
@@ -764,10 +765,10 @@ contract Gatekeeper {
             runoffLoser = confidenceVoteWinner;
             runoffLoserVotes = confidenceWinnerVotes;
         }
-        emit RunoffCounted(ballotID, categoryID, runoffWinner, runoffWinnerVotes, runoffLoser, runoffLoserVotes);
+        emit RunoffCounted(ballotID, resource, runoffWinner, runoffWinnerVotes, runoffLoser, runoffLoserVotes);
 
         // Update state
-        Contest storage updatedContest = ballots[ballotID].contests[categoryID];
+        Contest storage updatedContest = ballots[ballotID].contests[resource];
         updatedContest.winner = runoffWinner;
         updatedContest.status = ContestStatus.Finalized;
         acceptWinningSlate(runoffWinner);
@@ -775,17 +776,17 @@ contract Gatekeeper {
         // Reject the losing slate
         slates[runoffLoser].status = SlateStatus.Rejected;
 
-        emit RunoffFinalized(ballotID, categoryID, runoffWinner);
+        emit RunoffFinalized(ballotID, resource, runoffWinner);
     }
 
 
     /**
      @dev Send tokens of the rejected slates to the token capacitor.
      @param ballotID The ballot
-     @param categoryID The category
+     @param resource The resource
      */
-    function donateChallengerStakes(uint256 ballotID, uint256 categoryID) public {
-        Contest memory contest = ballots[ballotID].contests[categoryID];
+    function donateChallengerStakes(uint256 ballotID, address resource) public {
+        Contest memory contest = ballots[ballotID].contests[resource];
         require(contest.status == ContestStatus.Finalized, "Contest is not finalized");
 
         address tokenCapacitorAddress = parameters.getAsAddress("tokenCapacitorAddress");
@@ -793,7 +794,7 @@ contract Gatekeeper {
         IERC20 token = token();
         bytes memory emptyHash = new bytes(0);
 
-        uint256[] memory allSlates = contestSlates(ballotID, categoryID);
+        uint256[] memory allSlates = contestSlates(ballotID, resource);
         uint256 numSlates = allSlates.length;
         for (uint256 i = 0; i < numSlates; i++) {
             uint256 slateID = allSlates[i];
@@ -817,12 +818,12 @@ contract Gatekeeper {
     /**
     @dev Mark all but the winning slate as rejected
      */
-    function rejectLosingSlates(uint ballotID, uint categoryID) internal {
-        Contest storage contest = ballots[ballotID].contests[categoryID];
+    function rejectLosingSlates(uint ballotID, address resource) internal {
+        Contest storage contest = ballots[ballotID].contests[resource];
         uint winningSlate = contest.confidenceVoteWinner;
 
         // Reject all the other slates
-        uint[] memory allSlates = contestSlates(ballotID, categoryID);
+        uint[] memory allSlates = contestSlates(ballotID, resource);
         uint numSlates = allSlates.length;
         for (uint i = 0; i < numSlates; i++) {
             uint slateID = allSlates[i];
@@ -835,13 +836,13 @@ contract Gatekeeper {
     /**
     @dev Mark all but the top two slates as rejected
      */
-    function rejectEliminatedSlates(uint ballotID, uint categoryID) internal {
-        Contest storage contest = ballots[ballotID].contests[categoryID];
+    function rejectEliminatedSlates(uint ballotID, address resource) internal {
+        Contest storage contest = ballots[ballotID].contests[resource];
         uint winningSlate = contest.confidenceVoteWinner;
         uint runnerUp = contest.confidenceVoteRunnerUp;
 
         // Reject all the other slates
-        uint[] memory allSlates = contestSlates(ballotID, categoryID);
+        uint[] memory allSlates = contestSlates(ballotID, resource);
         uint numSlates = allSlates.length;
         for (uint i = 0; i < numSlates; i++) {
             uint slateID = allSlates[i];
@@ -852,13 +853,13 @@ contract Gatekeeper {
     }
 
     /**
-     @dev Return the ID of the winning slate for the given ballot and category
+     @dev Return the ID of the winning slate for the given ballot and resource
      Revert if the vote has not been finalized yet.
      @param ballotID The ballot of interest
-     @param categoryID The category of interest
+     @param resource The resource of interest
      */
-    function getWinningSlate(uint ballotID, uint categoryID) public view returns(uint) {
-        Contest storage c = ballots[ballotID].contests[categoryID];
+    function getWinningSlate(uint ballotID, address resource) public view returns(uint) {
+        Contest storage c = ballots[ballotID].contests[resource];
         require(c.status == ContestStatus.Finalized, "Vote is not finalized yet");
 
         return c.winner;
@@ -872,10 +873,12 @@ contract Gatekeeper {
     */
     function requestPermission(bytes memory metadataHash) public returns(uint) {
         require(metadataHash.length > 0, "metadataHash cannot be empty");
+        address resource = msg.sender;
 
         // Create new request
         Request memory r = Request({
             metadataHash: metadataHash,
+            resource: resource,
             approved: false
         });
 
@@ -884,7 +887,7 @@ contract Gatekeeper {
         requests[requestID] = r;
         requestCount = requestCount.add(1);
 
-        emit PermissionRequested(requestID, metadataHash);
+        emit PermissionRequested(resource, requestID, metadataHash);
         return requestID;
     }
 
@@ -893,8 +896,6 @@ contract Gatekeeper {
     @param slateID The slate to update
      */
     function acceptWinningSlate(uint slateID) internal {
-        // TODO: must be a winner
-
         // Mark the slate as accepted
         Slate storage s = slates[slateID];
         s.status = SlateStatus.Accepted;
@@ -922,12 +923,12 @@ contract Gatekeeper {
     }
 
     /**
-    @dev Return the slate submission deadline for the given category
+    @dev Return the slate submission deadline for the given resource
     @param epochNumber The epoch
-    @param categoryID The ID of the category
+    @param resource The resource
      */
-    function slateSubmissionDeadline(uint256 epochNumber, uint256 categoryID) public view returns(uint256) {
-        Contest memory contest = ballots[epochNumber].contests[categoryID];
+    function slateSubmissionDeadline(uint256 epochNumber, address resource) public view returns(uint256) {
+        Contest memory contest = ballots[epochNumber].contests[resource];
         uint256 offset = (contest.lastStaked.add(COMMIT_PERIOD_START)).div(2);
 
         return epochStart(epochNumber).add(offset);

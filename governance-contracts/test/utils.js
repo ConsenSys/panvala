@@ -273,18 +273,18 @@ async function epochTime(gatekeeper, dt, units) {
 
 /**
  * generateCommitHash
- * keccak256(category + firstChoice + secondChoice ... + salt)
- * @param {*} votes { category: { firstChoice, secondChoice }}
+ * keccak256(resource + firstChoice + secondChoice ... + salt)
+ * @param {*} votes { resource: { firstChoice, secondChoice }}
  * @param {ethUtils.BN} salt Random 256-bit number
  */
 function generateCommitHash(votes, salt) {
   const types = [];
   const values = [];
 
-  Object.keys(votes).forEach((category) => {
-    const { firstChoice, secondChoice } = votes[category];
-    types.push('uint', 'uint', 'uint');
-    values.push(category, firstChoice, secondChoice);
+  Object.keys(votes).forEach((resource) => {
+    const { firstChoice, secondChoice } = votes[resource];
+    types.push('address', 'uint', 'uint');
+    values.push(resource, firstChoice, secondChoice);
   });
   types.push('uint');
   values.push(salt);
@@ -327,7 +327,7 @@ async function grantSlateFromProposals(options) {
   const requestIDs = receipt.logs.map(l => l.args.requestID);
 
   await gatekeeper.recommendSlate(
-    proposalCategories.GRANT,
+    capacitor.address,
     requestIDs,
     asBytes(metadata),
     { from: recommender },
@@ -365,7 +365,7 @@ async function governanceSlateFromProposals(options) {
   const requestIDs = receipt.logs.map(l => l.args.requestID);
 
   await gatekeeper.recommendSlate(
-    proposalCategories.GOVERNANCE,
+    parameterStore.address,
     requestIDs,
     asBytes(metadata),
     { from: recommender },
@@ -402,28 +402,50 @@ async function getRequestIDs(gatekeeper, proposalData, options) {
 
 async function newSlate(gatekeeper, data, options) {
   const {
-    category, proposalData, slateData,
+    resource, proposalData, slateData,
   } = data;
   const requestIDs = await getRequestIDs(gatekeeper, proposalData, options);
 
-  await gatekeeper.recommendSlate(category, requestIDs, asBytes(slateData), options);
+  await gatekeeper.recommendSlate(resource, requestIDs, asBytes(slateData), options);
   return requestIDs;
 }
 
 
 /**
+ * Get the associated resource address by name
+ * @param {*} gatekeeper
+ * @param {string} name
+ */
+async function getResource(gatekeeper, name) {
+  const parametersAddress = await gatekeeper.parameters();
+  let source;
+
+  if (name === 'GRANT') {
+    const parameterStore = await ParameterStore.at(parametersAddress);
+    source = await parameterStore.getAsAddress('tokenCapacitorAddress');
+  } else if (name === 'GOVERNANCE') {
+    source = parametersAddress;
+  } else {
+    console.error('Some unknown resource');
+    throw new Error(`invalid resource ${name}`);
+  }
+
+  return source;
+}
+
+/**
  * Commit a ballot and return data for revealing
  * @param {*} gatekeeper
  * @param {*} voter
- * @param {*} category
+ * @param {*} resource
  * @param {*} firstChoice
  * @param {*} secondChoice
  * @param {*} numTokens
  * @param {*} salt
  */
-async function voteSingle(gatekeeper, voter, category, firstChoice, secondChoice, numTokens, salt) {
+async function voteSingle(gatekeeper, voter, resource, firstChoice, secondChoice, numTokens, salt) {
   const votes = {
-    [category]: { firstChoice, secondChoice },
+    [resource]: { firstChoice, secondChoice },
   };
 
   const commitHash = generateCommitHash(votes, salt);
@@ -431,7 +453,7 @@ async function voteSingle(gatekeeper, voter, category, firstChoice, secondChoice
 
   return {
     voter,
-    categories: [category],
+    resources: [resource],
     firstChoices: [firstChoice],
     secondChoices: [secondChoice],
     salt,
@@ -442,26 +464,26 @@ async function voteSingle(gatekeeper, voter, category, firstChoice, secondChoice
  * Commit a ballot and return data for revealing
  * @param {*} gatekeeper
  * @param {*} voter
- * @param {*} ballot Array of [category, firstChoice, secondChoice] triples
+ * @param {*} ballot Array of [resource, firstChoice, secondChoice] triples
  * @param {*} numTokens
  * @param {*} salt
  */
 async function commitBallot(gatekeeper, voter, ballot, numTokens, salt) {
   const votes = {};
   ballot.forEach((data) => {
-    const [category, firstChoice, secondChoice] = data;
-    votes[category] = { firstChoice, secondChoice };
+    const [resource, firstChoice, secondChoice] = data;
+    votes[resource] = { firstChoice, secondChoice };
   });
 
   const commitHash = generateCommitHash(votes, salt);
   await gatekeeper.commitBallot(commitHash, numTokens, { from: voter });
 
-  const categories = Object.keys(votes);
+  const resources = Object.keys(votes);
   return {
     voter,
-    categories,
-    firstChoices: categories.map(cat => votes[cat].firstChoice),
-    secondChoices: categories.map(cat => votes[cat].secondChoice),
+    resources,
+    firstChoices: resources.map(cat => votes[cat].firstChoice),
+    secondChoices: resources.map(cat => votes[cat].secondChoice),
     salt,
   };
 }
@@ -473,22 +495,22 @@ async function commitBallot(gatekeeper, voter, ballot, numTokens, salt) {
  */
 async function revealVote(ballotID, gatekeeper, revealData) {
   const {
-    voter, categories, firstChoices, secondChoices, salt,
+    voter, resources, firstChoices, secondChoices, salt,
   } = revealData;
   await gatekeeper.revealBallot(
-    ballotID, voter, categories, firstChoices, secondChoices, salt, { from: voter },
+    ballotID, voter, resources, firstChoices, secondChoices, salt, { from: voter },
   );
 }
 
 /**
  * Encode a ballot to be submitted to Gatekeeper.revealManyBallots()
- * @param {*} categories
+ * @param {*} resources
  * @param {*} firstChoices
  * @param {*} secondChoices
  */
-function encodeBallot(categories, firstChoices, secondChoices) {
-  const types = ['uint256[]', 'uint256[]', 'uint256[]'];
-  const values = [categories, firstChoices, secondChoices];
+function encodeBallot(resources, firstChoices, secondChoices) {
+  const types = ['address[]', 'uint256[]', 'uint256[]'];
+  const values = [resources, firstChoices, secondChoices];
 
   const encoded = ethers.utils.defaultAbiCoder.encode(types, values);
   return encoded;
@@ -498,13 +520,13 @@ function encodeBallot(categories, firstChoices, secondChoices) {
  * Get the number of first and second choice votes for a slate in a contest
  * @param {*} gatekeeper
  * @param {*} ballotID
- * @param {*} categoryID
+ * @param {*} resource
  * @param {*} slateID
  */
-async function getVotes(gatekeeper, ballotID, categoryID, slateID) {
+async function getVotes(gatekeeper, ballotID, resource, slateID) {
   const result = await Promise.all([
-    gatekeeper.getFirstChoiceVotes(ballotID, categoryID, slateID),
-    gatekeeper.getSecondChoiceVotes(ballotID, categoryID, slateID),
+    gatekeeper.getFirstChoiceVotes(ballotID, resource, slateID),
+    gatekeeper.getSecondChoiceVotes(ballotID, resource, slateID),
   ]);
   return result;
 }
@@ -559,6 +581,7 @@ const utils = {
   governanceSlateFromProposals,
   getRequestIDs,
   newSlate,
+  getResource,
   voteSingle,
   commitBallot,
   revealVote,

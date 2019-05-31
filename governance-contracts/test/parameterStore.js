@@ -4,10 +4,9 @@ const utils = require('./utils');
 
 const {
   abiCoder, abiEncode, expectErrorLike, expectRevert, governanceSlateFromProposals,
-  voteSingle, timing, revealVote, BN,
+  voteSingle, timing, revealVote, BN, getResource,
 } = utils;
 
-const { GOVERNANCE } = utils.categories;
 const { increaseTime } = utils.evm;
 
 const ParameterStore = artifacts.require('ParameterStore');
@@ -304,6 +303,7 @@ contract('ParameterStore', (accounts) => {
       }));
 
       ballotID = await gatekeeper.currentEpochNumber();
+      const GOVERNANCE = await getResource(gatekeeper, 'GOVERNANCE');
 
       // Allocate tokens
       const allocatedTokens = '10000';
