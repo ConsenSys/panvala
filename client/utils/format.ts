@@ -1,7 +1,18 @@
 import { utils } from 'ethers';
 import { BigNumberish } from 'ethers/utils';
 
+export function isAddress(address: string): boolean {
+  try {
+    utils.getAddress(address);
+    return true;
+  } catch (error) {}
+  return false;
+}
+
 export function splitAddressHumanReadable(address: string): string {
+  if (!isAddress(address)) {
+    return address;
+  }
   // 0xd115bffabbdd893a6f7cea402e7338643ced44a6
   const addr = utils.getAddress(address);
   // 0xD115BFFAbbdd893A6f7ceA402e7338643Ced44a6
@@ -27,7 +38,7 @@ export function baseToConvertedUnits(base: BigNumberish, decimals: number = 18):
   return utils.formatUnits(base, decimals).toString();
 }
 
-export function formatPanvalaUnits(base: BigNumberish) {
+export function formatPanvalaUnits(base: BigNumberish): string {
   const converted: string = baseToConvertedUnits(base, 18);
 
   return converted + ' PAN';

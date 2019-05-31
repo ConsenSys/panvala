@@ -34,3 +34,9 @@ a {
   font-style: italic;
   src: url('/static/fonts/Roboto-Italic.ttf');
 }
+
+@font-face {
+  font-family: 'Fira Code';
+  font-weight: 400;
+  src: url('/static/fonts/FiraCode-Regular.ttf');
+}

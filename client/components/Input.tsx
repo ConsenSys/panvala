@@ -1,8 +1,8 @@
 import styled from 'styled-components';
 import { COLORS } from '../styles';
-import { space } from 'styled-system';
+import { space, fontFamily } from 'styled-system';
 
-const Input = styled.input`
+const Input: any = styled.input`
   border: 1px solid ${COLORS.greyBorder};
   border-radius: 2px;
   width: 100%;
@@ -14,6 +14,7 @@ const Input = styled.input`
   background-color: ${COLORS.grey6};
 
   ${space};
+  ${fontFamily}
 `;
 
 export default Input;
