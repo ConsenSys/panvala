@@ -54,13 +54,14 @@ const Withdraw: StatelessPage<IProps> = ({ query, asPath }) => {
     }
   }
 
+  // TODO: include more slate context
   let dialog, method: string;
   let args: string;
   if (asPath.includes('voting')) {
     dialog = (
       <SectionDialog>
         The tokens you previously deposited for <strong>voting on the ballot</strong> can be
-        withdrawn. Upon selecting Confirm and Withdraw, you'll be prompted to confirm in you
+        withdrawn. Upon selecting Confirm and Withdraw, you'll be prompted to confirm in your
         MetaMask wallet.
         <strong>You must withdraw these tokens by 00/00/0000.</strong>
       </SectionDialog>
@@ -71,7 +72,7 @@ const Withdraw: StatelessPage<IProps> = ({ query, asPath }) => {
     dialog = (
       <SectionDialog>
         The tokens you previously deposited for <strong>staking on the slate</strong> can be
-        withdrawn. Upon selecting Confirm and Withdraw, you'll be prompted to confirm in you
+        withdrawn. Upon selecting Confirm and Withdraw, you'll be prompted to confirm in your
         MetaMask wallet.
         <strong>You must withdraw these tokens by 00/00/0000.</strong>
       </SectionDialog>
@@ -82,7 +83,7 @@ const Withdraw: StatelessPage<IProps> = ({ query, asPath }) => {
     dialog = (
       <SectionDialog>
         The tokens you were awarded for <strong>grant proposal</strong> can be withdrawn. Upon
-        selecting Confirm and Withdraw, you'll be prompted to confirm in you MetaMask wallet.
+        selecting Confirm and Withdraw, you'll be prompted to confirm in your MetaMask wallet.
         <strong>You must withdraw these tokens by 00/00/0000.</strong>
       </SectionDialog>
     );

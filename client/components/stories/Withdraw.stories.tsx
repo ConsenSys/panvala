@@ -2,17 +2,15 @@ import * as React from 'react';
 import { storiesOf } from '@storybook/react';
 import Withdraw from '../../pages/Withdraw';
 import EthereumProvider from '../EthereumProvider';
-import { ThemeProvider } from 'styled-components';
-import { theme } from '../../styles';
+// import { ThemeProvider } from 'styled-components';
+// import { theme } from '../../styles';
 import MainProvider from '../MainProvider';
 import Layout from '../Layout';
 
 const AppContext = ({ children }: any) => (
   <EthereumProvider>
     <MainProvider>
-      <ThemeProvider theme={theme}>
-        <Layout title="Panvala">{children}</Layout>
-      </ThemeProvider>
+      <Layout title="Panvala">{children}</Layout>
     </MainProvider>
   </EthereumProvider>
 );
