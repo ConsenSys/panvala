@@ -15,6 +15,7 @@ import { saveState, loadState, PANVALA_STATE } from '../utils/localStorage';
 import { splitAddressHumanReadable, isAddress } from '../utils/format';
 import StepperMetamaskDialog from '../components/StepperMetamaskDialog';
 import RouterLink from '../components/RouterLink';
+import Jazzicon from '../components/Jazzicon';
 
 const CancelButton = styled(Button)`
   color: ${COLORS.grey3};
@@ -118,6 +119,7 @@ const Wallet: React.SFC = () => {
       />
 
       <Label htmlFor="hot-wallet">Enter hot wallet</Label>
+      <Jazzicon address={account} diameter={30} />
       <Input
         fontFamily="Fira Code"
         name="hot-wallet"
