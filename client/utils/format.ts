@@ -17,12 +17,12 @@ export function splitAddressHumanReadable(address: string): string {
   return joined;
 }
 
-export function convertedToBaseUnits(converted: string, decimals: number): string {
+export function convertedToBaseUnits(converted: string, decimals: number = 18): string {
   // expects converted: string, throws on failure to convert
   return utils.parseUnits(converted, decimals).toString();
 }
 
-export function baseToConvertedUnits(base: BigNumberish, decimals: number): string {
+export function baseToConvertedUnits(base: BigNumberish, decimals: number = 18): string {
   // expects base: BigNumberish, throws on failure to convert
   return utils.formatUnits(base, decimals).toString();
 }
