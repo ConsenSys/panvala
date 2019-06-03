@@ -203,12 +203,16 @@ const Slate: StatelessPage<IProps> = ({ query: { id } }) => {
 
       <Container>
         <MetaColumn>
-          <SlateSidebar slate={slate} requiredStake={slate.requiredStake} currentBallot={currentBallot} />
+          <SlateSidebar
+            slate={slate}
+            requiredStake={slate.requiredStake}
+            currentBallot={currentBallot}
+          />
         </MetaColumn>
         <MainColumn>
           <SectionLabel>DESCRIPTION</SectionLabel>
           <Box color="black">{slate.description}</Box>
-          {slate.proposals && slate.proposals.length ? (
+          {slate.proposals && slate.proposals.length > 0 ? (
             <>
               <SectionLabel>{'GRANTS'}</SectionLabel>
               <SlateProposals>

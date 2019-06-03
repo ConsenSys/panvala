@@ -13,7 +13,7 @@ import Checkbox from '../../../components/Checkbox';
 import { MainContext } from '../../../components/MainProvider';
 import Button from '../../../components/Button';
 import Card from '../../../components/Card';
-import { EthereumContext } from '../../../components/EthereumProvider';
+import { EthereumContext, IEthereumContext } from '../../../components/EthereumProvider';
 import FieldText, { ErrorMessage } from '../../../components/FieldText';
 import FieldTextarea from '../../../components/FieldTextarea';
 import CenteredWrapper from '../../../components/CenteredWrapper';
@@ -28,7 +28,6 @@ import {
   IGrantProposalMetadata,
   ISlateMetadata,
   ISaveSlate,
-  IEthereumContext,
   StatelessPage,
 } from '../../../interfaces';
 import { TokenCapacitor } from '../../../types';
@@ -37,7 +36,7 @@ import {
   sendStakeTokensTransaction,
 } from '../../../utils/transaction';
 import { ipfsAddObject } from '../../../utils/ipfs';
-import { convertedToBaseUnits } from '../../../utils/format';
+import { convertedToBaseUnits, formatPanvalaUnits } from '../../../utils/format';
 import { postSlate } from '../../../utils/api';
 
 const Separator = styled.div`
@@ -89,9 +88,12 @@ interface IProps {
 const CreateGrantSlate: StatelessPage<IProps> = ({ query, classes }) => {
   // get proposals and eth context
   const { proposals, onRefreshSlates }: IMainContext = React.useContext(MainContext);
-  const { account, contracts, onRefreshBalances }: IEthereumContext = React.useContext(
-    EthereumContext
-  );
+  const {
+    account,
+    contracts,
+    onRefreshBalances,
+    slateStakeAmount,
+  }: IEthereumContext = React.useContext(EthereumContext);
 
   // modal opener
   const [isOpen, setOpenModal] = React.useState(false);
@@ -479,7 +481,9 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, classes }) => {
               <PaddedDiv>
                 <SectionLabel>STAKE</SectionLabel>
                 <Label htmlFor="stake" required>
-                  {`Would you like to stake 5000 PAN tokens for this slate? This makes your slate eligible for the current batch.`}
+                  {`Would you like to stake ${formatPanvalaUnits(
+                    slateStakeAmount
+                  )} tokens for this slate? This makes your slate eligible for the current batch.`}
                 </Label>
                 <ErrorMessage name="stake" component="span" />
                 <div>

@@ -14,6 +14,7 @@ export interface IEthereumContext {
   gkAllowance: utils.BigNumber;
   tcAllowance: utils.BigNumber;
   votingRights: utils.BigNumber;
+  slateStakeAmount: utils.BigNumber;
   onRefreshBalances(): any;
 }
 export const EthereumContext: React.Context<IEthereumContext> = React.createContext<any>({});
@@ -47,6 +48,7 @@ function reducer(state: any, action: any) {
         ethProvider: action.ethProvider,
         contracts: action.contracts,
         account: action.account,
+        slateStakeAmount: action.slateStakeAmount,
       };
     case 'account':
       return {
@@ -79,6 +81,7 @@ export default function EthereumProvider(props: any) {
     panHuman: utils.bigNumberify('0'),
     gkHuman: utils.bigNumberify('0'),
     tcHuman: utils.bigNumberify('0'),
+    slateStakeAmount: utils.bigNumberify('0'),
   });
 
   // runs once, on-load
@@ -104,6 +107,9 @@ export default function EthereumProvider(props: any) {
               toast.error(`Contracts not deployed on current network`);
             }
           }
+          const slateStakeAmount = await contracts.parameterStore.functions.getAsUint(
+            'slateStakeAmount'
+          );
 
           // set state
           if (account && !isEmpty(ethProvider)) {
@@ -112,6 +118,7 @@ export default function EthereumProvider(props: any) {
               ethProvider,
               contracts,
               account,
+              slateStakeAmount,
             });
             if (contracts.hasOwnProperty('token')) {
               toast.success('MetaMask successfully connected!');

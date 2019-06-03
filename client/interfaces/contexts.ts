@@ -47,6 +47,12 @@ export interface IGrantProposalMetadata {
   awardAddress: string;
 }
 
+export interface IGovernanceProposalMetadata {
+  id: number;
+  title: string;
+  summary: string;
+}
+
 /**
  * Slate fields that gets loaded/rendered in the frontend
  */
@@ -77,7 +83,7 @@ export interface ISlateMetadata {
   title: string;
   description: string;
   proposalMultihashes: string[];
-  proposals: IGrantProposalMetadata[];
+  proposals: IGrantProposalMetadata[] | IGovernanceProposalMetadata[];
 }
 
 /**

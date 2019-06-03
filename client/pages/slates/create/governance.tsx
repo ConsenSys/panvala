@@ -11,7 +11,7 @@ import { COLORS } from '../../../styles';
 import Box from '../../../components/system/Box';
 import Flex from '../../../components/system/Flex';
 import { MainContext } from '../../../components/MainProvider';
-import { EthereumContext } from '../../../components/EthereumProvider';
+import { EthereumContext, IEthereumContext } from '../../../components/EthereumProvider';
 import Button from '../../../components/Button';
 import Image from '../../../components/Image';
 import Label from '../../../components/Label';
@@ -23,10 +23,10 @@ import FieldText, { ErrorMessage, Field } from '../../../components/FieldText';
 import Modal, { ModalTitle, ModalDescription } from '../../../components/Modal';
 import { Separator } from '../../../components/Separator';
 import SectionLabel from '../../../components/SectionLabel';
-import { convertedToBaseUnits } from '../../../utils/format';
+import { convertedToBaseUnits, formatPanvalaUnits } from '../../../utils/format';
 import { ipfsAddObject } from '../../../utils/ipfs';
 import { postSlate } from '../../../utils/api';
-import { ISaveSlate, IEthereumContext, IMainContext, StatelessPage } from '../../../interfaces';
+import { ISaveSlate, IMainContext, StatelessPage } from '../../../interfaces';
 import { TokenCapacitor, Gatekeeper } from '../../../types';
 
 const FormSchema = yup.object().shape({
@@ -130,9 +130,12 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
   const [isOpen, setOpenModal] = React.useState(false);
   const { onRefreshSlates }: IMainContext = React.useContext(MainContext);
   // get eth context
-  const { account, contracts, onRefreshBalances }: IEthereumContext = React.useContext(
-    EthereumContext
-  );
+  const {
+    account,
+    contracts,
+    onRefreshBalances,
+    slateStakeAmount,
+  }: IEthereumContext = React.useContext(EthereumContext);
   // pending tx loader
   const [txPending, setTxPending] = React.useState(false);
 
@@ -346,9 +349,9 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
 
               <Separator />
               <Box p={4}>
-                <SectionLabel>{'RECOMMENDATION'}</SectionLabel>
+                <SectionLabel>{'PARAMETERS'}</SectionLabel>
                 <div>slateStakeAmount</div>
-                <div>{values.parameters.slateStakeAmount.oldValue}</div>
+                <div>{formatPanvalaUnits(slateStakeAmount)}</div>
                 <Field
                   label="Propose New Value"
                   name="parameters.slateStakeAmount.newValue"
@@ -366,7 +369,9 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
                 <Box p={4}>
                   <SectionLabel>STAKE</SectionLabel>
                   <Label htmlFor="stake" required>
-                    {`Would you like to stake 5000 PAN tokens for this slate? This makes your slate eligible for the current batch.`}
+                    {`Would you like to stake ${formatPanvalaUnits(
+                      slateStakeAmount
+                    )} tokens for this slate? This makes your slate eligible for the current batch.`}
                   </Label>
                   <ErrorMessage name="stake" component="span" />
                   <div>
