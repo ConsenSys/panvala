@@ -11,7 +11,7 @@ export function isAddress(address: string): boolean {
 
 export function splitAddressHumanReadable(address: string): string {
   if (!isAddress(address)) {
-    return address;
+    return 'invalid address';
   }
   // 0xd115bffabbdd893a6f7cea402e7338643ced44a6
   const addr = utils.getAddress(address);
