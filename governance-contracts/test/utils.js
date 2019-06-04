@@ -412,7 +412,7 @@ async function voteSingle(gatekeeper, voter, resource, firstChoice, secondChoice
   };
 
   const commitHash = generateCommitHash(votes, salt);
-  await gatekeeper.commitBallot(commitHash, numTokens, { from: voter });
+  await gatekeeper.commitBallot(voter, commitHash, numTokens, { from: voter });
 
   return {
     voter,
@@ -439,7 +439,7 @@ async function commitBallot(gatekeeper, voter, ballot, numTokens, salt) {
   });
 
   const commitHash = generateCommitHash(votes, salt);
-  await gatekeeper.commitBallot(commitHash, numTokens, { from: voter });
+  await gatekeeper.commitBallot(voter, commitHash, numTokens, { from: voter });
 
   const resources = Object.keys(votes);
   return {

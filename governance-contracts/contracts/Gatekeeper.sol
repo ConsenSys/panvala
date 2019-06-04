@@ -412,16 +412,14 @@ contract Gatekeeper {
 
     /**
      @dev Submit a commitment for the current ballot
+     @param voter The voter to commit for
      @param commitHash The hash representing the voter's vote choices
      @param numTokens The number of vote tokens to use
      */
-    function commitBallot(bytes32 commitHash, uint numTokens) public {
+    function commitBallot(address voter, bytes32 commitHash, uint numTokens) public {
         uint ballotID = currentEpochNumber();
 
-        uint256 epochTime = now.sub(epochStart(ballotID));
         require(commitPeriodActive(), "Commit period not active");
-
-        address voter = msg.sender;
 
         require(didCommit(ballotID, voter) == false, "Voter has already committed for this ballot");
         require(commitHash != 0, "Cannot commit zero hash");
