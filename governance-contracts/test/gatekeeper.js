@@ -1055,6 +1055,51 @@ contract('Gatekeeper', (accounts) => {
     });
   });
 
+  describe('delegateVote', () => {
+    const [creator, voter, delegate] = accounts;
+    let gatekeeper;
+
+    beforeEach(async () => {
+      ({ gatekeeper } = await utils.newPanvala({ from: creator }));
+    });
+
+    it('should allow a voter to set a delegate account', async () => {
+      const receipt = await gatekeeper.delegateVote(delegate, { from: voter });
+
+      assert.strictEqual(receipt.logs[0].event, 'DelegateSet', 'Wrong event was emitted');
+      const { voter: emittedVoter, delegate: emittedDelegate } = receipt.logs[0].args;
+
+      assert.strictEqual(emittedVoter, voter, 'Emitted wrong voter');
+      assert.strictEqual(emittedDelegate, delegate, 'Emitted wrong voter');
+
+      const storedDelegate = await gatekeeper.delegate(voter);
+      assert.strictEqual(storedDelegate, delegate, 'Did not set delegate');
+    });
+
+    it('should revert if the delegate is the same as the sender', async () => {
+      try {
+        await gatekeeper.delegateVote(voter, { from: voter });
+      } catch (error) {
+        expectRevert(error);
+        expectErrorLike(error, 'equal');
+        return;
+      }
+      assert.fail('Allowed voter to be its own delegate');
+    });
+
+    it('should allow the voter to unset the delegate', async () => {
+      // Set delegate
+      const receipt = await gatekeeper.delegateVote(delegate, { from: voter });
+      const { delegate: setDelegate } = receipt.logs[0].args;
+
+      // Unset delegate by setting to zero
+      const noDelegate = utils.zeroAddress();
+      await gatekeeper.delegateVote(noDelegate, { from: voter });
+
+      assert.notStrictEqual(setDelegate, noDelegate, 'Should have unset delegate');
+    });
+  });
+
   describe('commitBallot', () => {
     const [creator, voter] = accounts;
     let gatekeeper;

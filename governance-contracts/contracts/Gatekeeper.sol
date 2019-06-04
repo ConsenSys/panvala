@@ -14,6 +14,7 @@ contract Gatekeeper {
     event SlateStaked(uint slateID, address indexed staker, uint numTokens);
     event VotingTokensDeposited(address indexed voter, uint numTokens);
     event VotingTokensWithdrawn(address indexed voter, uint numTokens);
+    event DelegateSet(address indexed voter, address delegate);
     event BallotCommitted(uint indexed ballotID, address indexed voter, uint numTokens, bytes32 commitHash);
     event BallotRevealed(uint indexed ballotID, address indexed voter, uint numTokens);
     event ContestAutomaticallyFinalized(
@@ -99,6 +100,9 @@ contract Gatekeeper {
 
     // The number of tokens each account has available for voting
     mapping(address => uint) public voteTokenBalance;
+
+    // The delegated account for each voting account
+    mapping(address => address) public delegate;
 
     // The data committed when voting
     struct VoteCommitment {
@@ -391,6 +395,20 @@ contract Gatekeeper {
         return true;
     }
 
+
+    /**
+     @dev Set a delegate account that can vote on behalf of the voter
+     @param _delegate The account being delegated to
+     */
+    function delegateVote(address _delegate) public returns(bool) {
+        address voter = msg.sender;
+        require(voter != _delegate, "Delegate and voter cannot be equal");
+
+        delegate[voter] = _delegate;
+
+        emit DelegateSet(voter, _delegate);
+        return true;
+    }
 
     /**
      @dev Submit a commitment for the current ballot
