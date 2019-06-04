@@ -1,7 +1,7 @@
 import * as React from 'react';
 import styled from 'styled-components';
-import { Signer } from 'ethers';
 import isEmpty from 'lodash/isEmpty';
+import { toast } from 'react-toastify';
 
 import { IEthereumContext, EthereumContext } from '../components/EthereumProvider';
 import Button from '../components/Button';
@@ -28,10 +28,7 @@ const CancelButton = styled(Button)`
 const Wallet: React.SFC = () => {
   const {
     account,
-    ethProvider,
     contracts: { parameterStore },
-    panBalance,
-    votingRights,
     onRefreshBalances,
   }: IEthereumContext = React.useContext(EthereumContext);
 
@@ -50,31 +47,23 @@ const Wallet: React.SFC = () => {
     if (isAddress(hotWallet)) {
       setStep(1);
 
-      if (!isEmpty(ethProvider) && !isEmpty(parameterStore)) {
-        // get signer
-        const signer: Signer = ethProvider.getSigner();
-        // trigger metamask to popup so user can sign with hardware wallet
-        const message: string = `Cold wallet: ${coldWallet}. Hot wallet: ${hotWallet}`;
+      if (!isEmpty(parameterStore)) {
         try {
-          // sign message
-          const signature: string = await signer.signMessage(message);
-          // save to local storage
-          saveState(PANVALA_STATE, {
-            hotWallet,
-            coldWallet,
-            signature,
-          });
-
           // TODO:
-          // const numTokens = votingRights.add(panBalance);
-          // const response = await gatekeeper.functions.delegateVoter(hotWallet, numTokens);
+          // const response = await gatekeeper.functions.delegateVoter(hotWallet);
           // setTxPending(true);
 
           // await response.wait();
           // setTxPending(false);
 
-          // toast.success('delagate voter tx mined');
-          // onRefreshBalances();
+          // save to local storage
+          saveState(PANVALA_STATE, {
+            hotWallet,
+            coldWallet,
+          });
+
+          toast.success('delagate voter tx mined');
+          onRefreshBalances();
         } catch (error) {
           if (!error.message.includes('User denied message signature.')) {
             throw error;
