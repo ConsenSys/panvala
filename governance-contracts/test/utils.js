@@ -375,43 +375,6 @@ async function governanceSlateFromProposals(options) {
 }
 
 /**
- * Ask the Gatekeeper for permission and get back the requestIDs
- * @param {*} gatekeeper
- * @param {*} proposalData
- * @param {*} options
- */
-async function getRequestIDs(gatekeeper, proposalData, options) {
-  // console.log(options);
-  const txOptions = options || {};
-
-  const metadataHashes = proposalData.map(createMultihash);
-  const requests = metadataHashes.map(md => gatekeeper.requestPermission(
-    asBytes(md),
-    txOptions,
-  ));
-
-  const receipts = await Promise.all(requests);
-  const requestIDs = receipts.map((receipt) => {
-    // console.log(receipt);
-    const { requestID } = receipt.logs[0].args;
-    return requestID;
-  });
-
-  return requestIDs;
-}
-
-async function newSlate(gatekeeper, data, options) {
-  const {
-    resource, proposalData, slateData,
-  } = data;
-  const requestIDs = await getRequestIDs(gatekeeper, proposalData, options);
-
-  await gatekeeper.recommendSlate(resource, requestIDs, asBytes(slateData), options);
-  return requestIDs;
-}
-
-
-/**
  * Get the associated resource address by name
  * @param {*} gatekeeper
  * @param {string} name
@@ -579,8 +542,6 @@ const utils = {
   generateCommitHash,
   grantSlateFromProposals,
   governanceSlateFromProposals,
-  getRequestIDs,
-  newSlate,
   getResource,
   voteSingle,
   commitBallot,

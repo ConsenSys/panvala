@@ -258,7 +258,8 @@ contract Gatekeeper {
             uint requestID = requestIDs[i];
             require(requestID < requestCount, "Invalid requestID");
 
-            // TODO: request's resource must match the one passed in
+            // Every request's resource must match the one passed in
+            require(requests[requestID].resource == resource, "Resource does not match");
 
             require(slates[slateID].requestIncluded[requestID] == false, "Duplicate requests are not allowed");
             slates[slateID].requestIncluded[requestID] = true;

@@ -21,6 +21,8 @@ const {
   // printDate,
   timing,
   getResource,
+  asBytes,
+  createMultihash,
 } = utils;
 
 const { increaseTime } = utils.evm;
@@ -395,6 +397,7 @@ contract('Gatekeeper', (accounts) => {
   describe('recommendSlate', () => {
     const [creator, recommender] = accounts;
     let gatekeeper;
+    let capacitor;
     let requestIDs;
     const metadataHash = utils.createMultihash('my slate');
     let epochNumber;
@@ -402,18 +405,20 @@ contract('Gatekeeper', (accounts) => {
     let GRANT;
 
     beforeEach(async () => {
-      gatekeeper = await utils.newGatekeeper({ from: creator });
+      ({ gatekeeper, capacitor } = await utils.newPanvala({ from: creator }));
       epochNumber = await gatekeeper.currentEpochNumber();
 
       GRANT = await getResource(gatekeeper, 'GRANT');
 
       // Get requestIDs for the slate
-      requestIDs = await utils.getRequestIDs(gatekeeper, [
-        'proposal1',
-        'proposal2',
-        'proposal3',
-        'proposal4',
-      ], { from: recommender });
+      const proposalsReceipt = await capacitor.createManyProposals(
+        [creator, recommender, creator, recommender],
+        ['1000', '1000', '2000', '2000'],
+        ['proposal1', 'proposal2', 'proposal3', 'proposal4'].map(p => utils.asBytes(utils.createMultihash(p))),
+        { from: recommender },
+      );
+
+      requestIDs = proposalsReceipt.logs.map(l => l.args.requestID);
     });
 
     it('should create a new slate with the provided data', async () => {
@@ -541,7 +546,44 @@ contract('Gatekeeper', (accounts) => {
       assert.fail('Recommended a slate with duplicate requestIDs');
     });
 
-    it('should revert if the resource is invalid');
+    it('should revert if any of the requests have resources that do not match the one provided', async () => {
+      const parameterStore = await ParameterStore.at(await gatekeeper.parameters());
+
+      // Create grant proposal
+      const grantRequestReceipt = await capacitor.createProposal(
+        recommender,
+        '1000',
+        asBytes(utils.createMultihash('grant proposal')),
+      );
+
+      const { requestID: grantRequestID } = grantRequestReceipt.logs[0].args;
+
+      // Create governance proposal
+      const governanceRequestReceipt = await parameterStore.createProposal(
+        'param',
+        utils.abiEncode('uint256', '1000'),
+        asBytes(utils.createMultihash('governance proposal')),
+      );
+
+      const { requestID: governanceRequestID } = governanceRequestReceipt.logs[0].args;
+
+      // Try to create a grant slate with a governance request included
+      const resource = capacitor.address;
+      try {
+        await gatekeeper.recommendSlate(
+          resource,
+          [grantRequestID, governanceRequestID],
+          asBytes('mixed slate'),
+          { from: recommender },
+        );
+      } catch (error) {
+        expectRevert(error);
+        expectErrorLike(error, 'does not match');
+        return;
+      }
+
+      assert.fail('Allowed creation of a slate with mixed proposal types');
+    });
 
     describe('timing', () => {
       let snapshotID;
@@ -582,6 +624,7 @@ contract('Gatekeeper', (accounts) => {
   describe('stakeTokens', () => {
     const [creator, recommender, staker, staker2] = accounts;
     let gatekeeper;
+    let capacitor;
     let token;
     const initialTokens = '20000000';
     let GRANT;
@@ -592,20 +635,27 @@ contract('Gatekeeper', (accounts) => {
     let snapshotID;
 
     beforeEach(async () => {
-      token = await utils.newToken({ initialTokens, from: creator });
-      gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+      ({ gatekeeper, capacitor, token } = await utils.newPanvala({ initialTokens, from: creator }));
       GRANT = await getResource(gatekeeper, 'GRANT');
 
       snapshotID = await utils.evm.snapshot();
 
       epochNumber = await gatekeeper.currentEpochNumber();
 
-      await utils.newSlate(gatekeeper, {
-        epochNumber,
-        resource: GRANT,
-        proposalData: ['a', 'b', 'c'],
-        slateData: 'grant slate',
-      }, { from: recommender });
+      const proposals = [
+        { to: staker, tokens: '1000', metadataHash: createMultihash('a') },
+        { to: staker, tokens: '1000', metadataHash: createMultihash('b') },
+        { to: staker, tokens: '1000', metadataHash: createMultihash('c') },
+      ];
+      const metadata = asBytes(createMultihash('grant slate'));
+
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals,
+        capacitor,
+        metadata,
+        recommender,
+      });
 
       stakeAmount = await parameters.getAsUint('slateStakeAmount');
 
@@ -1260,6 +1310,7 @@ contract('Gatekeeper', (accounts) => {
 
     let gatekeeper;
     let token;
+    let capacitor;
     const initialTokens = '20000000';
     let snapshotID;
     let GRANT;
@@ -1274,8 +1325,12 @@ contract('Gatekeeper', (accounts) => {
     beforeEach(async () => {
       snapshotID = await utils.evm.snapshot();
 
-      token = await utils.newToken({ initialTokens, from: creator });
-      gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+      ({
+        gatekeeper, capacitor, token, parameters,
+      } = await utils.newPanvala({
+        initialTokens,
+        from: creator,
+      }));
       ballotID = await gatekeeper.currentEpochNumber();
       GRANT = await getResource(gatekeeper, 'GRANT');
       GOVERNANCE = await getResource(gatekeeper, 'GOVERNANCE');
@@ -1293,16 +1348,24 @@ contract('Gatekeeper', (accounts) => {
 
       // New slates 0, 1
       // grant
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['a', 'b', 'c'],
-        slateData: 'my slate',
+      const grantProposals = [{
+        to: recommender, tokens: '1000', metadataHash: createMultihash('grant'),
+      }];
+
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('my slate'),
       }, { from: recommender });
 
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['a', 'b', 'd'],
-        slateData: 'competing slate',
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('competing slate'),
       }, { from: recommender });
 
       await gatekeeper.stakeTokens(0, { from: recommender });
@@ -1310,17 +1373,28 @@ contract('Gatekeeper', (accounts) => {
 
       // New slates 2, 3
       // governance
-      await utils.newSlate(gatekeeper, {
-        resource: GOVERNANCE,
-        proposalData: ['e', 'f', 'g'],
-        slateData: 'governance slate',
-      }, { from: recommender });
+      const governanceProposals = [
+        {
+          key: 'param',
+          value: utils.abiEncode('uint256', '1000'),
+          metadataHash: createMultihash('governance'),
+        },
+      ];
+      await utils.governanceSlateFromProposals({
+        gatekeeper,
+        proposals: governanceProposals,
+        parameterStore: parameters,
+        recommender,
+        metadata: 'governance slate',
+      });
 
-      await utils.newSlate(gatekeeper, {
-        resource: GOVERNANCE,
-        proposalData: ['g', 'h', 'i'],
-        slateData: 'competing slate',
-      }, { from: recommender });
+      await utils.governanceSlateFromProposals({
+        gatekeeper,
+        proposals: governanceProposals,
+        parameterStore: parameters,
+        recommender,
+        metadata: 'competing slate',
+      });
 
       await gatekeeper.stakeTokens(2, { from: recommender });
       await gatekeeper.stakeTokens(3, { from: recommender });
@@ -1682,6 +1756,7 @@ contract('Gatekeeper', (accounts) => {
 
     let gatekeeper;
     let token;
+    let capacitor;
     const initialTokens = '20000000';
     let ballotID;
     let snapshotID;
@@ -1691,8 +1766,9 @@ contract('Gatekeeper', (accounts) => {
     beforeEach(async () => {
       snapshotID = await utils.evm.snapshot();
 
-      token = await utils.newToken({ initialTokens, from: creator });
-      gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+      ({
+        gatekeeper, capacitor, token, parameters,
+      } = await utils.newPanvala({ initialTokens, from: creator }));
       ballotID = await gatekeeper.currentEpochNumber();
       GRANT = await getResource(gatekeeper, 'GRANT');
       GOVERNANCE = await getResource(gatekeeper, 'GOVERNANCE');
@@ -1705,34 +1781,53 @@ contract('Gatekeeper', (accounts) => {
       // Set up ballot
       // New slates 0, 1
       // grant
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['a', 'b', 'c'],
-        slateData: 'grant slate',
-      }, { from: recommender });
+      const grantProposals = [{
+        to: recommender, tokens: '1000', metadataHash: createMultihash('grant'),
+      }];
 
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['a', 'b', 'd'],
-        slateData: 'competing slate',
-      }, { from: recommender });
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('my slate'),
+      });
+
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('competing slate'),
+      });
 
       await gatekeeper.stakeTokens(0, { from: recommender });
       await gatekeeper.stakeTokens(1, { from: recommender });
 
       // New slates 2, 3
       // governance
-      await utils.newSlate(gatekeeper, {
-        resource: GOVERNANCE,
-        proposalData: ['e', 'f', 'g'],
-        slateData: 'governance slate',
-      }, { from: recommender });
+      const governanceProposals = [
+        {
+          key: 'param',
+          value: utils.abiEncode('uint256', '1000'),
+          metadataHash: createMultihash('governance'),
+        },
+      ];
+      await utils.governanceSlateFromProposals({
+        gatekeeper,
+        proposals: governanceProposals,
+        parameterStore: parameters,
+        recommender,
+        metadata: 'governance slate',
+      });
 
-      await utils.newSlate(gatekeeper, {
-        resource: GOVERNANCE,
-        proposalData: ['g', 'h', 'i'],
-        slateData: 'competing slate',
-      }, { from: recommender });
+      await utils.governanceSlateFromProposals({
+        gatekeeper,
+        proposals: governanceProposals,
+        parameterStore: parameters,
+        recommender,
+        metadata: 'competing slate',
+      });
 
       await gatekeeper.stakeTokens(2, { from: recommender });
       await gatekeeper.stakeTokens(3, { from: recommender });
@@ -1806,6 +1901,8 @@ contract('Gatekeeper', (accounts) => {
 
     let gatekeeper;
     let token;
+    let capacitor;
+    let parameterStore;
     const initialTokens = '20000000';
     let snapshotID;
     let GRANT;
@@ -1820,8 +1917,12 @@ contract('Gatekeeper', (accounts) => {
     beforeEach(async () => {
       snapshotID = await utils.evm.snapshot();
 
-      token = await utils.newToken({ initialTokens, from: creator });
-      gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+      ({
+        gatekeeper, token, capacitor, parameters: parameterStore,
+      } = await utils.newPanvala({
+        initialTokens,
+        from: creator,
+      }));
       ballotID = await gatekeeper.currentEpochNumber();
 
       GRANT = await getResource(gatekeeper, 'GRANT');
@@ -1839,33 +1940,52 @@ contract('Gatekeeper', (accounts) => {
       await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
 
       // grant - slates 0, 1
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['a', 'b', 'c'],
-        slateData: 'my slate',
-      }, { from: recommender });
+      const grantProposals = [{
+        to: recommender, tokens: '1000', metadataHash: createMultihash('grant'),
+      }];
 
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['a', 'b', 'd'],
-        slateData: 'competing slate',
-      }, { from: recommender });
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('my slate'),
+      });
+
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('competing slate'),
+      });
 
       await gatekeeper.stakeTokens(0, { from: recommender });
       await gatekeeper.stakeTokens(1, { from: recommender });
 
       // governance - slates 2, 3
-      await utils.newSlate(gatekeeper, {
-        resource: GOVERNANCE,
-        proposalData: ['e', 'f', 'g'],
-        slateData: 'governance slate',
-      }, { from: recommender });
+      const governanceProposals = [
+        {
+          key: 'param',
+          value: utils.abiEncode('uint256', '1000'),
+          metadataHash: createMultihash('governance'),
+        },
+      ];
+      await utils.governanceSlateFromProposals({
+        gatekeeper,
+        proposals: governanceProposals,
+        parameterStore,
+        recommender,
+        metadata: 'governance slate',
+      });
 
-      await utils.newSlate(gatekeeper, {
-        resource: GOVERNANCE,
-        proposalData: ['g', 'h', 'i'],
-        slateData: 'competing slate',
-      }, { from: recommender });
+      await utils.governanceSlateFromProposals({
+        gatekeeper,
+        proposals: governanceProposals,
+        parameterStore,
+        recommender,
+        metadata: 'competing slate',
+      });
 
       await gatekeeper.stakeTokens(2, { from: recommender });
       await gatekeeper.stakeTokens(3, { from: recommender });
@@ -1939,18 +2059,28 @@ contract('Gatekeeper', (accounts) => {
 
     let gatekeeper;
     let token;
+    let capacitor;
+    let parameterStore;
     const initialTokens = '20000000';
     let ballotID;
     let snapshotID;
     let GRANT;
     let GOVERNANCE;
 
+    const governanceProposals = [
+      {
+        key: 'param',
+        value: utils.abiEncode('uint256', '1000'),
+        metadataHash: createMultihash('governance'),
+      },
+    ];
 
     beforeEach(async () => {
       snapshotID = await utils.evm.snapshot();
 
-      token = await utils.newToken({ initialTokens, from: creator });
-      gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+      ({
+        gatekeeper, token, capacitor, parameters: parameterStore,
+      } = await utils.newPanvala({ initialTokens, from: creator }));
       ballotID = await gatekeeper.currentEpochNumber();
 
       GRANT = await getResource(gatekeeper, 'GRANT');
@@ -1974,17 +2104,25 @@ contract('Gatekeeper', (accounts) => {
       await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
 
       // create simple ballot with just grants
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['a', 'b', 'c'],
-        slateData: 'my slate',
-      }, { from: recommender });
+      const grantProposals = [{
+        to: recommender, tokens: '1000', metadataHash: createMultihash('grant'),
+      }];
 
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['a', 'b', 'd'],
-        slateData: 'competing slate',
-      }, { from: recommender });
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('my slate'),
+      });
+
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('competing slate'),
+      });
 
       await gatekeeper.stakeTokens(0, { from: recommender });
       await gatekeeper.stakeTokens(1, { from: recommender });
@@ -2093,11 +2231,13 @@ contract('Gatekeeper', (accounts) => {
 
     it('should revert if the resource has no staked slates', async () => {
       // Add a new governance slate, but don't stake
-      await utils.newSlate(gatekeeper, {
-        resource: GOVERNANCE,
-        proposalData: ['e', 'f', 'g'],
-        slateData: 'governance slate',
-      }, { from: recommender });
+      await utils.governanceSlateFromProposals({
+        gatekeeper,
+        proposals: governanceProposals,
+        parameterStore,
+        recommender,
+        metadata: 'governance slate',
+      });
 
       // Advance past reveal period
       await increaseTime(timing.EPOCH_LENGTH);
@@ -2117,11 +2257,13 @@ contract('Gatekeeper', (accounts) => {
       const slateID = await gatekeeper.slateCount();
 
       // Add a new governance slate
-      await utils.newSlate(gatekeeper, {
-        resource: GOVERNANCE,
-        proposalData: ['e', 'f', 'g'],
-        slateData: 'governance slate',
-      }, { from: recommender });
+      await utils.governanceSlateFromProposals({
+        gatekeeper,
+        proposals: governanceProposals,
+        parameterStore,
+        recommender,
+        metadata: 'governance slate',
+      });
       await gatekeeper.stakeTokens(slateID, { from: recommender });
 
       // status: NoContest
@@ -2165,11 +2307,17 @@ contract('Gatekeeper', (accounts) => {
 
     it('should ignore votes for unstaked slates', async () => {
       // Add another grant slate, but don't stake
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['x', 'y', 'z'],
-        slateData: 'an unstaked slate',
-      }, { from: recommender });
+      const grantProposals = [{
+        to: recommender, tokens: '1000', metadataHash: createMultihash('grant'),
+      }];
+
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('an unstaked slate'),
+      });
 
       // David votes for it with lots of power
       const david = accounts[5];
@@ -2216,11 +2364,17 @@ contract('Gatekeeper', (accounts) => {
     it('should wait for a runoff if no slate has more than 50% of the votes', async () => {
       const slateID = await gatekeeper.slateCount();
       // Add a third slate
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['h', 'i', 'j'],
-        slateData: 'yet another slate',
-      }, { from: recommender });
+      const grantProposals = [{
+        to: recommender, tokens: '1000', metadataHash: createMultihash('grant'),
+      }];
+
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('yet another slate'),
+      });
       await gatekeeper.stakeTokens(slateID, { from: recommender });
 
       // Split the votes among the three slates
@@ -2328,11 +2482,13 @@ contract('Gatekeeper', (accounts) => {
       const slateID = await gatekeeper.slateCount();
 
       // Add a new governance slate
-      await utils.newSlate(gatekeeper, {
-        resource: GOVERNANCE,
-        proposalData: ['e', 'f', 'g'],
-        slateData: 'governance slate',
-      }, { from: recommender });
+      await utils.governanceSlateFromProposals({
+        gatekeeper,
+        proposals: governanceProposals,
+        parameterStore,
+        recommender,
+        metadata: 'governance slate',
+      });
       await gatekeeper.stakeTokens(slateID, { from: recommender });
 
       // Advance to reveal period
@@ -2352,6 +2508,7 @@ contract('Gatekeeper', (accounts) => {
 
     let gatekeeper;
     let token;
+    let capacitor;
     const initialTokens = '20000000';
     let ballotID;
     let snapshotID;
@@ -2361,8 +2518,7 @@ contract('Gatekeeper', (accounts) => {
     beforeEach(async () => {
       snapshotID = await utils.evm.snapshot();
 
-      token = await utils.newToken({ initialTokens, from: creator });
-      gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+      ({ gatekeeper, token, capacitor } = await utils.newPanvala({ initialTokens, from: creator }));
       ballotID = await gatekeeper.currentEpochNumber();
 
       GRANT = await getResource(gatekeeper, 'GRANT');
@@ -2385,23 +2541,33 @@ contract('Gatekeeper', (accounts) => {
       await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
 
       // create simple ballot with just grants
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['a', 'b', 'c'],
-        slateData: 'my slate',
-      }, { from: recommender });
+      const grantProposals = [{
+        to: recommender, tokens: '1000', metadataHash: createMultihash('grant'),
+      }];
 
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['a', 'b', 'd'],
-        slateData: 'competing slate',
-      }, { from: recommender });
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('my slate'),
+      });
 
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['e', 'f', 'g'],
-        slateData: 'competing slate',
-      }, { from: recommender });
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('competing slate'),
+      });
+
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('competing slate'),
+      });
 
       await gatekeeper.stakeTokens(0, { from: recommender });
       await gatekeeper.stakeTokens(1, { from: recommender });
@@ -2438,15 +2604,18 @@ contract('Gatekeeper', (accounts) => {
 
     let gatekeeper;
     let token;
+    let capacitor;
 
     const initialTokens = '20000000';
     let ballotID;
     let GRANT;
+    const grantProposals = [{
+      to: recommender, tokens: '1000', metadataHash: createMultihash('grant'),
+    }];
 
 
     beforeEach(async () => {
-      token = await utils.newToken({ initialTokens, from: creator });
-      gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+      ({ gatekeeper, token, capacitor } = await utils.newPanvala({ initialTokens, from: creator }));
       ballotID = await gatekeeper.currentEpochNumber();
 
       GRANT = await getResource(gatekeeper, 'GRANT');
@@ -2458,11 +2627,13 @@ contract('Gatekeeper', (accounts) => {
     });
 
     it('should return Empty if the resource has no staked slates', async () => {
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['a', 'b', 'c'],
-        slateData: 'my slate',
-      }, { from: recommender });
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('my slate'),
+      });
 
       const status = await gatekeeper.contestStatus(ballotID, GRANT);
 
@@ -2474,17 +2645,20 @@ contract('Gatekeeper', (accounts) => {
     });
 
     it('should return NoContest if the resource has only a single staked slate', async () => {
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['a', 'b', 'c'],
-        slateData: 'my slate',
-      }, { from: recommender });
-
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['d', 'e', 'f'],
-        slateData: 'another slate',
-      }, { from: recommender });
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('my slate'),
+      });
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('another slate'),
+      });
 
       // Only stake on one
       await gatekeeper.stakeTokens(0, { from: recommender });
@@ -2499,17 +2673,21 @@ contract('Gatekeeper', (accounts) => {
     });
 
     it('should return Active if the resource has two or more staked slates', async () => {
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['a', 'b', 'c'],
-        slateData: 'my slate',
-      }, { from: recommender });
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('my slate'),
+      });
 
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['a', 'b', 'd'],
-        slateData: 'competing slate',
-      }, { from: recommender });
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('competing slate'),
+      });
 
       // Stake on two
       await gatekeeper.stakeTokens(0, { from: recommender });
@@ -2531,18 +2709,21 @@ contract('Gatekeeper', (accounts) => {
 
     let gatekeeper;
     let token;
+    let capacitor;
     let snapshotID;
 
     const initialTokens = '20000000';
     let ballotID;
     let GRANT;
+    const grantProposals = [{
+      to: recommender, tokens: '1000', metadataHash: createMultihash('grant'),
+    }];
 
 
     beforeEach(async () => {
       snapshotID = await utils.evm.snapshot();
 
-      token = await utils.newToken({ initialTokens, from: creator });
-      gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+      ({ gatekeeper, capacitor, token } = await utils.newPanvala({ initialTokens, from: creator }));
       ballotID = await gatekeeper.currentEpochNumber();
 
       GRANT = await getResource(gatekeeper, 'GRANT');
@@ -2553,23 +2734,29 @@ contract('Gatekeeper', (accounts) => {
       await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
 
       // create simple ballot with just grants
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['a', 'b', 'c'],
-        slateData: 'my slate',
-      }, { from: recommender });
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('my slate'),
+      });
 
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['a', 'b', 'd'],
-        slateData: 'competing slate',
-      }, { from: recommender });
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('competing slate'),
+      });
 
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['h', 'i', 'j'],
-        slateData: 'yet another slate',
-      }, { from: recommender });
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('yet another slate'),
+      });
 
       await gatekeeper.stakeTokens(0, { from: recommender });
       await gatekeeper.stakeTokens(1, { from: recommender });
@@ -2792,18 +2979,21 @@ contract('Gatekeeper', (accounts) => {
 
     let gatekeeper;
     let token;
+    let capacitor;
     let snapshotID;
 
     const initialTokens = '20000000';
     let ballotID;
     let GRANT;
+    const grantProposals = [{
+      to: recommender, tokens: '1000', metadataHash: createMultihash('grant'),
+    }];
 
 
     beforeEach(async () => {
       snapshotID = await utils.evm.snapshot();
 
-      token = await utils.newToken({ initialTokens, from: creator });
-      gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+      ({ gatekeeper, capacitor, token } = await utils.newPanvala({ initialTokens, from: creator }));
       ballotID = await gatekeeper.currentEpochNumber();
 
       GRANT = await getResource(gatekeeper, 'GRANT');
@@ -2814,23 +3004,29 @@ contract('Gatekeeper', (accounts) => {
       await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
 
       // create simple ballot with just grants
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['a', 'b', 'c'],
-        slateData: 'my slate',
-      }, { from: recommender });
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('my slate'),
+      });
 
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['a', 'b', 'd'],
-        slateData: 'competing slate',
-      }, { from: recommender });
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('competing slate'),
+      });
 
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['h', 'i', 'j'],
-        slateData: 'yet another slate',
-      }, { from: recommender });
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('yet another slate'),
+      });
 
       await gatekeeper.stakeTokens(0, { from: recommender });
       await gatekeeper.stakeTokens(1, { from: recommender });
@@ -2894,18 +3090,22 @@ contract('Gatekeeper', (accounts) => {
 
     let gatekeeper;
     let token;
+    let capacitor;
     const initialTokens = '20000000';
     let ballotID;
     let snapshotID;
     let GRANT;
+    const grantProposals = [
+      { to: recommender, tokens: '1000', metadataHash: createMultihash('grant') },
+      { to: recommender, tokens: '1000', metadataHash: createMultihash('grant 2') },
+      { to: recommender, tokens: '1000', metadataHash: createMultihash('grant 3') },
+    ];
 
 
     beforeEach(async () => {
       snapshotID = await utils.evm.snapshot();
 
-      ({ token, gatekeeper } = await utils.newPanvala({ initialTokens, from: creator }));
-      // token = await utils.newToken({ initialTokens, from: creator });
-      // gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+      ({ token, gatekeeper, capacitor } = await utils.newPanvala({ initialTokens, from: creator }));
       ballotID = await gatekeeper.currentEpochNumber();
 
       GRANT = await getResource(gatekeeper, 'GRANT');
@@ -2929,25 +3129,31 @@ contract('Gatekeeper', (accounts) => {
 
       // create simple ballot with just grants
       // contains requests 0, 1, 2
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['a', 'b', 'c'],
-        slateData: 'my slate',
-      }, { from: recommender });
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('my slate'),
+      });
 
       // contains requests 3, 4, 5
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['a', 'b', 'd'],
-        slateData: 'competing slate',
-      }, { from: recommender });
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('competing slate'),
+      });
 
       // contains requests 6, 7, 8
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['e', 'f', 'g'],
-        slateData: 'competing slate',
-      }, { from: recommender });
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('competing slate'),
+      });
 
       await gatekeeper.stakeTokens(0, { from: recommender });
       await gatekeeper.stakeTokens(1, { from: recommender });
@@ -3038,18 +3244,21 @@ contract('Gatekeeper', (accounts) => {
 
     let gatekeeper;
     let token;
+    let capacitor;
     let stakeAmount;
     let snapshotID;
 
     const initialTokens = '20000000';
     let ballotID;
     let GRANT;
+    const grantProposals = [{
+      to: recommender, tokens: '1000', metadataHash: createMultihash('grant'),
+    }];
 
     beforeEach(async () => {
       snapshotID = await utils.evm.snapshot();
 
-      token = await utils.newToken({ initialTokens, from: creator });
-      gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
+      ({ gatekeeper, token, capacitor } = await utils.newPanvala({ initialTokens, from: creator }));
       ballotID = await gatekeeper.currentEpochNumber();
 
       GRANT = await getResource(gatekeeper, 'GRANT');
@@ -3060,23 +3269,30 @@ contract('Gatekeeper', (accounts) => {
       await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
 
       // create simple ballot with just grants
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['a', 'b', 'c'],
-        slateData: 'my slate',
-      }, { from: recommender });
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('my slate'),
+      });
 
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['a', 'b', 'd'],
-        slateData: 'competing slate',
-      }, { from: recommender });
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('competing slate'),
+      });
 
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['h', 'i', 'j'],
-        slateData: 'yet another slate',
-      }, { from: recommender });
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('yet another slate'),
+      });
+
 
       const allocatedTokens = '10000';
 
@@ -3334,6 +3550,9 @@ contract('Gatekeeper', (accounts) => {
     const initialTokens = '20000000';
     let ballotID;
     let GRANT;
+    const grantProposals = [{
+      to: recommender, tokens: '1000', metadataHash: createMultihash('grant'),
+    }];
 
     beforeEach(async () => {
       snapshotID = await utils.evm.snapshot();
@@ -3344,23 +3563,29 @@ contract('Gatekeeper', (accounts) => {
       GRANT = await getResource(gatekeeper, 'GRANT');
 
       // create simple ballot with just grants
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['a', 'b', 'c'],
-        slateData: 'my slate',
-      }, { from: recommender });
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('my slate'),
+      });
 
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['a', 'b', 'd'],
-        slateData: 'competing slate',
-      }, { from: recommender });
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('competing slate'),
+      });
 
-      await utils.newSlate(gatekeeper, {
-        resource: GRANT,
-        proposalData: ['h', 'i', 'j'],
-        slateData: 'yet another slate',
-      }, { from: recommender });
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('yet another slate'),
+      });
 
       const allocatedTokens = '10000';
 
