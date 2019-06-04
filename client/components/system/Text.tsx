@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import { space, width, fontSize, color, textAlign, lineHeight, fontWeight } from 'styled-system';
+import { space, width, typography, color } from 'styled-system';
 import { COLORS } from '../../styles';
 
 const Text: any = styled.p`
@@ -8,10 +8,7 @@ const Text: any = styled.p`
   ${space};
   ${width};
   ${color};
-  ${fontSize};
-  ${textAlign};
-  ${lineHeight};
-  ${fontWeight};
+  ${typography};
 `;
 
 Text.displayName = 'Text';

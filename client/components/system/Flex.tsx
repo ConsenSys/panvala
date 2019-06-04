@@ -1,16 +1,5 @@
 import styled from 'styled-components';
-import {
-  space,
-  width,
-  borders,
-  boxShadow,
-  position,
-  zIndex,
-  top,
-  right,
-  bottom,
-  left,
-} from 'styled-system';
+import { space, border, shadow, position } from 'styled-system';
 
 const Flex: any = styled.div`
   box-sizing: 'border-box';
@@ -48,16 +37,9 @@ const Flex: any = styled.div`
   flex-direction: ${(props: any) => (props.column ? 'column' : 'row')};
 
   ${space}
-  ${width};
-  ${borders};
-  ${boxShadow};
-
+  ${border};
+  ${shadow};
   ${position};
-  ${zIndex};
-  ${top};
-  ${right};
-  ${bottom};
-  ${left};
 `;
 
 export const Column = styled.div`

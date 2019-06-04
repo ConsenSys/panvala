@@ -15,7 +15,7 @@ import { saveState, loadState, PANVALA_STATE } from '../utils/localStorage';
 import { splitAddressHumanReadable, isAddress } from '../utils/format';
 import StepperMetamaskDialog from '../components/StepperMetamaskDialog';
 import RouterLink from '../components/RouterLink';
-import Jazzicon from '../components/Jazzicon';
+import Identicon from '../components/Identicon';
 
 const CancelButton = styled(Button)`
   color: ${COLORS.grey3};
@@ -111,21 +111,26 @@ const Wallet: React.SFC = () => {
       </Text>
 
       <Label htmlFor="cold-wallet">Cold wallet</Label>
-      <Input
-        fontFamily="Fira Code"
-        name="cold-wallet"
-        onChange={() => null}
-        value={coldWallet && splitAddressHumanReadable(coldWallet)}
-      />
+      <Flex justifyStart noWrap alignCenter>
+        <Identicon address={account} diameter={20} />
+        <Input
+          fontFamily="Fira Code"
+          name="cold-wallet"
+          onChange={() => null}
+          value={coldWallet && splitAddressHumanReadable(coldWallet)}
+        />
+      </Flex>
 
       <Label htmlFor="hot-wallet">Enter hot wallet</Label>
-      <Jazzicon address={account} diameter={30} />
-      <Input
-        fontFamily="Fira Code"
-        name="hot-wallet"
-        onChange={handleChangeHotWallet}
-        value={hotWallet}
-      />
+      <Flex justifyStart noWrap alignCenter>
+        <Identicon address={hotWallet} diameter={20} />
+        <Input
+          fontFamily="Fira Code"
+          name="hot-wallet"
+          onChange={handleChangeHotWallet}
+          value={hotWallet}
+        />
+      </Flex>
 
       <Flex justifyEnd>
         <Button width="200px" large type="default" onClick={handleClickContinue}>
