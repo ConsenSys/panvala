@@ -1,4 +1,5 @@
 export const PANVALA_STATE = 'PANVALA_STATE';
+export const ENABLED_ACCOUNTS = 'ENABLED_ACCOUNTS';
 
 export function saveState(store: string, state: any) {
   try {

@@ -5,6 +5,7 @@ import isEmpty from 'lodash/isEmpty';
 import { connectProvider, connectContracts } from '../utils/provider';
 import { IContracts } from '../interfaces';
 import { baseToConvertedUnits } from '../utils/format';
+import { saveState, loadState, ENABLED_ACCOUNTS } from '../utils/localStorage';
 
 export interface IEthereumContext {
   account: string;
@@ -92,11 +93,28 @@ export default function EthereumProvider(props: any) {
           // this means metamask is installed. get the ethereum provider
           const { ethereum }: Window = window;
           // pop-up metamask to authorize panvala-app (account signature validation)
-          const addresses = await ethereum.enable();
+          let addresses: string[] = [];
+          try {
+            addresses = await ethereum.enable();
+            let enabledAccounts = loadState(ENABLED_ACCOUNTS);
+            if (enabledAccounts && !enabledAccounts.includes(addresses[0])) {
+              enabledAccounts = enabledAccounts.concat(addresses[0]);
+            } else if (!enabledAccounts) {
+              enabledAccounts = addresses;
+            }
+            saveState(ENABLED_ACCOUNTS, enabledAccounts);
+          } catch (error) {
+            console.error(`ERROR failed to enable metamask: ${error.message}`);
+          }
           // selected account
           const account = utils.getAddress(addresses[0]);
           // wrap MetaMask with ethers
-          const ethProvider: providers.Web3Provider = await connectProvider(ethereum);
+          let ethProvider: providers.Web3Provider | {} = {};
+          try {
+            ethProvider = await connectProvider(ethereum);
+          } catch (error) {
+            console.error(`ERROR failed to connect eth provider: ${error.message}`);
+          }
           // contract abstractions (w/ metamask signer)
           let contracts: IContracts | {} = {};
           try {
