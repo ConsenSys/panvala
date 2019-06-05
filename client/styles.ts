@@ -1,3 +1,5 @@
+import { Theme } from 'styled-system';
+
 export const COLORS: any = {
   primary: '#59B6E6',
   text: '#343434',
@@ -65,7 +67,7 @@ export const colors: any = {
   },
 };
 
-export const theme = {
+export const theme: Theme = {
   breakpoints: ['40em', '52em', '64em', '90em'],
   space: [0, 4, 8, 16, 32, 64, 128, 256, 512],
   fontSizes: [12, 14, 16, 20, 24, 36, 48, 80, 96],
@@ -75,12 +77,6 @@ export const theme = {
     title: 1.25,
     copy: 1.5,
   },
-  letterSpacings: {
-    normal: 'normal',
-    tracked: '0.1em',
-    tight: '-0.05em',
-    mega: '0.25em',
-  },
   fonts: {
     serif: 'Canela, athelas, georgia, times, serif',
     sansSerif:
@@ -89,7 +85,6 @@ export const theme = {
   borders: [0, '1px solid', '2px solid', '4px solid', '8px solid', '16px solid', '32px solid'],
   radii: [0, 2, 4, 16, 9999, '100%'],
   shadows: ['0px 5px 20px rgba(0, 0, 0, 0.1)'],
-  width: [16, 32, 64, 128, 256],
   heights: [16, 32, 64, 128, 256],
   maxWidths: [16, 32, 64, 128, 256, 512, 768, 1024, 1536],
   colors,

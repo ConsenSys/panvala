@@ -1,4 +1,4 @@
-export const PANVALA_STATE = 'PANVALA_STATE';
+export const LINKED_WALLETS = 'LINKED_WALLETS';
 export const ENABLED_ACCOUNTS = 'ENABLED_ACCOUNTS';
 
 export function saveState(store: string, state: any) {

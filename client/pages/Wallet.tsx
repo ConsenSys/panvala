@@ -11,7 +11,7 @@ import Text from '../components/system/Text';
 import Flex from '../components/system/Flex';
 import Input from '../components/Input';
 import Label from '../components/Label';
-import { saveState, loadState, PANVALA_STATE } from '../utils/localStorage';
+import { saveState, loadState, LINKED_WALLETS, ENABLED_ACCOUNTS } from '../utils/localStorage';
 import { splitAddressHumanReadable, isAddress } from '../utils/format';
 import StepperMetamaskDialog from '../components/StepperMetamaskDialog';
 import RouterLink from '../components/RouterLink';
@@ -29,62 +29,94 @@ const CancelButton = styled(Button)`
 const Wallet: React.SFC = () => {
   const {
     account,
-    contracts: { parameterStore },
+    contracts: { gatekeeper },
     onRefreshBalances,
   }: IEthereumContext = React.useContext(EthereumContext);
 
+  // list of enabled accounts. use to populate wallet list
+  const enabledAccounts = loadState(ENABLED_ACCOUNTS);
+
   // voter (trezor/ledger) cold wallet
-  const [coldWallet, setColdWallet] = React.useState(account);
+  const [coldWallet, setColdWallet] = React.useState('');
   // delegate (metamask) hot wallet
   const [hotWallet, setHotWallet] = React.useState('');
   const [step, setStep] = React.useState(0);
+  const [confirmed, setConfirmed] = React.useState({
+    coldWallet: false,
+    hotWallet: false,
+  });
 
-  function handleChangeHotWallet(e: React.ChangeEvent<HTMLInputElement>) {
-    setHotWallet(e.target.value);
+  function confirmColdWallet() {
+    const linkedWallets = loadState(LINKED_WALLETS);
+    saveState(LINKED_WALLETS, {
+      ...linkedWallets,
+      coldWallet,
+    });
+    setConfirmed({
+      ...confirmed,
+      coldWallet: true,
+    });
+  }
+  function confirmHotWallet() {
+    const linkedWallets = loadState(LINKED_WALLETS);
+    saveState(LINKED_WALLETS, {
+      ...linkedWallets,
+      hotWallet,
+    });
+    setConfirmed({
+      ...confirmed,
+      hotWallet: true,
+    });
   }
 
-  async function handleClickContinue() {
+  React.useEffect(() => {
+    // get persisted state from local storage
+    const linkedWallets = loadState(LINKED_WALLETS);
+    if (linkedWallets && linkedWallets.coldWallet) {
+      setColdWallet(linkedWallets.coldWallet);
+    }
+    if (account && linkedWallets && linkedWallets.hotWallet) {
+      setHotWallet(linkedWallets.hotWallet);
+    }
+  }, [account]);
+
+  async function toGrantPermissions() {
+    const linkedWallets = loadState(LINKED_WALLETS);
+    if (
+      !linkedWallets ||
+      linkedWallets.hotWallet !== hotWallet ||
+      linkedWallets.coldWallet !== coldWallet
+    ) {
+      console.error('Linked wallets not in sync with local storage');
+      return;
+    }
     // TODO: (might not be possible) check if hotWallet is an unlocked account in metamask
-    if (isAddress(hotWallet)) {
-      setStep(1);
+    setStep(1);
 
-      if (!isEmpty(parameterStore)) {
-        try {
-          // TODO:
-          // const response = await gatekeeper.functions.delegateVoter(hotWallet);
-          // setTxPending(true);
+    if (!isEmpty(gatekeeper)) {
+      try {
+        // TODO:
+        // const response = await gatekeeper.functions.delegateVoter(hotWallet);
+        // setTxPending(true);
 
-          // await response.wait();
-          // setTxPending(false);
+        // await response.wait();
+        // setTxPending(false);
+        // toast.success('delagate voter tx mined');
 
-          // save to local storage
-          saveState(PANVALA_STATE, {
-            hotWallet,
-            coldWallet,
-          });
+        // save to local storage
+        saveState(LINKED_WALLETS, {
+          hotWallet,
+          coldWallet,
+        });
 
-          toast.success('delagate voter tx mined');
-          onRefreshBalances();
-        } catch (error) {
-          if (!error.message.includes('User denied message signature.')) {
-            throw error;
-          }
+        onRefreshBalances();
+      } catch (error) {
+        if (!error.message.includes('User denied message signature.')) {
+          throw error;
         }
       }
     }
   }
-
-  React.useEffect(() => {
-    if (account) {
-      setColdWallet(account);
-
-      // get persisted state from local storage
-      const localState = loadState(PANVALA_STATE);
-      if (localState && localState.coldWallet === account && localState.hotWallet) {
-        setHotWallet(localState.hotWallet);
-      }
-    }
-  }, [account]);
 
   const steps = [
     <>
@@ -104,19 +136,27 @@ const Wallet: React.SFC = () => {
 
       <Label htmlFor="cold-wallet">{'Select cold wallet'}</Label>
       <Flex justifyStart noWrap alignCenter>
-        <Identicon address={account} diameter={20} />
+        <Identicon address={coldWallet} diameter={20} />
         <Input
           m={2}
           fontFamily="Fira Code"
           name="cold-wallet"
           onChange={(e: any) => setColdWallet(e.target.value)}
           value={coldWallet}
-          disabled
         />
+        <Button
+          width="100px"
+          type="default"
+          onClick={confirmColdWallet}
+          disabled={!isAddress(coldWallet)}
+        >
+          Confirm
+        </Button>
       </Flex>
       {/* prettier-ignore */}
       <Text mt={0} mb={4} fontSize={0} color="grey">
-        This wallet must be connected. How to connect <A bold color="blue">Trezor</A> and <A bold color="blue">Ledger</A>.
+        This wallet must be connected.
+        How to connect <A bold color="blue">Trezor</A> and <A bold color="blue">Ledger</A>.
       </Text>
 
       <Label htmlFor="hot-wallet">{'Select hot wallet'}</Label>
@@ -126,17 +166,31 @@ const Wallet: React.SFC = () => {
           m={2}
           fontFamily="Fira Code"
           name="hot-wallet"
-          onChange={handleChangeHotWallet}
+          onChange={(e: any) => setHotWallet(e.target.value)}
           value={hotWallet}
         />
+        <Button
+          width="100px"
+          type="default"
+          onClick={confirmHotWallet}
+          disabled={!isAddress(hotWallet)}
+        >
+          Confirm
+        </Button>
       </Flex>
       <Text mt={0} mb={4} fontSize={0} color="grey">
         Reminder: This is the address that will be able to vote with your PAN.
       </Text>
 
       <Flex justifyEnd>
-        <Button width="200px" large type="default" onClick={handleClickContinue}>
-          Confirm and Continue
+        <Button
+          width="200px"
+          large
+          type="default"
+          onClick={toGrantPermissions}
+          disabled={!confirmed.coldWallet || !confirmed.hotWallet}
+        >
+          Continue
         </Button>
       </Flex>
     </>,
@@ -144,11 +198,13 @@ const Wallet: React.SFC = () => {
       <Text textAlign="center" fontSize={'1.5rem'} m={0}>
         Grant Permissions
       </Text>
-      <CancelButton onClick={null}>Cancel</CancelButton>
+      <CancelButton onClick={() => setStep(0)}>Cancel</CancelButton>
 
       <Text lineHeight={1.5}>
-        By granting permissions in this transaction, you are allowing your proxy voting contract to
-        lock your PAN. You are not relinquishing control of your PAN and can withdraw it at anytime.
+        By granting permissions in this transaction, you are allowing the contract to lock your PAN.
+        You are not relinquishing control of your PAN and can withdraw it at anytime. Linking your
+        hot and cold wallet will enable you to vote while your PAN is still stored in your cold
+        wallet.
       </Text>
 
       <StepperMetamaskDialog />
@@ -165,7 +221,7 @@ const Wallet: React.SFC = () => {
       </Text>
 
       <Flex justifyEnd>
-        <Button width="200px" large type="default" onClick={handleClickContinue}>
+        <Button width="200px" large type="default" onClick={null}>
           Confirm and Continue
         </Button>
       </Flex>
