@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 import { COLORS } from '../styles';
-import { space, fontFamily } from 'styled-system';
+import { space, layout, fontFamily } from 'styled-system';
 
 const Input: any = styled.input`
   border: 1px solid ${COLORS.greyBorder};
@@ -14,6 +14,7 @@ const Input: any = styled.input`
   background-color: ${COLORS.grey6};
 
   ${space};
+  ${layout};
   ${fontFamily}
 `;
 

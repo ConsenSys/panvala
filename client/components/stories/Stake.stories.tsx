@@ -5,9 +5,9 @@ import MainProvider from '../MainProvider';
 import EthereumProvider from '../EthereumProvider';
 
 storiesOf('Stake', module).add('Stake', () => (
-  <MainProvider>
-    <EthereumProvider>
+  <EthereumProvider>
+    <MainProvider>
       <Stake query={{ id: '0' }} />
-    </EthereumProvider>
-  </MainProvider>
+    </MainProvider>
+  </EthereumProvider>
 ));

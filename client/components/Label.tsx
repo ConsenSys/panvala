@@ -1,12 +1,14 @@
 import * as React from 'react';
 import styled from 'styled-components';
-import { COLORS } from '../styles';
+import { colors } from '../styles';
 import Required from './Required';
+import { space } from 'styled-system';
 
-const StyledLabel = styled.label`
+const StyledLabel: any = styled.label`
   margin: 2em 0 5em;
   font-size: 0.8em;
-  color: ${COLORS.grey3};
+  color: ${colors.grey};
+  ${space};
 `;
 
 type Props = {

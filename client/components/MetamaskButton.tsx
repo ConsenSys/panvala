@@ -12,7 +12,6 @@ const ButtonWrapper = styled.div`
 const StyledMMButton = styled(Button)`
   margin-left: 0;
   margin-right: 0;
-  padding: 0.9rem;
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
 `;

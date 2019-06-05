@@ -1,8 +1,11 @@
 import styled from 'styled-components';
-import { COLORS } from '../styles';
+import { color, typography } from 'styled-system';
 
 const A: any = styled.a`
-  color: ${props => (props.blue ? COLORS.blue2 : 'inherit')};
+  color: inherit;
+  cursor: pointer;
+  ${color};
+  ${({ bold }) => bold && 'font-weight: bold'};
 `;
 
 export default A;

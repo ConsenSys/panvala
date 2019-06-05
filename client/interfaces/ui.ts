@@ -17,6 +17,7 @@ export interface IButton {
     | 'secondChoice';
   active?: boolean;
   width?: string;
+  color?: string;
 }
 
 export interface ITag {

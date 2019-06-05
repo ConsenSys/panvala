@@ -1,5 +1,14 @@
 import styled from 'styled-components';
-import { space, border, shadow, position } from 'styled-system';
+import {
+  space,
+  color,
+  layout,
+  typography,
+  border,
+  background,
+  shadow,
+  position,
+} from 'styled-system';
 
 const Flex: any = styled.div`
   box-sizing: 'border-box';
@@ -36,8 +45,12 @@ const Flex: any = styled.div`
   }};
   flex-direction: ${(props: any) => (props.column ? 'column' : 'row')};
 
-  ${space}
+  ${space};
+  ${color};
+  ${layout};
+  ${typography};
   ${border};
+  ${background};
   ${shadow};
   ${position};
 `;

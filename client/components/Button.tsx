@@ -2,6 +2,7 @@ import React, { Children } from 'react';
 import styled, { css } from 'styled-components';
 import { COLORS, BUTTON_COLORS } from '../styles';
 import { IButton } from '../interfaces';
+import { color } from 'styled-system';
 
 const BaseButton: any = styled.button`
   display: flex;
@@ -9,14 +10,15 @@ const BaseButton: any = styled.button`
   align-items: center;
   letter-spacing: 0.02rem;
   font-family: 'Roboto';
-  font-weight: 500;
   cursor: pointer;
+  font-weight: 500;
+  ${color};
 `;
 
 const StyledButton: any = styled(BaseButton)`
   height: 2rem;
   background-color: ${({ type }: any) => {
-    if (type && (BUTTON_COLORS as any)[type]) return (BUTTON_COLORS as any)[type];
+    if (type && BUTTON_COLORS[type]) return BUTTON_COLORS[type];
     return COLORS.white;
   }};
   color: ${({ active }: any) => (active ? COLORS.primary : COLORS.text)};
@@ -43,7 +45,7 @@ const StyledButton: any = styled(BaseButton)`
 
 const LargeButton: any = styled(BaseButton)`
   width: ${({ width }) => (width ? width : '100%')};
-  background-color: ${({ type }: any) => (type ? (BUTTON_COLORS as any)[type] : COLORS.white)};
+  background-color: ${({ type }: any) => (type ? BUTTON_COLORS[type] : COLORS.white)};
   padding: 0.8rem 1rem;
   margin: 0 0.5rem 1rem;
   border: 2px solid ${COLORS.grey5};

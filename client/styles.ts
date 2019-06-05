@@ -1,4 +1,4 @@
-export const COLORS = {
+export const COLORS: any = {
   primary: '#59B6E6',
   text: '#343434',
 
@@ -26,13 +26,43 @@ export const COLORS = {
   red2: '#EA6B6B',
 };
 
-export const BUTTON_COLORS = {
+export const BUTTON_COLORS: any = {
   default: COLORS.grey5,
   submit: COLORS.grey5,
   firstChoice: COLORS.green1,
   secondChoice: COLORS.yellow1,
   firstChoiceFg: COLORS.green2,
   secondChoiceFg: COLORS.yellow2,
+};
+
+export const colors: any = {
+  black: '#000',
+  grey: '#8E9EA6',
+  greys: {
+    dark: '#343434',
+    border: '#E5ECED',
+    light: '#F0F5F6',
+    veryLight: '#FCFDFE',
+  },
+  white: '#FFF',
+  transparent: 'transparent',
+  blue: '#59B6E6',
+  blues: {
+    dark: '#1872A0',
+    light: '#DEF0FA',
+  },
+  yellow: '#C6B72C',
+  yellows: {
+    light: 'rgba(255, 245, 2, 0.2)',
+  },
+  green: '#31AE5C',
+  greens: {
+    light: '#E5FFEE',
+  },
+  red: '#EA6B6B',
+  reds: {
+    light: 'rgba(255, 147, 147, 0.25)',
+  },
 };
 
 export const theme = {
@@ -52,7 +82,7 @@ export const theme = {
     mega: '0.25em',
   },
   fonts: {
-    serif: 'athelas, georgia, times, serif',
+    serif: 'Canela, athelas, georgia, times, serif',
     sansSerif:
       '-apple-system, BlinkMacSystemFont, roboto, "avenir next", avenir, "helvetica neue", helvetica, ubuntu, noto, "segoe ui", arial, sans-serif',
   },
@@ -62,47 +92,5 @@ export const theme = {
   width: [16, 32, 64, 128, 256],
   heights: [16, 32, 64, 128, 256],
   maxWidths: [16, 32, 64, 128, 256, 512, 768, 1024, 1536],
-  colors: {
-    black: '#000',
-    'near-black': '#111',
-    'dark-gray': '#333',
-    'mid-gray': '#555',
-    gray: ' #777',
-    silver: '#999',
-    'light-silver': '#aaa',
-    'moon-gray': '#ccc',
-    'light-gray': '#eee',
-    'near-white': '#f4f4f4',
-    white: '#fff',
-    transparent: 'transparent',
-    blacks: [
-      'rgba(0,0,0,.0125)',
-      'rgba(0,0,0,.025)',
-      'rgba(0,0,0,.05)',
-      'rgba(0,0,0,.1)',
-      'rgba(0,0,0,.2)',
-      'rgba(0,0,0,.3)',
-      'rgba(0,0,0,.4)',
-      'rgba(0,0,0,.5)',
-      'rgba(0,0,0,.6)',
-      'rgba(0,0,0,.7)',
-      'rgba(0,0,0,.8)',
-      'rgba(0,0,0,.9)',
-    ],
-    whites: [
-      'rgba(255,255,255,.0125)',
-      'rgba(255,255,255,.025)',
-      'rgba(255,255,255,.05)',
-      'rgba(255,255,255,.1)',
-      'rgba(255,255,255,.2)',
-      'rgba(255,255,255,.3)',
-      'rgba(255,255,255,.4)',
-      'rgba(255,255,255,.5)',
-      'rgba(255,255,255,.6)',
-      'rgba(255,255,255,.7)',
-      'rgba(255,255,255,.8)',
-      'rgba(255,255,255,.9)',
-    ],
-    // ... and so on
-  },
+  colors,
 };

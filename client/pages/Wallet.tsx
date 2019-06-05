@@ -16,6 +16,7 @@ import { splitAddressHumanReadable, isAddress } from '../utils/format';
 import StepperMetamaskDialog from '../components/StepperMetamaskDialog';
 import RouterLink from '../components/RouterLink';
 import Identicon from '../components/Identicon';
+import A from '../components/A';
 
 const CancelButton = styled(Button)`
   color: ${COLORS.grey3};
@@ -94,32 +95,44 @@ const Wallet: React.SFC = () => {
         <CancelButton>Cancel</CancelButton>
       </RouterLink>
 
+      {/* prettier-ignore */}
       <Text lineHeight={1.5}>
-        Please confirm your cold wallet, we support Ledger and Trezor. Then select the hot wallet
-        you would like to link it to. Your hot wallet will be your delegated voting wallet.
+        Please select your <A bold color="blue">cold wallet</A>, we support Ledger and Trezor.
+        Then select the <A bold color="blue">hot wallet</A> you would like to link it to.
+        Your hot wallet will be your delegated voting wallet.
       </Text>
 
-      <Label htmlFor="cold-wallet">Cold wallet</Label>
+      <Label htmlFor="cold-wallet">{'Select cold wallet'}</Label>
       <Flex justifyStart noWrap alignCenter>
         <Identicon address={account} diameter={20} />
         <Input
+          m={2}
           fontFamily="Fira Code"
           name="cold-wallet"
-          onChange={() => null}
-          value={coldWallet && splitAddressHumanReadable(coldWallet)}
+          onChange={(e: any) => setColdWallet(e.target.value)}
+          value={coldWallet}
+          disabled
         />
       </Flex>
+      {/* prettier-ignore */}
+      <Text mt={0} mb={4} fontSize={0} color="grey">
+        This wallet must be connected. How to connect <A bold color="blue">Trezor</A> and <A bold color="blue">Ledger</A>.
+      </Text>
 
-      <Label htmlFor="hot-wallet">Enter hot wallet</Label>
+      <Label htmlFor="hot-wallet">{'Select hot wallet'}</Label>
       <Flex justifyStart noWrap alignCenter>
         <Identicon address={hotWallet} diameter={20} />
         <Input
+          m={2}
           fontFamily="Fira Code"
           name="hot-wallet"
           onChange={handleChangeHotWallet}
           value={hotWallet}
         />
       </Flex>
+      <Text mt={0} mb={4} fontSize={0} color="grey">
+        Reminder: This is the address that will be able to vote with your PAN.
+      </Text>
 
       <Flex justifyEnd>
         <Button width="200px" large type="default" onClick={handleClickContinue}>
