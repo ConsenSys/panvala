@@ -1101,7 +1101,7 @@ contract('Gatekeeper', (accounts) => {
   });
 
   describe('commitBallot', () => {
-    const [creator, voter] = accounts;
+    const [creator, voter, delegate, nonDelegate] = accounts;
     let gatekeeper;
     let token;
     const initialTokens = '20000000';
@@ -1243,6 +1243,86 @@ contract('Gatekeeper', (accounts) => {
       assert.fail('Committed a ballot with a zero commit hash');
     });
 
+    describe('delegated', () => {
+      const commitHash = utils.keccak('data');
+      const numTokens = '1000';
+
+      beforeEach(async () => {
+        await gatekeeper.delegateVote(delegate, { from: voter });
+      });
+
+      it('should let a delegate commit a ballot for the voter', async () => {
+        await gatekeeper.depositVoteTokens(numTokens, { from: voter });
+
+        await increaseTime(timing.VOTING_PERIOD_START);
+        const receipt = await gatekeeper.commitBallot(voter, commitHash, numTokens, {
+          from: delegate,
+        });
+
+        // Emit an event with the correct values
+        const {
+          voter: emittedVoter,
+          numTokens: emittedTokens,
+          commitHash: emittedHash,
+        } = receipt.logs[0].args;
+
+        assert.strictEqual(emittedVoter, voter, 'Emitted voter was wrong');
+        assert.strictEqual(emittedTokens.toString(), numTokens, 'Emitted token amount was wrong');
+        assert.strictEqual(
+          utils.stripHexPrefix(emittedHash),
+          commitHash.toString('hex'),
+          'Emitted hash was wrong',
+        );
+
+        // Correctly store commitment
+        const storedCommitHash = await gatekeeper.getCommitHash(ballotID, voter);
+        assert.strictEqual(
+          utils.stripHexPrefix(storedCommitHash.toString()),
+          commitHash.toString('hex'),
+          'Stored commit hash is wrong',
+        );
+      });
+
+      it('should revert if the delegate has tokens but the voter does not', async () => {
+        // Give the delegate tokens and deposit them
+        const delegateTokens = '10000';
+        await token.transfer(delegate, delegateTokens, { from: creator });
+        await token.approve(gatekeeper.address, delegateTokens, { from: delegate });
+        await gatekeeper.depositVoteTokens(delegateTokens, { from: delegate });
+
+        // Check voter balance
+        const voterBalance = await gatekeeper.voteTokenBalance(voter);
+        assert.strictEqual(voterBalance.toString(), '0', 'Voter should not have any voting tokens');
+
+        // Try to commit for the voter
+        await increaseTime(timing.VOTING_PERIOD_START);
+
+        try {
+          await gatekeeper.commitBallot(voter, commitHash, numTokens, { from: delegate });
+        } catch (error) {
+          expectRevert(error);
+          return;
+        }
+
+        assert.fail('Allowed delegate to vote for a voter with no voting tokens');
+      });
+
+      it('should revert if the committer is not a delegate for the voter', async () => {
+        await gatekeeper.depositVoteTokens(numTokens, { from: voter });
+
+        await increaseTime(timing.VOTING_PERIOD_START);
+
+        try {
+          await gatekeeper.commitBallot(voter, commitHash, numTokens, { from: nonDelegate });
+        } catch (error) {
+          expectRevert(error);
+          expectErrorLike(error, 'Not a delegate');
+          return;
+        }
+        assert.fail('Allowed someone other than the delegate to commit a ballot for the voter');
+      });
+    });
+
     afterEach(async () => {
       await utils.evm.revert(snapshotID);
     });
@@ -1290,6 +1370,23 @@ contract('Gatekeeper', (accounts) => {
     it('should return false if the voter has not committed for the ballot', async () => {
       const didCommit = await gatekeeper.didCommit(ballotID, voter);
       assert.strictEqual(didCommit, false, 'Voter did not commit, but didCommit returned true');
+    });
+
+    it("should return true if a delegate voted on the voter's behalf", async () => {
+      const [, , delegate] = accounts;
+      await gatekeeper.delegateVote(delegate, { from: voter });
+
+      const commitHash = utils.keccak('data');
+      const numTokens = '1000';
+
+      // Advance to commit period
+      await increaseTime(timing.VOTING_PERIOD_START);
+
+      // commit
+      await gatekeeper.commitBallot(voter, commitHash, numTokens, { from: voter });
+
+      const didCommit = await gatekeeper.didCommit(ballotID, voter);
+      assert(didCommit, 'Voter committed, but didCommit returned false');
     });
 
     afterEach(async () => utils.evm.revert(snapshotID));

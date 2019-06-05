@@ -424,11 +424,20 @@ contract Gatekeeper {
         require(didCommit(ballotID, voter) == false, "Voter has already committed for this ballot");
         require(commitHash != 0, "Cannot commit zero hash");
 
-        // If the voter doesn't have enough tokens for voting, deposit more
-        if (voteTokenBalance[voter] < numTokens) {
-            uint remainder = numTokens.sub(voteTokenBalance[voter]);
-            depositVoteTokens(remainder);
+        address committer = msg.sender;
+
+        // Must be a delegate if not the voter
+        if (committer != voter) {
+            require(committer == delegate[voter], "Not a delegate");
+            require(voteTokenBalance[voter] >= numTokens);
+        } else {
+            // If the voter doesn't have enough tokens for voting, deposit more
+            if (voteTokenBalance[voter] < numTokens) {
+                uint remainder = numTokens.sub(voteTokenBalance[voter]);
+                depositVoteTokens(remainder);
+            }
         }
+
         assert(voteTokenBalance[voter] >= numTokens);
 
         // TODO: If the ballot has not been created yet, create it
