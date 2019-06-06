@@ -63,6 +63,7 @@ export const colors: any = {
   },
   red: '#EA6B6B',
   reds: {
+    dark: '#DE3333',
     light: 'rgba(255, 147, 147, 0.25)',
   },
 };

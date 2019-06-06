@@ -38,6 +38,7 @@ import {
 import { ipfsAddObject } from '../../../utils/ipfs';
 import { convertedToBaseUnits, formatPanvalaUnits } from '../../../utils/format';
 import { postSlate } from '../../../utils/api';
+import { GRANT_PROPOSAL } from '../../../utils/constants';
 
 const Separator = styled.div`
   border: 1px solid ${COLORS.grey5};
@@ -466,6 +467,7 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, classes }) => {
                               }
                             }}
                             isActive={values.proposals[proposal.id]}
+                            type={GRANT_PROPOSAL}
                           />
                         ))}
                     </FlexContainer>

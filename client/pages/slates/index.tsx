@@ -10,6 +10,7 @@ import RouteTitle from '../../components/RouteTitle';
 import RouterLink from '../../components/RouterLink';
 import { ISlate, IMainContext } from '../../interfaces';
 import { convertEVMSlateStatus } from '../../utils/status';
+import { GRANT_SLATE } from '../../utils/constants';
 
 const VisibilityFilterContainer = styled.div`
   display: flex;
@@ -76,6 +77,8 @@ const Slates: React.FunctionComponent<Props> = props => {
                     address={slate.recommenderAddress}
                     recommender={slate.owner}
                     verifiedRecommender={slate.verifiedRecommender}
+                    type={GRANT_SLATE}
+                    incumbent={slate.incumbent}
                   />
                 </RouterLink>
               </div>

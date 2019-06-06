@@ -7,6 +7,8 @@ import Button from './Button';
 import { Separator } from './Separator';
 import { IChoices, IProposal } from '../interfaces';
 import RouterLink from './RouterLink';
+import Text from './system/Text';
+import { GRANT_SLATE } from '../utils/constants';
 
 const animatedCss = css`
   opacity: 1;
@@ -36,6 +38,11 @@ const CardTitle = styled.div`
   font-size: 1.5rem;
   font-weight: 500;
   color: ${COLORS.text};
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 const CardSubTitle = styled.div`
   font-size: 1rem;
@@ -100,6 +107,7 @@ interface ICardProps {
   address?: string;
   recommender?: string;
   status?: string;
+  incumbent?: boolean;
   // /ballots/vote
   choices?: IChoices;
   onSetChoice?: any;
@@ -111,6 +119,7 @@ interface ICardProps {
   verifiedRecommender?: boolean;
   // /slates/create/grant
   isActive?: boolean;
+  type: string;
 }
 
 const ChoiceButton: any = styled(Button)`
@@ -152,7 +161,28 @@ const Card: React.FunctionComponent<ICardProps> = props => {
         {props.status && <Tag status={props.status}>{props.status}</Tag>}
       </div>
 
-      <CardTitle>{props.title}</CardTitle>
+      {props.type === GRANT_SLATE &&
+        (!props.verifiedRecommender ? (
+          <Text my={2} fontSize={11} color="reds.dark" fontWeight="bold">
+            {'UNVERIFIED RECOMMENDER'}
+          </Text>
+        ) : !!props.incumbent ? (
+          <Text my={2} fontSize={11} color="blue" fontWeight="bold">
+            {'INCUMBENT'}
+          </Text>
+        ) : (
+          <Text my={1} fontSize={11} color="white">
+            verifiedNonIncumbent
+          </Text>
+        ))}
+
+      <CardTitle>
+        {props.address && props.verifiedRecommender
+          ? props.title
+          : props.address
+          ? splitAddressHumanReadable(props.address)
+          : props.title}
+      </CardTitle>
       <CardSubTitle>{props.subtitle}</CardSubTitle>
       <CardDescription>{props.description}</CardDescription>
 

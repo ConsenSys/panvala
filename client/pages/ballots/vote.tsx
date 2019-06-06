@@ -23,6 +23,7 @@ import { postBallot } from '../../utils/api';
 import { convertEVMSlateStatus, SlateStatus } from '../../utils/status';
 import Actions from '../../components/Actions';
 import { loadState, LINKED_WALLETS } from '../../utils/localStorage';
+import { GRANT_SLATE } from '../../utils/constants';
 
 type IProps = {
   account?: string;
@@ -260,6 +261,8 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
                       proposals={slate.proposals}
                       slateID={slate.id.toString()}
                       asPath={'/ballots/vote'}
+                      type={GRANT_SLATE}
+                      incumbent={slate.incumbent}
                     />
                   ))
               : null}

@@ -1,6 +1,6 @@
 const ethers = require('ethers');
 const ipfs = require('./ipfs');
-const range = require('lodash/range')
+const range = require('lodash/range');
 
 const { Slate } = require('../models');
 
@@ -15,6 +15,8 @@ const { rpcEndpoint } = config;
 const { gatekeeperAddress } = config.contracts;
 
 const { nonEmptyString } = require('./validation');
+
+const BN = small => ethers.utils.bigNumberify(small);
 
 /**
  * Read slate info from the blockchain, IPFS, and the local DB
@@ -33,6 +35,8 @@ async function getAllSlates() {
   // Get the number of available slates
   const slateCount = await gatekeeper.functions.slateCount();
   console.log(`fetching ${slateCount} slates`);
+  const currentEpoch = await gatekeeper.functions.currentEpochNumber();
+  console.log('currentEpoch:', currentEpoch);
 
   // 0..slateCount
   const ids = range(0, slateCount);
@@ -42,7 +46,7 @@ async function getAllSlates() {
     // give access to this variable throughout the chain
     return gatekeeper
       .slates(slateID)
-      .then(({ recommender, metadataHash, status, staker, stake }) => {
+      .then(({ recommender, metadataHash, status, staker, stake, epochNumber }) => {
         // decode hash
         const decoded = toUtf8String(metadataHash);
         // console.log('decoded hash', decoded);
@@ -53,10 +57,12 @@ async function getAllSlates() {
           recommenderAddress: recommender,
           staker,
           stake,
+          epochNumber,
         };
       })
       .then(slate => {
-        return getSlateWithMetadata(slate, slate.decoded, requiredStake);
+        console.log('slate:', slate);
+        return getSlateWithMetadata(slate, slate.decoded, requiredStake, currentEpoch);
       });
   });
 
@@ -69,7 +75,7 @@ async function getAllSlates() {
  * @param {String} metadataHash
  * @param {ethers.BigNumber} requiredStake
  */
-async function getSlateWithMetadata(slate, metadataHash, requiredStake) {
+async function getSlateWithMetadata(slate, metadataHash, requiredStake, currentEpoch) {
   try {
     // the slate as it exists in the db:
     const [dbSlate] = await Slate.findOrBuild({
@@ -104,8 +110,15 @@ async function getSlateWithMetadata(slate, metadataHash, requiredStake) {
 
     // TODO: get real data
     const deadline = 1539044131;
-    // TODO: get from database
-    const incumbent = false;
+
+    let incumbent = false;
+    // prettier-ignore
+    if (
+      slate.status === 3 &&
+      BN(slate.epochNumber).eq(BN(currentEpoch)).sub('1')
+    ) {
+      incumbent = true;
+    }
 
     // --------------------------
     // COMBINE/RETURN SLATE DATA

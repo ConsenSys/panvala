@@ -7,6 +7,7 @@ import Deadline from '../../components/Deadline';
 import RouterLink from '../../components/RouterLink';
 import RouteTitle from '../../components/RouteTitle';
 import { IMainContext, IProposal } from '../../interfaces';
+import { GRANT_PROPOSAL } from '../../utils/constants';
 
 const CardsWrapper = styled.div`
   display: flex;
@@ -47,6 +48,7 @@ const Proposals: React.SFC<any> = () => {
                     subtitle={proposal.tokensRequested + ' Tokens Requested'}
                     description={proposal.summary}
                     category={`${proposal.category} PROPOSAL`}
+                    type={GRANT_PROPOSAL}
                   />
                 </RouterLink>
               </div>
