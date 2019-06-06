@@ -1,5 +1,6 @@
 import React, { Children } from 'react';
 import styled from 'styled-components';
+import { color } from 'styled-system';
 import { ITag } from '../interfaces';
 import { COLORS } from '../styles';
 
@@ -37,6 +38,7 @@ const StyledTag = styled.div`
   height: 1.5rem;
   border: 1px solid transparent;
   padding: 0 0.5rem;
+  ${color};
 `;
 
 const Tag: React.FunctionComponent<ITag> = props => {

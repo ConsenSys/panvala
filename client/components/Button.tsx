@@ -2,7 +2,7 @@ import React, { Children } from 'react';
 import styled, { css } from 'styled-components';
 import { COLORS, BUTTON_COLORS } from '../styles';
 import { IButton } from '../interfaces';
-import { color } from 'styled-system';
+import { color, layout } from 'styled-system';
 
 const BaseButton: any = styled.button`
   display: flex;
@@ -12,7 +12,6 @@ const BaseButton: any = styled.button`
   font-family: 'Roboto';
   cursor: pointer;
   font-weight: 500;
-  ${color};
 `;
 
 const StyledButton: any = styled(BaseButton)`
@@ -41,16 +40,20 @@ const StyledButton: any = styled(BaseButton)`
   }
   font-size: 1rem;
   line-height: 1rem;
+  ${color};
+  ${layout};
 `;
 
 const LargeButton: any = styled(BaseButton)`
-  width: ${({ width }) => (width ? width : '100%')};
+  width: 100%;
   background-color: ${({ type }: any) => (type ? BUTTON_COLORS[type] : COLORS.white)};
   padding: 0.8rem 1rem;
   margin: 0 0.5rem 1rem;
   border: 2px solid ${COLORS.grey5};
   border-radius: 7px;
   font-size: 1rem;
+  ${color};
+  ${layout};
 `;
 
 const Button: React.FunctionComponent<IButton> = props => {

@@ -17,6 +17,7 @@ import StepperMetamaskDialog from '../components/StepperMetamaskDialog';
 import RouterLink from '../components/RouterLink';
 import Identicon from '../components/Identicon';
 import A from '../components/A';
+import Tag from '../components/Tag';
 
 const CancelButton = styled(Button)`
   color: ${COLORS.grey3};
@@ -40,12 +41,23 @@ const Wallet: React.SFC = () => {
   const [coldWallet, setColdWallet] = React.useState('');
   // delegate (metamask) hot wallet
   const [hotWallet, setHotWallet] = React.useState('');
-  const [step, setStep] = React.useState(0);
+  const [step, setStep] = React.useState(2);
   const [confirmed, setConfirmed] = React.useState({
     coldWallet: false,
     hotWallet: false,
   });
 
+  function setLinkedWallet(type, value) {
+    setConfirmed({
+      ...confirmed,
+      [type]: false,
+    });
+    if (type === 'hotWallet') {
+      setHotWallet(value);
+    } else if (type === 'coldWallet') {
+      setColdWallet(value);
+    }
+  }
   function confirmColdWallet() {
     const linkedWallets = loadState(LINKED_WALLETS);
     saveState(LINKED_WALLETS, {
@@ -141,16 +153,17 @@ const Wallet: React.SFC = () => {
           m={2}
           fontFamily="Fira Code"
           name="cold-wallet"
-          onChange={(e: any) => setColdWallet(e.target.value)}
+          onChange={(e: any) => setLinkedWallet('coldWallet', e.target.value)}
           value={coldWallet}
         />
         <Button
           width="100px"
           type="default"
           onClick={confirmColdWallet}
+          bg={confirmed.coldWallet ? 'greens.light' : ''}
           disabled={!isAddress(coldWallet)}
         >
-          Confirm
+          {confirmed.coldWallet ? 'Confirmed' : 'Confirm'}
         </Button>
       </Flex>
       {/* prettier-ignore */}
@@ -166,16 +179,17 @@ const Wallet: React.SFC = () => {
           m={2}
           fontFamily="Fira Code"
           name="hot-wallet"
-          onChange={(e: any) => setHotWallet(e.target.value)}
+          onChange={(e: any) => setLinkedWallet('hotWallet', e.target.value)}
           value={hotWallet}
         />
         <Button
           width="100px"
           type="default"
           onClick={confirmHotWallet}
+          bg={confirmed.hotWallet ? 'greens.light' : ''}
           disabled={!isAddress(hotWallet)}
         >
-          Confirm
+          {confirmed.hotWallet ? 'Confirmed' : 'Confirm'}
         </Button>
       </Flex>
       <Text mt={0} mb={4} fontSize={0} color="grey">
@@ -210,19 +224,48 @@ const Wallet: React.SFC = () => {
       <StepperMetamaskDialog />
     </>,
     <>
-      <Text textAlign="center" fontSize={'1.5rem'} m={0}>
+      <Text textAlign="center" fontSize={'1.5rem'} mt={2} mb={4}>
         Wallets linked!
       </Text>
-      <CancelButton onClick={null}>Cancel</CancelButton>
 
-      <Text lineHeight={1.5}>
+      <Text lineHeight={1.5} px={3}>
         You have now linked your cold and hot wallets. You can change these settings any time on the
         ballot screen or when you go to vote.
       </Text>
 
+      <Box p={3}>
+        <Text fontWeight="bold" fontSize={0}>
+          Linked Cold Wallet
+        </Text>
+        <Flex justifyBetween alignCenter>
+          <Identicon address={coldWallet} diameter={20} />
+          <Box fontSize={1} fontFamily="fira code" px={2}>
+            {splitAddressHumanReadable(coldWallet).slice(0, 30)} ...
+          </Box>
+          <Tag color="blue" bg="blues.light">
+            COLD WALLET
+          </Tag>
+        </Flex>
+      </Box>
+
+      <Box p={3}>
+        <Text fontWeight="bold" fontSize={0}>
+          Active Hot Wallet
+        </Text>
+        <Flex justifyBetween alignCenter>
+          <Identicon address={hotWallet} diameter={20} />
+          <Box fontSize={1} fontFamily="fira code" px={2}>
+            {splitAddressHumanReadable(hotWallet).slice(0, 30)} ...
+          </Box>
+          <Tag color="red" bg="reds.light">
+            HOT WALLET
+          </Tag>
+        </Flex>
+      </Box>
+
       <Flex justifyEnd>
-        <Button width="200px" large type="default" onClick={null}>
-          Confirm and Continue
+        <Button width="150px" large type="default" onClick={null}>
+          Continue
         </Button>
       </Flex>
     </>,

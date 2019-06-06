@@ -18,6 +18,7 @@ export interface IButton {
   active?: boolean;
   width?: string;
   color?: string;
+  bg?: string;
 }
 
 export interface ITag {
@@ -27,4 +28,6 @@ export interface ITag {
   large?: boolean;
   type?: 'default' | 'primary' | 'success' | 'info' | 'warning' | 'danger' | 'link';
   status?: string;
+  color?: string;
+  bg?: string;
 }
