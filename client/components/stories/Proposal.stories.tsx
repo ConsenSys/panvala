@@ -3,11 +3,17 @@ import { storiesOf } from '@storybook/react';
 import Proposal, { ProposalHeader, ProposalSidebar } from '../../pages/proposals/proposal';
 import { ISlate, IProposal } from '../../interfaces';
 import { currentBallot, unstakedSlate, proposals } from './data';
-import { MainContext } from '../MainProvider';
 import { SlateStatus } from '../../utils/status';
+import { StoryWrapper } from './utils.stories';
+import Layout from '../Layout';
+import NotificationsProvider from '../NotificationsProvider';
 
 const proposal: IProposal = proposals[0];
 
+const pendingSlate: ISlate = {
+  ...unstakedSlate,
+  status: SlateStatus.Unstaked,
+};
 const acceptedSlate: ISlate = {
   ...unstakedSlate,
   status: SlateStatus.Accepted,
@@ -18,62 +24,44 @@ const rejectedSlate: ISlate = {
   status: SlateStatus.Rejected,
 };
 
-storiesOf('ProposalHeader', module)
-  .add('not in a slate', () => (
+storiesOf('Proposal', module)
+  .add('Header pending', () => (
     <ProposalHeader proposal={proposal} includedInSlates={[]} currentBallot={currentBallot} />
   ))
-  .add('accepted', () => (
+  .add('Header included', () => (
     <ProposalHeader
       proposal={proposal}
-      includedInSlates={[acceptedSlate]}
+      includedInSlates={[pendingSlate]}
       currentBallot={currentBallot}
     />
   ))
-  .add('not accepted', () => (
+  .add('Header rejected', () => (
     <ProposalHeader
       proposal={proposal}
       includedInSlates={[rejectedSlate]}
       currentBallot={currentBallot}
     />
-  ));
-
-storiesOf('ProposalSidebar', module)
-  .add('not in a slate', () => <ProposalSidebar proposal={proposal} includedInSlates={[]} />)
-  .add('in a slate', () => (
+  ))
+  .add('Sidebar pending', () => <ProposalSidebar proposal={proposal} includedInSlates={[]} />)
+  .add('Sidebar included', () => (
     <ProposalSidebar proposal={proposal} includedInSlates={[unstakedSlate]} />
-  ));
-
-storiesOf('Proposal', module)
-  .add('not in a slate', () => (
-    <MainContext.Provider
-      value={{
-        currentBallot,
-        slates: [],
-        proposals: [proposal],
-      }}
-    >
-      <Proposal query={{ id: '0' }} />
-    </MainContext.Provider>
   ))
-  .add('accepted', () => (
-    <MainContext.Provider
-      value={{
-        currentBallot,
-        slates: [acceptedSlate],
-        proposals: [proposal],
-      }}
-    >
+  .add('Proposal pending', () => (
+    <StoryWrapper proposals={[proposal]}>
       <Proposal query={{ id: '0' }} />
-    </MainContext.Provider>
+    </StoryWrapper>
   ))
-  .add('not accepted', () => (
-    <MainContext.Provider
-      value={{
-        currentBallot,
-        slates: [rejectedSlate],
-        proposals: [proposal],
-      }}
-    >
+  .add('Proposal accepted', () => (
+    <StoryWrapper slates={[acceptedSlate]} proposals={[proposal]}>
       <Proposal query={{ id: '0' }} />
-    </MainContext.Provider>
+    </StoryWrapper>
+  ))
+  .add('Proposal', () => (
+    <StoryWrapper slates={[acceptedSlate]} proposals={[proposal]}>
+      <NotificationsProvider>
+        <Layout>
+          <Proposal query={{ id: '0' }} />
+        </Layout>
+      </NotificationsProvider>
+    </StoryWrapper>
   ));

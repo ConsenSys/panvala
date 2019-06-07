@@ -10,6 +10,7 @@ import SectionLabel from '../../components/SectionLabel';
 import Tag from '../../components/Tag';
 import Deadline from '../../components/Deadline';
 import RouteTitle from '../../components/RouteTitle';
+import Flex from '../../components/system/Flex';
 
 const Separator = styled.div`
   border: 1px solid ${COLORS.grey5};
@@ -18,6 +19,7 @@ const Separator = styled.div`
 const Container = styled.div`
   display: flex;
   border: 2px solid ${COLORS.grey5};
+  max-width: 1200px;
 `;
 const MetaColumn = styled.div`
   width: 30%;
@@ -58,7 +60,7 @@ export const ProposalHeader = ({
   includedInSlates,
   currentBallot,
 }: IProposalHeaderProps): any => {
-  if (includedInSlates.length === 1) {
+  if (includedInSlates.length > 0) {
     const slate = includedInSlates[0];
 
     {
@@ -67,25 +69,23 @@ export const ProposalHeader = ({
     const accepted = slate.status === SlateStatus.Accepted;
 
     return (
-      <>
-        <div className="flex">
+      <Flex justifyBetween alignCenter width="100%">
+        <Flex>
           <Tag status={''}>{slate.category.toUpperCase() + ' PROPOSAL'}</Tag>
-          {accepted && (
+          {!!SlateStatus[slate.status] && (
             <Tag status={convertEVMSlateStatus(slate.status)}>
               {convertEVMSlateStatus(slate.status)}
             </Tag>
           )}
-        </div>
+        </Flex>
         {slate.deadline && <Deadline ballot={currentBallot} route="/proposals" />}
-      </>
+      </Flex>
     );
   } else {
     return (
-      <>
-        <div className="flex">
-          <Tag status={''}>{'GRANT PROPOSAL'}</Tag>
-        </div>
-      </>
+      <Flex>
+        <Tag status={''}>{'GRANT PROPOSAL'}</Tag>
+      </Flex>
     );
   }
 };
@@ -200,10 +200,12 @@ const FlexColumn = styled.div`
   display: flex;
   flex-direction: column;
   font-family: 'Roboto';
+  align-items: center;
 `;
 const HeaderWrapper = styled.div`
   display: flex;
   justify-content: space-between;
+  width: 100%;
 `;
 
 Proposal.getInitialProps = async ({ query }) => {

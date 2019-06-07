@@ -15,6 +15,7 @@ import { splitAddressHumanReadable, formatPanvalaUnits } from '../../utils/forma
 import { StatelessPage, IMainContext, ISlate, IBallotDates, IProposal } from '../../interfaces';
 import { convertEVMSlateStatus, statuses, slateSubmissionDeadline } from '../../utils/status';
 import { tsToDeadline, timestamp } from '../../utils/datetime';
+import Flex from '../../components/system/Flex';
 
 const Incumbent = styled.div`
   color: ${COLORS.primary};
@@ -29,6 +30,7 @@ const Separator = styled.div`
 const Container = styled.div`
   display: flex;
   border: 2px solid ${COLORS.grey5};
+  max-width: 1200px;
 `;
 const MetaColumn = styled.div`
   width: 30%;
@@ -164,13 +166,13 @@ export const SlateSidebar = ({ slate, requiredStake, currentBallot }: IStakeSide
 export const SlateHeader = ({ slate, currentBallot }: IStakeHeaderProps) => {
   const status = convertEVMSlateStatus(slate.status);
   return (
-    <>
-      <div className="flex">
+    <Flex justifyBetween alignCenter width="100%">
+      <Flex>
         <Tag status={''}>{slate.category.toUpperCase()}</Tag>
         <Tag status={status}>{status}</Tag>
-      </div>
+      </Flex>
       {slate.deadline && <Deadline ballot={currentBallot} route={'/slates'} />}
-    </>
+    </Flex>
   );
 };
 
@@ -244,10 +246,12 @@ const FlexColumn = styled.div`
   display: flex;
   flex-direction: column;
   font-family: 'Roboto';
+  align-items: center;
 `;
 const HeaderWrapper = styled.div`
   display: flex;
   justify-content: space-between;
+  width: 100%;
 `;
 
 Slate.getInitialProps = async ({ query }) => {

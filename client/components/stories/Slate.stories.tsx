@@ -4,10 +4,9 @@ import { storiesOf } from '@storybook/react';
 import Slate, { SlateSidebar, SlateHeader } from '../../pages/slates/slate';
 import { ISlate } from '../../interfaces';
 import { currentBallot, unstakedSlate } from './data';
-import { MainContext } from '../MainProvider';
 import { SlateStatus } from '../../utils/status';
 import { convertedToBaseUnits } from '../../utils/format';
-import EthereumProvider from '../EthereumProvider';
+import { StoryWrapper } from './utils.stories';
 
 const unstakedIncumbent: ISlate = {
   ...unstakedSlate,
@@ -48,7 +47,6 @@ const rejectedSlate: ISlate = {
 
 const requiredStake = convertedToBaseUnits('5000', 18);
 
-
 storiesOf('SlateHeader', module)
   .add('unstaked', () => <SlateHeader slate={unstakedSlate} currentBallot={currentBallot} />)
   .add('staked', () => <SlateHeader slate={stakedSlate} currentBallot={currentBallot} />);
@@ -81,74 +79,32 @@ storiesOf('SlateSidebar', module)
 
 storiesOf('Slate with contexts', module)
   .add('unstaked', () => (
-    <MainContext.Provider
-      value={{
-        currentBallot,
-        slates: [unstakedSlate],
-      }}
-    >
-      <EthereumProvider>
-        <Slate query={{ id: '0' }} />
-      </EthereumProvider>
-    </MainContext.Provider>
+    <StoryWrapper slates={[unstakedSlate]}>
+      <Slate query={{ id: '0' }} />
+    </StoryWrapper>
   ))
   .add('unstaked incumbent', () => (
-    <MainContext.Provider
-      value={{
-        currentBallot,
-        slates: [unstakedIncumbent],
-      }}
-    >
-      <EthereumProvider>
-        <Slate query={{ id: '0' }} />
-      </EthereumProvider>
-    </MainContext.Provider>
+    <StoryWrapper slates={[unstakedIncumbent]}>
+      <Slate query={{ id: '0' }} />
+    </StoryWrapper>
   ))
   .add('staked unverified', () => (
-    <MainContext.Provider
-      value={{
-        currentBallot,
-        slates: [stakedSlate],
-      }}
-    >
-      <EthereumProvider>
-        <Slate query={{ id: '0' }} />
-      </EthereumProvider>
-    </MainContext.Provider>
+    <StoryWrapper slates={[stakedSlate]}>
+      <Slate query={{ id: '0' }} />
+    </StoryWrapper>
   ))
   .add('staked verified', () => (
-    <MainContext.Provider
-      value={{
-        currentBallot,
-        slates: [stakedVerified],
-      }}
-    >
-      <EthereumProvider>
-        <Slate query={{ id: '0' }} />
-      </EthereumProvider>
-    </MainContext.Provider>
+    <StoryWrapper slates={[stakedVerified]}>
+      <Slate query={{ id: '0' }} />
+    </StoryWrapper>
   ))
   .add('accepted', () => (
-    <MainContext.Provider
-      value={{
-        currentBallot,
-        slates: [acceptedSlate],
-      }}
-    >
-      <EthereumProvider>
-        <Slate query={{ id: '0' }} />
-      </EthereumProvider>
-    </MainContext.Provider>
+    <StoryWrapper slates={[acceptedSlate]}>
+      <Slate query={{ id: '0' }} />
+    </StoryWrapper>
   ))
   .add('rejected', () => (
-    <MainContext.Provider
-      value={{
-        currentBallot,
-        slates: [rejectedSlate],
-      }}
-    >
-      <EthereumProvider>
-        <Slate query={{ id: '0' }} />
-      </EthereumProvider>
-    </MainContext.Provider>
+    <StoryWrapper slates={[rejectedSlate]}>
+      <Slate query={{ id: '0' }} />
+    </StoryWrapper>
   ));

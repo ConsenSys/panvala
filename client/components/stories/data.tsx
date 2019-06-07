@@ -20,7 +20,8 @@ export const proposals: IProposal[] = [
     lastName: 'Crypto',
     title: 'A great project',
     tokensRequested: '5000000000',
-    summary: 'All sorts of amazing things',
+    summary:
+      "Plasma is a family of protocols which allow individuals to easily deploy high-throughput, secure blockchains. A smart contract on Ethereum’s main chain can ensure that users’ funds are secure, even if the “plasma chain” acts fully maliciously. This eliminates the need for a trusted pegging mechanism like that of sidechains. Plasma chains are non-custodial, allowing the prioritization of scalability without sacrificing security. We’ve devised a new architecture for building Plasma apps on one generalized plasma chain. It establishes a clean separation between the plasma layer and the application layer. We will publish a generalized Plasma predicate contract framework, which allows for upgradeability and composability of plasma contracts. Since plasma research moves so quickly, we realized we needed to develop an architecture that allowed for maximal modularity, to prevent vast chunks of code from being thrown away with each new research discovery. With that framework, we will refactor our existing codebase for secure payments using predicates. We want to use the generalized Plasma research we did and put it to the test in our codebase refactor following the launch of our testnet on January 31. Dogfooding is a critical part of the work we do, as there's no point to open sourcing the codebase if it's not readable or easy to use.",
     awardAddress: '0xd115bffabbdd893a6f7cea402e7338643ced44a6',
     projectTimeline: 'timeline',
     teamBackgrounds: 'backgrounds',
