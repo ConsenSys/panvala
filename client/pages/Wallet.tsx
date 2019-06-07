@@ -2,22 +2,23 @@ import * as React from 'react';
 import styled from 'styled-components';
 import isEmpty from 'lodash/isEmpty';
 import { toast } from 'react-toastify';
+import { utils } from 'ethers';
 
-import { IEthereumContext, EthereumContext } from '../components/EthereumProvider';
+import A from '../components/A';
+import Tag from '../components/Tag';
+import Label from '../components/Label';
+import Input from '../components/Input';
 import Button from '../components/Button';
-import { COLORS } from '../styles';
 import Box from '../components/system/Box';
 import Text from '../components/system/Text';
 import Flex from '../components/system/Flex';
-import Input from '../components/Input';
-import Label from '../components/Label';
+import Identicon from '../components/Identicon';
+import RouterLink from '../components/RouterLink';
+import StepperMetamaskDialog from '../components/StepperMetamaskDialog';
+import { IEthereumContext, EthereumContext } from '../components/EthereumProvider';
 import { saveState, loadState, LINKED_WALLETS, ENABLED_ACCOUNTS } from '../utils/localStorage';
 import { splitAddressHumanReadable, isAddress } from '../utils/format';
-import StepperMetamaskDialog from '../components/StepperMetamaskDialog';
-import RouterLink from '../components/RouterLink';
-import Identicon from '../components/Identicon';
-import A from '../components/A';
-import Tag from '../components/Tag';
+import { COLORS } from '../styles';
 
 const CancelButton = styled(Button)`
   color: ${COLORS.grey3};
@@ -36,18 +37,18 @@ const Wallet: React.SFC = () => {
 
   // list of enabled accounts. use to populate wallet list
   const enabledAccounts = loadState(ENABLED_ACCOUNTS);
-
-  // voter (trezor/ledger) cold wallet
-  const [coldWallet, setColdWallet] = React.useState('');
   // delegate (metamask) hot wallet
   const [hotWallet, setHotWallet] = React.useState('');
-  const [step, setStep] = React.useState(2);
+  // voter (trezor/ledger) cold wallet
+  const [coldWallet, setColdWallet] = React.useState('');
+
+  const [step, setStep] = React.useState(0);
   const [confirmed, setConfirmed] = React.useState({
     coldWallet: false,
     hotWallet: false,
   });
 
-  function setLinkedWallet(type, value) {
+  function setLinkedWallet(type: string, value: string) {
     setConfirmed({
       ...confirmed,
       [type]: false,
@@ -84,15 +85,35 @@ const Wallet: React.SFC = () => {
   React.useEffect(() => {
     // get persisted state from local storage
     const linkedWallets = loadState(LINKED_WALLETS);
-    if (linkedWallets && linkedWallets.coldWallet) {
-      setColdWallet(linkedWallets.coldWallet);
-    }
-    if (account && linkedWallets && linkedWallets.hotWallet) {
-      setHotWallet(linkedWallets.hotWallet);
-    }
-  }, [account]);
 
-  async function toGrantPermissions() {
+    if (account) {
+      if (!linkedWallets) {
+        // no link, fill in hot
+        setHotWallet(account);
+      } else {
+        if (linkedWallets.hotWallet === account) {
+          // signed in as hot
+          setHotWallet(account);
+        } else if (linkedWallets.hotWallet) {
+          // signed in, but not as hot
+          setHotWallet(linkedWallets.hotWallet);
+
+          if (confirmed.hotWallet) {
+            // confirmed hot, time to set cold
+            if (linkedWallets.coldWallet) {
+              // cold exists
+              setColdWallet(linkedWallets.coldWallet);
+            } else {
+              // no cold set, fill in cold
+              setColdWallet(account);
+            }
+          }
+        }
+      }
+    }
+  }, [account, confirmed.hotWallet]);
+
+  async function linkDelegateVoter() {
     const linkedWallets = loadState(LINKED_WALLETS);
     if (
       !linkedWallets ||
@@ -113,7 +134,8 @@ const Wallet: React.SFC = () => {
 
         // await response.wait();
         // setTxPending(false);
-        // toast.success('delagate voter tx mined');
+        // setStep(2);
+        // toast.success('delegate voter tx mined');
 
         // save to local storage
         saveState(LINKED_WALLETS, {
@@ -141,35 +163,10 @@ const Wallet: React.SFC = () => {
 
       {/* prettier-ignore */}
       <Text lineHeight={1.5}>
-        Please select your <A bold color="blue">cold wallet</A>, we support Ledger and Trezor.
-        Then select the <A bold color="blue">hot wallet</A> you would like to link it to.
+        Please sign in with and confirm your <A bold color="blue">hot wallet</A>.
         Your hot wallet will be your delegated voting wallet.
-      </Text>
-
-      <Label htmlFor="cold-wallet">{'Select cold wallet'}</Label>
-      <Flex justifyStart noWrap alignCenter>
-        <Identicon address={coldWallet} diameter={20} />
-        <Input
-          m={2}
-          fontFamily="Fira Code"
-          name="cold-wallet"
-          onChange={(e: any) => setLinkedWallet('coldWallet', e.target.value)}
-          value={coldWallet}
-        />
-        <Button
-          width="100px"
-          type="default"
-          onClick={confirmColdWallet}
-          bg={confirmed.coldWallet ? 'greens.light' : ''}
-          disabled={!isAddress(coldWallet)}
-        >
-          {confirmed.coldWallet ? 'Confirmed' : 'Confirm'}
-        </Button>
-      </Flex>
-      {/* prettier-ignore */}
-      <Text mt={0} mb={4} fontSize={0} color="grey">
-        This wallet must be connected.
-        How to connect <A bold color="blue">Trezor</A> and <A bold color="blue">Ledger</A>.
+        Then sign in with the <A bold color="blue">cold wallet</A> (Ledger or Trezor)
+        you would like to link the hot wallet with.
       </Text>
 
       <Label htmlFor="hot-wallet">{'Select hot wallet'}</Label>
@@ -196,19 +193,46 @@ const Wallet: React.SFC = () => {
         Reminder: This is the address that will be able to vote with your PAN.
       </Text>
 
+      <Label htmlFor="cold-wallet">{'Select cold wallet'}</Label>
+      <Flex justifyStart noWrap alignCenter>
+        <Identicon address={coldWallet} diameter={20} />
+        <Input
+          m={2}
+          fontFamily="Fira Code"
+          name="cold-wallet"
+          onChange={(e: any) => setLinkedWallet('coldWallet', e.target.value)}
+          value={coldWallet}
+          disabled={!confirmed.hotWallet}
+        />
+        <Button
+          width="100px"
+          type="default"
+          onClick={confirmColdWallet}
+          bg={confirmed.coldWallet ? 'greens.light' : ''}
+          disabled={!isAddress(coldWallet) || !confirmed.hotWallet}
+        >
+          {confirmed.coldWallet ? 'Confirmed' : 'Confirm'}
+        </Button>
+      </Flex>
+      {/* prettier-ignore */}
+      <Text mt={0} mb={4} fontSize={0} color="grey">
+        This wallet must be connected.
+        How to connect <A bold color="blue">Trezor</A> and <A bold color="blue">Ledger</A>.
+      </Text>
+
       <Flex justifyEnd>
         <Button
           width="200px"
           large
           type="default"
-          onClick={toGrantPermissions}
+          onClick={linkDelegateVoter}
           disabled={!confirmed.coldWallet || !confirmed.hotWallet}
         >
           Continue
         </Button>
       </Flex>
     </>,
-    <>
+    <div>
       <Text textAlign="center" fontSize={'1.5rem'} m={0}>
         Grant Permissions
       </Text>
@@ -222,7 +246,7 @@ const Wallet: React.SFC = () => {
       </Text>
 
       <StepperMetamaskDialog />
-    </>,
+    </div>,
     <>
       <Text textAlign="center" fontSize={'1.5rem'} mt={2} mb={4}>
         Wallets linked!
@@ -264,7 +288,18 @@ const Wallet: React.SFC = () => {
       </Box>
 
       <Flex justifyEnd>
-        <Button width="150px" large type="default" onClick={null}>
+        <Button
+          width="150px"
+          large
+          type="default"
+          onClick={null}
+          disabled={
+            (hotWallet &&
+              coldWallet &&
+              utils.getAddress(hotWallet) === utils.getAddress(coldWallet)) ||
+            false
+          }
+        >
           Continue
         </Button>
       </Flex>
