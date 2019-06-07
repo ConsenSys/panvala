@@ -98,12 +98,12 @@ export function slateSubmissionDeadline(votingOpenDate: number, lastStaked: numb
   return lastStaked + (votingOpenDate - lastStaked) / 2;
 }
 
-export function ballotDates(startDate: number): IBallotDates {
+export function ballotDates(startDate: number = 1549040400): IBallotDates {
   const oneWeekSeconds = 604800;
   const epochStartDate = startDate;
-  const week11EndDate = epochStartDate + oneWeekSeconds * 11;
-  const week12EndDate = week11EndDate + oneWeekSeconds;
-  const week13EndDate = week12EndDate + oneWeekSeconds;
+  const week11EndDate: number = epochStartDate + oneWeekSeconds * 11; // 1555689600
+  const week12EndDate: number = week11EndDate + oneWeekSeconds;
+  const week13EndDate: number = week12EndDate + oneWeekSeconds;
   const initialSlateSubmissionDeadline = slateSubmissionDeadline(week11EndDate, startDate);
 
   return {

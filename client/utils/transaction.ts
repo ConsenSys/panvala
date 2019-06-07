@@ -1,7 +1,8 @@
 import { TransactionReceipt, TransactionResponse, Web3Provider } from 'ethers/providers';
 import { LogDescription } from 'ethers/utils';
 import { Contract, utils } from 'ethers';
-import { BasicToken, Gatekeeper, TokenCapacitor } from '../types';
+import { BasicToken, Gatekeeper, TokenCapacitor, ParameterStore } from '../types';
+import { abiEncode } from './values';
 
 export interface IMinedTransaction {
   receipt: TransactionReceipt;
@@ -77,4 +78,65 @@ export async function sendAndWaitForTransaction(
     .catch((error: any) => {
       console.log('send tx error:', error);
     });
+}
+
+// Submit requestIDs and metadataHash to the Gatekeeper.
+export async function sendRecommendGovernanceSlateTx(
+  gatekeeper: Gatekeeper,
+  parameterStoreAddress: string,
+  requestIDs: any[],
+  metadataHash: string,
+  setTxPending: any
+): Promise<any> {
+  const response = await gatekeeper.functions.recommendSlate(
+    parameterStoreAddress,
+    requestIDs,
+    Buffer.from(metadataHash)
+  );
+  setTxPending(true);
+
+  const receipt = await response.wait();
+  setTxPending(false);
+
+  if ('events' in receipt) {
+    // Get the SlateCreated logs from the receipt
+    // Extract the slateID
+    const slateID = receipt.events
+      .filter((event: any) => event.event === 'SlateCreated')
+      .map((event: any) => event.args.slateID.toString());
+
+    const slate: any = { slateID: utils.bigNumberify(slateID).toString(), metadataHash };
+    return slate;
+  }
+}
+
+// Submit proposals to the token capacitor and get corresponding request IDs
+export async function sendCreateManyGovernanceProposals(
+  parameterStore: ParameterStore,
+  proposalChanges: any,
+  multihash: Buffer,
+  setTxPending: any
+): Promise<any> {
+  const keys = Object.keys(proposalChanges);
+  const values = keys.map((key: string) =>
+    abiEncode(proposalChanges[key].type, proposalChanges[key].newValue)
+  );
+  // submit to the capacitor, get requestIDs
+  console.log('keys, values:', keys, values);
+  // prettier-ignore
+  const response: TransactionResponse = await parameterStore.functions.createManyProposals(keys, values, multihash);
+  setTxPending(true);
+
+  // wait for tx to get mined
+  const receipt: any = await response.wait();
+  setTxPending(false);
+
+  if ('events' in receipt) {
+    // Get the ProposalCreated logs from the receipt
+    // Extract the requestID
+    const requestIDs = receipt.events
+      .filter((event: any) => event.event === 'ProposalCreated')
+      .map((event: any) => utils.bigNumberify(event.args.requestID).toString());
+    return requestIDs;
+  }
 }

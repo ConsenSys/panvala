@@ -1,11 +1,9 @@
 import * as React from 'react';
 import styled from 'styled-components';
 import { Formik, Form, FormikContext } from 'formik';
-import { TransactionResponse, TransactionReceipt } from 'ethers/providers';
 import { CircularProgress, withStyles } from '@material-ui/core';
 import { toast } from 'react-toastify';
-import { utils } from 'ethers';
-import * as yup from 'yup';
+import clone from 'lodash/clone';
 
 import { COLORS } from '../../../styles';
 import Box from '../../../components/system/Box';
@@ -19,111 +17,25 @@ import Checkbox from '../../../components/Checkbox';
 import CenteredTitle from '../../../components/CenteredTitle';
 import CenteredWrapper from '../../../components/CenteredWrapper';
 import FieldTextarea from '../../../components/FieldTextarea';
-import FieldText, { ErrorMessage, Field } from '../../../components/FieldText';
+import FieldText, { ErrorMessage } from '../../../components/FieldText';
 import Modal, { ModalTitle, ModalDescription } from '../../../components/Modal';
 import { Separator } from '../../../components/Separator';
 import SectionLabel from '../../../components/SectionLabel';
 import { convertedToBaseUnits, formatPanvalaUnits } from '../../../utils/format';
 import { ipfsAddObject } from '../../../utils/ipfs';
 import { postSlate } from '../../../utils/api';
-import { ISaveSlate, IMainContext, StatelessPage } from '../../../interfaces';
-import { TokenCapacitor, Gatekeeper } from '../../../types';
-
-const FormSchema = yup.object().shape({
-  email: yup
-    .string()
-    .email('Invalid email')
-    .required('Required'),
-  title: yup
-    .string()
-    .max(80, 'Too Long!')
-    .required('Required'),
-  firstName: yup.string().required('Required'),
-  summary: yup
-    .string()
-    .max(5000, 'Too Long!')
-    .required('Required'),
-  recommendation: yup.string().required('Required'),
-  parameters: yup.object().required('Required'),
-});
-
-interface IParameterChangesObject {
-  [key: string]: {
-    oldValue: string;
-    newValue: string;
-  };
-}
-
-interface IFormValues {
-  email: string;
-  title: string;
-  firstName: string;
-  lastName?: string;
-  organization?: string;
-  summary: string;
-  recommendation: string;
-  parameters: IParameterChangesObject;
-  stake: string;
-}
-// Submit proposals to the token capacitor and get corresponding request IDs
-async function getRequestIDs(
-  tokenCapacitor: TokenCapacitor,
-  account: string,
-  multihash: Buffer,
-  setTxPending: any
-): Promise<any> {
-  // submit to the capacitor, get requestIDs
-  // prettier-ignore
-  const response: TransactionResponse = await tokenCapacitor.functions.createProposal(account, 0, multihash);
-  setTxPending(true);
-
-  // wait for tx to get mined
-  const receipt: any = await response.wait();
-  setTxPending(false);
-
-  if ('events' in receipt) {
-    // Get the ProposalCreated logs from the receipt
-    // Extract the requestID
-    const requestIDs = receipt.events
-      .filter((event: any) => event.event === 'ProposalCreated')
-      .map((event: any) => utils.bigNumberify(event.args.requestID).toString());
-    return requestIDs;
-  }
-}
-
-// Submit requestIDs and metadataHash to the Gatekeeper.
-async function submitGovernanceSlate(
-  gatekeeper: Gatekeeper,
-  requestIDs: any[],
-  metadataHash: string,
-  setTxPending: any
-): Promise<any> {
-  const epochNumber = await gatekeeper.functions.currentEpochNumber();
-  // placeholder
-  const category = 0; // Grant
-
-  const response = await gatekeeper.functions.recommendSlate(
-    epochNumber,
-    category,
-    requestIDs,
-    Buffer.from(metadataHash)
-  );
-  setTxPending(true);
-
-  const receipt = await response.wait();
-  setTxPending(false);
-
-  if ('events' in receipt) {
-    // Get the SlateCreated logs from the receipt
-    // Extract the slateID
-    const slateID = receipt.events
-      .filter((event: any) => event.event === 'SlateCreated')
-      .map((event: any) => event.args.slateID.toString());
-
-    const slate: any = { slateID: utils.bigNumberify(slateID).toString(), metadataHash };
-    return slate;
-  }
-}
+import {
+  ISaveSlate,
+  IMainContext,
+  StatelessPage,
+  IGovernanceSlateFormValues,
+} from '../../../interfaces';
+import ParametersForm from '../../../components/ParametersForm';
+import {
+  sendRecommendGovernanceSlateTx,
+  sendCreateManyGovernanceProposals,
+} from '../../../utils/transaction';
+import { GovernanceSlateFormSchema } from '../../../utils/schemas';
 
 const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
   // modal opener
@@ -140,7 +52,7 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
   const [txPending, setTxPending] = React.useState(false);
 
   // Submit slate information to the Gatekeeper, saving metadata in IPFS
-  async function handleSubmitSlate(values: IFormValues) {
+  async function handleSubmitSlate(values: IGovernanceSlateFormValues) {
     if (!account) {
       const msg =
         'To create a slate, you must first log into MetaMask and switch to the Rinkeby Test Network.';
@@ -150,8 +62,8 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
 
     // filter for only changes in parameters
     const parameterChanges = Object.keys(values.parameters).reduce((acc, paramKey) => {
-      let value = values.parameters[paramKey];
-      if (value.newValue && value.newValue !== value.oldValue) {
+      let value = clone(values.parameters[paramKey]);
+      if (!!value.newValue && value.newValue !== value.oldValue) {
         if (paramKey === 'slateStakeAmount') {
           value.newValue = convertedToBaseUnits(value.newValue, 18);
         }
@@ -186,77 +98,66 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
       const emptySlate = values.recommendation === 'noAction';
       const getRequests = emptySlate
         ? Promise.resolve([])
-        : getRequestIDs(contracts.tokenCapacitor, account, proposalMultihash, setTxPending);
+        : sendCreateManyGovernanceProposals(
+            contracts.parameterStore,
+            parameterChanges,
+            proposalMultihash,
+            setTxPending
+          );
 
-      try {
-        // console.log('creating proposals...');
-        const requestIDs = await getRequests;
+      errorMessage = 'error adding proposal metadata.';
+      // console.log('creating proposals...');
+      const requestIDs = await getRequests;
 
-        const slateMetadata: any = {
-          ...proposalMetadata,
-          requestIDs,
-          category: 'governance',
-        };
+      const slateMetadata: any = {
+        ...proposalMetadata,
+        requestIDs,
+        category: contracts.parameterStore.address,
+      };
 
-        console.log('slateMetadata:', slateMetadata);
+      console.log('slateMetadata:', slateMetadata);
 
-        try {
-          console.log('saving slate metadata...');
-          const slateMetadataHash: string = await ipfsAddObject(slateMetadata);
+      errorMessage = 'error saving slate metadata.';
+      console.log('saving slate metadata...');
+      const slateMetadataHash: string = await ipfsAddObject(slateMetadata);
 
-          // Submit the slate info to the contract
-          try {
-            const slate: any = await submitGovernanceSlate(
-              contracts.gatekeeper,
-              requestIDs,
-              slateMetadataHash,
-              setTxPending
-            );
-            console.log('Submitted slate', slate);
+      // Submit the slate info to the contract
+      errorMessage = 'error submitting slate.';
+      const slate: any = await sendRecommendGovernanceSlateTx(
+        contracts.gatekeeper,
+        contracts.parameterStore.address,
+        requestIDs,
+        slateMetadataHash,
+        setTxPending
+      );
+      console.log('Submitted slate', slate);
 
-            // Add slate to db
-            const slateToSave: ISaveSlate = {
-              slateID: slate.slateID,
-              metadataHash: slateMetadataHash,
-              email: values.email,
-            };
+      // Add slate to db
+      const slateToSave: ISaveSlate = {
+        slateID: slate.slateID,
+        metadataHash: slateMetadataHash,
+        email: values.email,
+      };
 
-            const response = await postSlate(slateToSave);
-            if (response.status === 200) {
-              console.log('Saved slate info');
-              toast.success('Saved slate');
-              if (values.stake === 'yes') {
-                const res = await contracts.gatekeeper.functions.stakeTokens(slate.slateID);
-                setTxPending(true);
+      errorMessage = 'problem saving slate info.';
+      const response = await postSlate(slateToSave);
+      if (response.status === 200) {
+        console.log('Saved slate info');
+        toast.success('Saved slate');
+        if (values.stake === 'yes') {
+          const res = await contracts.gatekeeper.functions.stakeTokens(slate.slateID);
+          setTxPending(true);
 
-                await res.wait();
-                setTxPending(false);
-              }
-
-              setOpenModal(true);
-              onRefreshSlates();
-              onRefreshBalances();
-            } else {
-              errorMessage = `problem saving slate info ${response.data}`;
-              toast.error(errorMessage);
-            }
-            // end add slate
-          } catch (error) {
-            errorMessage = `error submitting slate ${error.message}`;
-            toast.error(errorMessage);
-          }
-        } catch (error) {
-          errorMessage = `error saving slate metadata: ${error.message}`;
-          // console.error(errorMessage);
-          toast.error(errorMessage);
+          await res.wait();
+          setTxPending(false);
         }
-      } catch (error) {
-        errorMessage = `error adding proposal metadata ${error.message}`;
-        toast.error(errorMessage);
-        return error;
+
+        setOpenModal(true);
+        onRefreshSlates();
+        onRefreshBalances();
       }
     } catch (error) {
-      errorMessage = `error preparing proposals : ${error.message}`;
+      errorMessage = `ERROR: ${errorMessage}: ${error.message}`;
       console.error(errorMessage);
       toast.error(errorMessage);
     }
@@ -281,23 +182,25 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
               slateStakeAmount: {
                 oldValue: '',
                 newValue: '',
+                type: 'uint256',
               },
               tokenAddress: {
                 oldValue: '',
                 newValue: '',
+                type: 'address',
               },
             },
             recommendation: 'governance',
             stake: 'no',
           }}
-          validationSchema={FormSchema}
-          onSubmit={async (values: IFormValues, { setSubmitting }: any) => {
+          validationSchema={GovernanceSlateFormSchema}
+          onSubmit={async (values: IGovernanceSlateFormValues, { setSubmitting }: any) => {
             await handleSubmitSlate(values);
             // re-enable submit button
             setSubmitting(false);
           }}
         >
-          {({ isSubmitting, values }: FormikContext<IFormValues>) => (
+          {({ isSubmitting, values, setFieldValue }: FormikContext<IGovernanceSlateFormValues>) => (
             <Form>
               <Box p={4}>
                 <SectionLabel>{'ABOUT'}</SectionLabel>
@@ -350,19 +253,11 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
               <Separator />
               <Box p={4}>
                 <SectionLabel>{'PARAMETERS'}</SectionLabel>
-                <div>slateStakeAmount</div>
-                <div>{formatPanvalaUnits(slateStakeAmount)}</div>
-                <Field
-                  label="Propose New Value"
-                  name="parameters.slateStakeAmount.newValue"
-                  placeholder="Propose New Value"
-                />
-                <div>tokenAddress</div>
-                <div>{values.parameters.tokenAddress.oldValue}</div>
-                <Field
-                  label="Propose New Value"
-                  name="parameters.tokenAddress.newValue"
-                  placeholder="Propose New Value"
+                <ParametersForm
+                  onChange={setFieldValue}
+                  slateStakeAmount={formatPanvalaUnits(slateStakeAmount)}
+                  newSlateStakeAmount={values.parameters.slateStakeAmount.newValue}
+                  newTokenAddress={values.parameters.tokenAddress.newValue}
                 />
 
                 <Separator />

@@ -108,10 +108,10 @@ export default function MainProvider(props: any) {
 
       // Epoch 1 (Nov 3, 2018 12:00:00pm EST)
       // const novThird = 1541260800;
-      // Epoch 2 (Feb 1, 2019 12:00:01pm EST)
-      const febFirst = 1549040401;
-      // Epoch 3 (May 3, 2019 12:00:02pm EDT)
-      // const mayThird = 1556902802;
+      // Epoch 2 (Feb 1, 2019 12:00:00pm EST)
+      const febFirst = 1549040400;
+      // Epoch 3 (May 3, 2019 12:00:00pm EDT)
+      // const mayThird = 1556902800;
 
       const epochStartDate = febFirst;
       const currentEpochStart = (await gatekeeper.functions.currentEpochStart()).toNumber();

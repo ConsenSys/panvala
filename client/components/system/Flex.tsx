@@ -15,8 +15,8 @@ const Flex: any = styled.div`
   display: flex;
   flex-wrap: ${(props: any) => {
     if (props.wrapReverse) return 'wrap-reverse';
-    else if (props.noWrap) return 'nowrap';
-    return 'wrap';
+    else if (props.wrap) return 'wrap';
+    return 'nowrap';
   }};
   justify-content: ${(props: any) => {
     if (props.justifyContent) return props.justifyContent;
@@ -33,15 +33,6 @@ const Flex: any = styled.div`
     if (props.alignCenter) return 'center';
     else if (props.alignBaseline) return 'baseline';
     return 'flex-start';
-  }};
-  align-content: ${(props: any) => {
-    if (props.alignContent) return props.content;
-    else if (props.contentStart) return 'flex-start';
-    else if (props.contentEnd) return 'flex-end';
-    else if (props.contentCenter) return 'center';
-    else if (props.contentBetween) return 'space-between';
-    else if (props.contentAround) return 'contentAround';
-    return 'stretch';
   }};
   flex-direction: ${(props: any) => (props.column ? 'column' : 'row')};
 

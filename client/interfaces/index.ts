@@ -1,5 +1,5 @@
 import { IButton, ITag } from './ui';
-import { StatelessPage } from './components';
+import { StatelessPage, IGovernanceSlateFormValues } from './components';
 import {
   ISlate,
   IProposal,
@@ -29,4 +29,5 @@ export {
   ISubmitBallot,
   IBallotDates,
   ISaveSlate,
+  IGovernanceSlateFormValues,
 };
