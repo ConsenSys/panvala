@@ -8,6 +8,7 @@ export interface IParameterChangesObject {
   [key: string]: {
     oldValue: string;
     newValue: string;
+    type: string;
   };
 }
 
