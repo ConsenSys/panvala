@@ -400,7 +400,7 @@ contract Gatekeeper {
      @dev Set a delegate account that can vote on behalf of the voter
      @param _delegate The account being delegated to
      */
-    function delegateVote(address _delegate) public returns(bool) {
+    function delegateVotingRights(address _delegate) public returns(bool) {
         address voter = msg.sender;
         require(voter != _delegate, "Delegate and voter cannot be equal");
 
@@ -429,7 +429,7 @@ contract Gatekeeper {
         // Must be a delegate if not the voter
         if (committer != voter) {
             require(committer == delegate[voter], "Not a delegate");
-            require(voteTokenBalance[voter] >= numTokens);
+            require(voteTokenBalance[voter] >= numTokens, "Insufficient tokens");
         } else {
             // If the voter doesn't have enough tokens for voting, deposit more
             if (voteTokenBalance[voter] < numTokens) {
