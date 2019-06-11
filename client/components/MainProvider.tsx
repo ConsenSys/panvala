@@ -7,7 +7,7 @@ import { EthereumContext } from './EthereumProvider';
 import { IProposal, ISlate, IMainContext } from '../interfaces';
 import { getAllProposals, getAllSlates } from '../utils/api';
 import { baseToConvertedUnits } from '../utils/format';
-import { slateSubmissionDeadline } from '../utils/status';
+import { ballotDates } from '../utils/status';
 
 export const MainContext: React.Context<IMainContext> = React.createContext<any>({});
 
@@ -103,37 +103,9 @@ export default function MainProvider(props: any) {
       const slatesByID = keyBy(slates, 'id');
       const proposalsByID = keyBy(proposalData, 'id');
 
-      const oneWeekSeconds: number = 604800;
-      const epochLength = 13 * oneWeekSeconds;
-
-      // Epoch 1 (Nov 3, 2018 12:00:00pm EST)
-      // const novThird = 1541260800;
-      // Epoch 2 (Feb 1, 2019 12:00:00pm EST)
-      const febFirst = 1549040400;
-      // Epoch 3 (May 3, 2019 12:00:00pm EDT)
-      // const mayThird = 1556902800;
-
-      const epochStartDate = febFirst;
       const currentEpochStart = (await gatekeeper.functions.currentEpochStart()).toNumber();
-      console.log('currentEpochStart:', currentEpochStart);
-      // end of week 11 (4/19)
-      const week11EndDate: number = epochStartDate + oneWeekSeconds * 11; // 1555689601
-      // end of week 12 (4/26)
-      const week12EndDate: number = week11EndDate + oneWeekSeconds;
-      // end of week 13 (5/3)
-      const week13EndDate: number = week12EndDate + oneWeekSeconds;
-      const initialSlateSubmissionDeadline: number = slateSubmissionDeadline(
-        week11EndDate,
-        epochStartDate
-      );
-      const currentBallot = {
-        startDate: epochStartDate,
-        votingOpenDate: week11EndDate,
-        votingCloseDate: week12EndDate,
-        finalityDate: week13EndDate,
-        initialSlateSubmissionDeadline,
-        slateSubmissionDeadline: {},
-      };
+      const currentBallot = ballotDates(currentEpochStart);
+      console.log('currentBallot:', currentBallot);
 
       dispatch({
         type: 'all',

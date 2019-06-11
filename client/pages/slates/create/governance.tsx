@@ -36,6 +36,8 @@ import {
   sendCreateManyGovernanceProposals,
 } from '../../../utils/transaction';
 import { GovernanceSlateFormSchema } from '../../../utils/schemas';
+import { IGovernanceProposalMetadata } from '../../../interfaces/contexts';
+import { IParameterChangesObject } from '../../../interfaces/components';
 
 const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
   // modal opener
@@ -61,22 +63,27 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
     }
 
     // filter for only changes in parameters
-    const parameterChanges = Object.keys(values.parameters).reduce((acc, paramKey) => {
-      let value = clone(values.parameters[paramKey]);
-      if (!!value.newValue && value.newValue !== value.oldValue) {
-        if (paramKey === 'slateStakeAmount') {
-          value.newValue = convertedToBaseUnits(value.newValue, 18);
+    const parameterChanges: IParameterChangesObject = Object.keys(values.parameters).reduce(
+      (acc, paramKey) => {
+        let value = clone(values.parameters[paramKey]);
+        if (!!value.newValue && value.newValue !== value.oldValue) {
+          if (paramKey === 'slateStakeAmount') {
+            value.newValue = convertedToBaseUnits(value.newValue, 18);
+          }
+          return {
+            ...acc,
+            [paramKey]: value,
+          };
         }
-        return {
-          ...acc,
-          [paramKey]: value,
-        };
-      }
-      return acc;
-    }, {});
+        return acc;
+      },
+      {}
+    );
     console.log('parameterChanges:', parameterChanges);
 
-    const proposalMetadata = {
+    // TODO: refactor id field. notifications expect it.
+    const proposalMetadata: IGovernanceProposalMetadata = {
+      id: Object.keys(parameterChanges).length,
       firstName: values.firstName,
       lastName: values.lastName,
       title: values.title,
@@ -109,6 +116,7 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
       // console.log('creating proposals...');
       const requestIDs = await getRequests;
 
+      // TODO: change the metadata format to include resource (but maybe include a human-readable resourceType)
       const slateMetadata: any = {
         ...proposalMetadata,
         requestIDs,
@@ -155,11 +163,14 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
         setOpenModal(true);
         onRefreshSlates();
         onRefreshBalances();
+      } else {
+        throw new Error(`ERROR: failed to save slate: ${JSON.stringify(response)}`);
       }
     } catch (error) {
       errorMessage = `ERROR: ${errorMessage}: ${error.message}`;
       console.error(errorMessage);
       toast.error(errorMessage);
+      throw error;
     }
 
     // TODO: Should take us to all slates view after successful submission
@@ -184,7 +195,7 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
                 newValue: '',
                 type: 'uint256',
               },
-              tokenAddress: {
+              gatekeeperAddress: {
                 oldValue: '',
                 newValue: '',
                 type: 'address',
@@ -257,7 +268,10 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
                   onChange={setFieldValue}
                   slateStakeAmount={formatPanvalaUnits(slateStakeAmount)}
                   newSlateStakeAmount={values.parameters.slateStakeAmount.newValue}
-                  newTokenAddress={values.parameters.tokenAddress.newValue}
+                  newGatekeeperAddress={values.parameters.gatekeeperAddress.newValue}
+                  gatekeeperAddress={
+                    contracts && contracts.gatekeeper && contracts.gatekeeper.address
+                  }
                 />
 
                 <Separator />

@@ -1,5 +1,6 @@
 import { providers, utils } from 'ethers';
 import { BasicToken, Gatekeeper, TokenCapacitor, ParameterStore } from '../types';
+import { IParameterChangesObject } from './components';
 
 /**
  * Proposal fields that gets loaded/rendered in the frontend
@@ -49,8 +50,12 @@ export interface IGrantProposalMetadata {
 
 export interface IGovernanceProposalMetadata {
   id: number;
+  firstName: string;
+  lastName?: string;
   title: string;
   summary: string;
+  organization?: string;
+  parameterChanges: IParameterChangesObject;
 }
 
 /**

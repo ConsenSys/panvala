@@ -13,13 +13,13 @@ const ParameterRow: React.SFC<any> = props => {
       border={1}
       borderColor="greys.light"
     >
-      <Flex justifyStart width="33%">
+      <Flex justifyStart width="25%" fontSize={1}>
         {props.parameterName}
       </Flex>
-      <Flex justifyStart width="33%">
+      <Flex justifyStart width="50%" fontSize={1}>
         {props.oldValue}
       </Flex>
-      <Flex justifyStart width="33%">
+      <Flex justifyStart width="25%" fontSize={1}>
         <Input
           m={0}
           fontFamily="Fira Code"
@@ -38,13 +38,13 @@ const ParametersForm: React.SFC<any> = props => {
     <>
       <Flex column>
         <Flex p={3} justifyBetween alignCenter width="100%" fontWeight="bold" bg="greys.light">
-          <Flex justifyStart width="33%">
+          <Flex justifyStart width="25%">
             Current Parameter
           </Flex>
-          <Flex justifyStart width="33%">
+          <Flex justifyStart width="50%">
             Current Value
           </Flex>
-          <Flex justifyStart width="33%">
+          <Flex justifyStart width="25%">
             Propose New Value
           </Flex>
         </Flex>
@@ -56,10 +56,10 @@ const ParametersForm: React.SFC<any> = props => {
           onChange={props.onChange}
         />
         <ParameterRow
-          parameterName="Token Address"
-          name="parameters.tokenAddress.newValue"
-          oldValue={'0x0314324'}
-          newValue={props.newTokenAddress}
+          parameterName="Gatekeeper Address"
+          name="parameters.gatekeeperAddress.newValue"
+          oldValue={props.gatekeeperAddress}
+          newValue={props.newGatekeeperAddress}
           onChange={props.onChange}
         />
       </Flex>
