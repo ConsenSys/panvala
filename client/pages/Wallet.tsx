@@ -48,15 +48,15 @@ const Wallet: React.SFC = () => {
     hotWallet: false,
   });
 
-  function setLinkedWallet(type: string, value: string) {
+  function setLinkedWallet(type: string, address: string) {
     setConfirmed({
       ...confirmed,
       [type]: false,
     });
     if (type === 'hotWallet') {
-      setHotWallet(value);
+      setHotWallet(address);
     } else if (type === 'coldWallet') {
-      setColdWallet(value);
+      setColdWallet(address);
     }
   }
   function confirmColdWallet() {
