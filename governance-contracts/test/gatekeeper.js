@@ -894,12 +894,16 @@ contract('Gatekeeper', (accounts) => {
       assert.strictEqual(emittedResource, requestor, 'Emitted resource should match caller address');
 
       // Check Request
-      const { metadataHash: requestHash, resource, approved } = await gatekeeper.requests(
-        requestID,
-      );
+      const {
+        metadataHash: requestHash,
+        resource,
+        approved,
+        expirationTime,
+      } = await gatekeeper.requests(requestID);
       assert.strictEqual(decode(requestHash), metadataHash, 'Metadata hash is incorrect');
       assert.strictEqual(approved, false);
       assert.strictEqual(resource, requestor, 'Requestor is incorrect');
+      assert.strictEqual(expirationTime.toString(), '0', 'Expiration initialized incorrectly');
 
       // Request count was incremented
       const requestCount = await gatekeeper.requestCount();
@@ -2282,6 +2286,18 @@ contract('Gatekeeper', (accounts) => {
       permissions.forEach((has) => {
         assert.strictEqual(has, true, 'Request should have permission');
       });
+
+      // all should have expirations set to an epoch in the future
+      const ts = await utils.evm.timestamp(receipt.receipt.blockNumber);
+      const expectedExpiration = new BN(ts).add(timing.EPOCH_LENGTH);
+      const requests = await Promise.all(slateRequests.map(r => gatekeeper.requests(r)));
+      requests.forEach((request) => {
+        assert.strictEqual(
+          request.expirationTime.toString(),
+          expectedExpiration.toString(),
+          'Expiration should have been an epoch in the future',
+        );
+      });
     });
 
     it('should revert if the resource has no staked slates', async () => {
@@ -2923,6 +2939,18 @@ contract('Gatekeeper', (accounts) => {
       permissions.forEach((has) => {
         assert.strictEqual(has, true, 'Request should have permission');
       });
+
+      // all should have expirations set to an epoch in the future
+      const ts = await utils.evm.timestamp(receipt.receipt.blockNumber);
+      const expectedExpiration = new BN(ts).add(timing.EPOCH_LENGTH);
+      const requests = await Promise.all(slateRequests.map(r => gatekeeper.requests(r)));
+      requests.forEach((request) => {
+        assert.strictEqual(
+          request.expirationTime.toString(),
+          expectedExpiration.toString(),
+          'Expiration should have been an epoch in the future',
+        );
+      });
     });
 
     it('should count correctly if the original leader wins the runoff', async () => {
@@ -3237,22 +3265,37 @@ contract('Gatekeeper', (accounts) => {
 
         // Advance past reveal period
         await increaseTime(timing.REVEAL_PERIOD_LENGTH);
+        await gatekeeper.countVotes(ballotID, GRANT);
       });
 
       it('should return true for a request that was included in an accepted slate', async () => {
-        await gatekeeper.countVotes(ballotID, GRANT);
-
         const requestID = 0;
         const hasPermission = await gatekeeper.hasPermission.call(requestID);
         assert.strictEqual(hasPermission, true, 'Request should have been approved');
       });
 
       it('should return false for a request that was included in a rejected slate', async () => {
-        await gatekeeper.countVotes(ballotID, GRANT);
-
         const requestID = 3;
         const hasPermission = await gatekeeper.hasPermission.call(requestID);
         assert.strictEqual(hasPermission, false, 'Request should NOT have been approved');
+      });
+
+      it('should return false for an approved request that has expired', async () => {
+        const requestID = 0;
+
+        // Request is initially approved
+        const initialPermission = await gatekeeper.hasPermission(requestID);
+        assert.strictEqual(initialPermission, true, 'Request should have been approved');
+
+        // Move forward
+        await increaseTime(timing.EPOCH_LENGTH);
+        const request = await gatekeeper.requests(requestID);
+        const now = await utils.evm.timestamp();
+        assert(now >= request.expirationTime, 'Not past expiration time');
+
+        // Check expired request
+        const hasPermission = await gatekeeper.hasPermission(requestID);
+        assert.strictEqual(hasPermission, false, 'Expired request should not have been approved');
       });
     });
 
@@ -3288,6 +3331,24 @@ contract('Gatekeeper', (accounts) => {
         const requestID = 0;
         const hasPermission = await gatekeeper.hasPermission.call(requestID);
         assert.strictEqual(hasPermission, false, 'Request should NOT have been approved');
+      });
+
+      it('should return false for an approved request that has expired', async () => {
+        const requestID = 3;
+
+        // Request is initially approved
+        const initialPermission = await gatekeeper.hasPermission(requestID);
+        assert.strictEqual(initialPermission, true, 'Request should have been approved');
+
+        // Move forward
+        await increaseTime(timing.EPOCH_LENGTH);
+        const request = await gatekeeper.requests(requestID);
+        const now = await utils.evm.timestamp();
+        assert(now >= request.expirationTime, 'Not past expiration time');
+
+        // Check expired request
+        const hasPermission = await gatekeeper.hasPermission(requestID);
+        assert.strictEqual(hasPermission, false, 'Expired request should not have been approved');
       });
     });
 
