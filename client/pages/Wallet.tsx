@@ -47,6 +47,7 @@ const Wallet: React.SFC = () => {
     coldWallet: false,
     hotWallet: false,
   });
+  const [txPending, setTxPending] = React.useState(false);
 
   function setLinkedWallet(type: string, address: string) {
     setConfirmed({
@@ -128,14 +129,17 @@ const Wallet: React.SFC = () => {
 
     if (!isEmpty(gatekeeper)) {
       try {
-        // TODO:
-        // const response = await gatekeeper.functions.delegateVoter(hotWallet);
-        // setTxPending(true);
+        if (typeof gatekeeper.functions.delegateVotingRights !== 'undefined') {
+          const response = await gatekeeper.functions.delegateVotingRights(hotWallet);
+          setTxPending(true);
 
-        // await response.wait();
-        // setTxPending(false);
-        // setStep(2);
-        // toast.success('delegate voter tx mined');
+          await response.wait();
+          setTxPending(false);
+          setStep(2);
+          toast.success('delegate voter tx mined');
+        } else {
+          toast.info('This feature is not supported yet');
+        }
 
         // save to local storage
         saveState(LINKED_WALLETS, {

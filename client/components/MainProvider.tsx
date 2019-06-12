@@ -103,7 +103,13 @@ export default function MainProvider(props: any) {
       const slatesByID = keyBy(slates, 'id');
       const proposalsByID = keyBy(proposalData, 'id');
 
-      const currentEpochStart = (await gatekeeper.functions.currentEpochStart()).toNumber();
+      const currentEpochStart =
+        typeof gatekeeper.functions.currentEpochStart !== 'undefined'
+          ? (await gatekeeper.functions.currentEpochStart()).toNumber()
+          : await gatekeeper.functions
+              .currentEpochNumber()
+              .then(epoch => gatekeeper.functions.epochStart(epoch));
+
       const currentBallot = ballotDates(currentEpochStart);
       console.log('currentBallot:', currentBallot);
 

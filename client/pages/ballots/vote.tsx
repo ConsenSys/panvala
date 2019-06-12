@@ -172,10 +172,22 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
             // commit (vote) the ballot to the gatekeeper contract
             // custom gasLimit can be provided here
             // -> gasPrice needs to be set also -- otherwise it will send with 1.0 gwei gas, which is not fast enough
-            await contracts.gatekeeper.functions.commitBallot(commitHash, numTokens, {
+            const txOptions = {
               gasLimit: estimate.add('70000').toHexString(), // for safety, +70k gas (+20k doesn't cut it)
               gasPrice: utils.parseUnits('9.0', 'gwei'),
-            });
+            };
+
+            // When the delegation feature exists, include the voter in the call
+            if (typeof contracts.gatekeeper.functions.delegateVotingRights !== 'undefined') {
+              await contracts.gatekeeper.functions.commitBallot(
+                account,
+                commitHash,
+                numTokens,
+                txOptions
+              );
+            } else {
+              await contracts.gatekeeper.functions.commitBallot(commitHash, numTokens, txOptions);
+            }
 
             setOpenModal(true);
             toast.success('Successfully submitted a ballot');
