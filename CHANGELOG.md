@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+## [0.4.0] 2019-06-06
+
+### Added
 - Recommenders can stake on their slates as they are creating them instead of waiting for someone to do it later
 - Add admin scripts to reveal ballots and tally votes
 - Greatly expanded notifications to include the following types
@@ -88,6 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2019-04-02
 
 [Unreleased]: https://github.com/ConsenSys/panvala/compare/v0.3.0...develop
+[0.4.0]: https://github.com/ConsenSys/panvala/compare/v0.4.0...develop
 [0.3.0]: https://github.com/ConsenSys/panvala/releases/tag/v0.3.0
 [0.2.0]: https://github.com/ConsenSys/panvala/releases/tag/v0.2.0
 [0.1.0]: https://github.com/ConsenSys/panvala/releases/tag/v0.1.0
