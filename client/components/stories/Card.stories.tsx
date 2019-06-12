@@ -3,29 +3,13 @@ import { storiesOf } from '@storybook/react';
 import Card from '../Card';
 import { StoryWrapper } from './utils.stories';
 import { ballotDates, convertEVMSlateStatus } from '../../utils/status';
-import { utils } from 'ethers';
-import { GRANT_SLATE } from '../../utils/constants';
-
-const currentBallot = ballotDates(1549040401);
-const slate = {
-  id: 0,
-  title: 'Some slate',
-  description:
-    'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer eu nibh molestie, auctor ligula a, faucibus ante. Morbi dapibus enim in vulputate congue. Mauris feugiat gravida nibh, sed pellentesque eros pellentesque eu. Sed rutrum vitae magna sed aliquet. Suspendisse facilisis vulputate lobortis. Vestibulum sed dolor eu mi molestie pharetra. Duis ut diam aliquam, molestie erat non, scelerisque ligula. Curabitur accumsan ipsum pellentesque posuere ornare. Sed vulputate cursus accumsan. Morbi efficitur dictum magna, a imperdiet mauris aliquet vitae.',
-  proposals: [],
-  category: 'GRANT',
-  status: 0,
-  deadline: currentBallot.votingOpenDate,
-  owner: 'John Doe',
-  recommenderAddress: '0xd115bffabbdd893a6f7cea402e7338643ced44a6',
-  organization: 'Team Recommender',
-  requiredStake: utils.bigNumberify('300000000000000000000'),
-};
+import { GRANT_SLATE, GRANT_PROPOSAL } from '../../utils/constants';
+import { unstakedSlate, proposals } from './data';
 
 storiesOf('Card', module)
   .add('unverified nonincumbent', () => {
     const newSlate = {
-      ...slate,
+      ...unstakedSlate,
       verifiedRecommender: false,
       incumbent: false,
     };
@@ -49,7 +33,7 @@ storiesOf('Card', module)
   })
   .add('verified nonincumbent', () => {
     const newSlate = {
-      ...slate,
+      ...unstakedSlate,
       verifiedRecommender: true,
       incumbent: false,
     };
@@ -73,7 +57,7 @@ storiesOf('Card', module)
   })
   .add('unverified incumbent', () => {
     const newSlate = {
-      ...slate,
+      ...unstakedSlate,
       verifiedRecommender: false,
       incumbent: true,
     };
@@ -97,7 +81,7 @@ storiesOf('Card', module)
   })
   .add('verified incumbent', () => {
     const newSlate = {
-      ...slate,
+      ...unstakedSlate,
       verifiedRecommender: true,
       incumbent: true,
     };
@@ -115,6 +99,22 @@ storiesOf('Card', module)
           verifiedRecommender={newSlate.verifiedRecommender}
           type={GRANT_SLATE}
           incumbent={newSlate.incumbent}
+        />
+      </StoryWrapper>
+    );
+  })
+  .add('proposal', () => {
+    const proposal = {
+      ...proposals[0],
+    };
+    return (
+      <StoryWrapper>
+        <Card
+          title={proposal.title}
+          subtitle={proposal.tokensRequested + ' Tokens Requested'}
+          description={proposal.summary}
+          category={`${proposal.category} PROPOSAL`}
+          type={GRANT_PROPOSAL}
         />
       </StoryWrapper>
     );

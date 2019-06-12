@@ -167,6 +167,7 @@ const Card: React.FunctionComponent<ICardProps> = props => {
           {'INCUMBENT'}
         </Text>
       ) : (
+        props.type === GRANT_SLATE &&
         !props.verifiedRecommender && (
           <Text my={2} fontSize={11} color="reds.dark" fontWeight="bold">
             {'UNVERIFIED RECOMMENDER'}
@@ -179,7 +180,7 @@ const Card: React.FunctionComponent<ICardProps> = props => {
           ? props.recommender
           : props.address
           ? splitAddressHumanReadable(props.address)
-          : props.recommender}
+          : props.title}
       </CardTitle>
       <CardSubTitle>{props.subtitle}</CardSubTitle>
       <CardDescription>{props.description}</CardDescription>
