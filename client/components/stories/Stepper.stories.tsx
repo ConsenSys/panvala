@@ -13,7 +13,7 @@ const StepperDialog = styled.div`
 
 const requiredStake = '5000.0 PAN';
 
-const stories = storiesOf('Stepper Knobs', module);
+const stories = storiesOf('Stepper', module);
 const steps = [
   <div>
     <StepperDialog>

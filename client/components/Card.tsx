@@ -4,6 +4,7 @@ import { COLORS, BUTTON_COLORS } from '../styles';
 import Tag from './Tag';
 import { splitAddressHumanReadable } from '../utils/format';
 import Button from './Button';
+import Flex from './system/Flex';
 import { Separator } from './Separator';
 import { IChoices, IProposal } from '../interfaces';
 import RouterLink from './RouterLink';
@@ -155,33 +156,30 @@ const Card: React.FunctionComponent<ICardProps> = props => {
       asPath={props.asPath}
       animated={animated}
     >
-      <div className="flex">
+      <Flex>
         {/* GRANT | PENDING TOKENS */}
         <Tag status={''}>{props.category.toUpperCase()}</Tag>
         {props.status && <Tag status={props.status}>{props.status}</Tag>}
-      </div>
+      </Flex>
 
-      {props.type === GRANT_SLATE &&
-        (!props.verifiedRecommender ? (
+      {props.type === GRANT_SLATE && props.incumbent ? (
+        <Text my={2} fontSize={11} color="blue" fontWeight="bold">
+          {'INCUMBENT'}
+        </Text>
+      ) : (
+        !props.verifiedRecommender && (
           <Text my={2} fontSize={11} color="reds.dark" fontWeight="bold">
             {'UNVERIFIED RECOMMENDER'}
           </Text>
-        ) : !!props.incumbent ? (
-          <Text my={2} fontSize={11} color="blue" fontWeight="bold">
-            {'INCUMBENT'}
-          </Text>
-        ) : (
-          <Text my={1} fontSize={11} color="white">
-            verifiedNonIncumbent
-          </Text>
-        ))}
+        )
+      )}
 
       <CardTitle>
-        {props.address && props.verifiedRecommender
-          ? props.title
+        {props.address && props.verifiedRecommender && props.recommender
+          ? props.recommender
           : props.address
           ? splitAddressHumanReadable(props.address)
-          : props.title}
+          : props.recommender}
       </CardTitle>
       <CardSubTitle>{props.subtitle}</CardSubTitle>
       <CardDescription>{props.description}</CardDescription>
