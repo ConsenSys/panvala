@@ -14,6 +14,7 @@ import Text from '../components/system/Text';
 import Flex from '../components/system/Flex';
 import Identicon from '../components/Identicon';
 import RouterLink from '../components/RouterLink';
+import PendingTransaction from '../components/PendingTransaction';
 import StepperMetamaskDialog from '../components/StepperMetamaskDialog';
 import { IEthereumContext, EthereumContext } from '../components/EthereumProvider';
 import { saveState, loadState, LINKED_WALLETS, ENABLED_ACCOUNTS } from '../utils/localStorage';
@@ -311,20 +312,23 @@ const Wallet: React.SFC = () => {
   ];
 
   return (
-    <Flex justifyCenter>
-      <Box
-        display="flex"
-        flexDirection="column"
-        alignItems="center"
-        width={550}
-        p={4}
-        mt={[2, 3, 5, 6]}
-        borderRadius={10}
-        boxShadow={0}
-      >
-        <Box position="relative">{steps[step]}</Box>
-      </Box>
-    </Flex>
+    <>
+      <PendingTransaction isOpen={txPending} setOpen={setTxPending} />
+      <Flex justifyCenter>
+        <Box
+          display="flex"
+          flexDirection="column"
+          alignItems="center"
+          width={550}
+          p={4}
+          mt={[2, 3, 5, 6]}
+          borderRadius={10}
+          boxShadow={0}
+        >
+          <Box position="relative">{steps[step]}</Box>
+        </Box>
+      </Flex>
+    </>
   );
 };
 
