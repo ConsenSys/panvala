@@ -162,12 +162,13 @@ const Card: React.FunctionComponent<ICardProps> = props => {
         {props.status && <Tag status={props.status}>{props.status}</Tag>}
       </Flex>
 
-      {props.type === GRANT_SLATE && props.incumbent ? (
+      {props.type && props.type.includes('SLATE') && props.incumbent ? (
         <Text my={2} fontSize={11} color="blue" fontWeight="bold">
           {'INCUMBENT'}
         </Text>
       ) : (
-        props.type === GRANT_SLATE &&
+        props.type &&
+        props.type.includes('SLATE') &&
         !props.verifiedRecommender && (
           <Text my={2} fontSize={11} color="reds.dark" fontWeight="bold">
             {'UNVERIFIED RECOMMENDER'}
