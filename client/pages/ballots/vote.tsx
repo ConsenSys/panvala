@@ -22,6 +22,7 @@ import { baseToConvertedUnits } from '../../utils/format';
 import { postBallot } from '../../utils/api';
 import { convertEVMSlateStatus, SlateStatus } from '../../utils/status';
 import Actions from '../../components/Actions';
+import { loadState, LINKED_WALLETS } from '../../utils/localStorage';
 
 type IProps = {
   account?: string;
@@ -179,8 +180,18 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
 
             // When the delegation feature exists, include the voter in the call
             if (typeof contracts.gatekeeper.functions.delegateVotingRights !== 'undefined') {
+              let voter = account;
+              const linkedWallets = loadState(LINKED_WALLETS);
+              if (!!linkedWallets && !!linkedWallets.coldWallet) {
+                const delegate = await contracts.gatekeeper.functions.delegate(
+                  linkedWallets.coldWallet
+                );
+                if (delegate === account) {
+                  voter = linkedWallets.coldWallet;
+                }
+              }
               await contracts.gatekeeper.functions.commitBallot(
-                account,
+                voter,
                 commitHash,
                 numTokens,
                 txOptions
