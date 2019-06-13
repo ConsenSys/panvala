@@ -1,7 +1,7 @@
 import { withStyles, CircularProgress } from '@material-ui/core';
 import Modal, { ModalTitle, ModalDescription } from './Modal';
 import Image from './Image';
-import { COLORS } from '../styles';
+import { colors } from '../styles';
 
 interface IProps {
   classes: any;
@@ -27,7 +27,7 @@ const PendingTransaction: React.SFC<IProps> = ({ classes, isOpen, setOpen }) => 
 const styles = (theme: any) => ({
   progress: {
     margin: theme.spacing.unit * 2,
-    color: COLORS.primary,
+    color: colors.blue,
   },
 });
 
