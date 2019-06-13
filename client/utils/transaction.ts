@@ -3,6 +3,7 @@ import { LogDescription } from 'ethers/utils';
 import { Contract, utils } from 'ethers';
 import { BasicToken, Gatekeeper, TokenCapacitor, ParameterStore } from '../types';
 import { abiEncode } from './values';
+import { IGovernanceProposalInfo } from '../interfaces/contexts';
 
 export interface IMinedTransaction {
   receipt: TransactionReceipt;
@@ -113,18 +114,18 @@ export async function sendRecommendGovernanceSlateTx(
 // Submit proposals to the token capacitor and get corresponding request IDs
 export async function sendCreateManyGovernanceProposals(
   parameterStore: ParameterStore,
-  proposalChanges: any,
-  multihash: Buffer,
+  proposalInfo: IGovernanceProposalInfo,
   setTxPending: any
 ): Promise<any> {
-  const keys = Object.keys(proposalChanges);
-  const values = keys.map((key: string) =>
-    abiEncode(proposalChanges[key].type, proposalChanges[key].newValue)
+  const { metadatas, multihashes } = proposalInfo as any;
+  const keys: string[] = metadatas.map((p: any) => p.parameterChanges.key);
+  const values: string[] = metadatas.map((p: any) =>
+    abiEncode(p.parameterChanges.type, p.parameterChanges.newValue)
   );
   // submit to the capacitor, get requestIDs
   console.log('keys, values:', keys, values);
   // prettier-ignore
-  const response: TransactionResponse = await parameterStore.functions.createManyProposals(keys, values, multihash);
+  const response: TransactionResponse = await parameterStore.functions.createManyProposals(keys, values, multihashes);
   setTxPending(true);
 
   // wait for tx to get mined

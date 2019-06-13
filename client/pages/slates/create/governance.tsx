@@ -1,5 +1,6 @@
 import * as React from 'react';
 import styled from 'styled-components';
+import * as ethUtils from 'ethereumjs-util';
 import { Formik, Form, FormikContext } from 'formik';
 import { CircularProgress, withStyles } from '@material-ui/core';
 import { toast } from 'react-toastify';
@@ -36,8 +37,8 @@ import {
   sendCreateManyGovernanceProposals,
 } from '../../../utils/transaction';
 import { GovernanceSlateFormSchema } from '../../../utils/schemas';
-import { IGovernanceProposalMetadata } from '../../../interfaces/contexts';
 import { IParameterChangesObject } from '../../../interfaces/components';
+import { IGovernanceProposalMetadata, IGovernanceProposalInfo } from '../../../interfaces/contexts';
 
 const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
   // modal opener
@@ -80,16 +81,35 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
       {}
     );
     console.log('parameterChanges:', parameterChanges);
+    const paramKeys = Object.keys(parameterChanges);
 
-    // TODO: refactor id field. notifications expect it.
-    const proposalMetadata: IGovernanceProposalMetadata = {
-      id: Object.keys(parameterChanges).length,
-      firstName: values.firstName,
-      lastName: values.lastName,
-      title: values.title,
-      summary: values.summary,
-      organization: values.organization,
-      parameterChanges,
+    const proposalMetadatas: IGovernanceProposalMetadata[] = paramKeys.map((param: string) => {
+      return {
+        id: Object.keys(parameterChanges).length,
+        firstName: values.firstName,
+        lastName: values.lastName,
+        title: values.title,
+        summary: values.summary,
+        organization: values.organization,
+        parameterChanges: {
+          ...parameterChanges[param],
+        },
+      };
+    });
+    const proposalMultihashes: Buffer[] = await Promise.all(
+      proposalMetadatas.map(async (metadata: IGovernanceProposalMetadata) => {
+        try {
+          const multihash: string = await ipfsAddObject(metadata);
+          // we need a buffer of the multihash for the transaction
+          return Buffer.from(multihash);
+        } catch (error) {
+          return error;
+        }
+      })
+    );
+    const proposalInfo: IGovernanceProposalInfo = {
+      metadatas: proposalMetadatas,
+      multihashes: proposalMultihashes,
     };
 
     // save proposal metadata to IPFS to be included in the slate metadata
@@ -97,20 +117,11 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
     let errorMessage = '';
 
     try {
-      const multihash: string = await ipfsAddObject(proposalMetadata);
-      // we need a buffer of the multihash for the transaction
-      const proposalMultihash = Buffer.from(multihash);
-
       // 1. create proposal and get request ID
       const emptySlate = values.recommendation === 'noAction';
       const getRequests = emptySlate
         ? Promise.resolve([])
-        : sendCreateManyGovernanceProposals(
-            contracts.parameterStore,
-            parameterChanges,
-            proposalMultihash,
-            setTxPending
-          );
+        : sendCreateManyGovernanceProposals(contracts.parameterStore, proposalInfo, setTxPending);
 
       errorMessage = 'error adding proposal metadata.';
       // console.log('creating proposals...');
@@ -118,9 +129,13 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
 
       // TODO: change the metadata format to include resource (but maybe include a human-readable resourceType)
       const slateMetadata: any = {
-        ...proposalMetadata,
+        firstName: values.firstName,
+        lastName: values.lastName,
+        title: values.title,
+        summary: values.summary,
+        organization: values.organization,
         requestIDs,
-        category: contracts.parameterStore.address,
+        resource: contracts.parameterStore.address,
       };
 
       console.log('slateMetadata:', slateMetadata);
@@ -133,7 +148,7 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
       errorMessage = 'error submitting slate.';
       const slate: any = await sendRecommendGovernanceSlateTx(
         contracts.gatekeeper,
-        contracts.parameterStore.address,
+        slateMetadata.resource,
         requestIDs,
         slateMetadataHash,
         setTxPending
@@ -194,11 +209,13 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
                 oldValue: '',
                 newValue: '',
                 type: 'uint256',
+                key: 'slateStakeAmount',
               },
               gatekeeperAddress: {
                 oldValue: '',
                 newValue: '',
                 type: 'address',
+                key: 'gatekeeperAddress',
               },
             },
             recommendation: 'governance',

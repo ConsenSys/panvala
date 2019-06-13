@@ -6,9 +6,10 @@ export interface StatelessPage<P = {}> extends React.SFC<P> {
 
 export interface IParameterChangesObject {
   [key: string]: {
-    oldValue: string;
-    newValue: string;
-    type: string;
+    oldValue: any;
+    newValue: any;
+    type: any;
+    key: any;
   };
 }
 

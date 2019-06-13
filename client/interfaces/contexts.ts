@@ -58,6 +58,11 @@ export interface IGovernanceProposalMetadata {
   parameterChanges: IParameterChangesObject;
 }
 
+export interface IGovernanceProposalInfo {
+  metadatas: IGovernanceProposalMetadata[];
+  multihashes: Buffer[];
+}
+
 /**
  * Slate fields that gets loaded/rendered in the frontend
  */

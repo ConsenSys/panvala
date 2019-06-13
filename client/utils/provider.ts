@@ -47,11 +47,12 @@ export async function connectContracts(provider: providers.Web3Provider): Promis
     const token: BasicToken = tokenContract.connect(signer) as BasicToken;
 
     const paramsAddress: string = await gc.functions.parameters();
-    const parameterStore: ParameterStore = new ethers.Contract(
+    const parameterStoreContract: ethers.Contract = new ethers.Contract(
       paramsAddress,
       paramsAbi,
       provider
-    ) as ParameterStore;
+    );
+    const parameterStore: ParameterStore = parameterStoreContract.connect(signer) as ParameterStore;
 
     return { tokenCapacitor, gatekeeper, token, parameterStore };
   } catch (error) {
