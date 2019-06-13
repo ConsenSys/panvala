@@ -1,5 +1,6 @@
 import { INotification } from '../interfaces/contexts';
 import { utils } from 'ethers';
+import isEmpty from 'lodash/isEmpty';
 
 interface IAPINotification {
   type: string;
@@ -37,11 +38,17 @@ export function normalizeNotifications(
     }
     switch (noti.type) {
       case NotificationTypes.PROPOSAL_INCLUDED_IN_SLATE: {
+        let text = `The proposal you created has been included in slate ${
+          slate.title
+        }. Token holders can vote for this slate to execute your proposal.`;
+        if (!isEmpty(proposal)) {
+          text = `The grant proposal ${proposal.title} you created has been included in slate ${
+            slate.title
+          }. Token holders can vote for this slate to fund your proposal.`;
+        }
         return {
           action: 'Proposal Recommended',
-          text: `The grant proposal ${proposal.title} you created has been included in slate ${
-            slate.title
-          }. Token holders can vote for this slate to fund your proposal.`,
+          text,
           href: `/slates/slate?id=${slateID}`,
           asPath: `/slates/${slateID}`,
         };
