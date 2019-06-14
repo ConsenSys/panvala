@@ -39,3 +39,18 @@ async function timeTravel(days) {
 
   await gatekeeper.functions.timeTravel(daysInSeconds);
 }
+
+// to travel forward one week:
+// node scripts/time-travel.js
+
+// to travel forward three days:
+// node scripts/time-travel.js 3
+
+// to travel backward three days:
+// node scripts/time-travel.js -3
+
+// to travel forward eleven weeks:
+// node scripts/time-travel.js weeks 11
+
+// to travel backward eleven weeks:
+// node scripts/time-travel.js weeks -11
