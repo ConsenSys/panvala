@@ -38,12 +38,51 @@ contract TokenCapacitor {
     // The total number of proposals
     uint public proposalCount;
 
+    // Token decay
+    uint256 public constant HALF_LIFE = 3600 * 1456;
+
+    // Token decay table
+    uint256 constant PRECISION = 12;
+    uint256 public scale;
+    uint256[12] decayMultipliers;
+
+    // Balances
+    // Tokens available for withdrawal
+    uint256 public unlockedBalance;
+
+    // The number of tokens locked as of the last update
+    uint256 public lastLockedBalance;
+
+    // The last time tokens were locked
+    uint256 public lastLockedTime;
+
+    // The total number of tokens released in the lifetime of the TokenCapacitor
+    uint256 public lifetimeReleasedTokens;
+
     // IMPLEMENTATION
     constructor(ParameterStore _parameters) public {
         parameters = _parameters;
 
         require(address(_gatekeeper()) != address(0), "Gatekeeper address cannot be zero");
         require(address(_token()) != address(0), "Token address cannot be zero");
+
+        // initialize multipliers
+        decayMultipliers[0] = 999524050675;
+        decayMultipliers[1] = 999048327879;
+        decayMultipliers[2] = 998097561438;
+        decayMultipliers[3] = 996198742149;
+        decayMultipliers[4] = 992411933860;
+        decayMultipliers[5] = 984881446469;
+        decayMultipliers[6] = 969991463599;
+        decayMultipliers[7] = 940883439455;
+        decayMultipliers[8] = 885261646641;
+        decayMultipliers[9] = 783688183013;
+        decayMultipliers[10] = 614167168195;
+        decayMultipliers[11] = 377201310488;
+
+        scale = 10 ** PRECISION;
+
+        lastLockedTime = now;
     }
 
     function _gatekeeper() private view returns(Gatekeeper) {
@@ -120,6 +159,14 @@ contract TokenCapacitor {
         IERC20 token = _token();
         proposals[proposalID].withdrawn = true;
 
+        // Accounting
+        updateBalances();
+        // Withdrawn tokens come out of the unlocked balance
+        require(unlockedBalance >= p.tokens, "Insufficient unlocked tokens");
+        unlockedBalance = unlockedBalance.sub(p.tokens);
+
+        lifetimeReleasedTokens = lifetimeReleasedTokens.add(p.tokens);
+
         require(token.transfer(p.to, p.tokens), "Failed to transfer tokens");
         emit TokensWithdrawn(proposalID, p.to, p.tokens);
         return true;
@@ -137,11 +184,90 @@ contract TokenCapacitor {
 
         address payer = msg.sender;
 
+        // Donations go into the locked balance
+        updateBalances();
+        lastLockedBalance = lastLockedBalance.add(tokens);
+
         // transfer tokens from payer
         IERC20 token = _token();
         require(token.transferFrom(payer, address(this), tokens), "Failed to transfer tokens");
 
         emit Donation(payer, donor, tokens, metadataHash);
         return true;
+    }
+
+
+    /**
+     @dev Number of tokens that will be unlocked by the given (future) time, not counting
+     donations or withdrawals
+     @param time The time to project for. Must be in the future.
+     */
+    function projectedUnlockedBalance(uint256 time) public view returns(uint256) {
+        uint256 futureUnlocked = lastLockedBalance.sub(projectedLockedBalance(time));
+        return unlockedBalance.add(futureUnlocked);
+    }
+
+    /**
+     @dev Number of tokens that will be locked by the given (future) time, not counting
+     donations or withdrawals
+     @param time The time to project for. Must be in the future.
+     */
+    function projectedLockedBalance(uint256 time) public view returns(uint256) {
+        require(time >= now, "Time cannot be past");
+        uint256 elapsedTime = time.sub(lastLockedTime);
+
+        // Based on the elapsed time (in days), calculate the decay factor
+        uint256 decayFactor = calculateDecay(elapsedTime.div(86400));
+
+        return lastLockedBalance.mul(decayFactor).div(scale);
+    }
+
+    /**
+     @dev Return a scaled decay multiplier. Multiply by the balance, then divide by the scale.
+     */
+    function calculateDecay(uint256 _days) public view returns(uint256) {
+        require(_days <= (2 ** decayMultipliers.length) - 1, "Time interval too large");
+
+        uint256 decay = scale;
+        uint256 d = _days;
+
+        for (uint256 i = 0; i < decayMultipliers.length; i++) {
+           uint256 remainder = d % 2;
+           uint256 quotient = d >> 1;
+
+           if (remainder == 1) {
+                uint256 multiplier = decayMultipliers[i];
+                decay = decay.mul(multiplier).div(scale);
+           } else if (quotient == 0) {
+               // Exit early if both quotient and remainder are zero
+               break;
+           }
+
+           d = quotient;
+        }
+
+        return decay;
+    }
+
+    /**
+     @dev Update the locked and unlocked balances according to the release rate, taking into account
+     any donations or withdrawals since the last update. At each step, start decaying anew from the
+     lastLockedBalance, as if it were the initial balance.
+     */
+    function updateBalances() public {
+        uint256 totalBalance = _token().balanceOf(address(this));
+
+        // Sweep the released tokens from locked into unlocked
+        // Locked balance is based on the decay since the last update
+        uint256 newLockedBalance = projectedLockedBalance(now);
+        assert(newLockedBalance <= lastLockedBalance);
+
+        // Calculate the number of tokens unlocked since the last update
+        unlockedBalance = lastLockedBalance.sub(newLockedBalance).add(unlockedBalance);
+
+        // Lock any tokens not currently unlocked
+        lastLockedBalance = totalBalance.sub(unlockedBalance);
+
+        lastLockedTime = now;
     }
 }

@@ -3,6 +3,8 @@ const ethUtils = require('ethereumjs-util');
 const bs58 = require('bs58');
 const ethers = require('ethers');
 const moment = require('moment');
+const fs = require('fs');
+const path = require('path');
 
 const Gatekeeper = artifacts.require('Gatekeeper');
 const BasicToken = artifacts.require('BasicToken');
@@ -25,6 +27,8 @@ const testProvider = new ethers.providers.JsonRpcProvider('http://localhost:8545
 
 const ONE_WEEK = new BN('604800');
 const timing = {
+  ONE_SECOND: new BN(1),
+  ONE_DAY: new BN(3600 * 24),
   ONE_WEEK,
   EPOCH_LENGTH: ONE_WEEK.mul(new BN(13)),
   VOTING_PERIOD_START: ONE_WEEK.mul(new BN(11)),
@@ -64,7 +68,8 @@ function expectEvents(receipt, eventNames) {
  */
 function expectErrorLike(error, substring) {
   const msg = `Expected error "${error.message}" to include "${substring}"`;
-  assert(error.toString().includes(substring), msg);
+  const a = error.toString().toLowerCase();
+  assert(a.includes(substring.toLowerCase()), msg);
 }
 
 /**
@@ -109,6 +114,12 @@ async function blockTime(blockNumber) {
     .getBlockNumber()
     .then(number => testProvider.getBlock(number))
     .then(block => block.timestamp);
+}
+
+async function futureTime(seconds) {
+  const now = await blockTime();
+  const offset = BN.isBN(seconds) ? seconds : new BN(seconds);
+  return (new BN(now)).add(offset);
 }
 
 /**
@@ -494,7 +505,6 @@ async function getVotes(gatekeeper, ballotID, resource, slateID) {
   return result;
 }
 
-
 const ContestStatus = {
   Empty: '0',
   NoContest: '1',
@@ -516,6 +526,26 @@ async function getLosingSlates(gatekeeper, slateIDs) {
   return ls.filter(s => s.status.toString() === SlateStatus.Rejected);
 }
 
+function loadDecayMultipliers() {
+  const filePath = path.join(__dirname, 'multipliers.json');
+  const doc = fs.readFileSync(filePath, { encoding: 'utf-8' });
+  return JSON.parse(doc);
+}
+
+
+async function chargeCapacitor(capacitor, numTokens, token, txOptions) {
+  await token.transfer(capacitor.address, numTokens, txOptions);
+  await capacitor.updateBalances(txOptions);
+}
+
+async function capacitorBalances(capacitor) {
+  const [unlocked, locked] = await Promise.all([
+    capacitor.unlockedBalance(),
+    capacitor.lastLockedBalance(),
+  ]);
+
+  return { unlocked, locked };
+}
 
 const utils = {
   expectRevert,
@@ -524,7 +554,7 @@ const utils = {
   zeroAddress: ethUtils.zeroAddress,
   BN,
   evm: {
-    increaseTime, snapshot: evmSnapshot, revert: evmRevert, timestamp: blockTime,
+    increaseTime, snapshot: evmSnapshot, revert: evmRevert, timestamp: blockTime, futureTime,
   },
   createMultihash,
   newGatekeeper,
@@ -553,6 +583,9 @@ const utils = {
   categories: proposalCategories,
   getLosingSlates,
   timing,
+  loadDecayMultipliers,
+  capacitorBalances,
+  chargeCapacitor,
 };
 
 module.exports = utils;
