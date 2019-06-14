@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "ethers": "^4.0.30",
     "prettier": "^1.17.0"
   }
 }
