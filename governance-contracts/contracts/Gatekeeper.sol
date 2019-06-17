@@ -147,6 +147,9 @@ contract Gatekeeper {
         uint winner;
     }
 
+    // The current incumbent for a resource
+    mapping(address => address) public incumbent;
+
     // A group of Contests in an epoch
     struct Ballot {
         // status: Unopened, Open, Closed
@@ -930,6 +933,11 @@ contract Gatekeeper {
         // Mark the slate as accepted
         Slate storage s = slates[slateID];
         s.status = SlateStatus.Accepted;
+
+        // Record the incumbent
+        if (incumbent[s.resource] != s.recommender) {
+            incumbent[s.resource] = s.recommender;
+        }
 
         // mark all of its requests as approved
         uint[] memory requestIDs = s.requests;

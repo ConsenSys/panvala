@@ -2441,6 +2441,14 @@ contract('Gatekeeper', (accounts) => {
           'Expiration should have been an epoch in the future',
         );
       });
+
+      // the current incumbent should be the recommender of the winning slate
+      const incumbent = await gatekeeper.incumbent(GRANT);
+      assert.strictEqual(
+        incumbent,
+        slate.recommender,
+        'Incumbent should be the recommender of the winning slate',
+      );
     });
 
     it('should revert if the resource has no staked slates', async () => {
@@ -3094,6 +3102,14 @@ contract('Gatekeeper', (accounts) => {
           'Expiration should have been an epoch in the future',
         );
       });
+
+      // the current incumbent should be the recommender of the winning slate
+      const incumbent = await gatekeeper.incumbent(GRANT);
+      assert.strictEqual(
+        incumbent,
+        slate.recommender,
+        'Incumbent should be the recommender of the winning slate',
+      );
     });
 
     it('should count correctly if the original leader wins the runoff', async () => {
@@ -3198,6 +3214,12 @@ contract('Gatekeeper', (accounts) => {
     });
 
     afterEach(async () => utils.evm.revert(snapshotID));
+  });
+
+  describe('post-voting', () => {
+    // before count
+    // confidence
+    // runoff
   });
 
   describe('getWinningSlate', () => {
@@ -3986,6 +4008,133 @@ contract('Gatekeeper', (accounts) => {
         }
         assert.fail('Allowed donation of challenger stakes for an unfinalized contest');
       });
+    });
+
+    afterEach(async () => utils.evm.revert(snapshotID));
+  });
+
+  describe('incumbent', () => {
+    const [creator, recommender, alice, bob, carol] = accounts;
+
+    let gatekeeper;
+    let token;
+    let capacitor;
+    let snapshotID;
+
+    let ballotID;
+    let GRANT;
+    const grantProposals = [{
+      to: recommender, tokens: '1000', metadataHash: createMultihash('grant'),
+    }];
+
+    beforeEach(async () => {
+      snapshotID = await utils.evm.snapshot();
+
+      ({ gatekeeper, token, capacitor } = await utils.newPanvala({ from: creator }));
+      ballotID = await gatekeeper.currentEpochNumber();
+
+      GRANT = await getResource(gatekeeper, 'GRANT');
+
+      // create simple ballot with just grants
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('my slate'),
+      });
+
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('competing slate'),
+      });
+
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('yet another slate'),
+      });
+
+      const allocatedTokens = '10000';
+
+      // Make sure the voter has available tokens and the gatekeeper is approved to spend them
+      await token.transfer(alice, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: alice });
+
+      await token.transfer(bob, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: bob });
+
+      await token.transfer(carol, allocatedTokens, { from: creator });
+      await token.approve(gatekeeper.address, allocatedTokens, { from: carol });
+
+      // Stake
+      await gatekeeper.stakeTokens(0, { from: alice });
+      await gatekeeper.stakeTokens(1, { from: carol });
+      await gatekeeper.stakeTokens(2, { from: bob });
+    });
+
+    it('should return the zero address if no contests have been finalized for the resource', async () => {
+      const incumbent = await gatekeeper.incumbent(GRANT);
+      assert.strictEqual(incumbent, utils.zeroAddress(), 'Initial incumbent should have been zero');
+    });
+
+    it('should return a new incumbent if someone else wins', async () => {
+      // run simple vote
+      await doConfidenceVote(gatekeeper, ballotID, [alice, bob, carol]);
+      const previousIncumbent = await gatekeeper.incumbent(GRANT);
+      const nextEpoch = await gatekeeper.currentEpochNumber();
+
+      // move forward a couple epochs
+      const offset = new BN(2);
+      await increaseTime(timing.EPOCH_LENGTH.mul(offset));
+      const epoch = await gatekeeper.currentEpochNumber();
+      assert.strictEqual(epoch.toString(), nextEpoch.add(offset).toString(), 'Wrong epoch number');
+
+      // finalize contest for another another epoch
+      const slateID = await gatekeeper.slateCount();
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender: alice,
+        metadata: createMultihash('the best slate'),
+      });
+      const stake = '5000';
+      await token.transfer(alice, stake, { from: creator });
+      await token.approve(gatekeeper.address, stake, { from: alice });
+      await gatekeeper.stakeTokens(slateID, { from: alice });
+
+      const resource = await getResource(gatekeeper, 'GRANT');
+
+      await increaseTime(timing.VOTING_PERIOD_START);
+      await gatekeeper.countVotes(epoch, resource);
+
+      // Check
+      const incumbent = await gatekeeper.incumbent(GRANT);
+      assert.strictEqual(incumbent, alice, 'Incumbent should be the winning slate recommender');
+      assert.notStrictEqual(incumbent, previousIncumbent, 'Incumbent should have changed');
+    });
+
+    it('should maintain the incumbent even if no action takes place in an epoch', async () => {
+      // run simple vote
+      await doConfidenceVote(gatekeeper, ballotID, [alice, bob, carol]);
+      const previousIncumbent = await gatekeeper.incumbent(GRANT);
+      const nextEpoch = await gatekeeper.currentEpochNumber();
+
+      // move forward a couple epochs
+      const offset = new BN(2);
+      await increaseTime(timing.EPOCH_LENGTH.mul(offset));
+      const epoch = await gatekeeper.currentEpochNumber();
+      assert.strictEqual(epoch.toString(), nextEpoch.add(offset).toString(), 'Wrong epoch number');
+
+      // incumbent should be the same
+      const incumbent = await gatekeeper.incumbent(GRANT);
+      assert.strictEqual(incumbent, previousIncumbent, 'Incumbent should have stayed the same');
     });
 
     afterEach(async () => utils.evm.revert(snapshotID));
