@@ -1,0 +1,17 @@
+{
+  "token": {
+    "deploy": true,
+    "address": "0x5Cb4b57510Feb5438C90d6e17B39c2c910051859",
+    "name": "Basic Token",
+    "symbol": "BSC",
+    "decimals": 18,
+    "supply": "100000000"
+  },
+  "gatekeeper": {
+    "firstEpochStart": "12:00 01 Feb 2019 EST"
+  },
+  "capacitor": {
+    "charge": true,
+    "initialBalance": "50000000"
+  }
+}

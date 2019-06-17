@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /* globals artifacts */
 const ParameterStore = artifacts.require('ParameterStore');
 const BasicToken = artifacts.require('BasicToken');
@@ -18,8 +19,11 @@ module.exports = async function (deployer, networks) {
     info(`Using ParameterStore at ${parameterStoreAddress}`);
   } else {
     const stakeAmount = '5000000000000000000000';
-    // TODO: handle token deployed outside of migrations
-    const token = await BasicToken.deployed();
+
+    const { token: tokenInfo } = global.panvalaConfig;
+    const token = tokenInfo.deploy
+      ? await BasicToken.deployed()
+      : await BasicToken.at(tokenInfo.address);
 
     const names = ['slateStakeAmount', 'tokenAddress'];
     const values = [

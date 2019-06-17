@@ -1,15 +1,18 @@
+/* eslint-disable no-console */
 /* globals artifacts */
 const Gatekeeper = artifacts.require('Gatekeeper');
 const ParameterStore = artifacts.require('ParameterStore');
 
 const { abiEncode } = require('../utils');
 
-// TODO: read deployment data from config file
-
 // eslint-disable-next-line func-names
 module.exports = async function (deployer) {
-  const firstEpochTime = new Date('12:00 01 Feb 2019 EST');
+  const { gatekeeper: config } = global.panvalaConfig;
+  const { firstEpochStart } = config;
+
+  const firstEpochTime = new Date(firstEpochStart);
   const startTime = Math.floor(firstEpochTime / 1000);
+  // console.log(startTime);
 
   const parameters = await ParameterStore.deployed();
 
