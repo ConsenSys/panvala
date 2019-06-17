@@ -903,7 +903,15 @@ contract('Gatekeeper', (accounts) => {
       assert.strictEqual(decode(requestHash), metadataHash, 'Metadata hash is incorrect');
       assert.strictEqual(approved, false);
       assert.strictEqual(resource, requestor, 'Requestor is incorrect');
-      assert.strictEqual(expirationTime.toString(), '0', 'Expiration initialized incorrectly');
+
+      const epochNumber = await gatekeeper.currentEpochNumber();
+      const start = await gatekeeper.epochStart(epochNumber);
+      const expectedExpiration = start.add(timing.EPOCH_LENGTH.mul(new BN(2)));
+      assert.strictEqual(
+        expirationTime.toString(),
+        expectedExpiration.toString(),
+        "Expiration should have been the start of the epoch after the one of the request's creation",
+      );
 
       // Request count was incremented
       const requestCount = await gatekeeper.requestCount();
@@ -2430,18 +2438,6 @@ contract('Gatekeeper', (accounts) => {
         assert.strictEqual(has, true, 'Request should have permission');
       });
 
-      // all should have expirations set to an epoch in the future
-      const ts = await utils.evm.timestamp(receipt.receipt.blockNumber);
-      const expectedExpiration = new BN(ts).add(timing.EPOCH_LENGTH);
-      const requests = await Promise.all(slateRequests.map(r => gatekeeper.requests(r)));
-      requests.forEach((request) => {
-        assert.strictEqual(
-          request.expirationTime.toString(),
-          expectedExpiration.toString(),
-          'Expiration should have been an epoch in the future',
-        );
-      });
-
       // the current incumbent should be the recommender of the winning slate
       const incumbent = await gatekeeper.incumbent(GRANT);
       assert.strictEqual(
@@ -3134,18 +3130,6 @@ contract('Gatekeeper', (accounts) => {
       const permissions = await Promise.all(slateRequests.map(r => gatekeeper.hasPermission(r)));
       permissions.forEach((has) => {
         assert.strictEqual(has, true, 'Request should have permission');
-      });
-
-      // all should have expirations set to an epoch in the future
-      const ts = await utils.evm.timestamp(receipt.receipt.blockNumber);
-      const expectedExpiration = new BN(ts).add(timing.EPOCH_LENGTH);
-      const requests = await Promise.all(slateRequests.map(r => gatekeeper.requests(r)));
-      requests.forEach((request) => {
-        assert.strictEqual(
-          request.expirationTime.toString(),
-          expectedExpiration.toString(),
-          'Expiration should have been an epoch in the future',
-        );
       });
 
       // the current incumbent should be the recommender of the winning slate

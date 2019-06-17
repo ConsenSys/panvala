@@ -907,12 +907,15 @@ contract Gatekeeper {
         require(metadataHash.length > 0, "metadataHash cannot be empty");
         address resource = msg.sender;
 
+        // If the request is created in epoch n, expire at the start of epoch n + 2
+        uint256 expirationTime = epochStart(currentEpochNumber().add(2));
+
         // Create new request
         Request memory r = Request({
             metadataHash: metadataHash,
             resource: resource,
             approved: false,
-            expirationTime: 0
+            expirationTime: expirationTime
         });
 
         // Record request and return its ID
@@ -940,11 +943,9 @@ contract Gatekeeper {
 
         // mark all of its requests as approved
         uint[] memory requestIDs = s.requests;
-        uint256 expirationTime = now.add(EPOCH_LENGTH);
         for (uint i = 0; i < requestIDs.length; i++) {
             uint requestID = requestIDs[i];
             requests[requestID].approved = true;
-            requests[requestID].expirationTime = expirationTime;
         }
     }
 
