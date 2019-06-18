@@ -1,6 +1,7 @@
 import { IBallotDates } from '../interfaces';
 import { dateHasPassed } from './datetime';
 import { utils } from 'ethers';
+import { BN } from './format';
 
 export const statuses = {
   PENDING_TOKENS: 'PENDING TOKENS',
@@ -65,13 +66,14 @@ export function getPrefixAndDeadline(
   ballot: IBallotDates,
   route: string
 ): { deadline: number; prefix: string } {
-  console.log('ballot:', ballot);
   let deadline = 0,
     prefix = '';
 
   if (isPreVoting(ballot)) {
     deadline = ballot.votingOpenDate;
     if (route.includes('slates')) {
+      // TODO: use resource (address)
+      deadline = ballot.slateSubmissionDeadline.GRANT;
       prefix = 'SLATE STAKING DEADLINE';
     } else if (route.includes('proposals')) {
       prefix = 'PROPOSAL DEADLINE';
@@ -84,6 +86,9 @@ export function getPrefixAndDeadline(
   } else if (isBallotClosed(ballot)) {
     prefix = 'VOTING CLOSED';
     deadline = ballot.votingCloseDate;
+  } else if (ballot.votingOpenDate === 0) {
+    prefix = 'LOADING...';
+    deadline = 0;
   } else if (isBallotFinalized(ballot)) {
     prefix = 'BALLOT FINALIZED';
     deadline = ballot.finalityDate;
@@ -97,7 +102,11 @@ export function getPrefixAndDeadline(
  * commit period.
  */
 export function slateSubmissionDeadline(votingOpenDate: number, lastStaked: number) {
-  return lastStaked + (votingOpenDate - lastStaked) / 2;
+  // prettier-ignore
+  const extraTime = BN(votingOpenDate).sub(BN(lastStaked)).div('2');
+  return BN(lastStaked)
+    .add(extraTime)
+    .toNumber();
 }
 
 export function ballotDates(startDate: number = 1549040400): IBallotDates {
@@ -114,7 +123,11 @@ export function ballotDates(startDate: number = 1549040400): IBallotDates {
     votingCloseDate: week12EndDate,
     finalityDate: week13EndDate,
     initialSlateSubmissionDeadline,
-    slateSubmissionDeadline: {},
+    // TODO: use the resource (addresses) instead of GRANT/GOVERNANCE
+    slateSubmissionDeadline: {
+      GRANT: 0,
+      GOVERNANCE: 0,
+    },
   };
 }
 

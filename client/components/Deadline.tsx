@@ -19,10 +19,11 @@ interface IProps extends ITag {
 }
 
 const Deadline: React.FunctionComponent<IProps> = ({ ballot, route }) => {
-  const { prefix, deadline } = getPrefixAndDeadline(ballot, route);
+  const { prefix, deadline: timestamp } = getPrefixAndDeadline(ballot, route);
+  const deadline = timestamp === 0 ? '' : tsToDeadline(timestamp);
   return (
     <Wrapper>
-      <StyledDeadline ballot={ballot}>{`${prefix} ${tsToDeadline(deadline)} EST`}</StyledDeadline>
+      <StyledDeadline ballot={ballot}>{`${prefix} ${deadline}`}</StyledDeadline>
     </Wrapper>
   );
 };
