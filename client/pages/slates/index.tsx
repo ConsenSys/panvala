@@ -71,7 +71,7 @@ const Slates: React.SFC = () => {
                     category={slate.category}
                     status={convertEVMSlateStatus(slate.status)}
                     address={slate.recommenderAddress}
-                    recommender={slate.owner}
+                    recommender={slate.organization}
                     verifiedRecommender={slate.verifiedRecommender}
                     type={SLATE}
                     incumbent={slate.incumbent}
