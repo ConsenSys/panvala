@@ -7,6 +7,7 @@ const readDir = `${currentDir}/../governance-contracts/build/contracts`;
 const Gatekeeper = JSON.parse(fs.readFileSync(`${readDir}/Gatekeeper.json`));
 
 const gatekeeperAddress = process.env.GATEKEEPER_ADDRESS;
+const rpcEndpoint = process.env.RPC_ENDPOINT;
 
 const ONE_DAY = 86400;
 const BN = small => ethers.utils.bigNumberify(small);
@@ -33,8 +34,8 @@ timeTravel(days);
 async function timeTravel(days) {
   const daysInSeconds = days.mul(ONE_DAY);
 
-  const testProvider = new ethers.providers.JsonRpcProvider('http://localhost:8545');
-  const signer = testProvider.getSigner();
+  const provider = new ethers.providers.JsonRpcProvider(rpcEndpoint);
+  const signer = provider.getSigner();
   const gatekeeper = new ethers.Contract(gatekeeperAddress, Gatekeeper.abi, signer);
 
   await gatekeeper.functions.timeTravel(daysInSeconds);
