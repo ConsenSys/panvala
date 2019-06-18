@@ -38,9 +38,6 @@ contract TokenCapacitor {
     // The total number of proposals
     uint public proposalCount;
 
-    // Token decay
-    uint256 public constant HALF_LIFE = 3600 * 1456;
-
     // Token decay table
     uint256 constant PRECISION = 12;
     uint256 public scale;
@@ -200,7 +197,7 @@ contract TokenCapacitor {
     /**
      @dev Number of tokens that will be unlocked by the given (future) time, not counting
      donations or withdrawals
-     @param time The time to project for. Must be in the future.
+     @param time The time to project for. Must after the lastLockedTime.
      */
     function projectedUnlockedBalance(uint256 time) public view returns(uint256) {
         uint256 futureUnlocked = lastLockedBalance.sub(projectedLockedBalance(time));
@@ -210,10 +207,10 @@ contract TokenCapacitor {
     /**
      @dev Number of tokens that will be locked by the given (future) time, not counting
      donations or withdrawals
-     @param time The time to project for. Must be in the future.
+     @param time The time to project for. Must be after the lastLockedTime.
      */
     function projectedLockedBalance(uint256 time) public view returns(uint256) {
-        require(time >= now, "Time cannot be past");
+        require(time >= lastLockedTime, "Time cannot be before last locked");
         uint256 elapsedTime = time.sub(lastLockedTime);
 
         // Based on the elapsed time (in days), calculate the decay factor
@@ -253,13 +250,14 @@ contract TokenCapacitor {
      @dev Update the locked and unlocked balances according to the release rate, taking into account
      any donations or withdrawals since the last update. At each step, start decaying anew from the
      lastLockedBalance, as if it were the initial balance.
+     @param time The time to update until. Must be less than 4096 days from the lastLockedTime.
      */
-    function updateBalances() public {
+    function updateBalancesUntil(uint256 time) public {
         uint256 totalBalance = _token().balanceOf(address(this));
 
         // Sweep the released tokens from locked into unlocked
         // Locked balance is based on the decay since the last update
-        uint256 newLockedBalance = projectedLockedBalance(now);
+        uint256 newLockedBalance = projectedLockedBalance(time);
         assert(newLockedBalance <= lastLockedBalance);
 
         // Calculate the number of tokens unlocked since the last update
@@ -268,6 +266,13 @@ contract TokenCapacitor {
         // Lock any tokens not currently unlocked
         lastLockedBalance = totalBalance.sub(unlockedBalance);
 
-        lastLockedTime = now;
+        lastLockedTime = time;
+    }
+
+    /**
+     @dev Update the locked and unlocked balances up until `now`.
+     */
+    function updateBalances() public {
+        updateBalancesUntil(now);
     }
 }

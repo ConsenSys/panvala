@@ -805,6 +805,21 @@ contract('TokenCapacitor', (accounts) => {
         assert.strictEqual(locked.toString(), expectedLocked.toString());
       });
 
+      it('should revert if more than 4096 days have passed since the last update', async () => {
+        const days = 4096;
+        // move forward
+        const offset = new BN(timing.ONE_DAY).muln(days);
+        await increaseTime(offset);
+
+        try {
+          await capacitor.updateBalances({ from: creator });
+        } catch (error) {
+          expectRevert(error);
+          return;
+        }
+        assert.fail(`Called updateBalances() after more than ${days} days`);
+      });
+
       afterEach(async () => utils.evm.revert(snapshotID));
     });
 

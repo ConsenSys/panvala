@@ -123,6 +123,17 @@ async function futureTime(seconds) {
 }
 
 /**
+ *
+ * @param {BN} timestamp
+ */
+async function goTo(timestamp) {
+  const now = await blockTime();
+  // console.log(timestamp.toNumber(), now);
+  const adjustment = timestamp.sub(new BN(now));
+  await increaseTime(adjustment);
+}
+
+/**
  * Print a BN date nicely
  * @param {BN} bn
  */
@@ -554,7 +565,7 @@ const utils = {
   zeroAddress: ethUtils.zeroAddress,
   BN,
   evm: {
-    increaseTime, snapshot: evmSnapshot, revert: evmRevert, timestamp: blockTime, futureTime,
+    increaseTime, snapshot: evmSnapshot, revert: evmRevert, timestamp: blockTime, futureTime, goTo,
   },
   createMultihash,
   newGatekeeper,
