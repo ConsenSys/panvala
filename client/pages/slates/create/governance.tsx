@@ -43,7 +43,7 @@ import { IGovernanceProposalMetadata, IGovernanceProposalInfo } from '../../../i
 const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
   // modal opener
   const [isOpen, setOpenModal] = React.useState(false);
-  const { onRefreshSlates }: IMainContext = React.useContext(MainContext);
+  const { onRefreshSlates, onRefreshCurrentBallot }: IMainContext = React.useContext(MainContext);
   // get eth context
   const {
     account,
@@ -177,6 +177,7 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
 
         setOpenModal(true);
         onRefreshSlates();
+        onRefreshCurrentBallot();
         onRefreshBalances();
       } else {
         throw new Error(`ERROR: failed to save slate: ${JSON.stringify(response)}`);

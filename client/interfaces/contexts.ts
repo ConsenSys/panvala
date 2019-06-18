@@ -148,6 +148,7 @@ export interface IMainContext {
   currentBallot: IBallotDates;
   onRefreshProposals(): any;
   onRefreshSlates(): any;
+  onRefreshCurrentBallot(): any;
 }
 export interface IEthereumContext {
   account?: string;

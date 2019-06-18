@@ -2,6 +2,7 @@ import * as React from 'react';
 import { format } from 'date-fns';
 import { AxiosResponse } from 'axios';
 import keyBy from 'lodash/keyBy';
+import isEmpty from 'lodash/isEmpty';
 
 import { EthereumContext } from './EthereumProvider';
 import { IProposal, ISlate, IMainContext } from '../interfaces';
@@ -38,16 +39,7 @@ async function handleGetAllSlates() {
 }
 
 function reducer(state: any, action: any) {
-  console.info(`Main state change (${action.type})`, state, action);
   switch (action.type) {
-    case 'all':
-      return {
-        slates: action.slates,
-        proposals: action.proposals,
-        slatesByID: action.slatesByID,
-        proposalsByID: action.proposalsByID,
-        currentBallot: action.currentBallot,
-      };
     case 'slates':
       return {
         ...state,
@@ -59,6 +51,11 @@ function reducer(state: any, action: any) {
         ...state,
         proposals: action.proposals,
         proposalsByID: action.proposalsByID,
+      };
+    case 'ballot':
+      return {
+        ...state,
+        currentBallot: action.currentBallot,
       };
     default:
       throw new Error();
@@ -79,69 +76,67 @@ export default function MainProvider(props: any) {
     },
   });
   const {
-    contracts: { gatekeeper },
+    contracts: { gatekeeper, tokenCapacitor, parameterStore },
   } = React.useContext(EthereumContext);
 
   React.useEffect(() => {
-    async function setInitialState() {
-      const [slates, proposals]: [ISlate[], IProposal[]] = await Promise.all([
-        handleGetAllSlates(),
-        handleGetAllProposals(),
-      ]);
-
-      let proposalData: IProposal[] = [];
-      // sort proposals by createdAt
-      if (Array.isArray(proposals)) {
-        const sortedProposals: IProposal[] = proposals.sort((a: IProposal, b: IProposal) => {
-          const timestampA = format(a.createdAt, 'x');
-          const timestampB = format(b.createdAt, 'x');
-          return parseInt(timestampA) - parseInt(timestampB);
-        });
-        proposalData = sortedProposals;
-      }
-
-      const slatesByID = keyBy(slates, 'id');
-      const proposalsByID = keyBy(proposalData, 'id');
-
-      const currentEpochStart =
-        typeof gatekeeper.functions.currentEpochStart !== 'undefined'
-          ? (await gatekeeper.functions.currentEpochStart()).toNumber()
-          : await gatekeeper.functions
-              .currentEpochNumber()
-              .then(epoch => gatekeeper.functions.epochStart(epoch));
-
-      const currentBallot = ballotDates(currentEpochStart);
-      console.log('currentBallot:', currentBallot);
-
-      dispatch({
-        type: 'all',
-        slates,
-        proposals,
-        slatesByID,
-        proposalsByID,
-        currentBallot,
-      });
-    }
-    if (gatekeeper) {
-      setInitialState();
+    if (!isEmpty(gatekeeper)) {
+      refreshCurrentBallot();
+      refreshProposals();
+      refreshSlates();
     }
   }, [gatekeeper]);
 
-  async function handleRefreshProposals() {
-    const proposals: IProposal[] = await handleGetAllProposals();
-    const proposalsByID = keyBy(proposals, 'id');
-    return dispatch({ type: 'proposals', proposals, proposalsByID });
+  async function refreshCurrentBallot() {
+    const epochNumber = await gatekeeper.functions.currentEpochNumber();
+    const currentEpochStart = (await gatekeeper.functions.epochStart(epochNumber)).toNumber();
+    let currentBallot = ballotDates(currentEpochStart);
+
+    // set slate submission deadlines for grants and governance
+    currentBallot.slateSubmissionDeadline.GRANT = (await gatekeeper.functions.slateSubmissionDeadline(
+      epochNumber,
+      tokenCapacitor.address
+    )).toNumber();
+    currentBallot.slateSubmissionDeadline.GOVERNANCE = (await gatekeeper.functions.slateSubmissionDeadline(
+      epochNumber,
+      parameterStore.address
+    )).toNumber();
+
+    console.log('currentBallot:', currentBallot);
+    return dispatch({ type: 'ballot', currentBallot });
   }
-  async function handleRefreshSlates() {
+
+  async function refreshProposals() {
+    const proposals: IProposal[] = await handleGetAllProposals();
+    let proposalData: IProposal[] = [];
+    // sort proposals by createdAt
+    if (Array.isArray(proposals)) {
+      const sortedProposals: IProposal[] = proposals.sort((a: IProposal, b: IProposal) => {
+        const timestampA = format(a.createdAt, 'x');
+        const timestampB = format(b.createdAt, 'x');
+        return parseInt(timestampA) - parseInt(timestampB);
+      });
+      proposalData = sortedProposals;
+    }
+    const proposalsByID = keyBy(proposalData, 'id');
+
+    console.log('proposals:', proposalData);
+    return dispatch({ type: 'proposals', proposals: proposalData, proposalsByID });
+  }
+
+  async function refreshSlates() {
     const slates: ISlate[] = await handleGetAllSlates();
     const slatesByID = keyBy(slates, 'id');
+
+    console.log('slates:', slates);
     return dispatch({ type: 'slates', slates, slatesByID });
   }
 
   const value: IMainContext = {
     ...state,
-    onRefreshProposals: handleRefreshProposals,
-    onRefreshSlates: handleRefreshSlates,
+    onRefreshCurrentBallot: refreshCurrentBallot,
+    onRefreshProposals: refreshProposals,
+    onRefreshSlates: refreshSlates,
   };
 
   return <MainContext.Provider value={value}>{props.children}</MainContext.Provider>;

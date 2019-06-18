@@ -19,6 +19,7 @@ export const StoryWrapper = ({ children, proposals, slates }: any) => {
           currentBallot,
           onRefreshProposals: () => null,
           onRefreshSlates: () => null,
+          onRefreshCurrentBallot: () => null,
         }}
       >
         <ThemeProvider theme={theme}>{children}</ThemeProvider>

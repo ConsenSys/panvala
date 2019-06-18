@@ -50,7 +50,7 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
   const { account, contracts, onRefreshBalances, gkAllowance }: IEthereumContext = React.useContext(
     EthereumContext
   );
-  const { onRefreshSlates, slatesByID } = React.useContext(MainContext);
+  const { onRefreshSlates, slatesByID, onRefreshCurrentBallot } = React.useContext(MainContext);
 
   // stepper/modal opener
   const [stepperIsOpen, toggleOpenStepper] = React.useState(false);
@@ -127,6 +127,7 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
       // refresh balances, refresh slates
       onRefreshBalances();
       onRefreshSlates();
+      onRefreshCurrentBallot();
       // TODO: refresh slate submission deadline on ballot
       toggleOpenStepper(false);
       setOpenModal(true);
