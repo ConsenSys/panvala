@@ -12,11 +12,12 @@ const { toUtf8String } = ethers.utils;
 
 const config = require('./config');
 const { rpcEndpoint } = config;
-const { gatekeeperAddress } = config.contracts;
+const { gatekeeperAddress, tokenCapacitorAddress } = config.contracts;
 
 const { nonEmptyString } = require('./validation');
 
 const BN = small => ethers.utils.bigNumberify(small);
+const getAddress = hexAddress => ethers.utils.getAddress(hexAddress);
 
 /**
  * Read slate info from the blockchain, IPFS, and the local DB
@@ -46,7 +47,7 @@ async function getAllSlates() {
     // give access to this variable throughout the chain
     return gatekeeper
       .slates(slateID)
-      .then(({ recommender, metadataHash, status, staker, stake, epochNumber }) => {
+      .then(({ recommender, metadataHash, status, staker, stake, epochNumber, resource }) => {
         // decode hash
         const decoded = toUtf8String(metadataHash);
         // console.log('decoded hash', decoded);
@@ -58,6 +59,7 @@ async function getAllSlates() {
           staker,
           stake,
           epochNumber,
+          resource,
         };
       })
       .then(slate => {
@@ -120,13 +122,18 @@ async function getSlateWithMetadata(slate, metadataHash, requiredStake, currentE
       incumbent = true;
     }
 
+    let category = 'GOVERNANCE';
+    if (getAddress(slate.resource) === getAddress(tokenCapacitorAddress)) {
+      category = 'GRANT';
+    }
+
     // --------------------------
     // COMBINE/RETURN SLATE DATA
     // --------------------------
     const slateData = {
       id: slate.slateID, // should we call this slateID instead of id? we're already using slateID as the primary key in the slates table
       metadataHash,
-      category: 'GRANT',
+      category,
       status: slate.status,
       deadline,
       title,

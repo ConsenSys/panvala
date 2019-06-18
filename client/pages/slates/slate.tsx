@@ -16,7 +16,7 @@ import { StatelessPage, IMainContext, ISlate, IBallotDates, IProposal } from '..
 import { convertEVMSlateStatus, statuses, slateSubmissionDeadline } from '../../utils/status';
 import { tsToDeadline, timestamp } from '../../utils/datetime';
 import Flex from '../../components/system/Flex';
-import { GRANT_PROPOSAL } from '../../utils/constants';
+import { PROPOSAL } from '../../utils/constants';
 
 const Incumbent = styled.div`
   color: ${COLORS.primary};
@@ -230,7 +230,7 @@ const Slate: StatelessPage<IProps> = ({ query: { id } }) => {
                         subtitle={proposal.tokensRequested + ' Tokens Requested'}
                         description={proposal.summary}
                         category={`${slate.category} PROPOSAL`}
-                        type={GRANT_PROPOSAL}
+                        type={PROPOSAL}
                       />
                     </RouterLink>
                   </div>

@@ -2,8 +2,8 @@ import * as React from 'react';
 import { storiesOf } from '@storybook/react';
 import Card from '../Card';
 import { StoryWrapper } from './utils.stories';
-import { ballotDates, convertEVMSlateStatus } from '../../utils/status';
-import { GRANT_SLATE, GRANT_PROPOSAL, GOVERNANCE_SLATE } from '../../utils/constants';
+import { convertEVMSlateStatus } from '../../utils/status';
+import { SLATE, PROPOSAL } from '../../utils/constants';
 import { unstakedSlate, proposals } from './data';
 
 storiesOf('Card', module)
@@ -25,7 +25,7 @@ storiesOf('Card', module)
           address={newSlate.recommenderAddress}
           recommender={newSlate.organization}
           verifiedRecommender={newSlate.verifiedRecommender}
-          type={GRANT_SLATE}
+          type={SLATE}
           incumbent={newSlate.incumbent}
         />
       </StoryWrapper>
@@ -49,7 +49,7 @@ storiesOf('Card', module)
           address={newSlate.recommenderAddress}
           recommender={newSlate.organization}
           verifiedRecommender={newSlate.verifiedRecommender}
-          type={GRANT_SLATE}
+          type={SLATE}
           incumbent={newSlate.incumbent}
         />
       </StoryWrapper>
@@ -73,7 +73,7 @@ storiesOf('Card', module)
           address={newSlate.recommenderAddress}
           recommender={newSlate.organization}
           verifiedRecommender={newSlate.verifiedRecommender}
-          type={GRANT_SLATE}
+          type={SLATE}
           incumbent={newSlate.incumbent}
         />
       </StoryWrapper>
@@ -97,7 +97,7 @@ storiesOf('Card', module)
           address={newSlate.recommenderAddress}
           recommender={newSlate.organization}
           verifiedRecommender={newSlate.verifiedRecommender}
-          type={GRANT_SLATE}
+          type={SLATE}
           incumbent={newSlate.incumbent}
         />
       </StoryWrapper>
@@ -127,7 +127,7 @@ storiesOf('Card', module)
           address={newSlate.recommenderAddress}
           recommender={newSlate.organization}
           verifiedRecommender={newSlate.verifiedRecommender}
-          type={GOVERNANCE_SLATE}
+          type={SLATE}
           incumbent={newSlate.incumbent}
         />
       </StoryWrapper>
@@ -144,7 +144,7 @@ storiesOf('Card', module)
           subtitle={proposal.tokensRequested + ' Tokens Requested'}
           description={proposal.summary}
           category={`${proposal.category} PROPOSAL`}
-          type={GRANT_PROPOSAL}
+          type={PROPOSAL}
         />
       </StoryWrapper>
     );

@@ -9,7 +9,7 @@ import { Separator } from './Separator';
 import { IChoices, IProposal } from '../interfaces';
 import RouterLink from './RouterLink';
 import Text from './system/Text';
-import { GRANT_SLATE } from '../utils/constants';
+import { SLATE } from '../utils/constants';
 
 const animatedCss = css`
   opacity: 1;
@@ -162,13 +162,12 @@ const Card: React.FunctionComponent<ICardProps> = props => {
         {props.status && <Tag status={props.status}>{props.status}</Tag>}
       </Flex>
 
-      {props.type && props.type.includes('SLATE') && props.incumbent ? (
+      {props.type === SLATE && props.incumbent ? (
         <Text my={2} fontSize={11} color="blue" fontWeight="bold">
           {'INCUMBENT'}
         </Text>
       ) : (
-        props.type &&
-        props.type.includes('SLATE') &&
+        props.type === SLATE &&
         !props.verifiedRecommender && (
           <Text my={2} fontSize={11} color="reds.dark" fontWeight="bold">
             {'UNVERIFIED RECOMMENDER'}

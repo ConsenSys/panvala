@@ -7,16 +7,15 @@ import Deadline from '../../components/Deadline';
 import RouterLink from '../../components/RouterLink';
 import RouteTitle from '../../components/RouteTitle';
 import { IMainContext, IProposal } from '../../interfaces';
-import { GRANT_PROPOSAL } from '../../utils/constants';
+import { PROPOSAL } from '../../utils/constants';
 
 const CardsWrapper = styled.div`
   display: flex;
   flex-flow: row wrap;
 `;
 
-const Proposals: React.SFC<any> = () => {
+const Proposals: React.SFC = () => {
   const { proposals, currentBallot }: IMainContext = React.useContext(MainContext);
-  console.log('proposals:', proposals);
 
   return (
     <div>
@@ -32,7 +31,7 @@ const Proposals: React.SFC<any> = () => {
             <Button type="default">{'Add Proposal'}</Button>
           </RouterLink>
         </div>
-        {currentBallot.votingOpenDate && <Deadline ballot={currentBallot} route="proposals" />}
+        <Deadline ballot={currentBallot} route="proposals" />
       </div>
 
       <CardsWrapper>
@@ -48,7 +47,7 @@ const Proposals: React.SFC<any> = () => {
                     subtitle={proposal.tokensRequested + ' Tokens Requested'}
                     description={proposal.summary}
                     category={`${proposal.category} PROPOSAL`}
-                    type={GRANT_PROPOSAL}
+                    type={PROPOSAL}
                   />
                 </RouterLink>
               </div>

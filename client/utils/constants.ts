@@ -1,5 +1,2 @@
-export const GRANT_PROPOSAL = 'GRANT_PROPOSAL';
-export const GRANT_SLATE = 'GRANT_SLATE';
-
-export const GOVERNANCE_PROPOSAL = 'GOVERNANCE_PROPOSAL';
-export const GOVERNANCE_SLATE = 'GOVERNANCE_SLATE';
+export const SLATE = 'SLATE';
+export const PROPOSAL = 'PROPOSAL';
