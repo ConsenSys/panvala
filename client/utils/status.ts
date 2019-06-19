@@ -128,6 +128,7 @@ export function ballotDates(startDate: number = 1549040400): IBallotDates {
       GRANT: 0,
       GOVERNANCE: 0,
     },
+    epochNumber: 0,
   };
 }
 

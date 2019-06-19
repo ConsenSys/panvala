@@ -131,6 +131,7 @@ export interface IBallotDates {
   slateSubmissionDeadline: {
     [key: string]: number;
   };
+  epochNumber: number;
 }
 
 export interface IContracts {

@@ -97,10 +97,8 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
     }
 
     if (account && contracts && contracts.token) {
-      // TODO: read this from the Gatekeeper
-      const ballotID: string = '0';
       const ballot: ISubmitBallot = {
-        epochNumber: utils.bigNumberify(ballotID).toString(),
+        epochNumber: currentBallot.epochNumber,
         choices: {
           // 0 = grant
           0: {

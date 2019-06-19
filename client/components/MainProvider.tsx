@@ -101,6 +101,7 @@ export default function MainProvider(props: any) {
       epochNumber,
       parameterStore.address
     )).toNumber();
+    currentBallot.epochNumber = epochNumber.toNumber();
 
     console.log('currentBallot:', currentBallot);
     return dispatch({ type: 'ballot', currentBallot });
