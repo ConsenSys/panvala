@@ -1,6 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 const ethers = require('ethers');
+const readline = require('readline');
+
 
 const currentDir = path.resolve(__dirname);
 const readDir = `${currentDir}/../governance-contracts/build/contracts`;
@@ -8,6 +10,7 @@ const Gatekeeper = JSON.parse(fs.readFileSync(`${readDir}/Gatekeeper.json`));
 
 const gatekeeperAddress = process.env.GATEKEEPER_ADDRESS;
 const rpcEndpoint = process.env.RPC_ENDPOINT;
+const mnemonic = process.env.MNEMONIC;
 
 const ONE_DAY = 86400;
 const BN = small => ethers.utils.bigNumberify(small);
@@ -30,15 +33,60 @@ if (argv[2] === 'weeks' && argv[3]) {
 }
 
 timeTravel(days);
+
+
+function getSigner(provider) {
+  if (typeof mnemonic === 'undefined') {
+    // default
+    return provider.getSigner();
+  } else {
+    // use the mnemonic
+    const mnemonicWallet = ethers.Wallet.fromMnemonic(mnemonic);
+    return new ethers.Wallet(mnemonicWallet.privateKey, provider);
+  }
+}
+
+function toDate(ts) {
+  const d = ethers.utils.bigNumberify(ts);
+  return new Date(d.mul(1000).toNumber());
+}
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
+
 // travel forward or backwards in time based on number of days provided
 async function timeTravel(days) {
   const daysInSeconds = days.mul(ONE_DAY);
 
   const provider = new ethers.providers.JsonRpcProvider(rpcEndpoint);
-  const signer = provider.getSigner();
+  const signer = getSigner(provider);
+
   const gatekeeper = new ethers.Contract(gatekeeperAddress, Gatekeeper.abi, signer);
 
-  await gatekeeper.functions.timeTravel(daysInSeconds);
+  // Print timings
+  const epoch = await gatekeeper.functions.currentEpochNumber();
+  const epochStart = await gatekeeper.functions.epochStart(epoch);
+  const now = Math.floor(new Date() / 1000);
+  console.log(`Current epoch: ${epoch.toString()}`);
+  console.log(`Epoch start: ${epochStart.toString()} -> ${toDate(epochStart)}`);
+  console.log(`Current time: ${now} -> ${toDate(now)}`);
+  console.log(`Epoch time: \n  ${(now - epochStart.toNumber()) / ONE_DAY} days`);
+  console.log(`  ${(now - epochStart.toNumber()) / (ONE_DAY * 7)} weeks`);
+
+  // Send the tx, with confirmation from the user
+  rl.question(`Do you want to time travel ${days} days? [y/N]`, (answer) => {
+    if (answer === 'y') {
+      console.log('traveling');
+      const receipt = await gatekeeper.functions.timeTravel(daysInSeconds);
+      console.log(receipt);
+    } else {
+      console.log('exiting');
+    }
+
+    rl.close();
+  });
 }
 
 // to travel forward one week:
