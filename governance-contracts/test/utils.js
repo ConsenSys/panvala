@@ -142,6 +142,26 @@ function printDate(bn) {
   return `${moment(dt, 'X')} ${dt}`;
 }
 
+/**
+ *@param {number} n
+ */
+function range(n) {
+  return [...Array(n).keys()];
+}
+
+/**
+ * Run promises in sequential order
+ * From https://stackoverflow.com/a/41115086
+ * @param {Array[Promise]} promises Functions returning promises
+ */
+function chain(promises) {
+  const chained = promises.reduce(
+    (promise, f) => promise.then(result => f().then(Array.prototype.concat.bind(result))),
+    Promise.resolve([]),
+  );
+  return chained;
+}
+
 function createMultihash(data) {
   const digest = sha256(data);
 
@@ -572,6 +592,8 @@ const utils = {
   newPanvala,
   epochTime,
   printDate,
+  range,
+  chain,
   asBytes,
   stripHexPrefix,
   bytesAsString,

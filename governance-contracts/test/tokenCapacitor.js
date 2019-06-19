@@ -820,6 +820,22 @@ contract('TokenCapacitor', (accounts) => {
         assert.fail(`Called updateBalances() after more than ${days} days`);
       });
 
+      it('should allow calls to updateBalancesUntil() to catch up after more than 4096 days', async () => {
+        const days = 6000;
+        const start = await utils.evm.timestamp();
+
+        // move forward
+        const offset = new BN(timing.ONE_DAY).muln(days);
+        await increaseTime(offset);
+
+        // catch up
+        const intermediateTime = (new BN(start)).add(timing.ONE_DAY.muln(4095));
+        await capacitor.updateBalancesUntil(intermediateTime, { from: creator });
+
+        // Should be able to update again
+        await capacitor.updateBalances({ from: creator });
+      });
+
       afterEach(async () => utils.evm.revert(snapshotID));
     });
 

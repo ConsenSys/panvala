@@ -15,13 +15,16 @@ const {
 
 const { increaseTime } = utils.evm;
 
-
-const epochDays = epochs => timing.EPOCH_LENGTH.muln(epochs).div(timing.ONE_DAY);
-
-function lockedTokens(multipliers, scale, days) {
-  const initialBalance = new BN(50000000);
+/**
+ * Calculate the number of locked tokens
+ * @param {Object} multipliers
+ * @param {BN} scale
+ * @param {BN} startingBalance
+ * @param {string} days
+ */
+function lockedTokens(multipliers, scale, startingBalance, days) {
   const mul = multipliers[days];
-  const locked = initialBalance.mul(new BN(mul)).div(scale);
+  const locked = startingBalance.mul(new BN(mul)).div(scale);
   return locked;
 }
 
@@ -34,15 +37,17 @@ contract('integration', (accounts) => {
     let gatekeeper;
     let capacitor;
     let token;
-    const initialTokens = '100000000';
+    const initialTokens = new BN(100e6);
     let GRANT;
     let scale;
     let snapshotID;
+    const initialBalance = new BN(50e6);
+    const zero = new BN(0);
 
     beforeEach(async () => {
       ({ gatekeeper, token, capacitor } = await utils.newPanvala({ initialTokens, from: creator }));
       snapshotID = await utils.evm.snapshot();
-      await utils.chargeCapacitor(capacitor, '50000000', token, { from: creator });
+      await utils.chargeCapacitor(capacitor, initialBalance, token, { from: creator });
 
       GRANT = await getResource(gatekeeper, 'GRANT');
       scale = await capacitor.scale();
@@ -53,26 +58,44 @@ contract('integration', (accounts) => {
       await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
     });
 
-    it('grant', async () => {
-      const initialBalance = new BN(50000000);
-
+    it('should calculate withdrawals correctly each epoch', async () => {
       let requestID;
       let slateID;
-      const zero = new BN(0);
       let totalRedeemed = zero;
+      const tokenWithdrawals = [];
 
       const runEpoch = async () => {
         const epochNumber = await gatekeeper.currentEpochNumber();
         // console.log('epoch', epochNumber.toString());
 
-        // get the locked balance for the start of the next epoch
-        const d = epochDays(epochNumber.addn(1).toNumber());
-        const lockedBalance = lockedTokens(multipliers, scale, d);
+        // calculate the locked balance for the start of the next epoch
+        const now = await utils.evm.timestamp();
+        const nextEpochStart = await gatekeeper.epochStart(epochNumber.addn(1));
+        const daysLeft = nextEpochStart.sub(new BN(now)).div(timing.ONE_DAY);
+        // console.log(`${daysLeft} days left`);
+
+        // decay from lastLockedBalance
+        const lastLockedBalance = await capacitor.lastLockedBalance();
+        const futureLockedBalance = lockedTokens(
+          multipliers,
+          scale,
+          lastLockedBalance,
+          daysLeft.toString(),
+        );
+        const projectedLockedBalance = await capacitor.projectedLockedBalance(nextEpochStart);
+        assert.strictEqual(
+          futureLockedBalance.toString(),
+          projectedLockedBalance.toString(),
+          `Calculation and projection do not match for epoch ${epochNumber.toString()}`,
+        );
+        // console.log({
+        //   calculated: futureLockedBalance.toString(),
+        //   projected: projectedLockedBalance.toString(),
+        // });
 
         // Create a grant slate for all the tokens
         // Calculate the number of tokens to request
-        const futureUnlocked = initialBalance.sub(lockedBalance);
-        const tokens = futureUnlocked.sub(totalRedeemed);
+        const tokens = initialBalance.sub(totalRedeemed).sub(futureLockedBalance);
         // console.log(`requesting ${tokens} tokens`);
 
         const grantProposals = [{
@@ -104,64 +127,137 @@ contract('integration', (accounts) => {
         //   locked: l.toString(),
         // });
 
-        await capacitor.withdrawTokens(requestID);
+        await capacitor.withdrawTokens(requestID, { from: recommender });
+        tokenWithdrawals.push(tokens.toNumber());
         totalRedeemed = await capacitor.lifetimeReleasedTokens();
         // console.log('withdraw', tokens.toString());
 
-        // const { unlocked, locked } = await utils.capacitorBalances(capacitor);
+        const { unlocked, locked } = await utils.capacitorBalances(capacitor);
         // console.log('capacitor balances', {
         //   unlocked: unlocked.toString(),
         //   locked: locked.toString(),
         // });
-        // console.log('checksum', totalRedeemed.add(locked).add(unlocked).toString());
 
-        // console.log('');
+        assert.strictEqual(
+          totalRedeemed
+            .add(locked)
+            .add(unlocked)
+            .toString(),
+          initialBalance.toString(),
+          `Checksum failed for epoch ${epochNumber.toString()}`,
+        );
       };
 
-      await runEpoch(0);
-      await runEpoch(1);
-      await runEpoch(2);
-      await runEpoch(3);
-      await runEpoch(4);
-      await runEpoch(5);
-      await runEpoch(5);
-      await runEpoch(6);
-      await runEpoch(7);
-      await runEpoch(8);
-      await runEpoch(9);
+      const numEpochs = 40;
+      const epochs = utils.range(numEpochs).map(i => (() => runEpoch(i)));
+      await utils.chain(epochs);
 
-      await runEpoch(10);
-      await runEpoch(11);
-      await runEpoch(12);
-      await runEpoch(13);
-      await runEpoch(14);
-      await runEpoch(15);
-      await runEpoch(16);
-      await runEpoch(17);
-      await runEpoch(18);
-      await runEpoch(19);
+      // console.log(tokenWithdrawals);
+    });
 
-      await runEpoch(20);
-      await runEpoch(21);
-      await runEpoch(22);
-      await runEpoch(23);
-      await runEpoch(24);
-      await runEpoch(25);
-      await runEpoch(26);
-      await runEpoch(27);
-      await runEpoch(28);
-      await runEpoch(29);
+    it('should calculate withdrawals correctly with daily balance updates', async () => {
+      let requestID;
+      let slateID;
+      let totalRedeemed = zero;
+      const tokenWithdrawals = [];
 
-      await runEpoch(30);
-      await runEpoch(31);
-      await runEpoch(32);
-      await runEpoch(33);
-      await runEpoch(34);
-      await runEpoch(35);
-      await runEpoch(36);
-      await runEpoch(37);
-      await runEpoch(38);
-      await runEpoch(39);
+      const runEpoch = async () => {
+        const epochNumber = await gatekeeper.currentEpochNumber();
+        // console.log('epoch', epochNumber.toString());
+
+        // calculate the locked balance for the start of the next epoch
+        const now = await utils.evm.timestamp();
+        const nextEpochStart = await gatekeeper.epochStart(epochNumber.addn(1));
+        const daysLeft = nextEpochStart.sub(new BN(now)).div(timing.ONE_DAY);
+        // console.log(`${daysLeft} days left`);
+
+        // decay from lastLockedBalance
+        const lastLockedBalance = await capacitor.lastLockedBalance();
+        const futureLockedBalance = lockedTokens(
+          multipliers,
+          scale,
+          lastLockedBalance,
+          daysLeft.toString(),
+        );
+        const projectedLockedBalance = await capacitor.projectedLockedBalance(nextEpochStart);
+        assert.strictEqual(
+          futureLockedBalance.toString(),
+          projectedLockedBalance.toString(),
+          `Calculation and projection do not match for epoch ${epochNumber.toString()}`,
+        );
+        // console.log({
+        //   calculated: futureLockedBalance.toString(),
+        //   projected: projectedLockedBalance.toString(),
+        // });
+
+        // Create a grant slate for all the tokens
+        // Calculate the number of tokens to request
+        const tokens = initialBalance.sub(totalRedeemed).sub(futureLockedBalance);
+        // console.log(`requesting ${tokens} tokens`);
+
+        const grantProposals = [{
+          to: recommender, tokens, metadataHash: createMultihash('grant'),
+        }];
+
+        slateID = await gatekeeper.slateCount();
+        requestID = await gatekeeper.requestCount();
+        await grantSlateFromProposals({
+          gatekeeper,
+          proposals: grantProposals,
+          capacitor,
+          recommender,
+          metadata: createMultihash('my slate'),
+        });
+        await gatekeeper.stakeTokens(slateID, { from: recommender });
+
+        // go to the next epoch and finalize
+        // go forward one day at a time to the next epoch and call updateBalances
+        const updateAndMove = () => increaseTime(timing.ONE_DAY)
+          .then(() => capacitor.updateBalances());
+
+        const steps = utils.range(daysLeft.addn(1).toNumber()).map(() => updateAndMove);
+        await utils.chain(steps);
+
+
+        assert.strictEqual(
+          (await gatekeeper.currentEpochNumber()).toString(),
+          epochNumber.addn(1).toString(),
+        );
+        await gatekeeper.countVotes(epochNumber, GRANT);
+
+        // const { unlocked: u, locked: l } = await utils.capacitorBalances(capacitor);
+        // console.log('capacitor balances (before withdrawal)', {
+        //   unlocked: u.toString(),
+        //   locked: l.toString(),
+        // });
+
+        await capacitor.withdrawTokens(requestID, { from: recommender });
+        tokenWithdrawals.push(tokens.toNumber());
+        totalRedeemed = await capacitor.lifetimeReleasedTokens();
+        // console.log('withdraw', tokens.toString());
+
+        const { unlocked, locked } = await utils.capacitorBalances(capacitor);
+        // console.log('capacitor balances', {
+        //   unlocked: unlocked.toString(),
+        //   locked: locked.toString(),
+        // });
+
+        assert.strictEqual(
+          totalRedeemed
+            .add(locked)
+            .add(unlocked)
+            .toString(),
+          initialBalance.toString(),
+          `Checksum failed for epoch ${epochNumber.toString()}`,
+        );
+      };
+
+      await capacitor.updateBalances();
+      const numEpochs = 4;
+      const epochs = utils.range(numEpochs).map(i => (() => runEpoch(i)));
+      await utils.chain(epochs);
+
+      // console.log(tokenWithdrawals);
     });
 
     afterEach(async () => utils.evm.revert(snapshotID));
