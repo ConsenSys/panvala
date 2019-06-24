@@ -79,7 +79,7 @@ export interface ISlate {
   proposals: IProposal[];
   requiredStake: utils.BigNumberish;
   verifiedRecommender: boolean;
-  recommenderAddress: string;
+  recommender: string;
   staker?: string;
 }
 

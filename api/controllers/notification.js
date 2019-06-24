@@ -2,6 +2,8 @@ const { utils } = require('ethers');
 const { getAllEvents } = require('../utils/transactions');
 const { getNormalizedNotificationsByEvents } = require('../utils/notifications');
 
+const numRegex = /^([^0-9]*)$/;
+
 module.exports = {
   /**
    * Get all notifications for a user's address
@@ -19,8 +21,17 @@ module.exports = {
       getAllEvents().then(events => {
         events.map(e => {
           console.log(e.name, e.timestamp);
+          Object.keys(e.values).map(arg => {
+            let value = e.values[arg];
+            if (numRegex.test(arg) && arg !== 'length') {
+              if (value.hasOwnProperty('_hex')) {
+                value = value.toString();
+              }
+              console.log(arg, value);
+            }
+          });
+          console.log('');
         });
-        console.log('');
         console.log('events:', events.length);
         console.log('');
         getNormalizedNotificationsByEvents(events, address).then(notifications => {

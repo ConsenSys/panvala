@@ -35,7 +35,7 @@ export const unstakedSlate: ISlate = {
   deadline: currentBallot.votingOpenDate,
   title: 'Some slate',
   owner: 'John Doe',
-  recommenderAddress: '0xd115bffabbdd893a6f7cea402e7338643ced44a6',
+  recommender: '0xd115bffabbdd893a6f7cea402e7338643ced44a6',
   organization: 'Team Recommender',
   description:
     'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer eu nibh molestie, auctor ligula a, faucibus ante. Morbi dapibus enim in vulputate congue. Mauris feugiat gravida nibh, sed pellentesque eros pellentesque eu. Sed rutrum vitae magna sed aliquet. Suspendisse facilisis vulputate lobortis. Vestibulum sed dolor eu mi molestie pharetra. Duis ut diam aliquam, molestie erat non, scelerisque ligula. Curabitur accumsan ipsum pellentesque posuere ornare. Sed vulputate cursus accumsan. Morbi efficitur dictum magna, a imperdiet mauris aliquet vitae.',

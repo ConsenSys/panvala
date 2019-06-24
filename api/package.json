@@ -19,6 +19,7 @@
   "license": "ISC",
   "dependencies": {
     "ajv": "^6.10.0",
+    "bluebird": "^3.5.5",
     "cors": "^2.8.5",
     "ethers": "^4.0.26",
     "express": "^4.16.4",

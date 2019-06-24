@@ -226,7 +226,7 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
                       category={slate.category}
                       status={convertEVMSlateStatus(slate.status)}
                       choices={choices}
-                      address={slate.recommenderAddress}
+                      address={slate.recommender}
                       onSetChoice={handleSetChoice}
                       proposals={slate.proposals}
                       slateID={slate.id.toString()}

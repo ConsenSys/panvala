@@ -22,7 +22,7 @@ storiesOf('Card', module)
           description={newSlate.description}
           category={newSlate.category}
           status={convertEVMSlateStatus(newSlate.status)}
-          address={newSlate.recommenderAddress}
+          address={newSlate.recommender}
           recommender={newSlate.organization}
           verifiedRecommender={newSlate.verifiedRecommender}
           type={SLATE}
@@ -46,7 +46,7 @@ storiesOf('Card', module)
           description={newSlate.description}
           category={newSlate.category}
           status={convertEVMSlateStatus(newSlate.status)}
-          address={newSlate.recommenderAddress}
+          address={newSlate.recommender}
           recommender={newSlate.organization}
           verifiedRecommender={newSlate.verifiedRecommender}
           type={SLATE}
@@ -70,7 +70,7 @@ storiesOf('Card', module)
           description={newSlate.description}
           category={newSlate.category}
           status={convertEVMSlateStatus(newSlate.status)}
-          address={newSlate.recommenderAddress}
+          address={newSlate.recommender}
           recommender={newSlate.organization}
           verifiedRecommender={newSlate.verifiedRecommender}
           type={SLATE}
@@ -94,7 +94,7 @@ storiesOf('Card', module)
           description={newSlate.description}
           category={newSlate.category}
           status={convertEVMSlateStatus(newSlate.status)}
-          address={newSlate.recommenderAddress}
+          address={newSlate.recommender}
           recommender={newSlate.organization}
           verifiedRecommender={newSlate.verifiedRecommender}
           type={SLATE}
@@ -124,7 +124,7 @@ storiesOf('Card', module)
           description={newSlate.description}
           category={newSlate.category}
           status={convertEVMSlateStatus(newSlate.status)}
-          address={newSlate.recommenderAddress}
+          address={newSlate.recommender}
           recommender={newSlate.organization}
           verifiedRecommender={newSlate.verifiedRecommender}
           type={SLATE}

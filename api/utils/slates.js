@@ -1,6 +1,7 @@
 const ethers = require('ethers');
 const ipfs = require('./ipfs');
 const range = require('lodash/range');
+const { Promise } = require('bluebird');
 
 const { Slate } = require('../models');
 
@@ -38,54 +39,52 @@ async function getAllSlates() {
   console.log(`fetching ${slateCount} slates`);
   const currentEpoch = await gatekeeper.functions.currentEpochNumber();
   console.log('currentEpoch:', currentEpoch);
+  // const grantsIncumbent = await gatekeeper.functions.incumbent(tokenCapacitorAddress);
+  // const governanceIncumbent = await gatekeeper.functions.incumbent(parameterStoreAddress);
 
   // 0..slateCount
-  const ids = range(0, slateCount);
-  // console.log('IDs', ids);
+  const slateIDs = range(0, slateCount);
+  console.log('slateIDs', slateIDs);
 
-  const slatePromises = ids.map(slateID => {
-    // give access to this variable throughout the chain
-    return gatekeeper
-      .slates(slateID)
-      .then(({ recommender, metadataHash, status, staker, stake, epochNumber, resource }) => {
-        // decode hash
-        const decoded = toUtf8String(metadataHash);
-        // console.log('decoded hash', decoded);
-        return {
-          slateID,
-          status,
-          decoded,
-          recommenderAddress: recommender,
-          staker,
-          stake,
-          epochNumber,
-          resource,
-        };
-      })
-      .then(slate => {
-        console.log('slate:', slate);
-        return getSlateWithMetadata(slate, slate.decoded, requiredStake, currentEpoch);
-      });
-  });
-
-  return Promise.all(slatePromises);
+  return Promise.map(
+    slateIDs,
+    async (slateID, index) => {
+      if (index !== 0) await Promise.delay(1000);
+      console.log('slateID:', slateID);
+      const slate = await gatekeeper.slates(slateID);
+      // decode hash
+      const decoded = toUtf8String(slate.metadataHash);
+      console.log('decoded hash', decoded);
+      let incumbent = false;
+      // if (recommender === grantsIncumbent && resource === tokenCapacitorAddress) {
+      //   incumbent = true;
+      // } else if (recommender === governanceIncumbent && resource === parameterStoreAddress) {
+      //   incumbent = true;
+      // }
+      console.log('slate:', slate);
+      return getSlateWithMetadata(slateID, slate, decoded, incumbent, requiredStake);
+    },
+    { concurrency: 5 }
+  );
 }
 
 /**
  * Get the slate metadata by combining data from multiple sources
  * @param {ethers.Contract} slate
+ * @param {Number} slateID
  * @param {String} metadataHash
+ * @param {Boolean} incumbent
  * @param {ethers.BigNumber} requiredStake
  */
-async function getSlateWithMetadata(slate, metadataHash, requiredStake, currentEpoch) {
+async function getSlateWithMetadata(slateID, slate, metadataHash, incumbent, requiredStake) {
   try {
     // the slate as it exists in the db:
     const [dbSlate] = await Slate.findOrBuild({
       where: {
-        slateID: slate.slateID,
+        slateID: slateID,
       },
       defaults: {
-        slateID: slate.slateID,
+        slateID: slateID,
         metadataHash,
         email: '',
         verifiedRecommender: false,
@@ -115,8 +114,6 @@ async function getSlateWithMetadata(slate, metadataHash, requiredStake, currentE
     // TODO: get real data
     const deadline = 1539044131;
 
-    let incumbent = false;
-
     let category = 'GOVERNANCE';
     if (getAddress(slate.resource) === getAddress(tokenCapacitorAddress)) {
       category = 'GRANT';
@@ -126,21 +123,23 @@ async function getSlateWithMetadata(slate, metadataHash, requiredStake, currentE
     // COMBINE/RETURN SLATE DATA
     // --------------------------
     const slateData = {
-      id: slate.slateID, // should we call this slateID instead of id? we're already using slateID as the primary key in the slates table
-      metadataHash,
+      id: slateID, // should we call this slateID instead of id? we're already using slateID as the primary key in the slates table
       category,
-      status: slate.status,
       deadline,
-      title,
-      description,
-      organization,
+      epochNumber: slate.epochNumber,
       incumbent,
-      proposals,
-      requiredStake,
-      staker: slate.staker,
+      description,
+      metadataHash,
+      organization,
       // either first + last name or just first name
       owner: lastName ? `${firstName} ${lastName}` : firstName,
-      recommenderAddress: slate.recommenderAddress,
+      proposals,
+      recommender: slate.recommender,
+      requiredStake,
+      stake: slate.stake,
+      staker: slate.staker,
+      status: slate.status,
+      title,
       verifiedRecommender: dbSlate.verifiedRecommender,
     };
     return slateData;

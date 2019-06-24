@@ -140,7 +140,7 @@ export const SlateSidebar = ({ slate, requiredStake, currentBallot }: IStakeSide
         <TokensSection>
           <SectionLabel lessMargin>{'CREATED BY'}</SectionLabel>
           <Box color="black">{slate.owner}</Box>
-          <CardAddress>{splitAddressHumanReadable(slate.recommenderAddress)}</CardAddress>
+          <CardAddress>{splitAddressHumanReadable(slate.recommender)}</CardAddress>
 
           {slate.verifiedRecommender ? (
             <>
