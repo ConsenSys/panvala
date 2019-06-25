@@ -46,6 +46,7 @@ app.prepare().then(() => {
   server.get('/proposals/create', (req, res) => app.render(req, res, '/proposals/create'));
 
   server.get('/wallet', (req, res) => app.render(req, res, '/Wallet'));
+  server.get('/donate', (req, res) => app.render(req, res, '/Donate'));
 
   // ----------------------------------------------
   // SLATE STAKING
