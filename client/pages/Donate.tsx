@@ -31,12 +31,14 @@ const Donate: React.FC = () => {
       const metadata = {
         sender: account,
         donor: donor || account,
-        amount: numTokens,
-        data: 'love is the ultimate store of value',
+        panAmount: numTokens,
+        usdAmount: '',
+        ethAmount: '',
+        memo: '',
       };
       const multihash = await ipfsAddObject(metadata);
       const metadataHash = Buffer.from(multihash);
-      await tokenCapacitor.functions.donate(metadata.donor, metadata.amount, metadataHash);
+      await tokenCapacitor.functions.donate(metadata.donor, metadata.panAmount, metadataHash);
     }
   }
 
