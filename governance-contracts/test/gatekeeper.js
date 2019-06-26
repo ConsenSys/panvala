@@ -2467,7 +2467,7 @@ contract('Gatekeeper', (accounts) => {
       assert.fail('Tallied votes for resource with no staked slates');
     });
 
-    it('should declare a slate as the winner if it is the only staked slate in the resource', async () => {
+    it('should declare a slate as the winner if it is the only staked slate for the resource', async () => {
       const slateID = await gatekeeper.slateCount();
 
       // Add a new governance slate
@@ -2572,6 +2572,51 @@ contract('Gatekeeper', (accounts) => {
         winningSlate.toString(),
         expectedWinner,
         `Slate ${expectedWinner} should have won`,
+      );
+    });
+
+    it('should finalize and not go to a runoff if a slate has 1 more than half of the votes', async () => {
+      // Commit for voters
+      await increaseTime(timing.VOTING_PERIOD_START);
+
+      const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '250', '1234');
+      const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 0, 1, '250', '5678');
+      const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '499', '9012');
+
+      // Reveal all votes
+      await increaseTime(timing.COMMIT_PERIOD_LENGTH);
+      await reveal(ballotID, gatekeeper, aliceReveal);
+      await reveal(ballotID, gatekeeper, bobReveal);
+      await reveal(ballotID, gatekeeper, carolReveal);
+
+      // Advance past reveal period
+      await increaseTime(timing.REVEAL_PERIOD_LENGTH);
+
+      // Finalize
+      const receipt = await gatekeeper.countVotes(ballotID, GRANT);
+      utils.expectEvents(receipt, ['ConfidenceVoteCounted', 'ConfidenceVoteFinalized']);
+
+      const { votes, totalVotes } = receipt.logs[0].args;
+      const winnerPercentage = votes.toNumber() / totalVotes.toNumber() * 100;
+      assert(winnerPercentage > 50.0, 'Winner should have had more than 50% of the votes');
+
+      const { winningSlate } = receipt.logs[1].args;
+      assert.strictEqual(winningSlate.toString(), '0', 'Slate 0 should have won');
+
+      // Should be finalized
+      const status = await gatekeeper.contestStatus(ballotID, GRANT);
+      assert.strictEqual(
+        status.toString(),
+        ContestStatus.Finalized,
+        'Contest status should have been Finalized',
+      );
+
+      // Winning slate should have status Accepted
+      const slate = await gatekeeper.slates(winningSlate);
+      assert.strictEqual(
+        slate.status.toString(),
+        SlateStatus.Accepted,
+        'Winning slate status should have been Accepted',
       );
     });
 
@@ -2976,7 +3021,7 @@ contract('Gatekeeper', (accounts) => {
       await gatekeeper.stakeTokens(1, { from: recommender });
       await gatekeeper.stakeTokens(2, { from: recommender });
 
-      const allocatedTokens = '1000';
+      const allocatedTokens = '1500';
 
       // Make sure the voter has available tokens and the gatekeeper is approved to spend them
       await token.transfer(alice, allocatedTokens, { from: creator });
@@ -3098,7 +3143,7 @@ contract('Gatekeeper', (accounts) => {
 
     it('should count correctly if the original leader wins the runoff', async () => {
       await increaseTime(timing.VOTING_PERIOD_START);
-      const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '99', '1234');
+      const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 2, '101', '1234');
       const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 1, 2, '900', '5678');
       const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 2, 0, '1000', '9012');
 
@@ -3126,9 +3171,9 @@ contract('Gatekeeper', (accounts) => {
       } = receipt.logs[1].args;
 
       const expectedWinner = '2';
-      const expectedVotes = '1000';
+      const expectedVotes = (1000 + 101).toString();
       const expectedLoser = '1';
-      const expectedLoserVotes = (900 + 99).toString();
+      const expectedLoserVotes = (900).toString();
 
       assert.strictEqual(countWinner.toString(), expectedWinner, 'Incorrect winner in runoff count');
       assert.strictEqual(countWinnerVotes.toString(), expectedVotes, 'Incorrect winning votes in runoff count');

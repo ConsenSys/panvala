@@ -697,8 +697,7 @@ contract Gatekeeper {
 
         // If the winner has more than 50%, we are done
         // Otherwise, trigger a runoff
-        uint winnerPercentage = winnerVotes.mul(100).div(total);
-        if (winnerPercentage > 50) {
+        if (winnerVotes.mul(2) > total) {
             contest.winner = winner;
             acceptWinningSlate(winner);
             rejectLosingSlates(ballotID, resource);
