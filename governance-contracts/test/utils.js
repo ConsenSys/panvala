@@ -563,6 +563,11 @@ function loadDecayMultipliers() {
   return JSON.parse(doc);
 }
 
+function loadTokenReleases() {
+  const filePath = path.join(__dirname, 'tokenReleases.json');
+  const doc = fs.readFileSync(filePath, { encoding: 'utf-8' });
+  return JSON.parse(doc);
+}
 
 async function chargeCapacitor(capacitor, numTokens, token, txOptions) {
   await token.transfer(capacitor.address, numTokens, txOptions);
@@ -617,6 +622,7 @@ const utils = {
   getLosingSlates,
   timing,
   loadDecayMultipliers,
+  loadTokenReleases,
   capacitorBalances,
   chargeCapacitor,
 };

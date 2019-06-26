@@ -43,11 +43,14 @@ contract('integration', (accounts) => {
     let snapshotID;
     const initialBalance = new BN(50e6);
     const zero = new BN(0);
+    const tokenReleases = utils.loadTokenReleases();
+    const daysPerEpoch = 91;
 
     beforeEach(async () => {
       ({ gatekeeper, token, capacitor } = await utils.newPanvala({ initialTokens, from: creator }));
       snapshotID = await utils.evm.snapshot();
       await utils.chargeCapacitor(capacitor, initialBalance, token, { from: creator });
+      // await token.transfer(capacitor.address, initialBalance, { from: creator });
 
       GRANT = await getResource(gatekeeper, 'GRANT');
       scale = await capacitor.scale();
@@ -58,44 +61,37 @@ contract('integration', (accounts) => {
       await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
     });
 
-    it('should calculate withdrawals correctly each epoch', async () => {
+    it('should calculate withdrawals correctly each epoch with quarterly balance updates', async () => {
       let requestID;
       let slateID;
       let totalRedeemed = zero;
-      const tokenWithdrawals = [];
 
-      const runEpoch = async () => {
-        const epochNumber = await gatekeeper.currentEpochNumber();
-        // console.log('epoch', epochNumber.toString());
+      const runEpoch = async (n) => {
+        const epochNumber = new BN(n);
+        const epoch = await gatekeeper.currentEpochNumber();
+        // console.log('epoch', epochNumber);
+        assert.strictEqual(epochNumber.toString(), epoch.toString(), 'Wrong epoch');
 
         // calculate the locked balance for the start of the next epoch
-        const now = await utils.evm.timestamp();
-        const nextEpochStart = await gatekeeper.epochStart(epochNumber.addn(1));
-        const daysLeft = nextEpochStart.sub(new BN(now)).div(timing.ONE_DAY);
-        // console.log(`${daysLeft} days left`);
-
         // decay from lastLockedBalance
+        const nextEpoch = epochNumber.addn(1);
         const lastLockedBalance = await capacitor.lastLockedBalance();
         const futureLockedBalance = lockedTokens(
           multipliers,
           scale,
           lastLockedBalance,
-          daysLeft.toString(),
+          daysPerEpoch.toString(),
         );
-        const projectedLockedBalance = await capacitor.projectedLockedBalance(nextEpochStart);
-        assert.strictEqual(
-          futureLockedBalance.toString(),
-          projectedLockedBalance.toString(),
-          `Calculation and projection do not match for epoch ${epochNumber.toString()}`,
-        );
-        // console.log({
-        //   calculated: futureLockedBalance.toString(),
-        //   projected: projectedLockedBalance.toString(),
-        // });
 
         // Create a grant slate for all the tokens
         // Calculate the number of tokens to request
         const tokens = initialBalance.sub(totalRedeemed).sub(futureLockedBalance);
+        const expectedRelease = tokenReleases.quarterly[nextEpoch.toString()];
+        assert.strictEqual(
+          tokens.toString(),
+          expectedRelease.toString(),
+          `Wrong release for epoch ${epochNumber.toString()}`,
+        );
         // console.log(`requesting ${tokens} tokens`);
 
         const grantProposals = [{
@@ -117,7 +113,7 @@ contract('integration', (accounts) => {
         await increaseTime(timing.EPOCH_LENGTH);
         assert.strictEqual(
           (await gatekeeper.currentEpochNumber()).toString(),
-          epochNumber.addn(1).toString(),
+          nextEpoch.toString(),
         );
         await gatekeeper.countVotes(epochNumber, GRANT);
 
@@ -127,10 +123,10 @@ contract('integration', (accounts) => {
         //   locked: l.toString(),
         // });
 
-        await capacitor.withdrawTokens(requestID, { from: recommender });
-        tokenWithdrawals.push(tokens.toNumber());
-        totalRedeemed = await capacitor.lifetimeReleasedTokens();
         // console.log('withdraw', tokens.toString());
+        await capacitor.withdrawTokens(requestID, { from: recommender });
+
+        totalRedeemed = await capacitor.lifetimeReleasedTokens();
 
         const { unlocked, locked } = await utils.capacitorBalances(capacitor);
         // console.log('capacitor balances', {
@@ -151,48 +147,40 @@ contract('integration', (accounts) => {
       const numEpochs = 40;
       const epochs = utils.range(numEpochs).map(i => (() => runEpoch(i)));
       await utils.chain(epochs);
-
-      // console.log(tokenWithdrawals);
     });
 
-    it('should calculate withdrawals correctly with daily balance updates', async () => {
+    it('should calculate withdrawals correctly each epoch with daily balance updates', async () => {
       let requestID;
       let slateID;
       let totalRedeemed = zero;
-      const tokenWithdrawals = [];
 
-      const runEpoch = async () => {
-        const epochNumber = await gatekeeper.currentEpochNumber();
-        // console.log('epoch', epochNumber.toString());
+      const runEpoch = async (n) => {
+        const epochNumber = new BN(n);
+        const epoch = await gatekeeper.currentEpochNumber();
+        // console.log('epoch', epochNumber);
+        assert.strictEqual(epochNumber.toString(), epoch.toString(), 'Wrong epoch');
 
         // calculate the locked balance for the start of the next epoch
-        const now = await utils.evm.timestamp();
-        const nextEpochStart = await gatekeeper.epochStart(epochNumber.addn(1));
-        const daysLeft = nextEpochStart.sub(new BN(now)).div(timing.ONE_DAY);
-        // console.log(`${daysLeft} days left`);
+        const nextEpoch = epochNumber.addn(1);
 
         // decay from lastLockedBalance
         const lastLockedBalance = await capacitor.lastLockedBalance();
-        const futureLockedBalance = lockedTokens(
-          multipliers,
-          scale,
-          lastLockedBalance,
-          daysLeft.toString(),
-        );
-        const projectedLockedBalance = await capacitor.projectedLockedBalance(nextEpochStart);
-        assert.strictEqual(
-          futureLockedBalance.toString(),
-          projectedLockedBalance.toString(),
-          `Calculation and projection do not match for epoch ${epochNumber.toString()}`,
-        );
-        // console.log({
-        //   calculated: futureLockedBalance.toString(),
-        //   projected: projectedLockedBalance.toString(),
-        // });
+
+        let futureLockedBalance = lastLockedBalance;
+        // eslint-disable-next-line no-plusplus
+        for (let i = 0; i < daysPerEpoch; i++) {
+          futureLockedBalance = lockedTokens(multipliers, scale, futureLockedBalance, '1');
+        }
 
         // Create a grant slate for all the tokens
         // Calculate the number of tokens to request
         const tokens = initialBalance.sub(totalRedeemed).sub(futureLockedBalance);
+        const expectedRelease = tokenReleases.daily[nextEpoch.toString()];
+        assert.strictEqual(
+          tokens.toString(),
+          expectedRelease.toString(),
+          `Wrong release for epoch ${epochNumber.toString()}`,
+        );
         // console.log(`requesting ${tokens} tokens`);
 
         const grantProposals = [{
@@ -210,18 +198,16 @@ contract('integration', (accounts) => {
         });
         await gatekeeper.stakeTokens(slateID, { from: recommender });
 
-        // go to the next epoch and finalize
         // go forward one day at a time to the next epoch and call updateBalances
         const updateAndMove = () => increaseTime(timing.ONE_DAY)
           .then(() => capacitor.updateBalances());
-
-        const steps = utils.range(daysLeft.addn(1).toNumber()).map(() => updateAndMove);
+        const steps = utils.range(daysPerEpoch).map(() => updateAndMove);
         await utils.chain(steps);
-
 
         assert.strictEqual(
           (await gatekeeper.currentEpochNumber()).toString(),
-          epochNumber.addn(1).toString(),
+          nextEpoch.toString(),
+          'Should have reached the next epoch',
         );
         await gatekeeper.countVotes(epochNumber, GRANT);
 
@@ -232,7 +218,6 @@ contract('integration', (accounts) => {
         // });
 
         await capacitor.withdrawTokens(requestID, { from: recommender });
-        tokenWithdrawals.push(tokens.toNumber());
         totalRedeemed = await capacitor.lifetimeReleasedTokens();
         // console.log('withdraw', tokens.toString());
 
@@ -252,12 +237,10 @@ contract('integration', (accounts) => {
         );
       };
 
-      await capacitor.updateBalances();
-      const numEpochs = 4;
+      // await capacitor.updateBalances();
+      const numEpochs = 16;
       const epochs = utils.range(numEpochs).map(i => (() => runEpoch(i)));
       await utils.chain(epochs);
-
-      // console.log(tokenWithdrawals);
     });
 
     afterEach(async () => utils.evm.revert(snapshotID));
