@@ -39,8 +39,11 @@ async function getAllSlates() {
   console.log(`fetching ${slateCount} slates`);
   const currentEpoch = await gatekeeper.functions.currentEpochNumber();
   console.log('currentEpoch:', currentEpoch);
-  // const grantsIncumbent = await gatekeeper.functions.incumbent(tokenCapacitorAddress);
-  // const governanceIncumbent = await gatekeeper.functions.incumbent(parameterStoreAddress);
+  let grantsIncumbent, governanceIncumbent;
+  if (gatekeeper.functions.hasOwnProperty('incumbent')) {
+    grantsIncumbent = await gatekeeper.functions.incumbent(tokenCapacitorAddress);
+    governanceIncumbent = await gatekeeper.functions.incumbent(parameterStoreAddress);
+  }
 
   // 0..slateCount
   const slateIDs = range(0, slateCount);
@@ -56,11 +59,14 @@ async function getAllSlates() {
       const decoded = toUtf8String(slate.metadataHash);
       console.log('decoded hash', decoded);
       let incumbent = false;
-      // if (recommender === grantsIncumbent && resource === tokenCapacitorAddress) {
-      //   incumbent = true;
-      // } else if (recommender === governanceIncumbent && resource === parameterStoreAddress) {
-      //   incumbent = true;
-      // }
+      if (slate.recommender === grantsIncumbent && slate.resource === tokenCapacitorAddress) {
+        incumbent = true;
+      } else if (
+        slate.recommender === governanceIncumbent &&
+        slate.resource === parameterStoreAddress
+      ) {
+        incumbent = true;
+      }
       console.log('slate:', slate);
       return getSlateWithMetadata(slateID, slate, decoded, incumbent, requiredStake);
     },
