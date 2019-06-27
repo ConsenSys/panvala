@@ -782,7 +782,7 @@ contract Gatekeeper {
 
         // Original winner has more votes, or it's tied and the original winner has a smaller ID
         if ((confidenceWinnerVotes > confidenceRunnerUpVotes) ||
-           ((confidenceWinnerVotes == confidenceVoteRunnerUp) &&
+           ((confidenceWinnerVotes == confidenceRunnerUpVotes) &&
             (confidenceVoteWinner < confidenceVoteRunnerUp)
             )) {
             runoffWinner = confidenceVoteWinner;

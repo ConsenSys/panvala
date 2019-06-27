@@ -3138,9 +3138,9 @@ contract('Gatekeeper', (accounts) => {
 
     it('should assign the slate with the lowest ID if the runoff ends in a tie', async () => {
       await increaseTime(timing.VOTING_PERIOD_START);
-      const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '400', '1234');
-      const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 1, 2, '600', '5678');
-      const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 2, 0, '1000', '9012');
+      const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 2, '400', '1234');
+      const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 2, 1, '600', '5678');
+      const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '1000', '9012');
 
       // Reveal all votes
       await increaseTime(timing.COMMIT_PERIOD_LENGTH);
@@ -3156,13 +3156,17 @@ contract('Gatekeeper', (accounts) => {
 
       // Runoff
       const receipt = await gatekeeper.countRunoffVotes(ballotID, GRANT);
+      utils.expectEvents(receipt, ['RunoffStarted', 'RunoffCounted', 'RunoffFinalized']);
+
       const {
         winningSlate, winnerVotes, losingSlate, loserVotes,
       } = receipt.logs[1].args;
 
       assert.strictEqual(winnerVotes.toString(), loserVotes.toString(), 'Runoff should end in a tie');
-      assert.strictEqual(winningSlate.toString(), '1', 'Winner should have been the slate with the lower ID');
-      assert.strictEqual(losingSlate.toString(), '2', 'Loser should have been the slate with the higher ID');
+      assert(
+        winningSlate.toNumber() < losingSlate.toNumber(),
+        `${winningSlate.toNumber()} > ${losingSlate.toNumber()} Winner should have been the slate with the lower ID`,
+      );
     });
 
     it('should revert if a runoff is not pending', async () => {
