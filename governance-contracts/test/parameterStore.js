@@ -146,12 +146,12 @@ contract('ParameterStore', (accounts) => {
 
   describe('createProposal', () => {
     const [creator, proposer] = accounts;
-    // let gatekeeper;
+    let gatekeeper;
     let parameters;
 
     beforeEach(async () => {
       // deploy
-      ({ parameters } = await utils.newPanvala({ from: creator }));
+      ({ parameters, gatekeeper } = await utils.newPanvala({ from: creator }));
     });
 
     it('it should create a proposal to change a parameter', async () => {
@@ -193,6 +193,7 @@ contract('ParameterStore', (accounts) => {
 
       // should save proposal with values
       const proposal = await parameters.proposals(requestID);
+      assert.strictEqual(proposal.gatekeeper, gatekeeper.address, 'Proposal has wrong gatekeeper');
       assert.strictEqual(proposal.key, key, 'Proposal has wrong key');
       assert.strictEqual(proposal.value, encodedValue, 'Proposal has wrong value');
       assert.strictEqual(

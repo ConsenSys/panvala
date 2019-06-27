@@ -26,6 +26,7 @@ contract TokenCapacitor {
     ParameterStore public parameters;
 
     struct Proposal {
+        address gatekeeper;
         uint tokens;
         address to;
         bytes metadataHash;
@@ -99,7 +100,9 @@ contract TokenCapacitor {
     function createProposal(address to, uint tokens, bytes memory metadataHash) public returns(uint) {
         require(metadataHash.length > 0, "metadataHash cannot be empty");
 
+        Gatekeeper gatekeeper = _gatekeeper();
         Proposal memory p = Proposal({
+            gatekeeper: address(gatekeeper),
             tokens: tokens,
             to: to,
             metadataHash: metadataHash,
@@ -109,7 +112,7 @@ contract TokenCapacitor {
         // Request permission from the Gatekeeper and store the proposal data for later.
         // If the request is approved, a user can execute the proposal by providing the
         // requestID.
-        uint requestID = _gatekeeper().requestPermission(metadataHash);
+        uint requestID = gatekeeper.requestPermission(metadataHash);
         proposals[requestID] = p;
         proposalCount = proposalCount.add(1);
 
@@ -146,11 +149,11 @@ contract TokenCapacitor {
     */
     function withdrawTokens(uint proposalID) public returns(bool) {
         require(proposalID < proposalCount, "Invalid proposalID");
-        Gatekeeper gatekeeper = _gatekeeper();
-        require(gatekeeper.hasPermission(proposalID), "Proposal has not been approved");
 
         Proposal memory p = proposals[proposalID];
+        Gatekeeper gatekeeper = Gatekeeper(p.gatekeeper);
 
+        require(gatekeeper.hasPermission(proposalID), "Proposal has not been approved");
         require(p.withdrawn == false, "Tokens have already been withdrawn for this proposal");
 
         IERC20 token = _token();

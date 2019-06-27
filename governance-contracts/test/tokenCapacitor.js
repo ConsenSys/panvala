@@ -92,9 +92,10 @@ contract('TokenCapacitor', (accounts) => {
   describe('createProposal', () => {
     const [creator, beneficiary] = accounts;
     let capacitor;
+    let gatekeeper;
 
     beforeEach(async () => {
-      ({ capacitor } = await utils.newPanvala({ from: creator }));
+      ({ capacitor, gatekeeper } = await utils.newPanvala({ from: creator }));
     });
 
     it('should create a proposal to the appropriate beneficiary', async () => {
@@ -134,6 +135,7 @@ contract('TokenCapacitor', (accounts) => {
 
       // should save proposal with values
       const proposal = await capacitor.proposals(requestID);
+      assert.strictEqual(proposal.gatekeeper, gatekeeper.address, 'Proposal has wrong gatekeeper');
       assert.strictEqual(proposal.tokens.toString(), tokens, 'Proposal has wrong number of tokens');
       assert.strictEqual(proposal.to, to, 'Proposal has wrong beneficiary');
       assert.strictEqual(
