@@ -1,17 +1,12 @@
 import styled from 'styled-components';
 
-const Container = styled.div`
-  display: flex;
-  align-items: center;
-  height: 100%;
-  overflow: hidden;
-`;
-
 const Wrapper: any = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
   width: ${({ wide }) => (wide ? '100%' : '70%')};
+  height: 100%;
+  overflow: hidden;
 `;
 
 const StyledImage = styled.img`
@@ -26,11 +21,9 @@ interface IProps {
 
 const Image: React.SFC<IProps> = ({ src, alt, wide }) => {
   return (
-    <Container>
-      <Wrapper wide={wide}>
-        <StyledImage src={src} alt={alt} />
-      </Wrapper>
-    </Container>
+    <Wrapper wide={wide}>
+      <StyledImage src={src} alt={alt} />
+    </Wrapper>
   );
 };
 

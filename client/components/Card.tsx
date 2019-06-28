@@ -205,6 +205,7 @@ const Card: React.FunctionComponent<ICardProps> = props => {
 
           <CardProposals>Grant Proposals:</CardProposals>
           {props.proposals &&
+            props.proposals.length > 0 &&
             props.proposals.map(p => <CardProposal key={p.id}>{p.title}</CardProposal>)}
 
           <Separator />

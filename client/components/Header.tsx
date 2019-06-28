@@ -6,7 +6,6 @@ import Image from './Image';
 import RouterLink from './RouterLink';
 import NotificationPanel from './NotificationPanel';
 import { NotificationsContext } from './NotificationsProvider';
-import { EthereumContext } from './EthereumProvider';
 
 const StyledHeader = styled.header`
   width: 100%;
@@ -21,8 +20,9 @@ const NavWrapper = styled(FlexContainer)`
   flex-wrap: wrap;
 `;
 const NavItems = styled(FlexContainer)`
-  justify-content: flex-start;
+  justify-content: flex-end;
   align-items: center;
+  flex-wrap: wrap;
 `;
 const NavItem = styled(FlexContainer)`
   margin-right: 1rem;
