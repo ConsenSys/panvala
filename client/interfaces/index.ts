@@ -1,16 +1,15 @@
-import { IButton, ITag } from './ui';
-import { StatelessPage, IGovernanceSlateFormValues } from './components';
+import { IButton, ITag, StatelessPage } from './components';
+import { IContracts } from './eth';
+import { INotification, INotificationsContext } from './notifications';
 import {
-  ISlate,
   IProposal,
-  IContracts,
   IGrantProposalMetadata,
-  ISlateMetadata,
-  IChoices,
-  ISubmitBallot,
-  IBallotDates,
-  ISaveSlate,
-} from './contexts';
+  IParameterChangesObject,
+  IGovernanceProposalMetadata,
+  IGovernanceProposalInfo,
+} from './proposals';
+import { ISlate, ISlateMetadata, ISaveSlate, IGovernanceSlateFormValues } from './slates';
+import { IChoices, ISubmitBallot, IBallotDates } from './voting';
 
 export {
   ISlate,
@@ -20,10 +19,15 @@ export {
   StatelessPage,
   IContracts,
   IGrantProposalMetadata,
+  IGovernanceProposalMetadata,
+  IParameterChangesObject,
+  IGovernanceProposalInfo,
   ISlateMetadata,
   IChoices,
   ISubmitBallot,
   IBallotDates,
   ISaveSlate,
   IGovernanceSlateFormValues,
+  INotification,
+  INotificationsContext,
 };

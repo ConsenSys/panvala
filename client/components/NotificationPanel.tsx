@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { COLORS } from '../styles';
 import Image from './Image';
 import RouterLink from './RouterLink';
-import { INotification } from '../interfaces/contexts';
+import { INotification } from '../interfaces';
 
 const Wrapper = styled.div`
   font-family: 'Roboto';

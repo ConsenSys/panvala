@@ -1,6 +1,6 @@
-import { INotification } from '../interfaces/contexts';
 import { utils } from 'ethers';
 import isEmpty from 'lodash/isEmpty';
+import { INotification } from '../interfaces';
 
 interface IAPINotification {
   type: string;

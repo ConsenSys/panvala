@@ -3,7 +3,7 @@ import { LogDescription } from 'ethers/utils';
 import { Contract, utils } from 'ethers';
 import { BasicToken, Gatekeeper, TokenCapacitor, ParameterStore } from '../types';
 import { abiEncode } from './values';
-import { IGovernanceProposalInfo } from '../interfaces/contexts';
+import { IGovernanceProposalInfo } from '../interfaces';
 
 export interface IMinedTransaction {
   receipt: TransactionReceipt;

@@ -11,10 +11,10 @@ import { baseToConvertedUnits } from '../utils/format';
 import { ballotDates } from '../utils/voting';
 
 export interface IMainContext {
-  slates?: ISlate[];
-  proposals?: IProposal[];
-  proposalsByID?: any;
-  slatesByID?: any;
+  slates: ISlate[];
+  proposals: IProposal[];
+  proposalsByID: any;
+  slatesByID: any;
   currentBallot: IBallotDates;
   onRefreshProposals(): void;
   onRefreshSlates(): void;
@@ -31,7 +31,7 @@ async function handleGetAllProposals() {
   if (Array.isArray(proposals)) {
     proposals = proposals.map((p: any) => {
       p.tokensRequested = baseToConvertedUnits(p.tokensRequested, 18);
-      p.category = 'GRANT';
+      p.category = p.hasOwnProperty('tokensRequested') ? 'GRANT' : 'GOVERNANCE';
       return p;
     });
     return proposals;

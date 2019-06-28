@@ -44,7 +44,7 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
   // get contexts
   const { slates, currentBallot }: IMainContext = React.useContext(MainContext);
   const {
-    contracts: { token, gatekeeper, tokenCapacitor, parameterStore },
+    contracts: { token, gatekeeper, tokenCapacitor },
     account,
     panBalance,
     gkAllowance,
@@ -214,7 +214,7 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
           <SectionLabel>{'GRANTS'}</SectionLabel>
           <Label required>{'Select your first and second choice slate'}</Label>
           <div className="flex flex-wrap mt3">
-            {slates && slates.length > 0
+            {slates.length > 0
               ? slates
                   .filter(s => s.status === SlateStatus.Staked)
                   .map((slate: ISlate) => (

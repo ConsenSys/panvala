@@ -24,15 +24,20 @@ import SectionLabel from '../../../components/SectionLabel';
 import { convertedToBaseUnits, formatPanvalaUnits } from '../../../utils/format';
 import { ipfsAddObject } from '../../../utils/ipfs';
 import { postSlate } from '../../../utils/api';
-import { ISaveSlate, StatelessPage, IGovernanceSlateFormValues } from '../../../interfaces';
+import {
+  ISaveSlate,
+  StatelessPage,
+  IGovernanceSlateFormValues,
+  IGovernanceProposalMetadata,
+  IGovernanceProposalInfo,
+  IParameterChangesObject,
+} from '../../../interfaces';
 import ParametersForm from '../../../components/ParametersForm';
 import {
   sendRecommendGovernanceSlateTx,
   sendCreateManyGovernanceProposals,
 } from '../../../utils/transaction';
 import { GovernanceSlateFormSchema } from '../../../utils/schemas';
-import { IParameterChangesObject } from '../../../interfaces/components';
-import { IGovernanceProposalMetadata, IGovernanceProposalInfo } from '../../../interfaces/contexts';
 
 const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
   // modal opener

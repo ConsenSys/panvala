@@ -2,7 +2,7 @@ import * as React from 'react';
 import isEmpty from 'lodash/isEmpty';
 import { getNotificationsByAddress } from '../utils/api';
 import { normalizeNotifications } from '../utils/notification';
-import { INotificationsContext, INotification } from '../interfaces/contexts';
+import { INotificationsContext, INotification } from '../interfaces';
 import { EthereumContext } from './EthereumProvider';
 import { MainContext } from './MainProvider';
 

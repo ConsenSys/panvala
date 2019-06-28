@@ -85,7 +85,7 @@ const Slate: StatelessPage<IProps> = ({ query: { id } }) => {
             {slate.description}
           </Box>
 
-          {slate.proposals && slate.proposals.length > 0 ? (
+          {slate.proposals.length > 0 ? (
             <>
               <SectionLabel>{'GRANTS'}</SectionLabel>
               <SlateProposals>
@@ -99,7 +99,7 @@ const Slate: StatelessPage<IProps> = ({ query: { id } }) => {
                         title={proposal.title}
                         subtitle={proposal.tokensRequested + ' Tokens Requested'}
                         description={proposal.summary}
-                        category={`${slate.category} PROPOSAL`}
+                        category={`${proposal.category} PROPOSAL`}
                         type={PROPOSAL}
                       />
                     </RouterLink>

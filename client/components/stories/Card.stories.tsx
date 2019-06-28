@@ -17,7 +17,7 @@ storiesOf('Card', module)
       <StoryWrapper>
         <Card
           key={newSlate.id}
-          subtitle={newSlate.proposals && newSlate.proposals.length + ' Grants Included'}
+          subtitle={newSlate.proposals.length + ' Grants Included'}
           description={newSlate.description}
           category={newSlate.category}
           status={convertEVMSlateStatus(newSlate.status)}
@@ -40,7 +40,7 @@ storiesOf('Card', module)
       <StoryWrapper>
         <Card
           key={newSlate.id}
-          subtitle={newSlate.proposals && newSlate.proposals.length + ' Grants Included'}
+          subtitle={newSlate.proposals.length + ' Grants Included'}
           description={newSlate.description}
           category={newSlate.category}
           status={convertEVMSlateStatus(newSlate.status)}
@@ -63,7 +63,7 @@ storiesOf('Card', module)
       <StoryWrapper>
         <Card
           key={newSlate.id}
-          subtitle={newSlate.proposals && newSlate.proposals.length + ' Grants Included'}
+          subtitle={newSlate.proposals.length + ' Grants Included'}
           description={newSlate.description}
           category={newSlate.category}
           status={convertEVMSlateStatus(newSlate.status)}
@@ -86,7 +86,7 @@ storiesOf('Card', module)
       <StoryWrapper>
         <Card
           key={newSlate.id}
-          subtitle={newSlate.proposals && newSlate.proposals.length + ' Grants Included'}
+          subtitle={newSlate.proposals.length + ' Grants Included'}
           description={newSlate.description}
           category={newSlate.category}
           status={convertEVMSlateStatus(newSlate.status)}
@@ -112,9 +112,7 @@ storiesOf('Card', module)
         <Card
           key={newSlate.id}
           subtitle={
-            newSlate.proposals && newSlate.proposals.length > 0
-              ? newSlate.proposals.length + ' Grants Included'
-              : ''
+            newSlate.proposals.length > 0 ? newSlate.proposals.length + ' Grants Included' : ''
           }
           description={newSlate.description}
           category={newSlate.category}
