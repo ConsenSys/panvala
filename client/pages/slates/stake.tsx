@@ -142,7 +142,7 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
         {`By confirming this transaction, you approve to spend ${requiredPAN} tokens to stake for this slate.`}
       </StepperDialog>
       <StepperMetamaskDialog />
-      <MetamaskButton handleClick={handleApproveTokens} text={`Approve`} />
+      <MetamaskButton handleClick={handleApproveTokens} text="Initiate transaction with Metamask" />
     </div>,
     <div>
       <StepperDialog>

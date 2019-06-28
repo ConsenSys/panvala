@@ -3,6 +3,7 @@ import { storiesOf } from '@storybook/react';
 import Button from '../Button';
 import { ThemeProvider } from 'styled-components';
 import { theme } from '../../styles';
+import MetamaskButton from '../MetamaskButton';
 
 storiesOf('Button', module)
   .add('default button', () => <Button type="default">{'default'}</Button>)
@@ -22,5 +23,10 @@ storiesOf('Button', module)
       <Button type="default" large width="50%" color="blue">
         {'large'}
       </Button>
+    </ThemeProvider>
+  ))
+  .add('metamask', () => (
+    <ThemeProvider theme={theme}>
+      <MetamaskButton handleClick={() => null} text="Initiate transaction with MetaMask" />
     </ThemeProvider>
   ));
