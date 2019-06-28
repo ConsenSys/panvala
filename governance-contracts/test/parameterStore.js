@@ -170,6 +170,7 @@ contract('ParameterStore', (accounts) => {
       // Should emit event with requestID and other data
       assert.strictEqual(receipt.logs[0].event, 'ProposalCreated');
       const {
+        proposalID,
         proposer: emittedProposer,
         requestID,
         key: emittedKey,
@@ -177,7 +178,8 @@ contract('ParameterStore', (accounts) => {
         metadataHash: emittedHash,
       } = receipt.logs[0].args;
 
-      assert.strictEqual(requestID.toString(), '0');
+      assert.strictEqual(requestID.toString(), '0', 'Emitted wrong requestID');
+      assert.strictEqual(proposalID.toString(), '0', 'Emitted wrong proposalID');
       assert.strictEqual(emittedProposer, proposer, 'Emitted wrong proposer');
       assert.strictEqual(emittedKey, key, 'Emitted wrong key');
       assert.strictEqual(emittedValue.toString(), encodedValue, 'Emitted wrong value');
@@ -194,6 +196,7 @@ contract('ParameterStore', (accounts) => {
       // should save proposal with values
       const proposal = await parameters.proposals(requestID);
       assert.strictEqual(proposal.gatekeeper, gatekeeper.address, 'Proposal has wrong gatekeeper');
+      assert.strictEqual(proposal.requestID.toString(), '0', 'Proposal has wrong requestID');
       assert.strictEqual(proposal.key, key, 'Proposal has wrong key');
       assert.strictEqual(proposal.value, encodedValue, 'Proposal has wrong value');
       assert.strictEqual(
@@ -255,6 +258,7 @@ contract('ParameterStore', (accounts) => {
           const metadataHash = metadataHashes[i];
 
           const {
+            proposalID,
             proposer: emittedProposer,
             requestID,
             key: emittedKey,
@@ -264,7 +268,8 @@ contract('ParameterStore', (accounts) => {
 
           // should emit event with requestID and other data
           const index = i.toString();
-          assert.strictEqual(requestID.toString(), index);
+          assert.strictEqual(requestID.toString(), index, 'Emitted wrong requestID');
+          assert.strictEqual(proposalID.toString(), index, 'Emitted wrong proposalID');
           assert.strictEqual(emittedProposer, proposer, 'Emitted wrong proposer');
           assert.strictEqual(emittedKey, key, 'Emitted wrong key');
           assert.strictEqual(emittedValue.toString(), value, 'Emitted wrong value');

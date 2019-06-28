@@ -345,6 +345,7 @@ const proposalCategories = {
  * Create a grant proposal slate from proposal info
  * options include: gatekeeper, capacitor, proposals, recommender, metadata, batchNumber
  * @param {*} options
+ * @returns proposalIDs
  */
 async function grantSlateFromProposals(options) {
   const {
@@ -375,13 +376,15 @@ async function grantSlateFromProposals(options) {
     { from: recommender },
   );
 
-  return requestIDs;
+  const proposalIDs = receipt.logs.map(l => l.args.proposalID);
+  return proposalIDs;
 }
 
 /**
  * Create a governance proposal slate from proposal info
  * options include: gatekeeper, parameterStore, proposals, recommender, metadata
  * @param {*} options
+ * @returns proposalIDs
  */
 async function governanceSlateFromProposals(options) {
   const {
@@ -413,7 +416,8 @@ async function governanceSlateFromProposals(options) {
     { from: recommender },
   );
 
-  return requestIDs;
+  const proposalIDs = receipt.logs.map(l => l.args.proposalID);
+  return proposalIDs;
 }
 
 /**

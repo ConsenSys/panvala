@@ -245,4 +245,95 @@ contract('integration', (accounts) => {
 
     afterEach(async () => utils.evm.revert(snapshotID));
   });
+
+  describe('full epoch cycles', () => {
+    const [creator, recommender] = accounts;
+
+    let gatekeeper;
+    let capacitor;
+    let token;
+    let parameters;
+    const initialTokens = new BN(100e6);
+    let GRANT;
+    let GOVERNANCE;
+    let snapshotID;
+    const initialBalance = new BN(50e6);
+
+    beforeEach(async () => {
+      ({
+        gatekeeper, token, capacitor, parameters,
+      } = await utils.newPanvala({ initialTokens, from: creator }));
+      snapshotID = await utils.evm.snapshot();
+      await utils.chargeCapacitor(capacitor, initialBalance, token, { from: creator });
+
+      GRANT = await getResource(gatekeeper, 'GRANT');
+      GOVERNANCE = await getResource(gatekeeper, 'GOVERNANCE');
+
+      // Make sure the recommender has tokens
+      const recommenderTokens = '50000000';
+      await token.transfer(recommender, recommenderTokens, { from: creator });
+      await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
+    });
+
+    it('should run an epoch with multiple contests', async () => {
+      // ===== EPOCH 0
+      const startingEpoch = await gatekeeper.currentEpochNumber();
+
+      // submit slates
+      const key = 'slateStakeAmount';
+      const value = '6000';
+      const proposals = [{
+        key,
+        value: utils.abiEncode('uint256', value),
+        metadataHash: utils.createMultihash('Smarter and faster gatekeeper'),
+      }];
+
+      const governancePermissions = await utils.governanceSlateFromProposals({
+        gatekeeper,
+        proposals,
+        parameterStore: parameters,
+        recommender,
+        metadata: utils.createMultihash('Important governance'),
+      });
+      await gatekeeper.stakeTokens(0, { from: recommender });
+
+      const tokens = '1000';
+      const grantProposals = [{
+        to: recommender, tokens, metadataHash: utils.createMultihash('grant'),
+      }];
+      const grantPermissions = await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: utils.createMultihash('Important grant'),
+      });
+      await gatekeeper.stakeTokens(1, { from: recommender });
+
+      // move forward
+      const offset = timing.EPOCH_LENGTH;
+      await increaseTime(offset);
+
+      // ===== EPOCH 1
+      const secondEpoch = await gatekeeper.currentEpochNumber();
+      assert.strictEqual(secondEpoch.toString(), startingEpoch.addn(1).toString(), 'Not in the next epoch');
+
+      // Finalize for both resources
+      await gatekeeper.countVotes(startingEpoch, GRANT);
+      await gatekeeper.countVotes(startingEpoch, GOVERNANCE);
+
+      // Execute the proposals
+      const originalBalance = await token.balanceOf(recommender);
+      await Promise.all(governancePermissions.map(r => parameters.setValue(r)));
+      await Promise.all(grantPermissions.map(r => capacitor.withdrawTokens(r)));
+
+      const newBalance = await token.balanceOf(recommender);
+      assert.strictEqual(newBalance.toString(), originalBalance.add(new BN(tokens)).toString(), 'Tokens not sent');
+
+      const setValue = await parameters.getAsUint(key);
+      assert.strictEqual(setValue.toString(), value, 'Stake amount not updated');
+    });
+
+    afterEach(async () => utils.evm.revert(snapshotID));
+  });
 });

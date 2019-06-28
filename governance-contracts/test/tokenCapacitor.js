@@ -111,6 +111,7 @@ contract('TokenCapacitor', (accounts) => {
       );
 
       const {
+        proposalID,
         proposer,
         requestID,
         recipient: emittedRecipient,
@@ -119,7 +120,8 @@ contract('TokenCapacitor', (accounts) => {
       } = receipt.logs[0].args;
 
       // should emit event with requestID and other data
-      assert.strictEqual(requestID.toString(), '0');
+      assert.strictEqual(proposalID.toString(), '0', 'Emitted wrong proposalID');
+      assert.strictEqual(requestID.toString(), '0', 'Emitted wrong requestID');
       assert.strictEqual(proposer, creator, 'Emitted wrong proposer');
       assert.strictEqual(emittedRecipient, to, 'Emitted wrong beneficiary');
       assert.strictEqual(emittedTokens.toString(), tokens, 'Emitted wrong number of tokens');
@@ -136,6 +138,7 @@ contract('TokenCapacitor', (accounts) => {
       // should save proposal with values
       const proposal = await capacitor.proposals(requestID);
       assert.strictEqual(proposal.gatekeeper, gatekeeper.address, 'Proposal has wrong gatekeeper');
+      assert.strictEqual(proposal.requestID.toString(), '0', 'Proposal has wrong requestID');
       assert.strictEqual(proposal.tokens.toString(), tokens, 'Proposal has wrong number of tokens');
       assert.strictEqual(proposal.to, to, 'Proposal has wrong beneficiary');
       assert.strictEqual(
@@ -211,6 +214,7 @@ contract('TokenCapacitor', (accounts) => {
         const metadataHash = metadataHashes[i];
 
         const {
+          proposalID,
           proposer: emittedProposer,
           requestID,
           recipient: emittedRecipient,
@@ -220,7 +224,8 @@ contract('TokenCapacitor', (accounts) => {
 
         // should emit event with requestID and other data
         const index = i.toString();
-        assert.strictEqual(requestID.toString(), index);
+        assert.strictEqual(requestID.toString(), index, 'Emitted wrong requestID');
+        assert.strictEqual(proposalID.toString(), index, 'Emitted wrong proposalID');
         assert.strictEqual(emittedProposer, proposer, 'Emitted wrong proposer');
         assert.strictEqual(emittedRecipient, to, 'Emitted wrong beneficiary');
         assert.strictEqual(emittedTokens.toString(), tokens, 'Emitted wrong number of tokens');

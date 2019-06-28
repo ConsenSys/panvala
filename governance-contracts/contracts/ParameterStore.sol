@@ -9,6 +9,7 @@ contract ParameterStore {
     // EVENTS
     event ParameterInitialized(bytes32 key, bytes32 value);
     event ProposalCreated(
+        uint256 proposalID,
         address indexed proposer,
         uint256 requestID,
         string key,
@@ -28,6 +29,7 @@ contract ParameterStore {
     // A proposal to change a value
     struct Proposal {
         address gatekeeper;
+        uint256 requestID;
         string key;
         bytes32 value;
         bytes metadataHash;
@@ -130,6 +132,7 @@ contract ParameterStore {
         Gatekeeper gatekeeper = _gatekeeper();
         Proposal memory p = Proposal({
             gatekeeper: address(gatekeeper),
+            requestID: 0,
             key: key,
             value: value,
             metadataHash: metadataHash,
@@ -138,13 +141,15 @@ contract ParameterStore {
 
         // Request permission from the Gatekeeper and store the proposal data for later.
         // If the request is approved, a user can execute the proposal by providing the
-        // requestID.
+        // proposalID.
         uint requestID = gatekeeper.requestPermission(metadataHash);
-        proposals[requestID] = p;
+        p.requestID = requestID;
+        uint proposalID = proposalCount;
+        proposals[proposalID] = p;
         proposalCount = proposalCount.add(1);
 
-        emit ProposalCreated(msg.sender, requestID, key, value, metadataHash);
-        return requestID;
+        emit ProposalCreated(proposalID, msg.sender, requestID, key, value, metadataHash);
+        return proposalID;
     }
 
     /**
@@ -180,7 +185,7 @@ contract ParameterStore {
         Proposal memory p = proposals[proposalID];
         Gatekeeper gatekeeper = Gatekeeper(p.gatekeeper);
 
-        require(gatekeeper.hasPermission(proposalID), "Proposal has not been approved");
+        require(gatekeeper.hasPermission(p.requestID), "Proposal has not been approved");
         require(p.executed == false, "Proposal already executed");
 
         proposals[proposalID].executed = true;
