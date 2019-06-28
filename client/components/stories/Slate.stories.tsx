@@ -1,7 +1,9 @@
 import * as React from 'react';
 import { storiesOf } from '@storybook/react';
 
-import Slate, { SlateSidebar, SlateHeader } from '../../pages/slates/slate';
+import Slate from '../../pages/slates/slate';
+import SlateHeader from '../SlateHeader';
+import SlateSidebar from '../SlateSidebar';
 import { ISlate } from '../../interfaces';
 import { currentBallot, unstakedSlate } from './data';
 import { SlateStatus } from '../../utils/status';
@@ -59,22 +61,8 @@ storiesOf('SlateSidebar', module)
       currentBallot={currentBallot}
     />
   ))
-  .add('unstaked verified', () => (
-    <SlateSidebar
-      slate={unstakedVerified}
-      requiredStake={requiredStake}
-      currentBallot={currentBallot}
-    />
-  ))
   .add('staked', () => (
     <SlateSidebar slate={stakedSlate} requiredStake={requiredStake} currentBallot={currentBallot} />
-  ))
-  .add('staked verified', () => (
-    <SlateSidebar
-      slate={stakedVerified}
-      requiredStake={requiredStake}
-      currentBallot={currentBallot}
-    />
   ));
 
 storiesOf('Slate with contexts', module)
