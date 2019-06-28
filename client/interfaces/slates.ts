@@ -13,7 +13,6 @@ export interface ISlate {
   id: number;
   category: string;
   status: number;
-  deadline: number | false;
   owner: string;
   organization: string;
   description: string;

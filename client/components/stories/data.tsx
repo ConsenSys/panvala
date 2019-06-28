@@ -15,6 +15,7 @@ export const currentBallot = ballotDates(epochStartDate);
 export const proposals: IProposal[] = [
   {
     id: 0,
+    category: 'GRANT',
     firstName: 'Amanda',
     lastName: 'Crypto',
     title: 'A great project',
@@ -31,7 +32,6 @@ export const unstakedSlate: ISlate = {
   id: 0,
   category: 'GRANT',
   status: 0,
-  deadline: currentBallot.votingOpenDate,
   owner: 'John Doe',
   recommender: '0xd115bffabbdd893a6f7cea402e7338643ced44a6',
   organization: 'Team Recommender',
@@ -40,4 +40,7 @@ export const unstakedSlate: ISlate = {
   proposals,
   requiredStake: utils.bigNumberify('300000000000000000000'),
   verifiedRecommender: false,
+  incumbent: false,
+  staker: '0x0000000000000000000000000000000000000000',
+  epochNumber: 1,
 };

@@ -116,9 +116,6 @@ async function getSlateWithMetadata(slateID, slate, metadataHash, incumbent, req
 
     // TODO: rehydrate proposals
 
-    // TODO: get real data
-    const deadline = 1539044131;
-
     let category = 'GOVERNANCE';
     if (getAddress(slate.resource) === getAddress(tokenCapacitorAddress)) {
       category = 'GRANT';
@@ -130,8 +127,7 @@ async function getSlateWithMetadata(slateID, slate, metadataHash, incumbent, req
     const slateData = {
       id: slateID, // should we call this slateID instead of id? we're already using slateID as the primary key in the slates table
       category,
-      deadline,
-      epochNumber: slate.epochNumber,
+      epochNumber: slate.epochNumber.toNumber(),
       incumbent,
       description,
       metadataHash,
