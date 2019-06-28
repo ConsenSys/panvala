@@ -16,7 +16,7 @@ const RouterLink: React.SFC<IProps> = ({ children, href, as, newTab, disabled })
       {disabled ? (
         children
       ) : (
-        <Link prefetch={process.env.NODE_ENV !== 'test'} passHref href={href} as={as ? as : href}>
+        <Link passHref href={href} as={as ? as : href}>
           <A className="link" target={newTab ? '_blank' : undefined}>
             {children}
           </A>
