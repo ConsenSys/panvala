@@ -2,9 +2,9 @@ import { panvala_utils } from './index';
 import { utils } from 'ethers';
 import { BasicToken, Gatekeeper } from '../types';
 
-const { generateCommitHash, randomSalt, generateCommitMessage } = panvala_utils.voting;
+const { generateCommitHash, randomSalt, generateCommitMessage, ballotDates } = panvala_utils.voting;
 
-export { generateCommitHash, randomSalt, generateCommitMessage };
+export { generateCommitHash, randomSalt, generateCommitMessage, ballotDates };
 
 export async function getMaxVotingRights(
   panBalance: utils.BigNumber,

@@ -1,13 +1,12 @@
 import Router from 'next/router';
 import { utils } from 'ethers';
-import { ballotDates } from '../../utils/status';
+import { ballotDates } from '../../utils/voting';
 import { ISlate, IProposal } from '../../interfaces';
 import '../../globalStyles.css';
 
 // https://github.com/zeit/next.js/issues/1827#issuecomment-323314141
 (Router as any).router = {
   push: () => {},
-  prefetch: () => {},
 };
 
 export const epochStartDate = 1549040401;
@@ -33,7 +32,6 @@ export const unstakedSlate: ISlate = {
   category: 'GRANT',
   status: 0,
   deadline: currentBallot.votingOpenDate,
-  title: 'Some slate',
   owner: 'John Doe',
   recommender: '0xd115bffabbdd893a6f7cea402e7338643ced44a6',
   organization: 'Team Recommender',

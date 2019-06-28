@@ -8,7 +8,7 @@ import { EthereumContext } from './EthereumProvider';
 import { IProposal, ISlate, IBallotDates } from '../interfaces';
 import { getAllProposals, getAllSlates } from '../utils/api';
 import { baseToConvertedUnits } from '../utils/format';
-import { ballotDates } from '../utils/status';
+import { ballotDates } from '../utils/voting';
 
 export interface IMainContext {
   slates?: ISlate[];

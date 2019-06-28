@@ -1,6 +1,5 @@
 import { IBallotDates } from '../interfaces';
 import { dateHasPassed } from './datetime';
-import { utils } from 'ethers';
 import { BN } from './format';
 
 export const statuses = {
@@ -107,29 +106,6 @@ export function slateSubmissionDeadline(votingOpenDate: number, lastStaked: numb
   return BN(lastStaked)
     .add(extraTime)
     .toNumber();
-}
-
-export function ballotDates(startDate: number = 1549040400): IBallotDates {
-  const oneWeekSeconds = 604800;
-  const epochStartDate = utils.bigNumberify(startDate).toNumber();
-  const week11EndDate: number = epochStartDate + oneWeekSeconds * 11; // 1555689600
-  const week12EndDate: number = week11EndDate + oneWeekSeconds;
-  const week13EndDate: number = week12EndDate + oneWeekSeconds;
-  const initialSlateSubmissionDeadline = slateSubmissionDeadline(week11EndDate, startDate);
-
-  return {
-    startDate: epochStartDate,
-    votingOpenDate: week11EndDate,
-    votingCloseDate: week12EndDate,
-    finalityDate: week13EndDate,
-    initialSlateSubmissionDeadline,
-    // TODO: use the resource (addresses) instead of GRANT/GOVERNANCE
-    slateSubmissionDeadline: {
-      GRANT: 0,
-      GOVERNANCE: 0,
-    },
-    epochNumber: 0,
-  };
 }
 
 const statusStrings = {

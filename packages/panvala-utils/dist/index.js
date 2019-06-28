@@ -67,6 +67,39 @@ function encodeBallot(resources, firstChoices, secondChoices) {
     const encoded = ethers_1.utils.defaultAbiCoder.encode(types, values);
     return encoded;
 }
+const BN = (small) => ethers_1.utils.bigNumberify(small);
+/**
+ * Calculate the next slate submission deadline as halfway between now and the start of the
+ * commit period.
+ */
+function slateSubmissionDeadline(votingOpenDate, lastStaked) {
+    // prettier-ignore
+    const extraTime = BN(votingOpenDate).sub(BN(lastStaked)).div('2');
+    return BN(lastStaked)
+        .add(extraTime)
+        .toNumber();
+}
+function ballotDates(startDate = 1549040400) {
+    const oneWeekSeconds = 604800;
+    const epochStartDate = ethers_1.utils.bigNumberify(startDate).toNumber();
+    const week11EndDate = epochStartDate + oneWeekSeconds * 11; // 1555689600
+    const week12EndDate = week11EndDate + oneWeekSeconds;
+    const week13EndDate = week12EndDate + oneWeekSeconds;
+    const initialSlateSubmissionDeadline = slateSubmissionDeadline(week11EndDate, startDate);
+    return {
+        startDate: epochStartDate,
+        votingOpenDate: week11EndDate,
+        votingCloseDate: week12EndDate,
+        finalityDate: week13EndDate,
+        initialSlateSubmissionDeadline,
+        // TODO: use the resource (addresses) instead of GRANT/GOVERNANCE
+        slateSubmissionDeadline: {
+            GRANT: 0,
+            GOVERNANCE: 0,
+        },
+        epochNumber: 0,
+    };
+}
 module.exports = {
     generateCommitHash,
     randomSalt,
@@ -74,4 +107,5 @@ module.exports = {
     encodeBallot,
     SlateCategories,
     ContestStatus,
+    ballotDates,
 };
