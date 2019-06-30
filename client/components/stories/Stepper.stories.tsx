@@ -40,7 +40,7 @@ stories.add('Step 1/2: sign message', () => {
       </StepperDialog>
       <StepperMetamaskDialog />
 
-      <Image src="/static/signature-request-tip.svg" alt="signature request tip" wide />
+      <Image src="/static/signature-request-tip.svg" alt="signature request tip" />
       <MetamaskButton handleClick={() => null} text="Sign Message" />
     </>,
   ];

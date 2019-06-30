@@ -15,7 +15,7 @@ const InlineImageWrapper = styled.span`
 const InlineImage: React.SFC<any> = ({ src, alt }) => {
   return (
     <InlineImageWrapper>
-      <Image src={src} alt={alt} wide />
+      <Image src={src} alt={alt} />
     </InlineImageWrapper>
   );
 };
