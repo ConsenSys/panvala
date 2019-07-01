@@ -1,6 +1,6 @@
 import * as React from 'react';
 import styled from 'styled-components';
-import { COLORS } from '../../styles';
+import { colors } from '../../styles';
 import Button from '../../components/Button';
 import { MainContext, IMainContext } from '../../components/MainProvider';
 import RouterLink from '../../components/RouterLink';
@@ -11,37 +11,12 @@ import Tag from '../../components/Tag';
 import Deadline from '../../components/Deadline';
 import RouteTitle from '../../components/RouteTitle';
 import Flex from '../../components/system/Flex';
+import { DetailContainer, MetaColumn, MainColumn } from '../slates/slate';
+import { TokensBorder, TokensSection } from '../../components/SlateSidebar';
+import { Separator } from '../../components/Separator';
 
-const Separator = styled.div`
-  border: 1px solid ${COLORS.grey5};
-`;
-
-const Container = styled.div`
-  display: flex;
-  border: 2px solid ${COLORS.grey5};
-  max-width: 1200px;
-`;
-const MetaColumn = styled.div`
-  width: 30%;
-  padding: 1.5rem 0;
-  border-right: 2px solid ${COLORS.grey5};
-`;
-const TokensBorder = styled.div`
-  margin: 0 1em;
-  border: 2px solid ${COLORS.grey5};
-`;
-const TokensSection = styled.div`
-  padding: 0 1.25rem 1rem;
-  color: ${COLORS.grey3};
-  margin-top: 1em;
-`;
 const DarkText = styled.div`
-  color: ${COLORS.grey1};
-`;
-
-const MainColumn = styled.div`
-  width: 70%;
-  padding: 1.2rem;
+  color: ${colors.black};
 `;
 
 interface IProposalSidebarProps {
@@ -93,13 +68,13 @@ export const ProposalHeader = ({
 export const ProposalSidebar = ({ proposal, includedInSlates }: IProposalSidebarProps): any => {
   const button = isPendingTokens('1') ? (
     <RouterLink href="/ballots" as="/ballots">
-      <Button large type="default">
+      <Button large type="default" m="0.5rem 0 2rem">
         {'View Ballot'}
       </Button>
     </RouterLink>
   ) : (
     <RouterLink href={`/slates/create/grant?id=${proposal.id}`} as={`/slates/create/grant`}>
-      <Button large type="default">
+      <Button large type="default" m="0.5rem 0 2rem">
         {'Add to a New Slate'}
       </Button>
     </RouterLink>
@@ -123,17 +98,17 @@ export const ProposalSidebar = ({ proposal, includedInSlates }: IProposalSidebar
       {button}
       <TokensBorder>
         <TokensSection>
-          <SectionLabel lessMargin>{'TOKENS REQUESTED'}</SectionLabel>
+          <SectionLabel my="1rem">{'TOKENS REQUESTED'}</SectionLabel>
           <DarkText>{proposal.tokensRequested}</DarkText>
         </TokensSection>
 
-        <Separator />
+        <Separator width="2" />
 
         <TokensSection>
-          <SectionLabel lessMargin>{'CREATED BY'}</SectionLabel>
+          <SectionLabel my="1rem">{'CREATED BY'}</SectionLabel>
           <DarkText>{proposal.firstName + ' ' + proposal.lastName}</DarkText>
 
-          <SectionLabel lessMargin>{'INCLUDED IN SLATES'}</SectionLabel>
+          <SectionLabel my="1rem">{'INCLUDED IN SLATES'}</SectionLabel>
           {slates}
         </TokensSection>
       </TokensBorder>
@@ -179,19 +154,31 @@ const Proposal: StatelessPage<IProps> = ({ query: { id } }) => {
       </HeaderWrapper>
       <RouteTitle>{proposal.title}</RouteTitle>
 
-      <Container>
+      <DetailContainer>
         <MetaColumn>
           <ProposalSidebar proposal={proposal} includedInSlates={includedInSlates} />
         </MetaColumn>
         <MainColumn>
-          <SectionLabel>PROJECT SUMMARY</SectionLabel>
+          <SectionLabel my="1rem">{'PROJECT SUMMARY'}</SectionLabel>
           <DarkText>{proposal.summary}</DarkText>
-          <SectionLabel>{'PROJECT TIMELINE'}</SectionLabel>
-          <DarkText>{proposal.projectTimeline}</DarkText>
-          <SectionLabel>{'PROJECT TEAM'}</SectionLabel>
-          <DarkText>{proposal.teamBackgrounds}</DarkText>
+          {proposal.projectTimeline && (
+            <>
+              <SectionLabel mt={4} mb="1rem">
+                {'PROJECT TIMELINE'}
+              </SectionLabel>
+              <DarkText>{proposal.projectTimeline}</DarkText>
+            </>
+          )}
+          {proposal.teamBackgrounds && (
+            <>
+              <SectionLabel mt={4} mb="1rem">
+                {'PROJECT TEAM'}
+              </SectionLabel>
+              <DarkText>{proposal.teamBackgrounds}</DarkText>
+            </>
+          )}
         </MainColumn>
-      </Container>
+      </DetailContainer>
     </FlexColumn>
   );
 };
@@ -199,8 +186,6 @@ const Proposal: StatelessPage<IProps> = ({ query: { id } }) => {
 const FlexColumn = styled.div`
   display: flex;
   flex-direction: column;
-  font-family: 'Roboto';
-  align-items: center;
 `;
 const HeaderWrapper = styled.div`
   display: flex;

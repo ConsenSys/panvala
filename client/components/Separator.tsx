@@ -1,6 +1,7 @@
 import styled from 'styled-components';
-import { COLORS } from '../styles';
+import { colors } from '../styles';
 
-export const Separator = styled.div`
-  border-top: 1px solid ${COLORS.grey5};
+export const Separator = styled.div<{ width?: string }>`
+  border-top: 1px solid ${colors.greys.light};
+  ${({ width }: any) => width && `border-top-width: ${width}px`};
 `;

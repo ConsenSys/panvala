@@ -14,10 +14,10 @@ import { timestamp, tsToDeadline } from '../utils/datetime';
 import { ISlate, IBallotDates } from '../interfaces';
 import { colors } from '../styles';
 
-const TokensBorder = styled.div`
+export const TokensBorder = styled.div`
   border: 2px solid ${colors.greys.light};
 `;
-const TokensSection = styled.div`
+export const TokensSection = styled.div`
   padding: 0 1.3rem 1rem;
   color: ${colors.grey};
   margin-top: 1em;

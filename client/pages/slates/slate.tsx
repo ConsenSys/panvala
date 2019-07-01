@@ -1,6 +1,6 @@
 import * as React from 'react';
 import styled from 'styled-components';
-import { COLORS } from '../../styles';
+import { colors } from '../../styles';
 import Box from '../../components/system/Box';
 import Card from '../../components/Card';
 import { MainContext, IMainContext } from '../../components/MainProvider';
@@ -14,23 +14,23 @@ import SlateSidebar from '../../components/SlateSidebar';
 import { splitAddressHumanReadable } from '../../utils/format';
 
 const Incumbent = styled.div`
-  color: ${COLORS.primary};
+  color: ${colors.blue};
   font-weight: bold;
   font-size: 0.8rem;
   margin-top: 1rem;
 `;
 
-const Container = styled.div`
+export const DetailContainer = styled.div`
   display: flex;
-  border: 2px solid ${COLORS.grey5};
+  border: 2px solid ${colors.greys.light};
   max-width: 1200px;
 `;
-const MetaColumn = styled.div`
+export const MetaColumn = styled.div`
   width: 30%;
   padding: 1.75rem;
-  border-right: 2px solid ${COLORS.grey5};
+  border-right: 2px solid ${colors.greys.light};
 `;
-const MainColumn = styled.div`
+export const MainColumn = styled.div`
   width: 70%;
   padding: 1.75rem 3rem;
 `;
@@ -70,7 +70,7 @@ const Slate: StatelessPage<IProps> = ({ query: { id } }) => {
           ? slate.organization
           : splitAddressHumanReadable(slate.recommender)}
       </RouteTitle>
-      <Container>
+      <DetailContainer>
         <MetaColumn>
           <SlateSidebar
             slate={slate}
@@ -109,7 +109,7 @@ const Slate: StatelessPage<IProps> = ({ query: { id } }) => {
             </>
           ) : null}
         </MainColumn>
-      </Container>
+      </DetailContainer>
     </SlateWrapper>
   );
 };
