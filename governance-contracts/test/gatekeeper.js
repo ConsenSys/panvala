@@ -2416,10 +2416,15 @@ contract('Gatekeeper', (accounts) => {
       );
 
       // All the other slates should have status Rejected
-      const contestSlates = await gatekeeper.contestSlates.call(ballotID, GRANT);
+      const contestSlates = await gatekeeper.contestSlates(ballotID, GRANT);
+      assert.deepStrictEqual(
+        contestSlates.map(i => i.toString()),
+        ['0', '1'],
+        'Wrong contest slates',
+      );
       const statuses = await Promise.all(
         contestSlates.filter(s => s.toString() !== winningSlate.toString())
-          .map(id => gatekeeper.slates.call(id)
+          .map(id => gatekeeper.slates(id)
             .then(s => s.status)),
       );
 
@@ -2967,6 +2972,330 @@ contract('Gatekeeper', (accounts) => {
     });
   });
 
+  describe('contestDetails', () => {
+    const [creator, recommender] = accounts;
+
+    let gatekeeper;
+    let token;
+    let capacitor;
+
+    const initialTokens = '20000000';
+    let epochNumber;
+    let GRANT;
+    const grantProposals = [{
+      to: recommender, tokens: '1000', metadataHash: createMultihash('grant'),
+    }];
+    let snapshotID;
+
+
+    beforeEach(async () => {
+      ({ gatekeeper, token, capacitor } = await utils.newPanvala({ initialTokens, from: creator }));
+      epochNumber = await gatekeeper.currentEpochNumber();
+      snapshotID = await utils.evm.snapshot();
+
+      GRANT = await getResource(gatekeeper, 'GRANT');
+
+      // Make sure the recommender has tokens
+      const recommenderTokens = '50000';
+      await token.transfer(recommender, recommenderTokens, { from: creator });
+      await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
+    });
+
+    it('should return uninitialized values if there are no slates', async () => {
+      const contest = await gatekeeper.contestDetails(epochNumber, GRANT);
+
+      const {
+        status,
+        allSlates: slates,
+        stakedSlates,
+        lastStaked,
+        confidenceVoteWinner,
+        confidenceVoteRunnerUp,
+        winner,
+      } = contest;
+
+      assert.strictEqual(status.toString(), ContestStatus.Empty, 'Wrong status');
+      assert.deepStrictEqual(slates, [], 'Slates should have been empty');
+      assert.deepStrictEqual(stakedSlates, [], 'Staked slates should have been empty');
+      assert.strictEqual(lastStaked.toString(), '0');
+      assert.strictEqual(confidenceVoteWinner.toString(), '0');
+      assert.strictEqual(confidenceVoteRunnerUp.toString(), '0');
+      assert.strictEqual(winner.toString(), '0');
+    });
+
+    it('should return contest details for an initialized contest', async () => {
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: grantProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('my slate'),
+      });
+
+      const otherProposals = [{
+        to: recommender, tokens: '1000', metadataHash: createMultihash('grant'),
+      }];
+
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: otherProposals,
+        capacitor,
+        recommender,
+        metadata: createMultihash('my slate'),
+      });
+
+      // only stake on one
+      await gatekeeper.stakeTokens(0, { from: recommender });
+      const stakingTime = await utils.evm.timestamp();
+      const stakingEpochTime = await utils.epochTime(gatekeeper, stakingTime, 'seconds');
+
+      // get details
+      const contest = await gatekeeper.contestDetails(epochNumber, GRANT);
+
+      const {
+        status,
+        allSlates: slates,
+        stakedSlates,
+        lastStaked,
+        confidenceVoteWinner,
+        confidenceVoteRunnerUp,
+        winner,
+      } = contest;
+
+      assert.strictEqual(status.toString(), ContestStatus.NoContest, 'Wrong status');
+      assert.deepStrictEqual(slates.map(i => i.toString()), ['0', '1'], 'Wrong slates');
+      assert.deepStrictEqual(stakedSlates.map(i => i.toString()), ['0'], 'Wrong staked slates');
+      assert.strictEqual(lastStaked.toString(), stakingEpochTime.toString());
+      assert.strictEqual(confidenceVoteWinner.toString(), '0');
+      assert.strictEqual(confidenceVoteRunnerUp.toString(), '0');
+      assert.strictEqual(winner.toString(), '0');
+    });
+
+    describe('after vote', () => {
+      const [,, alice, bob, carol] = accounts;
+      const allocatedTokens = '1000';
+      let stakingEpochTime;
+
+      beforeEach(async () => {
+        await token.transfer(alice, allocatedTokens, { from: creator });
+        await token.approve(gatekeeper.address, allocatedTokens, { from: alice });
+        await token.transfer(bob, allocatedTokens, { from: creator });
+        await token.approve(gatekeeper.address, allocatedTokens, { from: bob });
+        await token.transfer(carol, allocatedTokens, { from: creator });
+        await token.approve(gatekeeper.address, allocatedTokens, { from: carol });
+
+        // epochNumber = await gatekeeper.currentEpochNumber();
+
+        // set up three slates
+        await utils.grantSlateFromProposals({
+          gatekeeper,
+          proposals: [{
+            to: recommender, tokens: '100000000', metadataHash: createMultihash('big grant'),
+          }],
+          capacitor,
+          recommender,
+          metadata: createMultihash('slate 0'),
+        });
+
+        await utils.grantSlateFromProposals({
+          gatekeeper,
+          proposals: grantProposals,
+          capacitor,
+          recommender,
+          metadata: createMultihash('slate 1'),
+        });
+
+        await utils.grantSlateFromProposals({
+          gatekeeper,
+          proposals: [{
+            to: recommender, tokens: '1000', metadataHash: createMultihash('grant'),
+          }],
+          capacitor,
+          recommender,
+          metadata: createMultihash('slate 2'),
+        });
+
+        // only stake on some
+        await gatekeeper.stakeTokens(1, { from: recommender });
+        await gatekeeper.stakeTokens(2, { from: recommender });
+        const stakingTime = await utils.evm.timestamp();
+        stakingEpochTime = await utils.epochTime(gatekeeper, stakingTime, 'seconds');
+      });
+
+      it('should return contest details for a contest after a vote', async () => {
+        // Commit for voters
+        await increaseTime(timing.VOTING_PERIOD_START);
+
+        const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 2, 1, '1000', '1234');
+        const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 2, 1, '1000', '5678');
+        const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 2, '1000', '9012');
+
+        // Reveal all votes
+        await increaseTime(timing.COMMIT_PERIOD_LENGTH);
+        await reveal(epochNumber, gatekeeper, aliceReveal);
+        await reveal(epochNumber, gatekeeper, bobReveal);
+        await reveal(epochNumber, gatekeeper, carolReveal);
+
+        // Advance past reveal period
+        await increaseTime(timing.REVEAL_PERIOD_LENGTH);
+
+        // status: Active
+        const initialStatus = await gatekeeper.contestStatus(epochNumber, GRANT);
+        assert.strictEqual(
+          initialStatus.toString(),
+          ContestStatus.Active,
+          'Contest status should have been Active',
+        );
+
+        const expected = {
+          slates: ['0', '1', '2'],
+          stakedSlates: ['1', '2'],
+          lastStaked: stakingEpochTime.toString(),
+          voteWinner: '2',
+          voteRunnerUp: '1',
+          winner: '2',
+        };
+
+        const contestBeforeTally = await gatekeeper.contestDetails(epochNumber, GRANT);
+        const {
+          status: _status,
+          allSlates: _allSlates,
+          stakedSlates: _stakedSlates,
+          lastStaked: _lastStaked,
+          confidenceVoteWinner: _confidenceVoteWinner,
+          confidenceVoteRunnerUp: _confidenceVoteRunnerUp,
+          winner: _winner,
+        } = contestBeforeTally;
+
+        assert.strictEqual(_status.toString(), ContestStatus.Active, 'Status should be Active');
+        assert.deepStrictEqual(_allSlates.map(i => i.toString()), expected.slates, 'Wrong slates');
+        assert.deepStrictEqual(_stakedSlates.map(i => i.toString()), expected.stakedSlates, 'Wrong staked slates');
+        assert.strictEqual(_lastStaked.toString(), expected.lastStaked);
+        // result values should be uninitialized
+        assert.strictEqual(_confidenceVoteWinner.toString(), '0', 'Vote winner should be zero');
+        assert.strictEqual(_confidenceVoteRunnerUp.toString(), '0', 'Vote runner-up should be zero');
+        assert.strictEqual(_winner.toString(), '0', 'Contest winner should be zero');
+
+        await gatekeeper.countVotes(epochNumber, GRANT);
+
+        const contest = await gatekeeper.contestDetails(epochNumber, GRANT);
+
+        const {
+          status,
+          allSlates: slates,
+          stakedSlates,
+          lastStaked,
+          confidenceVoteWinner,
+          confidenceVoteRunnerUp,
+          winner,
+        } = contest;
+
+        assert.strictEqual(status.toString(), ContestStatus.Finalized, 'Status should be Finalized');
+        assert.deepStrictEqual(slates.map(i => i.toString()), expected.slates, 'Wrong slates');
+        assert.deepStrictEqual(stakedSlates.map(i => i.toString()), expected.stakedSlates, 'Wrong staked slates');
+        assert.strictEqual(lastStaked.toString(), expected.lastStaked);
+        assert.strictEqual(confidenceVoteWinner.toString(), expected.voteWinner);
+        assert.strictEqual(confidenceVoteRunnerUp.toString(), expected.voteRunnerUp);
+        assert.strictEqual(winner.toString(), expected.winner);
+      });
+
+      it('should return contest details for a contest after a runoff', async () => {
+        // Add a fourth slate
+        await utils.grantSlateFromProposals({
+          gatekeeper,
+          proposals: grantProposals,
+          capacitor,
+          recommender,
+          metadata: createMultihash('competition'),
+        });
+
+        await gatekeeper.stakeTokens(3, { from: recommender });
+        const stakingTime = await utils.evm.timestamp();
+        stakingEpochTime = await utils.epochTime(gatekeeper, stakingTime, 'seconds');
+
+        // Commit for voters
+        await increaseTime(timing.VOTING_PERIOD_START);
+
+        const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 3, 1, '1000', '1234');
+        const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 2, 1, '400', '5678');
+        const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 2, '600', '9012');
+
+        // Reveal all votes
+        await increaseTime(timing.COMMIT_PERIOD_LENGTH);
+        await reveal(epochNumber, gatekeeper, aliceReveal);
+        await reveal(epochNumber, gatekeeper, bobReveal);
+        await reveal(epochNumber, gatekeeper, carolReveal);
+
+        // Advance past reveal period
+        await increaseTime(timing.REVEAL_PERIOD_LENGTH);
+
+        // status: Active
+        const initialStatus = await gatekeeper.contestStatus(epochNumber, GRANT);
+        assert.strictEqual(
+          initialStatus.toString(),
+          ContestStatus.Active,
+          'Contest status should have been Active',
+        );
+
+        // Initial vote
+        await gatekeeper.countVotes(epochNumber, GRANT);
+
+        const expected = {
+          slates: ['0', '1', '2', '3'],
+          stakedSlates: ['1', '2', '3'],
+          lastStaked: stakingEpochTime.toString(),
+          voteWinner: '3',
+          voteRunnerUp: '1',
+          winner: '1',
+        };
+
+        const initialContest = await gatekeeper.contestDetails(epochNumber, GRANT);
+        const {
+          status: _status,
+          allSlates: _allSlates,
+          stakedSlates: _stakedSlates,
+          lastStaked: _lastStaked,
+          confidenceVoteWinner: _confidenceVoteWinner,
+          confidenceVoteRunnerUp: _confidenceVoteRunnerUp,
+          winner: _winner,
+        } = initialContest;
+
+        assert.strictEqual(_status.toString(), ContestStatus.RunoffPending, 'Status should be RunoffPending');
+        assert.deepStrictEqual(_allSlates.map(i => i.toString()), expected.slates, 'Wrong slates');
+        assert.deepStrictEqual(_stakedSlates.map(i => i.toString()), expected.stakedSlates, 'Wrong staked slates');
+        assert.strictEqual(_lastStaked.toString(), expected.lastStaked);
+        assert.strictEqual(_confidenceVoteWinner.toString(), expected.voteWinner, 'Wrong vote winner');
+        assert.strictEqual(_confidenceVoteRunnerUp.toString(), expected.voteRunnerUp, 'Wrong vote runner-up');
+        // final result value should be uninitialized
+        assert.strictEqual(_winner.toString(), '0', 'Contest winner should be zero');
+
+        // Runoff
+        await gatekeeper.countRunoffVotes(epochNumber, GRANT);
+
+        const contest = await gatekeeper.contestDetails(epochNumber, GRANT);
+        const {
+          status,
+          allSlates: slates,
+          stakedSlates,
+          lastStaked,
+          confidenceVoteWinner,
+          confidenceVoteRunnerUp,
+          winner,
+        } = contest;
+
+        assert.strictEqual(status.toString(), ContestStatus.Finalized, 'Status should be Finalized');
+        assert.deepStrictEqual(slates.map(i => i.toString()), expected.slates, 'Wrong slates');
+        assert.deepStrictEqual(stakedSlates.map(i => i.toString()), expected.stakedSlates, 'Wrong staked slates');
+        assert.strictEqual(lastStaked.toString(), expected.lastStaked);
+        assert.strictEqual(confidenceVoteWinner.toString(), expected.voteWinner);
+        assert.strictEqual(confidenceVoteRunnerUp.toString(), expected.voteRunnerUp);
+        assert.strictEqual(winner.toString(), expected.winner, 'Wrong contest winner');
+      });
+    });
+
+    afterEach(async () => utils.evm.revert(snapshotID));
+  });
+
   describe('countRunoffVotes', () => {
     const [creator, recommender, alice, bob, carol] = accounts;
 
@@ -3110,7 +3439,12 @@ contract('Gatekeeper', (accounts) => {
       );
 
       // All the other slates should have status Rejected
-      const contestSlates = await gatekeeper.contestSlates.call(ballotID, GRANT);
+      const contestSlates = await gatekeeper.contestSlates(ballotID, GRANT);
+      assert.deepStrictEqual(
+        contestSlates.map(i => i.toString()),
+        ['0', '1', '2'],
+        'Wrong contest slates',
+      );
       const statuses = await Promise.all(
         contestSlates.filter(s => s.toString() !== winningSlate.toString())
           .map(id => gatekeeper.slates.call(id)
@@ -3930,6 +4264,11 @@ contract('Gatekeeper', (accounts) => {
 
         // get slates from the contest
         const slateIDs = await gatekeeper.contestSlates(ballotID, GRANT);
+        assert.deepStrictEqual(
+          slateIDs.map(i => i.toString()),
+          ['0', '1', '2'],
+          'Wrong contest slates',
+        );
 
         const losingSlates = await utils.getLosingSlates(gatekeeper, slateIDs);
         const totalDonation = losingSlates.map(s => s.stake)
@@ -3992,6 +4331,11 @@ contract('Gatekeeper', (accounts) => {
 
         // get slates from the contest
         const slateIDs = await gatekeeper.contestSlates(ballotID, GRANT);
+        assert.deepStrictEqual(
+          slateIDs.map(i => i.toString()),
+          ['0', '1', '2'],
+          'Wrong contest slates',
+        );
 
         const losingSlates = await utils.getLosingSlates(gatekeeper, slateIDs);
         const totalDonation = losingSlates.map(s => s.stake)

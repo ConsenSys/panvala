@@ -273,6 +273,9 @@ contract Gatekeeper {
             slates[slateID].requestIncluded[requestID] = true;
         }
 
+        // Assign the slate to the appropriate contest
+        ballots[epochNumber].contests[resource].slates.push(slateID);
+
         emit SlateCreated(slateID, msg.sender, metadataHash);
         return slateID;
     }
@@ -721,10 +724,35 @@ contract Gatekeeper {
     }
 
     /**
-     @dev Return the IDs of the slates associated with the contest
+     @dev Return the IDs of the slates (staked and unstaked) associated with the contest
      */
     function contestSlates(uint ballotID, address resource) public view returns(uint[] memory) {
         return ballots[ballotID].contests[resource].slates;
+    }
+
+
+    /**
+     @dev Get the details of the specified contest
+     */
+    function contestDetails(uint256 epochNumber, address resource) external view
+        returns(
+            ContestStatus status,
+            uint256[] memory allSlates,
+            uint256[] memory stakedSlates,
+            uint256 lastStaked,
+            uint256 confidenceVoteWinner,
+            uint256 confidenceVoteRunnerUp,
+            uint256 winner
+        ) {
+        Contest memory c =  ballots[epochNumber].contests[resource];
+
+        status = c.status;
+        allSlates = c.slates;
+        stakedSlates = c.stakedSlates;
+        lastStaked = c.lastStaked;
+        confidenceVoteWinner = c.confidenceVoteWinner;
+        confidenceVoteRunnerUp = c.confidenceVoteRunnerUp;
+        winner = c.winner;
     }
 
     /**
@@ -826,16 +854,15 @@ contract Gatekeeper {
         IERC20 token = token();
         bytes memory emptyHash = new bytes(0);
 
-        uint256[] memory allSlates = contestSlates(ballotID, resource);
-        uint256 numSlates = allSlates.length;
+        uint256 numSlates = contest.stakedSlates.length;
         for (uint256 i = 0; i < numSlates; i++) {
-            uint256 slateID = allSlates[i];
+            uint256 slateID = contest.stakedSlates[i];
             Slate storage slate = slates[slateID];
             if (slate.status == SlateStatus.Rejected) {
                 uint256 donationAmount = slate.stake;
                 slate.stake = 0;
 
-                // NOTE: temporary until only staked slates are included in a contest
+                // Only donate for non-zero amounts
                 if (donationAmount > 0) {
                     require(
                         token.approve(address(capacitor), donationAmount),
