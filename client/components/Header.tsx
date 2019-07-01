@@ -6,6 +6,7 @@ import Image from './Image';
 import RouterLink from './RouterLink';
 import NotificationPanel from './NotificationPanel';
 import { NotificationsContext } from './NotificationsProvider';
+import Flex from './system/Flex';
 
 const StyledHeader = styled.header`
   width: 100%;
@@ -34,11 +35,11 @@ const Header: React.FunctionComponent<any> = ({ router }: any) => {
     <StyledHeader>
       <nav>
         <NavWrapper>
-          <FlexContainer>
+          <Flex width={['200px', '250px', '300px']}>
             <RouterLink href="/slates" as="/slates">
-              <Image src="/static/logo-black.svg" alt="panvala logo" />
+              <Image src="/static/black-logo.png" alt="panvala logo" />
             </RouterLink>
-          </FlexContainer>
+          </Flex>
 
           <NavItems>
             <NavItem>
