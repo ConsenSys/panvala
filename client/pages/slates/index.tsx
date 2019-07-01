@@ -1,6 +1,5 @@
 import * as React from 'react';
 import styled from 'styled-components';
-import { toast } from 'react-toastify';
 
 import { MainContext, IMainContext } from '../../components/MainProvider';
 import Button from '../../components/Button';
@@ -12,6 +11,7 @@ import RouterLink from '../../components/RouterLink';
 import { ISlate } from '../../interfaces';
 import { convertEVMSlateStatus } from '../../utils/status';
 import { SLATE } from '../../utils/constants';
+import { BN } from '../../utils/format';
 
 const VisibilityFilterContainer = styled.div`
   display: flex;
@@ -23,16 +23,33 @@ const CardsWrapper = styled.div`
 `;
 
 const Slates: React.SFC = () => {
-  const [visibilityFilter] = React.useState('all');
-  let { slates, currentBallot }: IMainContext = React.useContext(MainContext);
+  const { slates, currentBallot }: IMainContext = React.useContext(MainContext);
+  const [visibleSlates, setVisibleSlates] = React.useState(slates);
+  const [visibilityFilter, setVisibilityFilter] = React.useState('ALL');
 
-  function handleSelectVisibilityFilter(type: string) {
-    (toast as any)[type](`Demo: ${type}`);
+  function handleSelectVisibilityFilter(filter: string) {
+    setVisibilityFilter(filter);
   }
+
+  React.useEffect(() => {
+    if (slates.length > 0) {
+      if (visibilityFilter === 'ALL') {
+        setVisibleSlates(slates);
+      } else if (visibilityFilter === 'CURRENT') {
+        setVisibleSlates(
+          slates.filter((s: ISlate) => BN(s.epochNumber).eq(currentBallot.epochNumber))
+        );
+      } else if (visibilityFilter === 'PAST') {
+        setVisibleSlates(
+          slates.filter((s: ISlate) => !BN(s.epochNumber).eq(currentBallot.epochNumber))
+        );
+      }
+    }
+  }, [slates, visibilityFilter]);
 
   return (
     <div>
-      <Flex justifyBetween alignCenter wrap='true' mb={2}>
+      <Flex justifyBetween alignCenter wrap="true" mb={2}>
         <Flex alignCenter>
           <RouteTitle mr={3}>{'Slates'}</RouteTitle>
           <RouterLink href="/slates/create" as="/slates/create">
@@ -43,29 +60,35 @@ const Slates: React.SFC = () => {
       </Flex>
 
       <VisibilityFilterContainer>
-        <Button active={visibilityFilter === 'all'}>{'All'}</Button>
         <Button
-          onClick={() => handleSelectVisibilityFilter('info')}
-          active={visibilityFilter === 'current'}
+          onClick={() => handleSelectVisibilityFilter('ALL')}
+          active={visibilityFilter === 'ALL'}
+        >
+          {'All'}
+        </Button>
+
+        <Button
+          onClick={() => handleSelectVisibilityFilter('CURRENT')}
+          active={visibilityFilter === 'CURRENT'}
         >
           {'Current'}
         </Button>
         <Button
-          onClick={() => handleSelectVisibilityFilter('error')}
-          active={visibilityFilter === 'past'}
+          onClick={() => handleSelectVisibilityFilter('PAST')}
+          active={visibilityFilter === 'PAST'}
         >
           {'Past'}
         </Button>
       </VisibilityFilterContainer>
 
       <CardsWrapper>
-        {slates && slates.length > 0
-          ? slates.map((slate: ISlate) => (
+        {visibleSlates && visibleSlates.length > 0
+          ? visibleSlates.map((slate: ISlate) => (
               <div key={slate.id}>
                 <RouterLink href={`/slates/slate?id=${slate.id}`} as={`/slates/${slate.id}`}>
                   <Card
                     key={slate.id}
-                    subtitle={slate.proposals && slate.proposals.length + ' Grants Included'}
+                    subtitle={slate.proposals.length + ' Grants Included'}
                     description={slate.description}
                     category={slate.category}
                     status={convertEVMSlateStatus(slate.status)}
