@@ -150,6 +150,13 @@ function range(n) {
 }
 
 /**
+ * @param {Array} l
+ */
+function all(l) {
+  return l.reduce((a, b) => a && b, true);
+}
+
+/**
  * Run promises in sequential order
  * From https://stackoverflow.com/a/41115086
  * @param {Array[Promise]} promises Functions returning promises
@@ -160,6 +167,16 @@ function chain(promises) {
     Promise.resolve([]),
   );
   return chained;
+}
+
+/**
+ * Map a function returning a promise to values and return the resolved values
+ * @param {Function} f
+ * @param {Array} values
+ */
+async function pMap(f, values) {
+  const result = await Promise.all(values.map(f));
+  return result;
 }
 
 function createMultihash(data) {
@@ -302,7 +319,7 @@ async function newPanvala(options) {
 /**
  * Get the number of weeks into the current epoch
  * @param {Gatekeeper} gatekeeper
- * @param {*} dt
+ * @param {*} dt timestamp in seconds
  */
 async function epochTime(gatekeeper, dt, units) {
   const epoch = await gatekeeper.currentEpochNumber();
@@ -602,7 +619,9 @@ const utils = {
   epochTime,
   printDate,
   range,
+  all,
   chain,
+  pMap,
   asBytes,
   stripHexPrefix,
   bytesAsString,
