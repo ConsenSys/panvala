@@ -6,7 +6,7 @@ const BasicToken = artifacts.require('BasicToken');
 const { utils } = require('ethers');
 const { abiEncode, BN } = require('../utils');
 
-// eslint-disable-next-line func-names
+// eslint-disable-next-line
 module.exports = async function(deployer, _, accounts) {
   const parameters = await ParameterStore.deployed();
   console.log(`Deploying TokenCapacitor with ParameterStore ${parameters.address}`);
@@ -15,7 +15,7 @@ module.exports = async function(deployer, _, accounts) {
 
   await parameters.setInitialValue(
     'tokenCapacitorAddress',
-    abiEncode('address', capacitor.address)
+    abiEncode('address', capacitor.address) // eslint-disable-line comma-dangle
   );
 
   // Charge the capacitor
