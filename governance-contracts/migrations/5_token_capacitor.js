@@ -3,11 +3,11 @@
 const TokenCapacitor = artifacts.require('TokenCapacitor');
 const ParameterStore = artifacts.require('ParameterStore');
 const BasicToken = artifacts.require('BasicToken');
-
+const { utils } = require('ethers');
 const { abiEncode, BN } = require('../utils');
 
 // eslint-disable-next-line func-names
-module.exports = async function (deployer, _, accounts) {
+module.exports = async function(deployer, _, accounts) {
   const parameters = await ParameterStore.deployed();
   console.log(`Deploying TokenCapacitor with ParameterStore ${parameters.address}`);
 
@@ -15,7 +15,7 @@ module.exports = async function (deployer, _, accounts) {
 
   await parameters.setInitialValue(
     'tokenCapacitorAddress',
-    abiEncode('address', capacitor.address),
+    abiEncode('address', capacitor.address)
   );
 
   // Charge the capacitor
@@ -32,7 +32,8 @@ module.exports = async function (deployer, _, accounts) {
     const [creator] = accounts;
     const balance = await token.balanceOf(creator);
     if (balance.gte(new BN(initialBalance))) {
-      await token.transfer(capacitor.address, initialBalance);
+      const baseUnitsBalance = utils.parseUnits(initialBalance, tokenInfo.decimals);
+      await token.transfer(capacitor.address, baseUnitsBalance);
       await capacitor.updateBalances();
     } else {
       throw new Error("You don't have enough tokens to charge the capacitor");
