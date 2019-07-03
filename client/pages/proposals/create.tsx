@@ -39,7 +39,7 @@ const CreateProposal: React.FunctionComponent<IProps> = ({ router }) => {
   return (
     <div>
       <Modal handleClick={() => setOpenModal(false)} isOpen={isOpen}>
-        <Image src="/static/check.svg" alt="grant proposal created" />
+        <Image src="/static/check.svg" alt="grant proposal created" width="80px" />
         <ModalTitle>{'Grant proposal created.'}</ModalTitle>
         <ModalDescription className="flex flex-wrap">
           You have successfully created a Panvala Grant Proposal. Now groups that are creating

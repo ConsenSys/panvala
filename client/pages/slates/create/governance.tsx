@@ -352,7 +352,7 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
       <Modal handleClick={() => setOpenModal(false)} isOpen={txPending || isOpen}>
         {txPending ? (
           <>
-            <Image src="/static/metamask-fox.svg" alt="metamask logo" />
+            <Image src="/static/metamask-fox.svg" alt="metamask logo" width="80px" />
             <ModalTitle>{'Transaction Processing'}</ModalTitle>
             <ModalDescription className="flex flex-wrap">
               Please wait a few moments while MetaMask processes your transaction. This will only
@@ -362,7 +362,7 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
           </>
         ) : (
           <>
-            <Image src="/static/check.svg" alt="slate submitted" />
+            <Image src="/static/check.svg" alt="slate submitted" width="80px" />
             <ModalTitle>{'Slate submitted.'}</ModalTitle>
             <ModalDescription className="flex flex-wrap">
               Now that your slate has been created you and others have the ability to stake tokens
