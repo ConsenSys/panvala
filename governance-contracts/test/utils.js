@@ -299,7 +299,7 @@ async function newPanvala(options) {
   const parameters = await ParameterStore.at(parametersAddress);
   const tokenAddress = await parameters.getAsAddress('tokenAddress');
   const token = await BasicToken.at(tokenAddress);
-  const capacitor = await TokenCapacitor.new(parameters.address, { from: creator });
+  const capacitor = await TokenCapacitor.new(parameters.address, token.address, { from: creator });
 
   await parameters.setInitialValue(
     'tokenCapacitorAddress',

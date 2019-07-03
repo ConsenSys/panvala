@@ -26,6 +26,9 @@ contract TokenCapacitor {
     // The address of the associated ParameterStore contract
     ParameterStore public parameters;
 
+    // The address of the associated token
+    IERC20 public token;
+
     struct Proposal {
         address gatekeeper;
         uint256 requestID;
@@ -60,11 +63,13 @@ contract TokenCapacitor {
     uint256 public lifetimeReleasedTokens;
 
     // IMPLEMENTATION
-    constructor(ParameterStore _parameters) public {
+    constructor(ParameterStore _parameters, IERC20 _token) public {
         parameters = _parameters;
 
+        require(address(_token) != address(0), "Token address cannot be zero");
+        token = _token;
+
         require(address(_gatekeeper()) != address(0), "Gatekeeper address cannot be zero");
-        require(address(_token()) != address(0), "Token address cannot be zero");
 
         // initialize multipliers
         decayMultipliers[0] = 999524050675;
@@ -87,10 +92,6 @@ contract TokenCapacitor {
 
     function _gatekeeper() private view returns(Gatekeeper) {
         return Gatekeeper(parameters.getAsAddress("gatekeeperAddress"));
-    }
-
-    function _token() private view returns(IERC20) {
-        return IERC20(parameters.getAsAddress("tokenAddress"));
     }
 
     /**
@@ -161,7 +162,6 @@ contract TokenCapacitor {
         require(gatekeeper.hasPermission(p.requestID), "Proposal has not been approved");
         require(p.withdrawn == false, "Tokens have already been withdrawn for this proposal");
 
-        IERC20 token = _token();
         proposals[proposalID].withdrawn = true;
 
         // Accounting
@@ -194,7 +194,6 @@ contract TokenCapacitor {
         lastLockedBalance = lastLockedBalance.add(tokens);
 
         // transfer tokens from payer
-        IERC20 token = _token();
         require(token.transferFrom(payer, address(this), tokens), "Failed to transfer tokens");
 
         emit Donation(payer, donor, tokens, metadataHash);
@@ -261,7 +260,7 @@ contract TokenCapacitor {
      @param time The time to update until. Must be less than 4096 days from the lastLockedTime.
      */
     function updateBalancesUntil(uint256 time) public {
-        uint256 totalBalance = _token().balanceOf(address(this));
+        uint256 totalBalance = token.balanceOf(address(this));
 
         // Sweep the released tokens from locked into unlocked
         // Locked balance is based on the decay since the last update

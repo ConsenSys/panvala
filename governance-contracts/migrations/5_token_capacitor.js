@@ -11,7 +11,13 @@ module.exports = async function(deployer, _, accounts) {
   const parameters = await ParameterStore.deployed();
   console.log(`Deploying TokenCapacitor with ParameterStore ${parameters.address}`);
 
-  const capacitor = await deployer.deploy(TokenCapacitor, parameters.address);
+  const { capacitor: config, token: tokenInfo } = global.panvalaConfig;
+
+  const token = tokenInfo.deploy
+    ? await BasicToken.deployed()
+    : await BasicToken.at(tokenInfo.address);
+
+  const capacitor = await deployer.deploy(TokenCapacitor, parameters.address, token.address);
 
   await parameters.setInitialValue(
     'tokenCapacitorAddress',
@@ -19,14 +25,10 @@ module.exports = async function(deployer, _, accounts) {
   );
 
   // Charge the capacitor
-  const { capacitor: config, token: tokenInfo } = global.panvalaConfig;
   const { charge, initialBalance } = config;
 
   if (charge) {
     console.log(`Charging capacitor with ${initialBalance} tokens`);
-    const token = tokenInfo.deploy
-      ? await BasicToken.deployed()
-      : await BasicToken.at(tokenInfo.address);
 
     // if the creator has enough balance, then charge
     const [creator] = accounts;

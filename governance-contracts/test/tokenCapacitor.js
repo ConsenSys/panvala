@@ -13,7 +13,6 @@ const {
   revealVote,
   grantSlateFromProposals,
   BN,
-  abiCoder,
   timing,
   loadDecayMultipliers,
 } = utils;
@@ -30,21 +29,29 @@ contract('TokenCapacitor', (accounts) => {
     const [creator] = accounts;
     let gatekeeper;
     let parameters;
+    let token;
 
     beforeEach(async () => {
+      token = await utils.newToken({ from: creator });
       // deploy a gatekeeper
-      gatekeeper = await utils.newGatekeeper({ from: creator });
+      gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
       const parametersAddress = await gatekeeper.parameters();
       parameters = await ParameterStore.at(parametersAddress);
     });
 
     it('should correctly initialize the capacitor', async () => {
       // deploy a new capacitor
-      const capacitor = await TokenCapacitor.new(parameters.address, { from: creator });
+      const capacitor = await TokenCapacitor.new(parameters.address, token.address, {
+        from: creator,
+      });
 
       // ParameterStore was connected
       const connectedParameterStore = await capacitor.parameters();
       assert.strictEqual(connectedParameterStore, parameters.address);
+
+      // Token is set
+      const connectedToken = await capacitor.token();
+      assert.strictEqual(connectedToken, token.address);
 
       // no proposals yet
       const proposalCount = await capacitor.proposalCount();
@@ -52,15 +59,10 @@ contract('TokenCapacitor', (accounts) => {
     });
 
     it('should fail if the token address is zero', async () => {
-      const badParameters = await ParameterStore.new([], [], { from: creator });
-      await badParameters.setInitialValue(
-        'gatekeeperAddress',
-        abiCoder.encode(['address'], [gatekeeper.address]),
-      );
-      await badParameters.init({ from: creator });
+      const badToken = utils.zeroAddress();
 
       try {
-        await TokenCapacitor.new(badParameters.address, { from: creator });
+        await TokenCapacitor.new(parameters.address, badToken, { from: creator });
       } catch (error) {
         expectRevert(error);
         expectErrorLike(error, 'Token address');
@@ -71,15 +73,9 @@ contract('TokenCapacitor', (accounts) => {
 
     it('should fail if the Gatekeeper address is zero', async () => {
       const badParameters = await ParameterStore.new([], [], { from: creator });
-      const tokenAddress = await gatekeeper.token();
-      await badParameters.setInitialValue(
-        'tokenAddress',
-        abiCoder.encode(['address'], [tokenAddress]),
-      );
-      await badParameters.init({ from: creator });
 
       try {
-        await TokenCapacitor.new(badParameters.address, { from: creator });
+        await TokenCapacitor.new(badParameters.address, token.address, { from: creator });
       } catch (error) {
         expectRevert(error);
         expectErrorLike(error, 'Gatekeeper address');
