@@ -85,6 +85,20 @@ async function currentEpochStart(gatekeeper) {
   return epochStart;
 }
 
+// Check that all provided slates have a valid finalized status
+async function verifyFinalizedSlates(gatekeeper, slateIDs) {
+  const statusPromises = slateIDs.map(id => gatekeeper.slates(id).then(s => s.status));
+  const statuses = await Promise.all(statusPromises);
+
+  statuses.forEach((_status) => {
+    const s = _status.toString();
+    const isValid = s === SlateStatus.Accepted
+      || s === SlateStatus.Rejected
+      || s === SlateStatus.Unstaked;
+    assert(isValid, 'All slates should have status Accepted, Rejected, or Unstaked');
+  });
+}
+
 contract('Gatekeeper', (accounts) => {
   let parameters;
 
@@ -2435,6 +2449,7 @@ contract('Gatekeeper', (accounts) => {
           'Non-winning slate should have status Rejected',
         );
       });
+      await verifyFinalizedSlates(gatekeeper, contestSlates);
 
       // requests in the slate should all return true for hasPermission
       const slateRequests = await gatekeeper.slateRequests(winningSlate);
@@ -2526,6 +2541,9 @@ contract('Gatekeeper', (accounts) => {
         ContestStatus.Finalized,
         'Contest should have status Finalized',
       );
+
+      const slateIDs = await gatekeeper.contestSlates(ballotID, GOVERNANCE);
+      await verifyFinalizedSlates(gatekeeper, slateIDs);
     });
 
     it('should ignore votes for unstaked slates', async () => {
@@ -2582,6 +2600,9 @@ contract('Gatekeeper', (accounts) => {
         expectedWinner,
         `Slate ${expectedWinner} should have won`,
       );
+
+      const slateIDs = await gatekeeper.contestSlates(ballotID, GRANT);
+      await verifyFinalizedSlates(gatekeeper, slateIDs);
     });
 
     it('should finalize and not go to a runoff if a slate has 1 more than half of the votes', async () => {
@@ -2627,6 +2648,9 @@ contract('Gatekeeper', (accounts) => {
         SlateStatus.Accepted,
         'Winning slate status should have been Accepted',
       );
+
+      const slateIDs = await gatekeeper.contestSlates(ballotID, GRANT);
+      await verifyFinalizedSlates(gatekeeper, slateIDs);
     });
 
     it('should wait for a runoff if no slate has more than 50% of the votes', async () => {
@@ -2766,6 +2790,9 @@ contract('Gatekeeper', (accounts) => {
       await gatekeeper.countVotes(ballotID, GOVERNANCE);
       const status = await gatekeeper.contestStatus(ballotID, GOVERNANCE);
       assert.strictEqual(status.toString(), ContestStatus.Finalized);
+
+      const slateIDs = await gatekeeper.contestSlates(ballotID, GOVERNANCE);
+      await verifyFinalizedSlates(gatekeeper, slateIDs);
     });
 
     afterEach(async () => utils.evm.revert(snapshotID));
@@ -3445,19 +3472,7 @@ contract('Gatekeeper', (accounts) => {
         ['0', '1', '2'],
         'Wrong contest slates',
       );
-      const statuses = await Promise.all(
-        contestSlates.filter(s => s.toString() !== winningSlate.toString())
-          .map(id => gatekeeper.slates.call(id)
-            .then(s => s.status)),
-      );
-
-      statuses.forEach((_status) => {
-        assert.strictEqual(
-          _status.toString(),
-          SlateStatus.Rejected,
-          'Non-winning slate should have status Rejected',
-        );
-      });
+      await verifyFinalizedSlates(gatekeeper, contestSlates);
 
       // requests in the slate should all return true for hasPermission
       const slateRequests = await gatekeeper.slateRequests(winningSlate);
@@ -3513,6 +3528,9 @@ contract('Gatekeeper', (accounts) => {
       assert.strictEqual(countWinnerVotes.toString(), expectedVotes, 'Incorrect winning votes in runoff count');
       assert.strictEqual(countLoser.toString(), expectedLoser, 'Incorrect loser in runoff count');
       assert.strictEqual(countLoserVotes.toString(), expectedLoserVotes, 'Incorrect loser votes in runoff count');
+
+      const slateIDs = await gatekeeper.contestSlates(ballotID, GRANT);
+      await verifyFinalizedSlates(gatekeeper, slateIDs);
     });
 
     it('should assign the slate with the lowest ID if the runoff ends in a tie', async () => {
@@ -3546,6 +3564,9 @@ contract('Gatekeeper', (accounts) => {
         winningSlate.toNumber() < losingSlate.toNumber(),
         `${winningSlate.toNumber()} > ${losingSlate.toNumber()} Winner should have been the slate with the lower ID`,
       );
+
+      const slateIDs = await gatekeeper.contestSlates(ballotID, GRANT);
+      await verifyFinalizedSlates(gatekeeper, slateIDs);
     });
 
     it('should revert if a runoff is not pending', async () => {

@@ -22,6 +22,7 @@ contract Gatekeeper {
         address indexed resource,
         uint256 winningSlate
     );
+    event ContestFinalizedWithoutWinner(uint indexed ballotID, address indexed resource);
     event ConfidenceVoteCounted(
         uint indexed ballotID,
         address indexed resource,
@@ -30,7 +31,7 @@ contract Gatekeeper {
         uint totalVotes
     );
     event ConfidenceVoteFinalized(uint indexed ballotID, address indexed resource, uint winningSlate);
-    event ConfidenceVoteFailed(uint indexed ballotID, address resource);
+    event ConfidenceVoteFailed(uint indexed ballotID, address indexed resource);
     event RunoffStarted(uint indexed ballotID, address indexed resource, uint winningSlate, uint runnerUpSlate);
     event RunoffCounted(
         uint indexed ballotID,
@@ -651,7 +652,7 @@ contract Gatekeeper {
             contest.winner = winningSlate;
             contest.status = ContestStatus.Finalized;
 
-            acceptWinningSlate(winningSlate);
+            acceptSlate(winningSlate);
             emit ContestAutomaticallyFinalized(ballotID, resource, winningSlate);
             return;
         }
@@ -705,12 +706,20 @@ contract Gatekeeper {
         // Otherwise, trigger a runoff
         if (winnerVotes.mul(2) > total) {
             contest.winner = winner;
-            acceptWinningSlate(winner);
-            rejectLosingSlates(ballotID, resource);
+            acceptSlate(winner);
+
+            uint256[] memory activeSlates = new uint256[](1);
+            activeSlates[0] = contest.winner;
+            rejectSlates(contest.stakedSlates, activeSlates);
+
             contest.status = ContestStatus.Finalized;
             emit ConfidenceVoteFinalized(ballotID, resource, winner);
         } else {
-            rejectEliminatedSlates(ballotID, resource);
+            uint256[] memory activeSlates = new uint256[](2);
+            activeSlates[0] = contest.confidenceVoteWinner;
+            activeSlates[1] = contest.confidenceVoteRunnerUp;
+            rejectSlates(contest.stakedSlates, activeSlates);
+
             contest.status = ContestStatus.RunoffPending;
             emit ConfidenceVoteFailed(ballotID, resource);
         }
@@ -775,33 +784,26 @@ contract Gatekeeper {
 
         emit RunoffStarted(ballotID, resource, confidenceVoteWinner, confidenceVoteRunnerUp);
 
-        // eliminate all but the winner and the runner-up from the confidence vote
-        uint[] memory eliminated = new uint[](contest.stakedSlates.length.sub(2));
-        uint index = 0;
-        for (uint i = 0; i < contest.stakedSlates.length; i++) {
-            uint slateID = contest.stakedSlates[i];
-            if (slateID != confidenceVoteWinner && slateID != confidenceVoteRunnerUp) {
-                eliminated[index] = slateID;
-                index = index.add(1);
-            }
-        }
-
         // Get the number of first-choice votes for the top choices
         uint confidenceWinnerVotes = getFirstChoiceVotes(ballotID, resource, confidenceVoteWinner);
         uint confidenceRunnerUpVotes = getFirstChoiceVotes(ballotID, resource, confidenceVoteRunnerUp);
 
-        // Count second-choice votes for the top two slates
-        for (uint i = 0; i < eliminated.length; i++) {
-            uint slateID = eliminated[i];
-            SlateVotes storage currentSlate = ballots[ballotID].contests[resource].votes[slateID];
+        // For slates other than the winner and leader,
+        // count second-choice votes for the top two slates
+        for (uint i = 0; i < contest.stakedSlates.length; i++) {
+            uint slateID = contest.stakedSlates[i];
+            if (slateID != confidenceVoteWinner && slateID != confidenceVoteRunnerUp) {
+                // count second-choice votes for the top two slates
+                SlateVotes storage currentSlate = ballots[ballotID].contests[resource].votes[slateID];
 
-            // Second-choice votes for the winning slate
-            uint votesForWinner = currentSlate.secondChoiceVotes[confidenceVoteWinner];
-            confidenceWinnerVotes = confidenceWinnerVotes.add(votesForWinner);
+                // Second-choice votes for the winning slate
+                uint votesForWinner = currentSlate.secondChoiceVotes[confidenceVoteWinner];
+                confidenceWinnerVotes = confidenceWinnerVotes.add(votesForWinner);
 
-            // Second-choice votes for the runner-up slate
-            uint votesForRunnerUp = currentSlate.secondChoiceVotes[confidenceVoteRunnerUp];
-            confidenceRunnerUpVotes = confidenceRunnerUpVotes.add(votesForRunnerUp);
+                // Second-choice votes for the runner-up slate
+                uint votesForRunnerUp = currentSlate.secondChoiceVotes[confidenceVoteRunnerUp];
+                confidenceRunnerUpVotes = confidenceRunnerUpVotes.add(votesForRunnerUp);
+            }
         }
 
         // Tally for the runoff
@@ -831,7 +833,7 @@ contract Gatekeeper {
         Contest storage updatedContest = ballots[ballotID].contests[resource];
         updatedContest.winner = runoffWinner;
         updatedContest.status = ContestStatus.Finalized;
-        acceptWinningSlate(runoffWinner);
+        acceptSlate(runoffWinner);
 
         // Reject the losing slate
         slates[runoffLoser].status = SlateStatus.Rejected;
@@ -875,37 +877,24 @@ contract Gatekeeper {
     }
 
     /**
-    @dev Mark all but the winning slate as rejected
+    @dev Mark slates as rejected, except for those in _exclude
      */
-    function rejectLosingSlates(uint ballotID, address resource) internal {
-        Contest storage contest = ballots[ballotID].contests[resource];
-        uint winningSlate = contest.confidenceVoteWinner;
+    function rejectSlates(uint256[] memory _slates, uint256[] memory _exclude) private {
+        uint256 numSlates = _slates.length;
+        uint256 excludeCount = _exclude.length;
 
-        // Reject all the other slates
-        uint[] memory allSlates = contestSlates(ballotID, resource);
-        uint numSlates = allSlates.length;
         for (uint i = 0; i < numSlates; i++) {
-            uint slateID = allSlates[i];
-            if (slateID != winningSlate) {
-                slates[slateID].status = SlateStatus.Rejected;
+            uint slateID = _slates[i];
+
+            bool isExcluded = false;
+            for (uint j = 0; j < excludeCount; j++) {
+                if (_exclude[j] == slateID) {
+                    isExcluded = true;
+                    break;
+                }
             }
-        }
-    }
 
-    /**
-    @dev Mark all but the top two slates as rejected
-     */
-    function rejectEliminatedSlates(uint ballotID, address resource) internal {
-        Contest storage contest = ballots[ballotID].contests[resource];
-        uint winningSlate = contest.confidenceVoteWinner;
-        uint runnerUp = contest.confidenceVoteRunnerUp;
-
-        // Reject all the other slates
-        uint[] memory allSlates = contestSlates(ballotID, resource);
-        uint numSlates = allSlates.length;
-        for (uint i = 0; i < numSlates; i++) {
-            uint slateID = allSlates[i];
-            if (slateID != winningSlate && slateID != runnerUp) {
+            if (!isExcluded) {
                 slates[slateID].status = SlateStatus.Rejected;
             }
         }
@@ -955,10 +944,10 @@ contract Gatekeeper {
     }
 
     /**
-    @dev Update the winning slate and its associated requests
+    @dev Update a slate and its associated requests
     @param slateID The slate to update
      */
-    function acceptWinningSlate(uint slateID) internal {
+    function acceptSlate(uint slateID) private {
         // Mark the slate as accepted
         Slate storage s = slates[slateID];
         s.status = SlateStatus.Accepted;
