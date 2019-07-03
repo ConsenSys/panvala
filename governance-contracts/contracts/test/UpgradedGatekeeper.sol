@@ -20,8 +20,8 @@ contract UpgradedGatekeeper is Gatekeeper {
     bool initialized;
     uint256 epochToTransfer;
 
-    constructor(ParameterStore _parameters)
-        Gatekeeper(0, _parameters) public {
+    constructor(ParameterStore _parameters, IERC20 _token)
+        Gatekeeper(0, _parameters, _token) public {
 
         // get the old gatekeeper
         address gatekeeperAddress = _parameters.getAsAddress("gatekeeperAddress");

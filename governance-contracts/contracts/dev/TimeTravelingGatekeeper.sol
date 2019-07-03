@@ -14,8 +14,8 @@ contract TimeTravelingGatekeeper is Gatekeeper {
 
     event TimeTraveled(int256 amount, uint256 startTime);
 
-    constructor(uint _startTime, ParameterStore _parameters)
-        Gatekeeper(_startTime, _parameters) public {
+    constructor(uint _startTime, ParameterStore _parameters, IERC20 _token)
+        Gatekeeper(_startTime, _parameters, _token) public {
 
         owner = msg.sender;
     }

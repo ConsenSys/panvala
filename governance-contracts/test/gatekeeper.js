@@ -124,11 +124,18 @@ contract('Gatekeeper', (accounts) => {
   describe('constructor', () => {
     const [creator] = accounts;
     const startTime = '6000';
+    let token;
+
+    beforeEach(async () => {
+      token = await BasicToken.deployed();
+    });
 
     it('should correctly initialize the gatekeeper', async () => {
+      const expectedToken = token;
       const gatekeeper = await Gatekeeper.new(
         startTime,
         parameters.address,
+        token.address,
         { from: creator },
       );
 
@@ -143,13 +150,17 @@ contract('Gatekeeper', (accounts) => {
       // epoch length
       const epochLength = await gatekeeper.EPOCH_LENGTH();
       assert.strictEqual(epochLength.toString(), timing.EPOCH_LENGTH.toString());
+
+      // token
+      const actualToken = await gatekeeper.token();
+      assert.strictEqual(actualToken, expectedToken.address, 'Token not stored');
     });
 
     it('should fail if the parameter store address is zero', async () => {
       const parameterStoreAddress = utils.zeroAddress();
 
       try {
-        await Gatekeeper.new(startTime, parameterStoreAddress, { from: creator });
+        await Gatekeeper.new(startTime, parameterStoreAddress, token.address, { from: creator });
       } catch (error) {
         expectRevert(error);
         expectErrorLike(error, 'parameter store address');
@@ -159,15 +170,10 @@ contract('Gatekeeper', (accounts) => {
     });
 
     it('should fail if the token address is zero', async () => {
-      const badParameters = await ParameterStore.new(
-        ['slateStakeAmount'],
-        [abiCoder.encode(['uint256'], ['1000'])],
-        { from: creator },
-      );
-      await badParameters.init({ from: creator });
+      const tokenAddress = utils.zeroAddress();
 
       try {
-        await Gatekeeper.new(startTime, badParameters.address, { from: creator });
+        await Gatekeeper.new(startTime, parameters.address, tokenAddress, { from: creator });
       } catch (error) {
         expectRevert(error);
         expectErrorLike(error, 'token address');
@@ -200,7 +206,10 @@ contract('Gatekeeper', (accounts) => {
       });
 
       const pa = await gatekeeper.parameters();
-      assert.strictEqual(pa, createdParameters.address);
+      assert.strictEqual(pa, createdParameters.address, 'Wrong parameter store address');
+
+      const t = await gatekeeper.token();
+      assert.strictEqual(t, token.address, 'Wrong token address');
     });
   });
 
@@ -215,11 +224,7 @@ contract('Gatekeeper', (accounts) => {
     const halfVotingPeriod = votingPeriodLength.div(new BN(2));
 
     beforeEach(async () => {
-      gatekeeper = await Gatekeeper.new(
-        startTime,
-        parameters.address,
-        { from: creator },
-      );
+      gatekeeper = await utils.newGatekeeper({ startTime, from: creator });
 
       GRANT = await getResource(gatekeeper, 'GRANT');
     });

@@ -243,10 +243,9 @@ async function newGatekeeper(options) {
   if (typeof parameterStoreAddress === 'undefined') {
     const stakeAmount = '5000';
     parameters = await ParameterStore.new(
-      ['slateStakeAmount', 'tokenAddress'],
+      ['slateStakeAmount'],
       [
         abiCoder.encode(['uint256'], [stakeAmount]),
-        abiCoder.encode(['address'], [tokenAddress]),
       ],
       { from: creator },
     );
@@ -255,12 +254,6 @@ async function newGatekeeper(options) {
   }
 
   // console.log('using token at address', tokenAddress);
-  // set token
-  await parameters.setInitialValue(
-    'tokenAddress',
-    abiCoder.encode(['address'], [tokenAddress]),
-    { from: creator },
-  );
 
   // deploy a Gatekeeper
   let systemStart = startTime;
@@ -268,7 +261,9 @@ async function newGatekeeper(options) {
   if (typeof systemStart === 'undefined') {
     systemStart = Math.floor((new Date()).getTime() / 1000);
   }
-  const gatekeeper = await Gatekeeper.new(systemStart, parameters.address, { from: creator });
+  const gatekeeper = await Gatekeeper.new(systemStart, parameters.address, tokenAddress, {
+    from: creator,
+  });
   await parameters.setInitialValue(
     'gatekeeperAddress',
     abiCoder.encode(['address'], [gatekeeper.address]),
@@ -297,7 +292,7 @@ async function newPanvala(options) {
   const gatekeeper = await newGatekeeper({ ...options, init: false });
   const parametersAddress = await gatekeeper.parameters();
   const parameters = await ParameterStore.at(parametersAddress);
-  const tokenAddress = await parameters.getAsAddress('tokenAddress');
+  const tokenAddress = await gatekeeper.token();
   const token = await BasicToken.at(tokenAddress);
   const capacitor = await TokenCapacitor.new(parameters.address, token.address, { from: creator });
 

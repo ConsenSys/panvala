@@ -58,6 +58,9 @@ contract Gatekeeper {
     // Parameters
     ParameterStore public parameters;
 
+    // Associated token
+    IERC20 public token;
+
     // Requests
     struct Request {
         bytes metadataHash;
@@ -174,12 +177,12 @@ contract Gatekeeper {
      @param _startTime The start time of the first batch
      @param _parameters The parameter store to use
     */
-    constructor(uint _startTime, ParameterStore _parameters) public {
+    constructor(uint _startTime, ParameterStore _parameters, IERC20 _token) public {
         require(address(_parameters) != address(0), "Parameter store address cannot be zero");
         parameters = _parameters;
 
-        address tokenAddress = parameters.getAsAddress("tokenAddress");
-        require(tokenAddress != address(0), "Token address cannot be zero");
+        require(address(_token) != address(0), "Token address cannot be zero");
+        token = _token;
 
         startTime = _startTime;
     }
@@ -276,7 +279,6 @@ contract Gatekeeper {
         require(slates[slateID].status == SlateStatus.Unstaked, "Slate has already been staked");
 
         address staker = msg.sender;
-        IERC20 token = token();
 
         // Staker must have enough tokens
         uint stakeAmount = parameters.getAsUint("slateStakeAmount");
@@ -331,7 +333,6 @@ contract Gatekeeper {
 
         // Update slate and transfer tokens
         slates[slateID].stake = 0;
-        IERC20 token = token();
         require(token.transfer(slate.staker, slate.stake), "Failed to transfer tokens");
 
         emit StakeWithdrawn(slateID, slate.staker, slate.stake);
@@ -347,7 +348,6 @@ contract Gatekeeper {
         address voter = msg.sender;
 
         // Voter must have enough tokens
-        IERC20 token = token();
         require(token.balanceOf(msg.sender) >= numTokens, "Insufficient token balance");
 
         // Transfer tokens to increase the voter's balance by `numTokens`
@@ -376,7 +376,6 @@ contract Gatekeeper {
         // Transfer tokens to decrease the voter's balance by `numTokens`
         voteTokenBalance[voter] = votingRights.sub(numTokens);
 
-        IERC20 token = token();
         require(token.transfer(voter, numTokens), "Failed to transfer tokens");
 
         emit VotingTokensWithdrawn(voter, numTokens);
@@ -840,7 +839,6 @@ contract Gatekeeper {
 
         address tokenCapacitorAddress = parameters.getAsAddress("tokenCapacitorAddress");
         TokenCapacitor capacitor = TokenCapacitor(tokenCapacitorAddress);
-        IERC20 token = token();
         bytes memory stakeDonationHash = "Qmepxeh4KVkyHYgt3vTjmodB5RKZgUEmdohBZ37oKXCUCm";
 
         uint256 numSlates = contest.stakedSlates.length;
@@ -962,10 +960,6 @@ contract Gatekeeper {
 
 
     // MISCELLANEOUS GETTERS
-    function token() public view returns(IERC20) {
-        return IERC20(parameters.getAsAddress("tokenAddress"));
-    }
-
     /**
     @dev Return the slate submission deadline for the given resource
     @param epochNumber The epoch

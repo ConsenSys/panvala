@@ -20,22 +20,18 @@ const { ONE_WEEK } = timing;
 
 contract('TimeTravelGatekeeper', (accounts) => {
   const [creator] = accounts;
+  let token;
   let parameters;
   let gatekeeper;
   let GRANT;
 
   before(async () => {
     const stakeAmount = '5000';
-    const token = await BasicToken.deployed();
+    token = await BasicToken.deployed();
 
     parameters = await ParameterStore.new(
       ['slateStakeAmount'],
       [abiCoder.encode(['uint256'], [stakeAmount])],
-      { from: creator },
-    );
-    await parameters.setInitialValue(
-      'tokenAddress',
-      abiCoder.encode(['address'], [token.address]),
       { from: creator },
     );
     await parameters.init({ from: creator });
@@ -48,6 +44,7 @@ contract('TimeTravelGatekeeper', (accounts) => {
     gatekeeper = await TimeTravelingGatekeeper.new(
       startTime,
       parameters.address,
+      token.address,
       { from: creator },
     );
 

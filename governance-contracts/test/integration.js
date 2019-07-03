@@ -346,7 +346,7 @@ contract('integration', (accounts) => {
 
       // deploy new gatekeeper with the same starting time as the old one
       const systemStart = await gatekeeper.startTime();
-      const newGatekeeper = await Gatekeeper.new(systemStart, parameters.address, {
+      const newGatekeeper = await Gatekeeper.new(systemStart, parameters.address, token.address, {
         from: creator,
       });
 
@@ -493,7 +493,7 @@ contract('integration', (accounts) => {
         await token.approve(gatekeeper.address, '10000', { from: creator });
 
         // deploy newer and shinier gatekeeper
-        newGatekeeper = await UpgradedGatekeeper.new(parameters.address, {
+        newGatekeeper = await UpgradedGatekeeper.new(parameters.address, token.address, {
           from: creator,
         });
 
