@@ -58,6 +58,19 @@ contract('TokenCapacitor', (accounts) => {
       assert.strictEqual(proposalCount.toString(), '0', 'There should be no proposals yet');
     });
 
+    it('should fail if the parameter store address is zero', async () => {
+      const badParameters = utils.zeroAddress();
+
+      try {
+        await TokenCapacitor.new(badParameters, token.address, { from: creator });
+      } catch (error) {
+        expectRevert(error);
+        expectErrorLike(error, 'parameter store address');
+        return;
+      }
+      assert.fail('Created TokenCapacitor with a zero parameter store address');
+    });
+
     it('should fail if the token address is zero', async () => {
       const badToken = utils.zeroAddress();
 

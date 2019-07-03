@@ -175,6 +175,7 @@ contract Gatekeeper {
      @param _parameters The parameter store to use
     */
     constructor(uint _startTime, ParameterStore _parameters) public {
+        require(address(_parameters) != address(0), "Parameter store address cannot be zero");
         parameters = _parameters;
 
         address tokenAddress = parameters.getAsAddress("tokenAddress");

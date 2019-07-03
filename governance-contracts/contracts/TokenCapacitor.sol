@@ -64,6 +64,7 @@ contract TokenCapacitor {
 
     // IMPLEMENTATION
     constructor(ParameterStore _parameters, IERC20 _token) public {
+        require(address(_parameters) != address(0), "Parameter store address cannot be zero");
         parameters = _parameters;
 
         require(address(_token) != address(0), "Token address cannot be zero");

@@ -152,6 +152,7 @@ contract('Gatekeeper', (accounts) => {
         await Gatekeeper.new(startTime, parameterStoreAddress, { from: creator });
       } catch (error) {
         expectRevert(error);
+        expectErrorLike(error, 'parameter store address');
         return;
       }
       assert.fail('Created Gatekeeper with a zero parameter store address');
@@ -169,7 +170,7 @@ contract('Gatekeeper', (accounts) => {
         await Gatekeeper.new(startTime, badParameters.address, { from: creator });
       } catch (error) {
         expectRevert(error);
-
+        expectErrorLike(error, 'token address');
         return;
       }
       assert.fail('Created Gatekeeper with a zero token address');
