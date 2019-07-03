@@ -87,6 +87,7 @@ async function currentEpochStart(gatekeeper) {
 
 // Check that all provided slates have a valid finalized status
 async function verifyFinalizedSlates(gatekeeper, slateIDs) {
+  assert(slateIDs.length > 0, 'Contest slates cannot be empty');
   const statusPromises = slateIDs.map(id => gatekeeper.slates(id).then(s => s.status));
   const statuses = await Promise.all(statusPromises);
 
@@ -2557,6 +2558,48 @@ contract('Gatekeeper', (accounts) => {
 
       const slateIDs = await gatekeeper.contestSlates(ballotID, GRANT);
       await verifyFinalizedSlates(gatekeeper, slateIDs);
+    });
+
+    it('should reject all staked slates if no one votes', async () => {
+      // Add an unstaked slate
+      await utils.grantSlateFromProposals({
+        gatekeeper,
+        proposals: [{
+          to: recommender, tokens: '1000', metadataHash: createMultihash('grant'),
+        }],
+        capacitor,
+        recommender,
+        metadata: createMultihash('an unstaked slate'),
+      });
+
+      // Skip voting periods
+      const offset = timing.EPOCH_LENGTH;
+      await increaseTime(offset);
+
+      // Finalize
+      const receipt = await gatekeeper.countVotes(ballotID, GRANT);
+      utils.expectEvents(receipt, ['ContestFinalizedWithoutWinner']);
+
+      // Should be finalized
+      const status = await gatekeeper.contestStatus(ballotID, GRANT);
+      assert.strictEqual(
+        status.toString(),
+        ContestStatus.Finalized,
+        'Contest status should have been Finalized',
+      );
+
+      // All slates should have been rejected or remain unstaked
+      const contestSlates = await gatekeeper.contestSlates(ballotID, GRANT);
+      assert.deepStrictEqual(contestSlates.map(i => i.toString()), ['0', '1', '2'], 'Wrong contest slates');
+
+      const statusPromises = contestSlates.map(id => gatekeeper.slates(id).then(s => s.status));
+      const statuses = await Promise.all(statusPromises);
+
+      statuses.forEach((_status) => {
+        const s = _status.toString();
+        const isRejectedOrUnstaked = s === SlateStatus.Rejected || s === SlateStatus.Unstaked;
+        assert(isRejectedOrUnstaked, 'All slates should have status Rejected or Unstaked');
+      });
     });
 
     it('should wait for a runoff if no slate has more than 50% of the votes', async () => {

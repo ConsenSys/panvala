@@ -644,7 +644,7 @@ contract Gatekeeper {
         uint runnerUpVotes = 0;
 
         uint total = 0;
-        bool noCount = true;
+        bool noVotes = true;
 
         for (uint i = 0; i < contest.stakedSlates.length; i++) {
             uint slateID = contest.stakedSlates[i];
@@ -652,9 +652,10 @@ contract Gatekeeper {
 
             SlateVotes storage currentSlate = contest.votes[slateID];
 
-            noCount = false;
-
             uint votes = currentSlate.firstChoiceVotes;
+            if (noVotes && votes > 0) {
+                noVotes = false;
+            }
             total = total.add(votes);
 
             if (votes > winnerVotes) {
@@ -671,7 +672,16 @@ contract Gatekeeper {
             }
         }
 
-        // TODO: what if no one has voted for anything?
+        // If no one voted, reject all participating slates
+        if (noVotes) {
+            // No more active slates
+            uint256[] memory activeSlates = new uint256[](0);
+
+            rejectSlates(contest.stakedSlates, activeSlates);
+            contest.status = ContestStatus.Finalized;
+            emit ContestFinalizedWithoutWinner(ballotID, resource);
+            return;
+        }
 
         // Update state
         contest.confidenceVoteWinner = winner;
