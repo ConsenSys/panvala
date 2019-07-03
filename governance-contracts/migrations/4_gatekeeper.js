@@ -2,11 +2,13 @@
 /* globals artifacts */
 const Gatekeeper = artifacts.require('Gatekeeper');
 const ParameterStore = artifacts.require('ParameterStore');
+const DevGatekeeper = artifacts.require('TimeTravelingGatekeeper');
+
 
 const { abiEncode } = require('../utils');
 
 // eslint-disable-next-line func-names
-module.exports = async function (deployer) {
+module.exports = async function (deployer, networks) {
   const { gatekeeper: config } = global.panvalaConfig;
   const { firstEpochStart } = config;
 
@@ -18,7 +20,12 @@ module.exports = async function (deployer) {
 
   console.log(`Deploying Gatekeeper with ParameterStore ${parameters.address}`);
 
-  const gatekeeper = await deployer.deploy(Gatekeeper, startTime, parameters.address);
+  // Enable time travel on development networks
+  // eslint-disable-next-line operator-linebreak
+  const GatekeeperArtifact =
+    networks === 'development' || networks === 'ganache' ? DevGatekeeper : Gatekeeper;
+
+  const gatekeeper = await deployer.deploy(GatekeeperArtifact, startTime, parameters.address);
   await parameters.setInitialValue(
     'gatekeeperAddress',
     abiEncode('address', gatekeeper.address),
