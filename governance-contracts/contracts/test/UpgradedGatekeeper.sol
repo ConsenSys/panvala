@@ -42,7 +42,7 @@ contract UpgradedGatekeeper is Gatekeeper {
 
         // Do not allow initialization until this gatekeeper has been accepted
         address gatekeeperAddress = parameters.getAsAddress("gatekeeperAddress");
-        require(gatekeeperAddress == address(this), "Not ready for initialization");
+        require(gatekeeperAddress == address(this), "Not ready");
 
         migrateState();
 
@@ -52,7 +52,12 @@ contract UpgradedGatekeeper is Gatekeeper {
     // Functions frozen before initialization
     function depositVoteTokens(uint numTokens) public returns(bool) {
         require(initialized == true, "Not initialized");
-        super.depositVoteTokens(numTokens);
+        return super.depositVoteTokens(numTokens);
+    }
+
+    function stakeTokens(uint256 slateID) public returns(bool) {
+        require(initialized == true, "Not initialized");
+        return super.stakeTokens(slateID);
     }
 
     /**

@@ -483,8 +483,10 @@ contract('integration', (accounts) => {
       let transferEpoch;
       let govWinner;
       let grantWinner;
+      let oldGovernancePermissions;
+      const gatekeeperKey = 'gatekeeperAddress';
 
-      // go through upgrade up until point before initialization
+      // go through upgrade up until point before governance proposal execution
       beforeEach(async () => {
         // ===== EPOCH 0
         const startingEpoch = await gatekeeper.currentEpochNumber();
@@ -496,14 +498,13 @@ contract('integration', (accounts) => {
         });
 
         // create a slate with proposal to change the `gatekeeperAddress` parameter
-        const gatekeeperKey = 'gatekeeperAddress';
         const proposals = [{
           key: gatekeeperKey,
           value: utils.abiEncode('address', newGatekeeper.address),
           metadataHash: utils.createMultihash('Smarter and faster gatekeeper'),
         }];
 
-        const governancePermissions = await utils.governanceSlateFromProposals({
+        oldGovernancePermissions = await utils.governanceSlateFromProposals({
           gatekeeper,
           proposals,
           parameterStore: parameters,
@@ -572,195 +573,242 @@ contract('integration', (accounts) => {
         } = govReceipt.logs[0].args);
         assert.strictEqual(govWinner.toString(), '0', 'Wrong governance winner');
 
-        // Execute the proposals
+        // Execute the grant proposals
         const originalBalance = await token.balanceOf(recommender);
-        utils.pMap(p => parameters.setValue(p), governancePermissions);
         utils.pMap(p => capacitor.withdrawTokens(p), grantPermissions);
 
         const newBalance = await token.balanceOf(recommender);
         assert.strictEqual(newBalance.toString(), originalBalance.add(new BN('1000')).toString(), 'Tokens not sent');
-
-        const setGatekeeper = await parameters.getAsAddress(gatekeeperKey);
-        assert.strictEqual(setGatekeeper, newGatekeeper.address, 'Gatekeeper not updated');
 
         transferEpoch = startingEpoch;
       });
 
-      it('should do an upgrade of the gatekeeper while migrating existing state', async () => {
-        // migrate state
-        await newGatekeeper.init({ from: creator });
+      it('should not allow initialization before the new gatekeeper has been accepted', async () => {
+        const storedGatekeeper = await parameters.getAsAddress(gatekeeperKey);
+        assert(storedGatekeeper !== newGatekeeper.address, 'Wrong gatekeeper address');
 
-        // check state
-        const epochNumber = await newGatekeeper.currentEpochNumber();
-
-        assert.strictEqual(
-          epochNumber.toString(),
-          (await gatekeeper.currentEpochNumber()).toString(),
-          'Should have the same epoch number as the old gatekeeper',
-        );
-
-        // start time
-        const [startTime, expectedStartTime] = await Promise.all([
-          newGatekeeper.startTime(),
-          gatekeeper.startTime(),
-        ]);
-
-        // request count
-        const requestCount = await newGatekeeper.requestCount();
-        const expectedRequestCount = await gatekeeper.requestCount();
-        assert.strictEqual(requestCount.toString(), expectedRequestCount.toString(), 'Request count');
-
-        // slate count
-        const slateCount = await newGatekeeper.slateCount();
-        const expectedSlateCount = await gatekeeper.slateCount();
-        assert.strictEqual(slateCount.toString(), expectedSlateCount.toString(), 'Slate count');
-        assert.strictEqual(startTime.toString(), expectedStartTime.toString(), 'Wrong start time');
-
-        // Check transferred data for each contest
-        const checkResource = async (contest) => {
-          const { resource, name, winner: expectedWinner } = contest;
-          // console.log('RESOURCE', name);
-
-          // contests
-          const transferredContest = await newGatekeeper.contestDetails(transferEpoch, resource);
-          const expectedContest = await gatekeeper.contestDetails(transferEpoch, resource);
-          assert.deepStrictEqual(transferredContest, expectedContest, `${name} contest should have been transferred`);
-
-          // console.log(expectedContest);
-          assert.strictEqual(
-            transferredContest.status.toString(),
-            ContestStatus.Finalized,
-            `${name} contest should have been finalized`,
-          );
-
-          // winning slates from the transferred epoch
-          const winner = await newGatekeeper.getWinningSlate(transferEpoch, resource);
-          assert.strictEqual(winner.toString(), expectedWinner.toString(), `Winner does not match old gatekeeper for ${name}`);
-          assert.strictEqual(winner.toString(), expectedContest.winner.toString(), `Winner does not match stored for ${name}`);
-
-          // Check requests in the winning slate
-          const acceptedRequestIDs = await newGatekeeper.slateRequests(winner);
-          assert(acceptedRequestIDs.length > 0);
-          const expectedRequestIDs = await gatekeeper.slateRequests(winner);
-          assert.deepStrictEqual(acceptedRequestIDs, expectedRequestIDs, 'Wrong accepted requests');
-
-          // Check that all the fields got transferred
-          const requests = utils.pMap(r => newGatekeeper.requests(r), acceptedRequestIDs);
-          const expectedRequests = utils.pMap(r => gatekeeper.requests(r), acceptedRequestIDs);
-
-          for (let i = 0; i < requests.length; i += 1) {
-            const r = requests[i];
-            const e = expectedRequests[i];
-
-            assert(r.approved, 'All requests should have been approved');
-            assert.strictEqual(r.metadataHash, e.metadataHash, 'Wrong metadata hash');
-            assert.strictEqual(r.resource, e.resource, 'Wrong resource');
-            assert.strictEqual(r.approved, e.approved, 'Approved is wrong');
-            assert.strictEqual(r.expirationTime.toString(), e.expirationTime.toString(), 'Wrong expiration');
-          }
-
-          // incumbent
-          const incumbent = await newGatekeeper.incumbent(resource);
-          const expectedIncumbent = await gatekeeper.incumbent(resource);
-          assert.strictEqual(incumbent.toString(), expectedIncumbent.toString(), `Wrong incumbent for ${name}`);
-        };
-
-        const resources = [
-          { resource: GRANT, name: 'GRANT', winner: grantWinner },
-          { resource: GOVERNANCE, name: 'GOVERNANCE', winner: govWinner },
-        ];
-        await Promise.all([checkResource(resources[0]), checkResource(resources[1])]);
-
-        // use the new gatekeeper
-        const recommenderTokens = await token.balanceOf(recommender);
-        await token.approve(newGatekeeper.address, recommenderTokens, { from: recommender });
-
-        const oldGatekeeperRequestCount = await gatekeeper.requestCount();
-        const newGatekeeperRequestCount = await newGatekeeper.requestCount();
-
-        // create a grant slate and a governance slate
-        let slateID = slateCount.toNumber();
-
-        const governanceProposals = [{
-          key: 'slateStakeAmount',
-          value: utils.abiEncode('uint256', '6000'),
-          metadataHash: utils.createMultihash('Increase stake amount'),
-        }];
-
-        const governancePermissions = await utils.governanceSlateFromProposals({
-          gatekeeper: newGatekeeper,
-          proposals: governanceProposals,
-          parameterStore: parameters,
-          recommender,
-          metadata: utils.createMultihash('Another governance'),
-        });
-        await newGatekeeper.stakeTokens(slateID, { from: recommender });
-
-        // create a grant slate as well
-        const grantProposals = [{
-          to: recommender, tokens: '1000', metadataHash: utils.createMultihash('grant'),
-        }];
-        const grantPermissions = await utils.grantSlateFromProposals({
-          gatekeeper: newGatekeeper,
-          proposals: grantProposals,
-          capacitor,
-          recommender,
-          metadata: utils.createMultihash('Important grant'),
-        });
-        slateID += 1;
-        await newGatekeeper.stakeTokens(slateID, { from: recommender });
-
-        // capacitor has 2 proposals so far, parameter store has 1
-        assert.deepStrictEqual(governancePermissions.map(p => p.toString()), ['1']);
-        assert.deepStrictEqual(grantPermissions.map(p => p.toString()), ['2']);
-
-        // verify that no more requests were created in the old one
-        assert.strictEqual(
-          (await gatekeeper.requestCount()).toString(),
-          oldGatekeeperRequestCount.toString(),
-          'Created requests in old gatekeeper',
-        );
-
-        // verify that requests get generated in the new gatekeeper
-        assert.strictEqual(
-          (await newGatekeeper.requestCount()).toString(),
-          newGatekeeperRequestCount.addn(2).toString(),
-          'Did not create requests in new gatekeeper',
-        );
-
-        // finalize and execute for this epoch
-        await increaseTime(timing.EPOCH_LENGTH);
-
-        // ===== EPOCH 2
-        const nextEpoch = await gatekeeper.currentEpochNumber();
-        assert.strictEqual(nextEpoch.toString(), epochNumber.addn(1).toString(), 'Not next epoch');
-
-        await newGatekeeper.countVotes(epochNumber, GRANT);
-        await newGatekeeper.countVotes(epochNumber, GOVERNANCE);
-
-        const originalBalance = await token.balanceOf(recommender);
-        utils.pMap(p => parameters.setValue(p), governancePermissions);
-        utils.pMap(p => capacitor.withdrawTokens(p), grantPermissions);
-
-        const newBalance = await token.balanceOf(recommender);
-        assert.strictEqual(newBalance.toString(), originalBalance.add(new BN('1000')).toString(), 'Tokens not sent');
-
-        const setStakeAmount = await parameters.getAsUint('slateStakeAmount');
-        assert.strictEqual(setStakeAmount.toString(), '6000', 'Stake amount not updated');
-
-        // Should be able to deposit tokens
-        await newGatekeeper.depositVoteTokens('1000', { from: recommender });
-      });
-
-      it('should not allow users to deposit vote tokens before the new gatekeeper has been initialized', async () => {
         try {
-          await newGatekeeper.depositVoteTokens('1000', { from: recommender });
+          await newGatekeeper.init({ from: creator });
         } catch (error) {
           expectRevert(error);
-          expectErrorLike(error, 'not initialized');
+          expectErrorLike(error, 'Not ready');
           return;
         }
-        assert.fail('Allowed vote tokens to be deposited before initialization');
+        assert.fail('Allowed initialization before gatekeeper was accepted');
+      });
+
+      describe('with upgrade accepted', () => {
+        beforeEach(async () => {
+          // Execute the governance proposals
+          utils.pMap(p => parameters.setValue(p), oldGovernancePermissions);
+          const setGatekeeper = await parameters.getAsAddress(gatekeeperKey);
+          assert.strictEqual(setGatekeeper, newGatekeeper.address, 'Gatekeeper not updated');
+        });
+
+        it('should do an upgrade of the gatekeeper while migrating existing state', async () => {
+          // migrate state
+          await newGatekeeper.init({ from: creator });
+
+          // check state
+          const epochNumber = await newGatekeeper.currentEpochNumber();
+
+          assert.strictEqual(
+            epochNumber.toString(),
+            (await gatekeeper.currentEpochNumber()).toString(),
+            'Should have the same epoch number as the old gatekeeper',
+          );
+
+          // start time
+          const [startTime, expectedStartTime] = await Promise.all([
+            newGatekeeper.startTime(),
+            gatekeeper.startTime(),
+          ]);
+
+          // request count
+          const requestCount = await newGatekeeper.requestCount();
+          const expectedRequestCount = await gatekeeper.requestCount();
+          assert.strictEqual(requestCount.toString(), expectedRequestCount.toString(), 'Request count');
+
+          // slate count
+          const slateCount = await newGatekeeper.slateCount();
+          const expectedSlateCount = await gatekeeper.slateCount();
+          assert.strictEqual(slateCount.toString(), expectedSlateCount.toString(), 'Slate count');
+          assert.strictEqual(startTime.toString(), expectedStartTime.toString(), 'Wrong start time');
+
+          // Check transferred data for each contest
+          const checkResource = async (contest) => {
+            const { resource, name, winner: expectedWinner } = contest;
+            // console.log('RESOURCE', name);
+
+            // contests
+            const transferredContest = await newGatekeeper.contestDetails(transferEpoch, resource);
+            const expectedContest = await gatekeeper.contestDetails(transferEpoch, resource);
+            assert.deepStrictEqual(transferredContest, expectedContest, `${name} contest should have been transferred`);
+
+            // console.log(expectedContest);
+            assert.strictEqual(
+              transferredContest.status.toString(),
+              ContestStatus.Finalized,
+              `${name} contest should have been finalized`,
+            );
+
+            // winning slates from the transferred epoch
+            const winner = await newGatekeeper.getWinningSlate(transferEpoch, resource);
+            assert.strictEqual(winner.toString(), expectedWinner.toString(), `Winner does not match old gatekeeper for ${name}`);
+            assert.strictEqual(winner.toString(), expectedContest.winner.toString(), `Winner does not match stored for ${name}`);
+
+            // Check requests in the winning slate
+            const acceptedRequestIDs = await newGatekeeper.slateRequests(winner);
+            assert(acceptedRequestIDs.length > 0);
+            const expectedRequestIDs = await gatekeeper.slateRequests(winner);
+            assert.deepStrictEqual(acceptedRequestIDs, expectedRequestIDs, 'Wrong accepted requests');
+
+            // Check that all the fields got transferred
+            const requests = utils.pMap(r => newGatekeeper.requests(r), acceptedRequestIDs);
+            const expectedRequests = utils.pMap(r => gatekeeper.requests(r), acceptedRequestIDs);
+
+            for (let i = 0; i < requests.length; i += 1) {
+              const r = requests[i];
+              const e = expectedRequests[i];
+
+              assert(r.approved, 'All requests should have been approved');
+              assert.strictEqual(r.metadataHash, e.metadataHash, 'Wrong metadata hash');
+              assert.strictEqual(r.resource, e.resource, 'Wrong resource');
+              assert.strictEqual(r.approved, e.approved, 'Approved is wrong');
+              assert.strictEqual(r.expirationTime.toString(), e.expirationTime.toString(), 'Wrong expiration');
+            }
+
+            // incumbent
+            const incumbent = await newGatekeeper.incumbent(resource);
+            const expectedIncumbent = await gatekeeper.incumbent(resource);
+            assert.strictEqual(incumbent.toString(), expectedIncumbent.toString(), `Wrong incumbent for ${name}`);
+          };
+
+          const resources = [
+            { resource: GRANT, name: 'GRANT', winner: grantWinner },
+            { resource: GOVERNANCE, name: 'GOVERNANCE', winner: govWinner },
+          ];
+          await Promise.all([checkResource(resources[0]), checkResource(resources[1])]);
+
+          // use the new gatekeeper
+          const recommenderTokens = await token.balanceOf(recommender);
+          await token.approve(newGatekeeper.address, recommenderTokens, { from: recommender });
+
+          const oldGatekeeperRequestCount = await gatekeeper.requestCount();
+          const newGatekeeperRequestCount = await newGatekeeper.requestCount();
+
+          // create a grant slate and a governance slate
+          let slateID = slateCount.toNumber();
+
+          const governanceProposals = [{
+            key: 'slateStakeAmount',
+            value: utils.abiEncode('uint256', '6000'),
+            metadataHash: utils.createMultihash('Increase stake amount'),
+          }];
+
+          const governancePermissions = await utils.governanceSlateFromProposals({
+            gatekeeper: newGatekeeper,
+            proposals: governanceProposals,
+            parameterStore: parameters,
+            recommender,
+            metadata: utils.createMultihash('Another governance'),
+          });
+          await newGatekeeper.stakeTokens(slateID, { from: recommender });
+
+          // create a grant slate as well
+          const grantProposals = [{
+            to: recommender, tokens: '1000', metadataHash: utils.createMultihash('grant'),
+          }];
+          const grantPermissions = await utils.grantSlateFromProposals({
+            gatekeeper: newGatekeeper,
+            proposals: grantProposals,
+            capacitor,
+            recommender,
+            metadata: utils.createMultihash('Important grant'),
+          });
+          slateID += 1;
+          await newGatekeeper.stakeTokens(slateID, { from: recommender });
+
+          // capacitor has 2 proposals so far, parameter store has 1
+          assert.deepStrictEqual(governancePermissions.map(p => p.toString()), ['1']);
+          assert.deepStrictEqual(grantPermissions.map(p => p.toString()), ['2']);
+
+          // verify that no more requests were created in the old one
+          assert.strictEqual(
+            (await gatekeeper.requestCount()).toString(),
+            oldGatekeeperRequestCount.toString(),
+            'Created requests in old gatekeeper',
+          );
+
+          // verify that requests get generated in the new gatekeeper
+          assert.strictEqual(
+            (await newGatekeeper.requestCount()).toString(),
+            newGatekeeperRequestCount.addn(2).toString(),
+            'Did not create requests in new gatekeeper',
+          );
+
+          // finalize and execute for this epoch
+          await increaseTime(timing.EPOCH_LENGTH);
+
+          // ===== EPOCH 2
+          const nextEpoch = await gatekeeper.currentEpochNumber();
+          assert.strictEqual(nextEpoch.toString(), epochNumber.addn(1).toString(), 'Not next epoch');
+
+          await newGatekeeper.countVotes(epochNumber, GRANT);
+          await newGatekeeper.countVotes(epochNumber, GOVERNANCE);
+
+          const originalBalance = await token.balanceOf(recommender);
+          utils.pMap(p => parameters.setValue(p), governancePermissions);
+          utils.pMap(p => capacitor.withdrawTokens(p), grantPermissions);
+
+          const newBalance = await token.balanceOf(recommender);
+          assert.strictEqual(newBalance.toString(), originalBalance.add(new BN('1000')).toString(), 'Tokens not sent');
+
+          const setStakeAmount = await parameters.getAsUint('slateStakeAmount');
+          assert.strictEqual(setStakeAmount.toString(), '6000', 'Stake amount not updated');
+
+          // Should be able to deposit tokens
+          await newGatekeeper.depositVoteTokens('1000', { from: recommender });
+        });
+
+        it('should not allow users to deposit vote tokens before the new gatekeeper has been initialized', async () => {
+          try {
+            await newGatekeeper.depositVoteTokens('1000', { from: recommender });
+          } catch (error) {
+            expectRevert(error);
+            expectErrorLike(error, 'not initialized');
+            return;
+          }
+          assert.fail('Allowed vote tokens to be deposited before initialization');
+        });
+
+        it('should not allow users to stake tokens before the new gatekeeper has been initialized', async () => {
+          const slateID = await newGatekeeper.slateCount();
+
+          // recommend slate
+          await utils.grantSlateFromProposals({
+            gatekeeper: newGatekeeper,
+            proposals: [{
+              to: recommender, tokens: '1000', metadataHash: utils.createMultihash('grant'),
+            }],
+            capacitor,
+            recommender,
+            metadata: utils.createMultihash('Important grant'),
+          });
+
+          // try to stake on it
+          const recommenderTokens = await token.balanceOf(recommender);
+          await token.approve(newGatekeeper.address, recommenderTokens, { from: recommender });
+
+          try {
+            await newGatekeeper.stakeTokens(slateID, { from: recommender });
+          } catch (error) {
+            expectRevert(error);
+            expectErrorLike(error, 'not initialized');
+            return;
+          }
+          assert.fail('Allowed a slate to be staked before initialization');
+        });
       });
     });
 
