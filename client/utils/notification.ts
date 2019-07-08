@@ -23,16 +23,12 @@ enum NotificationTypes {
 
 export function normalizeNotifications(
   notifications: IAPINotification[],
-  slatesByID: any,
   proposalsByID: any
 ): INotification[] {
   console.log('notifications:', notifications);
   return notifications.map((noti: IAPINotification) => {
     const { slateID, proposalID } = noti;
-    let slate, proposal;
-    if (slateID && slatesByID) {
-      slate = slatesByID[utils.bigNumberify(slateID).toString()];
-    }
+    let proposal;
     if (proposalID && proposalsByID) {
       proposal = proposalsByID[utils.bigNumberify(proposalID).toString()];
     }

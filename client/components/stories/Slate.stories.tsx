@@ -15,11 +15,6 @@ const unstakedIncumbent: ISlate = {
   incumbent: true,
 };
 
-const unstakedVerified: ISlate = {
-  ...unstakedSlate,
-  verifiedRecommender: true,
-};
-
 const staker = '0xd115bffabbdd893a6f7cea402e7338643ced44a6';
 
 const stakedSlate: ISlate = {

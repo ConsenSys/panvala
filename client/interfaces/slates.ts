@@ -27,7 +27,6 @@ export interface ISlate {
 
 export interface IGovernanceSlateFormValues {
   email: string;
-  title: string;
   firstName: string;
   lastName?: string;
   organization?: string;

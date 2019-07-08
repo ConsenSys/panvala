@@ -17,7 +17,7 @@ import RouterLink from '../components/RouterLink';
 import PendingTransaction from '../components/PendingTransaction';
 import StepperMetamaskDialog from '../components/StepperMetamaskDialog';
 import { IEthereumContext, EthereumContext } from '../components/EthereumProvider';
-import { saveState, loadState, LINKED_WALLETS, ENABLED_ACCOUNTS } from '../utils/localStorage';
+import { saveState, loadState, LINKED_WALLETS } from '../utils/localStorage';
 import { splitAddressHumanReadable, isAddress } from '../utils/format';
 import { COLORS } from '../styles';
 
@@ -36,8 +36,8 @@ const Wallet: React.SFC = () => {
     onRefreshBalances,
   }: IEthereumContext = React.useContext(EthereumContext);
 
-  // list of enabled accounts. use to populate wallet list
-  const enabledAccounts = loadState(ENABLED_ACCOUNTS);
+  // // list of enabled accounts. use to populate wallet list
+  // const enabledAccounts = loadState(ENABLED_ACCOUNTS);
   // delegate (metamask) hot wallet
   const [hotWallet, setHotWallet] = React.useState('');
   // voter (trezor/ledger) cold wallet

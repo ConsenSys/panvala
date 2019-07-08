@@ -31,7 +31,7 @@ export async function sendCreateManyProposalsTransaction(
   tokenAmounts: string[],
   proposalMultihashes: Buffer[]
 ): Promise<TransactionResponse> {
-  return tokenCapacitor.functions.createManyProposals(
+  return (tokenCapacitor as any).functions.createManyProposals(
     beneficiaries,
     tokenAmounts,
     proposalMultihashes
@@ -89,7 +89,7 @@ export async function sendRecommendGovernanceSlateTx(
   metadataHash: string,
   setTxPending: any
 ): Promise<any> {
-  const response = await gatekeeper.functions.recommendSlate(
+  const response = await (gatekeeper as any).functions.recommendSlate(
     parameterStoreAddress,
     requestIDs,
     Buffer.from(metadataHash)

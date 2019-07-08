@@ -41,7 +41,6 @@ const PanelHeading = styled.div`
 `;
 
 const ItemWrapper: any = styled.div`
-  /* background: ${({ index }) => (index % 2 === 0 ? 'rgba(222, 240, 250, 0.3)' : 'white')}; */
   background-color: white;
   padding: 1.4rem;
   border-top: 1px solid ${COLORS.grey5};

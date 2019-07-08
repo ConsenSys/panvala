@@ -30,9 +30,7 @@ interface IProps {
 }
 
 const Withdraw: StatelessPage<IProps> = ({ query, asPath }) => {
-  const { onRefreshSlates, slatesByID, proposalsByID }: IMainContext = React.useContext(
-    MainContext
-  );
+  const { onRefreshSlates, proposalsByID }: IMainContext = React.useContext(MainContext);
   const {
     account,
     contracts: { gatekeeper, tokenCapacitor },
@@ -53,12 +51,12 @@ const Withdraw: StatelessPage<IProps> = ({ query, asPath }) => {
 
   async function handleWithdraw(method: string, args: string) {
     try {
-      if (account && !isEmpty(gatekeeper) && !isEmpty(slatesByID) && !isEmpty(proposalsByID)) {
+      if (account && !isEmpty(gatekeeper) && !isEmpty(proposalsByID)) {
         const contract = method === 'withdrawTokens' ? tokenCapacitor : gatekeeper;
         await sendAndWaitForTransaction(ethProvider, contract, method, [args]);
         onRefreshBalances();
         onRefreshSlates();
-        onHandleGetUnreadNotifications(account, slatesByID, proposalsByID);
+        onHandleGetUnreadNotifications(account, proposalsByID);
       }
     } catch (error) {
       console.error(`ERROR failed to withdraw tokens: ${error.message}`);

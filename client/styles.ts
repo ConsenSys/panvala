@@ -87,7 +87,6 @@ export const theme: Theme = {
   borders: [0, '1px solid', '2px solid', '4px solid', '8px solid', '16px solid', '32px solid'],
   radii: [0, 2, 4, 16, 9999, '100%'],
   shadows: ['0px 5px 20px rgba(0, 0, 0, 0.1)'],
-  heights: [16, 32, 64, 128, 256],
-  maxWidths: [16, 32, 64, 128, 256, 512, 768, 1024, 1536],
+  sizes: [16, 32, 64, 128, 256],
   colors,
 };

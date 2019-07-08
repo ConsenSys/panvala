@@ -1,5 +1,5 @@
 import * as React from 'react';
-import styled, { css, keyframes } from 'styled-components';
+import styled, { css } from 'styled-components';
 import { COLORS, BUTTON_COLORS } from '../styles';
 import Tag from './Tag';
 import { splitAddressHumanReadable } from '../utils/format';

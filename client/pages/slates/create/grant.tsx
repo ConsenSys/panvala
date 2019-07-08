@@ -124,7 +124,7 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, classes }) => {
       if ('events' in receipt) {
         // Get the ProposalCreated logs from the receipt
         // Extract the requestIDs
-        const requestIDs = receipt.events
+        const requestIDs = (receipt as any).events
           .filter(event => event.event === 'ProposalCreated')
           .map(e => e.args.requestID);
         return requestIDs;
@@ -147,7 +147,7 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, classes }) => {
         gasLimit: estimate.add('100000').toHexString(),
         gasPrice: utils.parseUnits('9.0', 'gwei'),
       };
-      const response = await contracts.gatekeeper.functions.recommendSlate(
+      const response = await (contracts.gatekeeper as any).functions.recommendSlate(
         contracts.tokenCapacitor.address,
         requestIDs,
         Buffer.from(metadataHash),

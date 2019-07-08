@@ -38,15 +38,10 @@ export const ProposalHeader = ({
   if (includedInSlates.length > 0) {
     const slate = includedInSlates[0];
 
-    {
-      /* this should be proposal.status */
-    }
-    const accepted = slate.status === SlateStatus.Accepted;
-
     return (
       <Flex justifyBetween alignCenter width="100%">
         <Flex>
-          <Tag status={''}>{slate.category.toUpperCase() + ' PROPOSAL'}</Tag>
+          <Tag status={''}>{proposal.category.toUpperCase() + ' PROPOSAL'}</Tag>
           {!!SlateStatus[slate.status] && (
             <Tag status={convertEVMSlateStatus(slate.status)}>
               {convertEVMSlateStatus(slate.status)}

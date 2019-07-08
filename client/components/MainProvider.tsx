@@ -73,7 +73,7 @@ function reducer(state: any, action: any) {
   }
 }
 
-const MainProvider: React.FC = (props: any) => {
+const MainProvider: React.FC<any> = (props: any) => {
   const [state, dispatch] = React.useReducer(reducer, {
     slates: [],
     proposals: [],

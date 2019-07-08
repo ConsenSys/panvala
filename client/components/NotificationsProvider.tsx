@@ -19,11 +19,11 @@ export default function NotificationsProvider(props: any) {
    * and replaces the global notifications state
    * @param address ethereum address of user
    */
-  async function getUnreadNotifications(address: string, slatesByID: any, proposalsByID: any) {
+  async function getUnreadNotifications(address: string, proposalsByID: any) {
     // fetch notifications from api
     const result: any[] = await getNotificationsByAddress(address);
     // normalize api return data
-    const normalized: INotification[] = normalizeNotifications(result, slatesByID, proposalsByID);
+    const normalized: INotification[] = normalizeNotifications(result, proposalsByID);
     console.info('normalized notifications:', normalized);
     // set state
     setNotifications(normalized);
@@ -31,8 +31,8 @@ export default function NotificationsProvider(props: any) {
 
   // runs whenever account changes
   React.useEffect(() => {
-    if (account && !isEmpty(slatesByID) && !isEmpty(proposalsByID)) {
-      getUnreadNotifications(account, slatesByID, proposalsByID);
+    if (account && !isEmpty(proposalsByID)) {
+      getUnreadNotifications(account, proposalsByID);
     }
   }, [account, slatesByID]);
 

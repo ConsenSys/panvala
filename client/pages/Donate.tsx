@@ -17,6 +17,9 @@ const Donate: React.FC = () => {
   const [donor, setDonor] = React.useState('');
 
   async function handleDonate() {
+    setAmount(100);
+    setDonor(account);
+
     const numTokens = convertedToBaseUnits(amount.toString());
     if (BN(numTokens).eq(0) || panBalance.eq(0)) {
       console.error('cannot donate zero tokens or panBalance is zero');
@@ -38,7 +41,7 @@ const Donate: React.FC = () => {
       };
       const multihash = await ipfsAddObject(metadata);
       const metadataHash = Buffer.from(multihash);
-      await tokenCapacitor.functions.donate(metadata.donor, metadata.panAmount, metadataHash);
+      await (tokenCapacitor as any).functions.donate(metadata.donor, metadata.panAmount, metadataHash);
     }
   }
 

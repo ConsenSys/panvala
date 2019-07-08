@@ -8,5 +8,5 @@ export interface INotification {
 
 export interface INotificationsContext {
   notifications: INotification[];
-  onHandleGetUnreadNotifications(account: string, slatesByID: any, proposalsByID: any): void;
+  onHandleGetUnreadNotifications(account: string, proposalsByID: any): void;
 }

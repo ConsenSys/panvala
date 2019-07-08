@@ -58,7 +58,7 @@ const Checkbox = (props: any) => {
   );
 };
 
-const styles = (theme: any) => {
+const styles = () => {
   return {
     checked: {},
     radio: {

@@ -54,7 +54,7 @@ function reducer(state: any, action: any) {
   }
 }
 
-const EthereumProvider: React.FC = (props: any) => {
+const EthereumProvider: React.FC<any> = (props: any) => {
   const [state, dispatch] = React.useReducer(reducer, {
     ethProvider: {},
     contracts: {
