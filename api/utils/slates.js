@@ -49,8 +49,17 @@ async function getAllSlates() {
   const slateIDs = range(0, slateCount);
   console.log('slateIDs', slateIDs);
 
+  // TEMPORARY HACK
+  let slateIDsToQuery = slateIDs;
+  const network = await provider.getNetwork();
+  if (network.chainId === 4) {
+    const garbage = [0, 1, 2, 3];
+    const filtered = slateIDs.filter(id => !garbage.includes(id));
+    slateIDsToQuery = filtered;
+  }
+
   return Promise.map(
-    slateIDs,
+    slateIDsToQuery,
     async (slateID, index) => {
       if (index !== 0) await Promise.delay(1000);
       console.log('slateID:', slateID);
@@ -68,7 +77,14 @@ async function getAllSlates() {
         incumbent = true;
       }
       console.log('slate:', slate);
-      return getSlateWithMetadata(slateID, slate, decoded, incumbent, requiredStake);
+      return getSlateWithMetadata(
+        slateID,
+        slate,
+        decoded,
+        incumbent,
+        requiredStake,
+        network.chainId
+      );
     },
     { concurrency: 5 }
   );
@@ -82,7 +98,14 @@ async function getAllSlates() {
  * @param {Boolean} incumbent
  * @param {ethers.BigNumber} requiredStake
  */
-async function getSlateWithMetadata(slateID, slate, metadataHash, incumbent, requiredStake) {
+async function getSlateWithMetadata(
+  slateID,
+  slate,
+  metadataHash,
+  incumbent,
+  requiredStake,
+  chainId
+) {
   try {
     // the slate as it exists in the db:
     const [dbSlate] = await Slate.findOrBuild({
@@ -103,7 +126,7 @@ async function getSlateWithMetadata(slateID, slate, metadataHash, incumbent, req
     // IPFS -- slate metadata
     // --------------------------
     const slateMetadata = await ipfs.get(metadataHash, { json: true });
-    const {
+    let {
       firstName,
       lastName,
       proposals,
@@ -113,6 +136,11 @@ async function getSlateWithMetadata(slateID, slate, metadataHash, incumbent, req
     } = slateMetadata;
     console.log('proposalMultihashes:', proposalMultihashes);
     console.log('');
+
+    // TEMPORARY HACK
+    if (chainId === 4 && slateID === 5) {
+      organization = 'Panvala Launch Team';
+    }
 
     // TODO: rehydrate proposals
 
