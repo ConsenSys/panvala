@@ -53,7 +53,7 @@ async function getAllSlates() {
   let slateIDsToQuery = slateIDs;
   const network = await provider.getNetwork();
   if (network.chainId === 4) {
-    const garbage = [0, 1, 2, 3];
+    const garbage = [0, 1, 2, 3, 5];
     const filtered = slateIDs.filter(id => !garbage.includes(id));
     slateIDsToQuery = filtered;
   }
@@ -77,14 +77,7 @@ async function getAllSlates() {
         incumbent = true;
       }
       console.log('slate:', slate);
-      return getSlateWithMetadata(
-        slateID,
-        slate,
-        decoded,
-        incumbent,
-        requiredStake,
-        network.chainId
-      );
+      return getSlateWithMetadata(slateID, slate, decoded, incumbent, requiredStake);
     },
     { concurrency: 5 }
   );
@@ -98,14 +91,7 @@ async function getAllSlates() {
  * @param {Boolean} incumbent
  * @param {ethers.BigNumber} requiredStake
  */
-async function getSlateWithMetadata(
-  slateID,
-  slate,
-  metadataHash,
-  incumbent,
-  requiredStake,
-  chainId
-) {
+async function getSlateWithMetadata(slateID, slate, metadataHash, incumbent, requiredStake) {
   try {
     // the slate as it exists in the db:
     const [dbSlate] = await Slate.findOrBuild({
@@ -126,7 +112,7 @@ async function getSlateWithMetadata(
     // IPFS -- slate metadata
     // --------------------------
     const slateMetadata = await ipfs.get(metadataHash, { json: true });
-    let {
+    const {
       firstName,
       lastName,
       proposals,
@@ -136,11 +122,6 @@ async function getSlateWithMetadata(
     } = slateMetadata;
     console.log('proposalMultihashes:', proposalMultihashes);
     console.log('');
-
-    // TEMPORARY HACK
-    if (chainId === 4 && slateID === 5) {
-      organization = 'Panvala Launch Team';
-    }
 
     // TODO: rehydrate proposals
 
