@@ -17,7 +17,7 @@ const animatedCss = css`
   transform: translateY(0);
 `;
 
-const Wrapper = styled.div<{ isActive?: boolean; asPath?: string; animated: boolean }>`
+const CardBody = styled.div<{ isActive?: boolean; asPath?: string; animated: boolean }>`
   width: 33%;
   padding: 1rem;
   overflow: hidden;
@@ -129,14 +129,14 @@ const ChoiceButton: any = styled(Button)`
     firstChoice
       ? BUTTON_COLORS.firstChoice
       : secondChoice
-      ? BUTTON_COLORS.secondChoice
-      : COLORS.white};
+        ? BUTTON_COLORS.secondChoice
+        : COLORS.white};
   color: ${({ firstChoice, secondChoice }: any) =>
     firstChoice
       ? BUTTON_COLORS.firstChoiceFg
       : secondChoice
-      ? BUTTON_COLORS.secondChoiceFg
-      : COLORS.text};
+        ? BUTTON_COLORS.secondChoiceFg
+        : COLORS.text};
   border: ${({ firstChoice, secondChoice }: any) =>
     firstChoice || secondChoice ? '2px solid transparent' : '2px solid ' + COLORS.grey5};
   margin-right: 1rem;
@@ -151,33 +151,10 @@ const Card: React.FunctionComponent<ICardProps> = props => {
   }, []);
 
   return (
-<<<<<<< HEAD
-    <Wrapper
-      onClick={props.onClick}
-      isActive={props.isActive}
-      asPath={props.asPath}
-      animated={animated}
-    >
-      <Flex>
-        {/* GRANT | PENDING TOKENS */}
-        <Tag status={''}>{props.category.toUpperCase()}</Tag>
-        {props.status && <Tag status={props.status}>{props.status}</Tag>}
-      </Flex>
-
-      {props.type === SLATE && props.incumbent ? (
-        <Text my={2} fontSize={11} color="blue" fontWeight="bold">
-          {'INCUMBENT'}
-        </Text>
-      ) : (
-        props.type === SLATE &&
-        !props.verifiedRecommender && (
-          <Text my={2} fontSize={11} color="reds.dark" fontWeight="bold">
-            {'UNVERIFIED RECOMMENDER'}
-=======
     <Box
       display="inline-block"
       padding="0.5rem"
-      verticalAlign= "top"
+      verticalAlign="top"
       width={['100%', '50%', '33.3%', '33.3%']}>
       <CardBody
         onClick={props.onClick}
@@ -194,67 +171,38 @@ const Card: React.FunctionComponent<ICardProps> = props => {
         {props.type === SLATE && props.incumbent ? (
           <Text my={2} fontSize={11} color="blue" fontWeight="bold">
             {'INCUMBENT'}
->>>>>>> 641eadf... proposal cards and proposal view
           </Text>
-        )
-      )}
+        ) : props.type === SLATE &&
+        !props.verifiedRecommender && (
+            <Text my={2} fontSize={11} color="reds.dark" fontWeight="bold">
+              {'UNVERIFIED RECOMMENDER'}
+            </Text>
+          )}
 
-      <CardTitle>
-        {props.address && props.verifiedRecommender && props.recommender
-          ? props.recommender
-          : props.address
-          ? splitAddressHumanReadable(props.address)
-          : props.title && props.title}
-      </CardTitle>
-      <CardSubTitle>{props.subtitle}</CardSubTitle>
-      <CardDescription>{props.description}</CardDescription>
+        <CardTitle>
+          {props.address && props.verifiedRecommender && props.recommender
+            ? props.recommender
+            : props.address
+              ? splitAddressHumanReadable(props.address)
+              : props.title && props.title}
+        </CardTitle>
+        <CardSubTitle>{props.subtitle}</CardSubTitle>
+        <CardDescription>{props.description}</CardDescription>
 
-      {props.address && ( // 0x D09C C3BC 67E4 294C 4A44 6D8E 4A29 34A9 2141 0ED7
-        <CardUser>
-          {props.recommender && <div>{props.recommender}</div>}
-          <CardAddress>{splitAddressHumanReadable(props.address)}</CardAddress>
-        </CardUser>
-      )}
+        {props.address && ( // 0x D09C C3BC 67E4 294C 4A44 6D8E 4A29 34A9 2141 0ED7
+          <CardUser>
+            {props.recommender && <div>{props.recommender}</div>}
+            <CardAddress>{splitAddressHumanReadable(props.address)}</CardAddress>
+          </CardUser>
+        )}
 
-      {props.choices && ( // renders in /ballots/vote
-        <>
-          <RouterLink
-            newTab
-            href={`/slates/slate?id=${props.slateID}`}
-            as={`/slates/${props.slateID}`}
-          >
-            <ViewSlateDetails>View slate details</ViewSlateDetails>
-          </RouterLink>
-          <Separator />
-
-          <CardProposals>Grant Proposals:</CardProposals>
-          {props.proposals &&
-            props.proposals.length > 0 &&
-            props.proposals.map(p => <CardProposal key={p.id}>{p.title}</CardProposal>)}
-
-          <Separator />
-          <CardDescription>{'Select an option'}</CardDescription>
-          <ChoiceOptions>
-            <ChoiceButton
-              onClick={() => props.onSetChoice('firstChoice', props.slateID)}
-              firstChoice={props.choices.firstChoice === props.slateID}
-              data-testid="first-choice"
+        {props.choices && ( // renders in /ballots/vote
+          <>
+            <RouterLink
+              newTab
+              href={`/slates/slate?id=${props.slateID}`}
+              as={`/slates/${props.slateID}`}
             >
-              {'1st Choice'}
-            </ChoiceButton>
-            <ChoiceButton
-              onClick={() => props.onSetChoice('secondChoice', props.slateID)}
-              secondChoice={props.choices.secondChoice === props.slateID}
-              data-testid="second-choice"
-            >
-<<<<<<< HEAD
-              {'2nd Choice'}
-            </ChoiceButton>
-          </ChoiceOptions>
-        </>
-      )}
-    </Wrapper>
-=======
               <ViewSlateDetails>View slate details</ViewSlateDetails>
             </RouterLink>
             <Separator />
@@ -286,7 +234,6 @@ const Card: React.FunctionComponent<ICardProps> = props => {
         )}
       </CardBody>
     </Box>
->>>>>>> 641eadf... proposal cards and proposal view
   );
 };
 
