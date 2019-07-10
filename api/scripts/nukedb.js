@@ -4,10 +4,14 @@ function nuke() {
   Slate.truncate({
     cascade: true,
     restartIdentity: true,
-  });
-  SubmittedBallot.truncate({
-    cascade: true,
-    restartIdentity: true,
+  }).then(() => {
+    SubmittedBallot.truncate({
+      cascade: true,
+      restartIdentity: true,
+    }).then(() => {
+      console.log('NUKED!');
+      process.exit(0);
+    });
   });
 }
 
