@@ -5,9 +5,6 @@ import { ITag } from '../interfaces';
 import { COLORS, colors } from '../styles';
 
 const StyledTag = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
   background-color: ${({ status }: any) =>
     status === 'PENDING VOTE'
       ? COLORS.grey5
@@ -30,14 +27,11 @@ const StyledTag = styled.div`
       : colors.blue};
   letter-spacing: 0.03rem;
   font-size: 0.7rem;
-  font-weight: bold;
-  line-height: 1rem;
+  font-weight: 500;
   border-radius: 4px;
-  margin-right: 1rem;
-  margin-bottom: 0.4rem;
-  height: 1.5rem;
-  border: 1px solid transparent;
-  padding: 0 0.5rem;
+  border: none;
+  padding: 0.5rem 0.5rem;
+  margin-right: 0.5rem;
   ${color};
 `;
 

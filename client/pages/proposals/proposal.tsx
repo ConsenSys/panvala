@@ -7,6 +7,7 @@ import RouterLink from '../../components/RouterLink';
 import { convertEVMSlateStatus, isPendingTokens, SlateStatus } from '../../utils/status';
 import { StatelessPage, ISlate, IBallotDates, IProposal } from '../../interfaces';
 import SectionLabel from '../../components/SectionLabel';
+import Copy from '../../components/Copy';
 import Tag from '../../components/Tag';
 import Deadline from '../../components/Deadline';
 import RouteTitle from '../../components/RouteTitle';
@@ -14,10 +15,6 @@ import Flex from '../../components/system/Flex';
 import { DetailContainer, MetaColumn, MainColumn } from '../slates/slate';
 import { TokensBorder, TokensSection } from '../../components/SlateSidebar';
 import { Separator } from '../../components/Separator';
-
-const DarkText = styled.div`
-  color: ${colors.black};
-`;
 
 interface IProposalSidebarProps {
   proposal: IProposal;
@@ -83,10 +80,10 @@ export const ProposalSidebar = ({ proposal, includedInSlates }: IProposalSidebar
             as={`/slates/${includedInSlate.id}`}
             key={includedInSlate.id}
           >
-            <DarkText>{includedInSlate.id}</DarkText>
+            <Copy>{includedInSlate.id}</Copy>
           </RouterLink>
         ))
-      : 'None';
+      : <Copy>None</Copy>;
 
   return (
     <>
@@ -94,14 +91,14 @@ export const ProposalSidebar = ({ proposal, includedInSlates }: IProposalSidebar
       <TokensBorder>
         <TokensSection>
           <SectionLabel my="1rem">{'TOKENS REQUESTED'}</SectionLabel>
-          <DarkText>{proposal.tokensRequested}</DarkText>
+          <Copy>{proposal.tokensRequested}</Copy>
         </TokensSection>
 
         <Separator width="2" />
 
         <TokensSection>
           <SectionLabel my="1rem">{'CREATED BY'}</SectionLabel>
-          <DarkText>{proposal.firstName + ' ' + proposal.lastName}</DarkText>
+          <Copy>{proposal.firstName + ' ' + proposal.lastName}</Copy>
 
           <SectionLabel my="1rem">{'INCLUDED IN SLATES'}</SectionLabel>
           {slates}
@@ -155,13 +152,13 @@ const Proposal: StatelessPage<IProps> = ({ query: { id } }) => {
         </MetaColumn>
         <MainColumn>
           <SectionLabel my="1rem">{'PROJECT SUMMARY'}</SectionLabel>
-          <DarkText>{proposal.summary}</DarkText>
+          <Copy>{proposal.summary}</Copy>
           {proposal.projectTimeline && (
             <>
               <SectionLabel mt={4} mb="1rem">
                 {'PROJECT TIMELINE'}
               </SectionLabel>
-              <DarkText>{proposal.projectTimeline}</DarkText>
+              <Copy>{proposal.projectTimeline}</Copy>
             </>
           )}
           {proposal.teamBackgrounds && (
@@ -169,7 +166,7 @@ const Proposal: StatelessPage<IProps> = ({ query: { id } }) => {
               <SectionLabel mt={4} mb="1rem">
                 {'PROJECT TEAM'}
               </SectionLabel>
-              <DarkText>{proposal.teamBackgrounds}</DarkText>
+              <Copy>{proposal.teamBackgrounds}</Copy>
             </>
           )}
         </MainColumn>

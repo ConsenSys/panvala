@@ -4,10 +4,10 @@ import { space } from 'styled-system';
 import { COLORS } from '../styles';
 
 const StyledSectionLabel = styled.div`
-  margin: ${(props: any) => (props.lessMargin ? '1rem 0' : '1rem 0 2rem')};
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: ${COLORS.grey3};
+  font-size: 0.85rem;
+  font-weight: 300;
+  color: ${COLORS.grey2};
+  line-height: 1.75rem;
   ${space};
 `;
 

@@ -5,6 +5,7 @@ import Tag from './Tag';
 import { splitAddressHumanReadable } from '../utils/format';
 import Button from './Button';
 import Flex from './system/Flex';
+import Box from './system/Box';
 import { Separator } from './Separator';
 import { IChoices, IProposal } from '../interfaces';
 import RouterLink from './RouterLink';
@@ -17,16 +18,14 @@ const animatedCss = css`
 `;
 
 const Wrapper = styled.div<{ isActive?: boolean; asPath?: string; animated: boolean }>`
-  width: 300px;
-  display: flex;
-  flex-direction: column;
+  width: 33%;
   padding: 1rem;
   overflow: hidden;
   border: ${({ isActive }) => (isActive ? '3px solid #59B6E6' : '2px solid ' + COLORS.grey5)};
   box-shadow: 0px 5px 5px ${COLORS.grey5};
-  margin-bottom: 1rem;
-  margin-right: 1rem;
+  margin: 0.5rem;
   max-height: 100%;
+  float: left;
   ${({ asPath }) => asPath && asPath.startsWith('/ballots') && 'height: 100%'};
   ${({ asPath }) => !asPath && 'cursor: pointer'};
 
@@ -44,13 +43,14 @@ const CardTitle = styled.div`
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  padding-top: 1rem;
 `;
 const CardSubTitle = styled.div`
-  font-size: 1rem;
+  font-size: 0.85rem;
   margin-top: 0.5rem;
 `;
 const CardDescription = styled.div`
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   margin-top: 1rem;
   color: ${COLORS.grey3};
   display: -webkit-box;
@@ -58,6 +58,7 @@ const CardDescription = styled.div`
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.25rem;
 `;
 
 const CardUser = styled.div`
@@ -150,6 +151,7 @@ const Card: React.FunctionComponent<ICardProps> = props => {
   }, []);
 
   return (
+<<<<<<< HEAD
     <Wrapper
       onClick={props.onClick}
       isActive={props.isActive}
@@ -171,6 +173,28 @@ const Card: React.FunctionComponent<ICardProps> = props => {
         !props.verifiedRecommender && (
           <Text my={2} fontSize={11} color="reds.dark" fontWeight="bold">
             {'UNVERIFIED RECOMMENDER'}
+=======
+    <Box
+      display="inline-block"
+      padding="0.5rem"
+      verticalAlign= "top"
+      width={['100%', '50%', '33.3%', '33.3%']}>
+      <CardBody
+        onClick={props.onClick}
+        isActive={props.isActive}
+        asPath={props.asPath}
+        animated={animated}
+      >
+        <Flex>
+          {/* GRANT | PENDING TOKENS */}
+          <Tag status={''}>{props.category.toUpperCase()}</Tag>
+          {props.status && <Tag status={props.status}>{props.status}</Tag>}
+        </Flex>
+
+        {props.type === SLATE && props.incumbent ? (
+          <Text my={2} fontSize={11} color="blue" fontWeight="bold">
+            {'INCUMBENT'}
+>>>>>>> 641eadf... proposal cards and proposal view
           </Text>
         )
       )}
@@ -223,12 +247,46 @@ const Card: React.FunctionComponent<ICardProps> = props => {
               secondChoice={props.choices.secondChoice === props.slateID}
               data-testid="second-choice"
             >
+<<<<<<< HEAD
               {'2nd Choice'}
             </ChoiceButton>
           </ChoiceOptions>
         </>
       )}
     </Wrapper>
+=======
+              <ViewSlateDetails>View slate details</ViewSlateDetails>
+            </RouterLink>
+            <Separator />
+
+            <CardProposals>Grant Proposals:</CardProposals>
+            {props.proposals &&
+              props.proposals.length > 0 &&
+              props.proposals.map(p => <CardProposal key={p.id}>{p.title}</CardProposal>)}
+
+            <Separator />
+            <CardDescription>{'Select an option'}</CardDescription>
+            <ChoiceOptions>
+              <ChoiceButton
+                onClick={() => props.onSetChoice('firstChoice', props.slateID)}
+                firstChoice={props.choices.firstChoice === props.slateID}
+                data-testid="first-choice"
+              >
+                {'1st Choice'}
+              </ChoiceButton>
+              <ChoiceButton
+                onClick={() => props.onSetChoice('secondChoice', props.slateID)}
+                secondChoice={props.choices.secondChoice === props.slateID}
+                data-testid="second-choice"
+              >
+                {'2nd Choice'}
+              </ChoiceButton>
+            </ChoiceOptions>
+          </>
+        )}
+      </CardBody>
+    </Box>
+>>>>>>> 641eadf... proposal cards and proposal view
   );
 };
 

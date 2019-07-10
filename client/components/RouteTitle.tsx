@@ -3,7 +3,6 @@ import { colors } from '../styles';
 import { space } from 'styled-system';
 
 const RouteTitle: any = styled.h1`
-  letter-spacing: 0.02em;
   color: ${colors.greys.dark};
   font-weight: bold;
   ${space};

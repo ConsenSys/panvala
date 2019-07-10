@@ -8,7 +8,6 @@ const BaseButton: any = styled.button`
   display: flex;
   justify-content: center;
   align-items: center;
-  letter-spacing: 0.02rem;
   font-family: 'Roboto';
   cursor: pointer;
   font-weight: 500;
@@ -30,15 +29,15 @@ const StyledButton: any = styled(BaseButton)`
       `
     );
   }};
-  padding: 0 0.6rem;
+  padding: 0.5rem 1rem;
   margin: 0;
-  border: 1px solid transparent;
-  border-radius: 0.3rem;
+  border: none;
+  border-radius: 4px;
   &:focus {
     box-shadow: 0px 3px 10px rgba(83, 172, 217, 0.16);
     outline: none;
   }
-  font-size: 1rem;
+  font-size: 0.85rem;
   line-height: 1rem;
   ${color};
   ${layout};

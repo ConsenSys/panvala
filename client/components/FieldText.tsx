@@ -15,7 +15,8 @@ export const Field = styled(FormikField)`
 `;
 
 export const ErrorMessage: any = styled(FormikError)`
-  font-weight: bold;
+  font-weight: 400;
+  font-size: 0.85rem;
   margin-left: 0.5em;
   color: red;
 `;

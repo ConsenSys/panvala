@@ -20,7 +20,7 @@ const Proposals: React.SFC = () => {
 
   return (
     <div>
-      <Flex justifyBetween>
+      <Flex justifyBetween alignCenter>
         <Flex alignCenter>
           <RouteTitle mr={3}>{'Proposals'}</RouteTitle>
           <RouterLink href="/proposals/create" as="/proposals/create">

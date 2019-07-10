@@ -15,11 +15,11 @@ import { BN } from '../../utils/format';
 
 const VisibilityFilterContainer = styled.div`
   display: flex;
-  margin-bottom: 1rem;
+  margin-bottom: 2rem;
 `;
 const CardsWrapper = styled.div`
-  display: flex;
-  flex-flow: row wrap;
+  display: table;
+  margin: -0.5rem;
 `;
 
 const Slates: React.SFC = () => {
