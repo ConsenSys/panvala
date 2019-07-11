@@ -37,13 +37,19 @@ import {
   sendStakeTokensTransaction,
 } from '../../../utils/transaction';
 import { ipfsAddObject } from '../../../utils/ipfs';
-import { convertedToBaseUnits, formatPanvalaUnits } from '../../../utils/format';
+import {
+  convertedToBaseUnits,
+  formatPanvalaUnits,
+  baseToConvertedUnits,
+} from '../../../utils/format';
 import { postSlate } from '../../../utils/api';
 import { PROPOSAL } from '../../../utils/constants';
 import Flex from '../../../components/system/Flex';
 import BackButton from '../../../components/BackButton';
 import Box from '../../../components/system/Box';
 import { isSlateSubmittable } from '../../../utils/status';
+import { projectedAvailableTokens } from '../../../utils/tokens';
+import Text from '../../../components/system/Text';
 
 const Separator = styled.div`
   border: 1px solid ${COLORS.grey5};
@@ -60,6 +66,7 @@ const FormSchema = yup.object().shape({
     .max(5000, 'Too Long!')
     .required('Required'),
   recommendation: yup.string().required('Required'),
+  proposals: yup.object().required('Required'),
   stake: yup.string().required('Required'),
 });
 
@@ -89,10 +96,11 @@ interface IProps {
 const CreateGrantSlate: StatelessPage<IProps> = ({ query, classes, router }) => {
   // get proposals and eth context
   const {
+    slates,
     proposals,
+    currentBallot,
     onRefreshSlates,
     onRefreshCurrentBallot,
-    currentBallot,
   }: IMainContext = React.useContext(MainContext);
   const {
     account,
@@ -112,6 +120,29 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, classes, router }) => 
   const [isOpen, setOpenModal] = React.useState(false);
   // pending tx loader
   const [txPending, setTxPending] = React.useState(false);
+  const [availableTokens, setAvailableTokens] = React.useState('0');
+
+  React.useEffect(() => {
+    async function getProjectedAvailableTokens() {
+      const winningSlate: any = slates.find(
+        s => s.status === 3 && s.epochNumber === currentBallot.epochNumber - 1
+      );
+      const tokens = await projectedAvailableTokens(
+        contracts.tokenCapacitor,
+        contracts.gatekeeper,
+        currentBallot.epochNumber,
+        winningSlate
+      );
+      setAvailableTokens(tokens.toString());
+    }
+    if (
+      !isEmpty(contracts.tokenCapacitor) &&
+      !isEmpty(contracts.gatekeeper) &&
+      contracts.tokenCapacitor.functions.hasOwnProperty('projectedUnlockedBalance')
+    ) {
+      getProjectedAvailableTokens();
+    }
+  }, [contracts, currentBallot.epochNumber, slates]);
 
   //  Submit proposals to the token capacitor and get corresponding request IDs
   async function getRequestIDs(proposalInfo: IProposalInfo, tokenCapacitor: TokenCapacitor) {
@@ -406,8 +437,23 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, classes, router }) => 
                   selectedProposalIDs.includes(p.id.toString())
                 );
 
-                // submit the associated proposals along with the slate form values
-                await handleSubmitSlate(values, selectedProposals);
+                const totalTokens = selectedProposals.reduce((acc, val) => {
+                  return utils
+                    .bigNumberify(acc)
+                    .add(convertedToBaseUnits(val.tokensRequested))
+                    .toString();
+                }, '0');
+                if (utils.bigNumberify(totalTokens).gt(availableTokens)) {
+                  setFieldError(
+                    'proposals',
+                    `token amount exceeds the projected available tokens (${baseToConvertedUnits(
+                      availableTokens
+                    )})`
+                  );
+                } else {
+                  // submit the associated proposals along with the slate form values
+                  await handleSubmitSlate(values, selectedProposals);
+                }
               }
             }
 
@@ -472,9 +518,19 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, classes, router }) => 
                     <Separator />
                     <PaddedDiv>
                       <SectionLabel>{'GRANTS'}</SectionLabel>
-                      <div className="mv3 f7 black-50">
+                      <Label htmlFor="proposals" required>
                         {'Select the grants that you would like to add to your slate'}
-                      </div>
+                      </Label>
+                      <ErrorMessage name="proposals" component="span" />
+
+                      <Text fontSize="0.75rem" color="grey">
+                        {`(There are currently `}
+                        <strong>{`${baseToConvertedUnits(
+                          availableTokens
+                        )} PAN tokens available`}</strong>
+                        {` for grant proposals at this time.)`}
+                      </Text>
+
                       <FlexContainer>
                         {proposals &&
                           proposals.map((proposal: IProposal) => (
