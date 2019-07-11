@@ -69,7 +69,7 @@ contract TokenCapacitor {
     uint256 public lifetimeReleasedTokens;
 
     // IMPLEMENTATION
-    constructor(ParameterStore _parameters, IERC20 _token) public {
+    constructor(ParameterStore _parameters, IERC20 _token, uint256 initialUnlockedBalance) public {
         require(address(_parameters) != address(0), "Parameter store address cannot be zero");
         parameters = _parameters;
 
@@ -94,6 +94,7 @@ contract TokenCapacitor {
 
         scale = 10 ** PRECISION;
 
+        unlockedBalance = initialUnlockedBalance;
         lastLockedTime = now;
     }
 

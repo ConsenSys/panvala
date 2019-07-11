@@ -17,7 +17,13 @@ module.exports = async function(deployer, _, accounts) {
     ? await BasicToken.deployed()
     : await BasicToken.at(tokenInfo.address);
 
-  const capacitor = await deployer.deploy(TokenCapacitor, parameters.address, token.address);
+  const { charge, initialBalance, initialUnlockedBalance } = config;
+  const capacitor = await deployer.deploy(
+    TokenCapacitor,
+    parameters.address,
+    token.address,
+    initialUnlockedBalance,
+  );
 
   await parameters.setInitialValue(
     'tokenCapacitorAddress',
@@ -25,8 +31,6 @@ module.exports = async function(deployer, _, accounts) {
   );
 
   // Charge the capacitor
-  const { charge, initialBalance } = config;
-
   if (charge) {
     console.log(`Charging capacitor with ${initialBalance} tokens`);
 

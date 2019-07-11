@@ -301,10 +301,10 @@ async function newGatekeeper(options) {
 
 /**
  * Set up the Panvala contracts
- * @param {*} options from, parameterStoreAddress, tokenAddress
+ * @param {*} options from, parameterStoreAddress, tokenAddress, initialUnlockedBalance
  */
 async function newPanvala(options) {
-  const { from: creator, initialTokens } = options;
+  const { from: creator, initialTokens, initialUnlockedBalance = toPanBase('0') } = options;
   assert(typeof initialTokens === 'undefined', 'should not have key initialTokens');
 
   const gatekeeper = await newGatekeeper({ ...options, init: false });
@@ -312,7 +312,12 @@ async function newPanvala(options) {
   const parameters = await ParameterStore.at(parametersAddress);
   const tokenAddress = await gatekeeper.token();
   const token = await BasicToken.at(tokenAddress);
-  const capacitor = await TokenCapacitor.new(parameters.address, token.address, { from: creator });
+  const capacitor = await TokenCapacitor.new(
+    parameters.address,
+    token.address,
+    initialUnlockedBalance,
+    { from: creator },
+  );
 
   await parameters.setInitialValue(
     'tokenCapacitorAddress',
