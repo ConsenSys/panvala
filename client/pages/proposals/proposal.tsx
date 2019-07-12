@@ -1,6 +1,5 @@
 import * as React from 'react';
 import styled from 'styled-components';
-import { colors } from '../../styles';
 import Button from '../../components/Button';
 import { MainContext, IMainContext } from '../../components/MainProvider';
 import RouterLink from '../../components/RouterLink';
@@ -73,17 +72,23 @@ export const ProposalSidebar = ({ proposal, includedInSlates }: IProposalSidebar
   );
 
   const slates =
-    includedInSlates.length > 0
-      ? includedInSlates.map(includedInSlate => (
-          <RouterLink
-            href={`/slates/slate?id=${includedInSlate.id}`}
-            as={`/slates/${includedInSlate.id}`}
-            key={includedInSlate.id}
-          >
-            <Copy>{includedInSlate.id}</Copy>
-          </RouterLink>
-        ))
-      : <Copy>None</Copy>;
+    includedInSlates.length > 0 ? (
+      includedInSlates.map(includedInSlate => (
+        <RouterLink
+          href={`/slates/slate?id=${includedInSlate.id}`}
+          as={`/slates/${includedInSlate.id}`}
+          key={includedInSlate.id}
+        >
+          <Copy>
+            {includedInSlate.verifiedRecommender
+              ? includedInSlate.organization
+              : includedInSlate.owner}
+          </Copy>
+        </RouterLink>
+      ))
+    ) : (
+      <Copy>None</Copy>
+    );
 
   return (
     <>
