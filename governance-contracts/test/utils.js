@@ -148,6 +148,16 @@ function printDate(bn) {
 }
 
 /**
+ * Convert a date to a timestamp
+ * @param {string} date ISO-8601 date
+ * @returns number (unix timestamp in seconds)
+ */
+function dateToTimestamp(date) {
+  const dt = moment(date, moment.ISO_8601);
+  return dt.unix();
+}
+
+/**
  *@param {number} n
  */
 function range(n) {
@@ -238,7 +248,7 @@ async function newToken(params) {
 /**
  * Convenience function for creating a Gatekeeper
  * Deploys a Token and a ParameterStore they aren't passed in.
- * @param {*} options from, parameterStoreAddress, tokenAddress, init
+ * @param {*} options from, parameterStoreAddress, tokenAddress, startTime, init
  */
 async function newGatekeeper(options) {
   const {
@@ -301,7 +311,7 @@ async function newGatekeeper(options) {
 
 /**
  * Set up the Panvala contracts
- * @param {*} options from, parameterStoreAddress, tokenAddress, initialUnlockedBalance
+ * @param {*} options from, startTime, parameterStoreAddress, tokenAddress, initialUnlockedBalance
  */
 async function newPanvala(options) {
   const { from: creator, initialTokens, initialUnlockedBalance = toPanBase('0') } = options;
@@ -638,6 +648,7 @@ const utils = {
   newPanvala,
   epochTime,
   printDate,
+  dateToTimestamp,
   range,
   all,
   chain,
