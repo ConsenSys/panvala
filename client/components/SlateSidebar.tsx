@@ -82,7 +82,9 @@ const SlateSidebar = ({ slate, requiredStake, currentBallot }: IStakeSidebarProp
 
           <Text fontSize={0} color="grey" lineHeight="21px" letterSpacing="0.03em">
             {status === statuses.PENDING_TOKENS
-              ? `If you want the Panvala Awards Committee to keep making recommendations and approve of the work they have done, you should stake tokens on this slate.`
+              ? `If you want ${
+                  slate.organization
+                } to keep making recommendations and approve of the work they have done, you should stake tokens on this slate.`
               : status !== statuses.SLATE_REJECTED &&
                 `Evaluate which slate should be accepted for the current batch and cast your vote accordingly.`}
           </Text>
