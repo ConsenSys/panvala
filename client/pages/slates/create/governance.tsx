@@ -38,6 +38,7 @@ import {
   sendCreateManyGovernanceProposals,
 } from '../../../utils/transaction';
 import { GovernanceSlateFormSchema } from '../../../utils/schemas';
+import RouterLink from '../../../components/RouterLink';
 
 const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
   // modal opener
@@ -369,14 +370,9 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
               on it to propose it to token holders. Once there are tokens staked on the slate it
               will be eligible for a vote.
             </ModalDescription>
-            <Button
-              type="default"
-              onClick={() => {
-                setOpenModal(false);
-              }}
-            >
-              {'Done'}
-            </Button>
+            <RouterLink href="/slates" as="/slates">
+              <Button type="default">{'Done'}</Button>
+            </RouterLink>
           </>
         )}
       </Modal>

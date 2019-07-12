@@ -23,6 +23,7 @@ import StepperMetamaskDialog from '../../components/StepperMetamaskDialog';
 import { COLORS } from '../../styles';
 import { formatPanvalaUnits } from '../../utils/format';
 import { sendApproveTransaction, sendStakeTokensTransaction } from '../../utils/transaction';
+import RouterLink from '../../components/RouterLink';
 
 const Wrapper = styled.div`
   font-family: 'Roboto';
@@ -184,9 +185,9 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
               Now that you have staked tokens on this slate the Panvala token holding community will
               have the ability to vote for or against the slate when the voting period begins.
             </ModalDescription>
-            <Button type="default" onClick={() => setOpenModal(false)}>
-              {'Done'}
-            </Button>
+            <RouterLink href="/slates" as="/slates">
+              <Button type="default">{'Done'}</Button>
+            </RouterLink>
           </>
         )}
       </Modal>

@@ -12,6 +12,7 @@ import Modal, { ModalTitle, ModalDescription } from '../../components/Modal';
 import ProposalForm from '../../components/ProposalForm';
 import { postProposal } from '../../utils/api';
 import { IProposal } from '../../interfaces';
+import RouterLink from '../../components/RouterLink';
 
 type IProps = {
   router: SingletonRouter;
@@ -45,15 +46,9 @@ const CreateProposal: React.FunctionComponent<IProps> = ({ router }) => {
           You have successfully created a Panvala Grant Proposal. Now groups that are creating
           slates can attach your grant to their slate.
         </ModalDescription>
-        <Button
-          type="default"
-          onClick={() => {
-            setOpenModal(false);
-            router.push('/proposals');
-          }}
-        >
-          {'Done'}
-        </Button>
+        <RouterLink href="/proposals" as="/proposals">
+          <Button type="default">{'Done'}</Button>
+        </RouterLink>
       </Modal>
 
       <CenteredTitle title="Create a Grant Proposal" />

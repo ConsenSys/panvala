@@ -1,6 +1,5 @@
 import * as React from 'react';
 import styled from 'styled-components';
-import { withRouter, SingletonRouter } from 'next/router';
 import { toast } from 'react-toastify';
 import { utils, Signer } from 'ethers';
 import isEmpty from 'lodash/isEmpty';
@@ -29,12 +28,7 @@ import { convertEVMSlateStatus, SlateStatus } from '../../utils/status';
 import Actions from '../../components/Actions';
 import { loadState, LINKED_WALLETS } from '../../utils/localStorage';
 import { SLATE } from '../../utils/constants';
-
-type IProps = {
-  account?: string;
-  provider?: any;
-  router: SingletonRouter;
-};
+import RouterLink from '../../components/RouterLink';
 
 const Separator = styled.div`
   border: 1px solid ${COLORS.grey5};
@@ -47,7 +41,12 @@ type ISectionProps = {
   onSetChoice: any;
 };
 
-const BallotSection: React.FunctionComponent<ISectionProps> = ({ title, slates, choices, onSetChoice }) => {
+const BallotSection: React.FunctionComponent<ISectionProps> = ({
+  title,
+  slates,
+  choices,
+  onSetChoice,
+}) => {
   const subtitle = (slate: ISlate) => {
     if (slate.category === 'GRANT') {
       return slate.proposals ? `${slate.proposals.length} Grants included` : '';
@@ -89,8 +88,7 @@ const BallotSection: React.FunctionComponent<ISectionProps> = ({ title, slates, 
   );
 };
 
-
-const Vote: React.FunctionComponent<IProps> = ({ router }) => {
+const Vote: React.FC = () => {
   // get contexts
   const { slates, currentBallot }: IMainContext = React.useContext(MainContext);
   const {
@@ -129,7 +127,6 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
     console.log('choices', choices);
   }, [choices]);
 
-
   /**
    * Click handler for choosing which rank (first/second) a slate has
    * @param category the category to set for: GRANT | GOVERNANCE
@@ -163,9 +160,9 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
   // TODO: move this somewhere better
   function categoryToResource(category: string): string {
     if (category === 'GRANT') {
-        return tokenCapacitor.address;
+      return tokenCapacitor.address;
     } else {
-        return parameterStore.address;
+      return parameterStore.address;
     }
   }
 
@@ -190,12 +187,12 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
     // Put choices in the format to submit
     const submitChoices = {};
     Object.keys(choices).forEach(category => {
-        const choice = choices[category];
-        const resource = categoryToResource(category);
-        submitChoices[resource] = {
-            firstChoice: utils.bigNumberify(choice.firstChoice).toString(),
-            secondChoice: utils.bigNumberify(choice.secondChoice).toString(),
-        };
+      const choice = choices[category];
+      const resource = categoryToResource(category);
+      submitChoices[resource] = {
+        firstChoice: utils.bigNumberify(choice.firstChoice).toString(),
+        secondChoice: utils.bigNumberify(choice.secondChoice).toString(),
+      };
     });
     console.log('choices to submit', submitChoices);
 
@@ -233,11 +230,7 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
         const commitHash: string = generateCommitHash(ballot.choices, salt);
 
         // 'Commit hash, first choice, second choice, salt'
-        const message = generateCommitMessage(
-          commitHash,
-          ballot.choices,
-          salt
-        );
+        const message = generateCommitMessage(commitHash, ballot.choices, salt);
         // sign mesage with metamask signer
         const signer: Signer = ethProvider.getSigner();
         const signature = await signer.signMessage(message);
@@ -287,15 +280,9 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
         <ModalDescription className="flex flex-wrap">
           Your vote has been recorded. It won't be revealed publicly until the vote concludes.
         </ModalDescription>
-        <Button
-          type="default"
-          onClick={() => {
-            setOpenModal(false);
-            router.push('/ballots');
-          }}
-        >
-          {'Done'}
-        </Button>
+        <RouterLink href="/ballots" as="/ballots">
+          <Button type="default">{'Done'}</Button>
+        </RouterLink>
       </Modal>
 
       <div className="flex justify-end">
@@ -332,4 +319,4 @@ const Vote: React.FunctionComponent<IProps> = ({ router }) => {
   );
 };
 
-export default withRouter(Vote);
+export default Vote;
