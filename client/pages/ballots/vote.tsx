@@ -309,11 +309,7 @@ const Vote: React.FC = () => {
         ) : null}
 
         <Separator />
-        <Actions
-          handleClick={handleSubmitVote}
-          handleBack={null}
-          actionText={'Confirm and Submit'}
-        />
+        <Actions handleClick={handleSubmitVote} actionText={'Confirm and Submit'} />
       </CenteredWrapper>
     </div>
   );

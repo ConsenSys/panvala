@@ -10,6 +10,8 @@ import { toast } from 'react-toastify';
 import FieldText from './FieldText';
 import FieldTextarea from './FieldTextarea';
 import { convertedToBaseUnits } from '../utils/format';
+import Flex from './system/Flex';
+import BackButton from './BackButton';
 
 const FormSchema = yup.object().shape({
   firstName: yup
@@ -193,14 +195,12 @@ const ProposalForm: React.SFC<IProps> = ({ onHandleSubmit }) => {
 
             <Separator />
 
-            <FormActions>
-              <Button type="default" large disabled={true}>
-                {'Back'}
-              </Button>
+            <Flex p={4} justifyEnd>
+              <BackButton />
               <Button type="submit" large primary disabled={isSubmitting}>
                 {'Confirm and Submit'}
               </Button>
-            </FormActions>
+            </Flex>
           </Form>
         )}
       </Formik>
@@ -210,12 +210,6 @@ const ProposalForm: React.SFC<IProps> = ({ onHandleSubmit }) => {
 
 const PaddedDiv = styled.div`
   padding: 2rem;
-`;
-
-const FormActions = styled.div`
-  display: flex;
-  padding: 2rem;
-  justify-content: flex-end;
 `;
 
 export default ProposalForm;

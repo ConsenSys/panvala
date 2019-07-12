@@ -39,6 +39,7 @@ import {
 } from '../../../utils/transaction';
 import { GovernanceSlateFormSchema } from '../../../utils/schemas';
 import RouterLink from '../../../components/RouterLink';
+import BackButton from '../../../components/BackButton';
 
 const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
   // modal opener
@@ -340,7 +341,7 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
 
               <Separator />
               <Flex p={4} justifyEnd>
-                <Button large>{'Back'}</Button>
+                <BackButton />
                 <Button type="submit" large primary disabled={isSubmitting}>
                   {'Create Slate'}
                 </Button>

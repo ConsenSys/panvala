@@ -216,7 +216,6 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
           <Separator />
           <Actions
             handleClick={() => toggleOpenStepper(true)}
-            handleBack={null}
             actionText={'Confirm and Deposit PAN'}
           />
         </CenteredWrapper>

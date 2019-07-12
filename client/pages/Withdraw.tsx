@@ -122,7 +122,6 @@ const Withdraw: StatelessPage<IProps> = ({ query, asPath }) => {
         <Separator />
         <Actions
           handleClick={() => method && handleWithdraw(method, args)}
-          handleBack={null}
           actionText={'Confirm and Withdraw'}
         />
       </CenteredWrapper>

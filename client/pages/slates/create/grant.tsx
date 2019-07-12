@@ -39,6 +39,8 @@ import { ipfsAddObject } from '../../../utils/ipfs';
 import { convertedToBaseUnits, formatPanvalaUnits } from '../../../utils/format';
 import { postSlate } from '../../../utils/api';
 import { PROPOSAL } from '../../../utils/constants';
+import Flex from '../../../components/system/Flex';
+import BackButton from '../../../components/BackButton';
 
 const Separator = styled.div`
   border: 1px solid ${COLORS.grey5};
@@ -502,12 +504,12 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, classes }) => {
                 </div>
               </PaddedDiv>
               <Separator />
-              <FormActions>
-                <Button large>{'Back'}</Button>
+              <Flex p={4} justifyEnd>
+                <BackButton />
                 <Button type="submit" large primary disabled={isSubmitting}>
                   {'Create Slate'}
                 </Button>
-              </FormActions>
+              </Flex>
             </Form>
           )}
         </Formik>
@@ -529,12 +531,6 @@ const FlexContainer = styled.div`
 
 const PaddedDiv = styled.div`
   padding: 2rem;
-`;
-
-const FormActions = styled.div`
-  display: flex;
-  padding: 2rem;
-  justify-content: flex-end;
 `;
 
 CreateGrantSlate.getInitialProps = async ({ query, classes }) => {

@@ -2,6 +2,7 @@ import * as React from 'react';
 import styled from 'styled-components';
 import Button from './Button';
 import { COLORS } from '../styles';
+import BackButton from './BackButton';
 
 const ActionsWrapper = styled.div`
   display: flex;
@@ -22,12 +23,10 @@ const ActionHelpMessage = styled.div`
   color: ${COLORS.grey3};
 `;
 
-const Actions = ({ handleClick, actionText, handleBack }: any) => (
+const Actions = ({ handleClick, actionText }: any) => (
   <ActionsWrapper>
     <FlexWrapper>
-      <Button large onClick={handleBack}>
-        Back
-      </Button>
+      <BackButton />
       <Button large type="default" onClick={handleClick}>
         {actionText}
       </Button>
