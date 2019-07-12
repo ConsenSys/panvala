@@ -41,6 +41,7 @@ import { postSlate } from '../../../utils/api';
 import { PROPOSAL } from '../../../utils/constants';
 import Flex from '../../../components/system/Flex';
 import BackButton from '../../../components/BackButton';
+import Box from '../../../components/system/Box';
 
 const Separator = styled.div`
   border: 1px solid ${COLORS.grey5};
@@ -402,115 +403,124 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, classes }) => {
             setSubmitting(false);
           }}
         >
-          {({ isSubmitting, setFieldValue, values }: FormikContext<IFormValues>) => (
-            <Form>
-              <PaddedDiv>
-                <SectionLabel>{'ABOUT'}</SectionLabel>
+          {({ isSubmitting, setFieldValue, values, handleSubmit }: FormikContext<IFormValues>) => (
+            <Box>
+              <Form>
+                <PaddedDiv>
+                  <SectionLabel>{'ABOUT'}</SectionLabel>
 
-                <FieldText required label={'Email'} name="email" placeholder="Enter your email" />
+                  <FieldText required label={'Email'} name="email" placeholder="Enter your email" />
 
-                <FieldText
-                  required
-                  label={'First Name'}
-                  name="firstName"
-                  placeholder="Enter your first name"
-                />
-                <FieldText label={'Last Name'} name="lastName" placeholder="Enter your last name" />
-                <FieldText
-                  label={'Organization Name'}
-                  name="organization"
-                  placeholder="Enter your organization's name"
-                />
+                  <FieldText
+                    required
+                    label={'First Name'}
+                    name="firstName"
+                    placeholder="Enter your first name"
+                  />
+                  <FieldText
+                    label={'Last Name'}
+                    name="lastName"
+                    placeholder="Enter your last name"
+                  />
+                  <FieldText
+                    label={'Organization Name'}
+                    name="organization"
+                    placeholder="Enter your organization's name"
+                  />
 
-                <FieldTextarea
-                  required
-                  label={'Description'}
-                  name="description"
-                  placeholder="Enter a description for your slate"
-                />
-              </PaddedDiv>
-              <Separator />
-              <PaddedDiv>
-                <SectionLabel>{'RECOMMENDATION'}</SectionLabel>
-                <Label htmlFor="recommendation" required>
-                  {'What type of recommendation would you like to make?'}
-                </Label>
-                <ErrorMessage name="recommendation" component="span" />
-                <div>
-                  <Checkbox name="recommendation" value="grant" label="Recommend grant proposals" />
-                  <Checkbox name="recommendation" value="noAction" label="Recommend no action" />
-                </div>
-                <RadioSubText>
-                  By recommending no action you are opposing any current or future slates for this
-                  batch.
-                </RadioSubText>
-              </PaddedDiv>
-              {values.recommendation === 'grant' && (
-                <>
-                  <Separator />
-                  <PaddedDiv>
-                    <SectionLabel>{'GRANTS'}</SectionLabel>
-                    <div className="mv3 f7 black-50">
-                      {'Select the grants that you would like to add to your slate'}
-                    </div>
-                    <FlexContainer>
-                      {proposals &&
-                        proposals.map((proposal: IProposal) => (
-                          <Card
-                            key={proposal.id}
-                            category={`${proposal.category} PROPOSAL`}
-                            title={proposal.title}
-                            subtitle={proposal.tokensRequested.toString()}
-                            description={proposal.summary}
-                            onClick={() => {
-                              if (values.proposals.hasOwnProperty(proposal.id)) {
-                                setFieldValue(
-                                  `proposals.${proposal.id}`,
-                                  !values.proposals[proposal.id]
-                                );
-                              } else {
-                                setFieldValue(`proposals.${proposal.id}`, true);
-                              }
-                            }}
-                            isActive={values.proposals[proposal.id]}
-                            type={PROPOSAL}
-                            width={['100%', '100%', '50%', '50%']}
-                          />
-                        ))}
-                    </FlexContainer>
-                  </PaddedDiv>
-                </>
-              )}
-              <Separator />
-              <PaddedDiv>
-                <SectionLabel>STAKE</SectionLabel>
-                <Label htmlFor="stake" required>
-                  {`Would you like to stake ${formatPanvalaUnits(
-                    slateStakeAmount
-                  )} tokens for this slate? This makes your slate eligible for the current batch.`}
-                </Label>
-                <ErrorMessage name="stake" component="span" />
-                <div>
-                  <Checkbox name="stake" value="yes" label="Yes" />
+                  <FieldTextarea
+                    required
+                    label={'Description'}
+                    name="description"
+                    placeholder="Enter a description for your slate"
+                  />
+                </PaddedDiv>
+                <Separator />
+                <PaddedDiv>
+                  <SectionLabel>{'RECOMMENDATION'}</SectionLabel>
+                  <Label htmlFor="recommendation" required>
+                    {'What type of recommendation would you like to make?'}
+                  </Label>
+                  <ErrorMessage name="recommendation" component="span" />
+                  <div>
+                    <Checkbox
+                      name="recommendation"
+                      value="grant"
+                      label="Recommend grant proposals"
+                    />
+                    <Checkbox name="recommendation" value="noAction" label="Recommend no action" />
+                  </div>
                   <RadioSubText>
-                    By selecting yes, you will stake tokens for your own slate and not have to rely
-                    on others to stake tokens for you.
+                    By recommending no action you are opposing any current or future slates for this
+                    batch.
                   </RadioSubText>
-                  <Checkbox name="stake" value="no" label="No" />
-                  <RadioSubText>
-                    By selecting no, you will have to wait for others to stake tokens for your slate
-                    or you can stake tokens after you have created the slate.
-                  </RadioSubText>
-                </div>
-              </PaddedDiv>
-              <Separator />
+                </PaddedDiv>
+                {values.recommendation === 'grant' && (
+                  <>
+                    <Separator />
+                    <PaddedDiv>
+                      <SectionLabel>{'GRANTS'}</SectionLabel>
+                      <div className="mv3 f7 black-50">
+                        {'Select the grants that you would like to add to your slate'}
+                      </div>
+                      <FlexContainer>
+                        {proposals &&
+                          proposals.map((proposal: IProposal) => (
+                            <Card
+                              key={proposal.id}
+                              category={`${proposal.category} PROPOSAL`}
+                              title={proposal.title}
+                              subtitle={proposal.tokensRequested.toString()}
+                              description={proposal.summary}
+                              onClick={() => {
+                                if (values.proposals.hasOwnProperty(proposal.id)) {
+                                  setFieldValue(
+                                    `proposals.${proposal.id}`,
+                                    !values.proposals[proposal.id]
+                                  );
+                                } else {
+                                  setFieldValue(`proposals.${proposal.id}`, true);
+                                }
+                              }}
+                              isActive={values.proposals[proposal.id]}
+                              type={PROPOSAL}
+                            />
+                          ))}
+                      </FlexContainer>
+                    </PaddedDiv>
+                  </>
+                )}
+                <Separator />
+                <PaddedDiv>
+                  <SectionLabel>STAKE</SectionLabel>
+                  <Label htmlFor="stake" required>
+                    {`Would you like to stake ${formatPanvalaUnits(
+                      slateStakeAmount
+                    )} tokens for this slate? This makes your slate eligible for the current batch.`}
+                  </Label>
+                  <ErrorMessage name="stake" component="span" />
+                  <div>
+                    <Checkbox name="stake" value="yes" label="Yes" />
+                    <RadioSubText>
+                      By selecting yes, you will stake tokens for your own slate and not have to
+                      rely on others to stake tokens for you.
+                    </RadioSubText>
+                    <Checkbox name="stake" value="no" label="No" />
+                    <RadioSubText>
+                      By selecting no, you will have to wait for others to stake tokens for your
+                      slate or you can stake tokens after you have created the slate.
+                    </RadioSubText>
+                  </div>
+                </PaddedDiv>
+                <Separator />
+              </Form>
               <Flex p={4} justifyEnd>
                 <BackButton />
-                <Button type="submit" large primary disabled={isSubmitting}>
+                <Button type="submit" large primary disabled={isSubmitting} onClick={handleSubmit}>
                   {'Create Slate'}
                 </Button>
               </Flex>
-            </Form>
+            </Box>
           )}
         </Formik>
       </CenteredWrapper>

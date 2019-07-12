@@ -12,6 +12,7 @@ import FieldTextarea from './FieldTextarea';
 import { convertedToBaseUnits } from '../utils/format';
 import Flex from './system/Flex';
 import BackButton from './BackButton';
+import Box from './system/Box';
 
 const FormSchema = yup.object().shape({
   firstName: yup
@@ -88,120 +89,126 @@ const ProposalForm: React.SFC<IProps> = ({ onHandleSubmit }) => {
           setSubmitting(false);
         }}
       >
-        {({ isSubmitting, setFieldValue }) => (
-          <Form>
-            <PaddedDiv>
-              <SectionLabel>{'PERSONAL INFORMATION'}</SectionLabel>
+        {({ isSubmitting, setFieldValue, handleSubmit }) => (
+          <Box>
+            <Form>
+              <PaddedDiv>
+                <SectionLabel>{'PERSONAL INFORMATION'}</SectionLabel>
 
-              <FieldText
-                required
-                label={'First Name / Organization'}
-                name="firstName"
-                placeholder="Enter your first name or the name of your organization"
-              />
-              <FieldText label={'Last Name'} name="lastName" placeholder="Enter your last name" />
-              <FieldText required label={'Email'} name="email" placeholder="Enter your email" />
-              <FieldText label={'Github'} name="github" placeholder="Enter your github username" />
-            </PaddedDiv>
-
-            <Separator />
-
-            <PaddedDiv>
-              <SectionLabel>{'PROJECT DETAILS'}</SectionLabel>
-
-              <FieldText
-                required
-                label={'Project Name'}
-                name="title"
-                placeholder="Enter project name"
-              />
-              <FieldText label={'Website'} name="website" placeholder="Enter project website" />
-
-              <FieldTextarea
-                required
-                label={'Project Summary'}
-                name="summary"
-                placeholder="Enter project proposal"
-              />
-              <FieldTextarea
-                label={'Project Plan'}
-                name="projectPlan"
-                placeholder="Enter project plan"
-              />
-              <FieldTextarea
-                label={'Timeline and Milestones'}
-                name="projectTimeline"
-                placeholder="Enter project timeline and milestones"
-              />
-              <FieldTextarea
-                label={"What are your and your team's backgrounds?"}
-                name="teamBackgrounds"
-                placeholder="Enter your and your team's backgrounds"
-              />
-
-              <Label htmlFor="file">{'File upload'}</Label>
-              <div className="mt2">
-                <input
-                  type="file"
-                  name="file"
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                    if (!event.currentTarget.files) {
-                      return;
-                    }
-                    const file = event.currentTarget.files[0];
-                    if (file.type !== 'application/pdf') {
-                      toast.error('Invalid file type. Please upload .pdf');
-                      setFieldValue('file', {});
-                    } else {
-                      setFieldValue('file', file);
-                    }
-                  }}
-                  placeholder="Choose file"
+                <FieldText
+                  required
+                  label={'First Name / Organization'}
+                  name="firstName"
+                  placeholder="Enter your first name or the name of your organization"
                 />
-              </div>
-            </PaddedDiv>
+                <FieldText label={'Last Name'} name="lastName" placeholder="Enter your last name" />
+                <FieldText required label={'Email'} name="email" placeholder="Enter your email" />
+                <FieldText
+                  label={'Github'}
+                  name="github"
+                  placeholder="Enter your github username"
+                />
+              </PaddedDiv>
 
-            <Separator />
+              <Separator />
 
-            <PaddedDiv>
-              <SectionLabel>{'FINANCIAL DETAILS'}</SectionLabel>
+              <PaddedDiv>
+                <SectionLabel>{'PROJECT DETAILS'}</SectionLabel>
 
-              <FieldTextarea
-                label={'What is the total budget of your project (in USD)?'}
-                name="totalBudget"
-                placeholder="Enter the total budget of your project"
-              />
+                <FieldText
+                  required
+                  label={'Project Name'}
+                  name="title"
+                  placeholder="Enter project name"
+                />
+                <FieldText label={'Website'} name="website" placeholder="Enter project website" />
 
-              <FieldText
-                required
-                label={'How many tokens are you requesting?'}
-                name="tokensRequested"
-                placeholder="Enter the amount of tokens you would like"
-              />
+                <FieldTextarea
+                  required
+                  label={'Project Summary'}
+                  name="summary"
+                  placeholder="Enter project proposal"
+                />
+                <FieldTextarea
+                  label={'Project Plan'}
+                  name="projectPlan"
+                  placeholder="Enter project plan"
+                />
+                <FieldTextarea
+                  label={'Timeline and Milestones'}
+                  name="projectTimeline"
+                  placeholder="Enter project timeline and milestones"
+                />
+                <FieldTextarea
+                  label={"What are your and your team's backgrounds?"}
+                  name="teamBackgrounds"
+                  placeholder="Enter your and your team's backgrounds"
+                />
 
-              <FieldText
-                required
-                label={'Award address'}
-                name="awardAddress"
-                placeholder="Enter the address of the token recipient for this proposal"
-              />
+                <Label htmlFor="file">{'File upload'}</Label>
+                <div className="mt2">
+                  <input
+                    type="file"
+                    name="file"
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                      if (!event.currentTarget.files) {
+                        return;
+                      }
+                      const file = event.currentTarget.files[0];
+                      if (file.type !== 'application/pdf') {
+                        toast.error('Invalid file type. Please upload .pdf');
+                        setFieldValue('file', {});
+                      } else {
+                        setFieldValue('file', file);
+                      }
+                    }}
+                    placeholder="Choose file"
+                  />
+                </div>
+              </PaddedDiv>
 
-              <FieldTextarea
-                label={'Have you applied/received other funding?'}
-                name="otherFunding"
-                placeholder="Enter any other funding you have received"
-              />
-            </PaddedDiv>
+              <Separator />
 
-            <Separator />
+              <PaddedDiv>
+                <SectionLabel>{'FINANCIAL DETAILS'}</SectionLabel>
+
+                <FieldTextarea
+                  label={'What is the total budget of your project (in USD)?'}
+                  name="totalBudget"
+                  placeholder="Enter the total budget of your project"
+                />
+
+                <FieldText
+                  required
+                  label={'How many tokens are you requesting?'}
+                  name="tokensRequested"
+                  placeholder="Enter the amount of tokens you would like"
+                />
+
+                <FieldText
+                  required
+                  label={'Award address'}
+                  name="awardAddress"
+                  placeholder="Enter the address of the token recipient for this proposal"
+                />
+
+                <FieldTextarea
+                  label={'Have you applied/received other funding?'}
+                  name="otherFunding"
+                  placeholder="Enter any other funding you have received"
+                />
+              </PaddedDiv>
+
+              <Separator />
+            </Form>
 
             <Flex p={4} justifyEnd>
               <BackButton />
-              <Button type="submit" large primary disabled={isSubmitting}>
+              <Button type="submit" large primary disabled={isSubmitting} onClick={handleSubmit}>
                 {'Confirm and Submit'}
               </Button>
             </Flex>
-          </Form>
+          </Box>
         )}
       </Formik>
     </div>
