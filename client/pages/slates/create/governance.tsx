@@ -4,6 +4,7 @@ import { Formik, Form, FormikContext } from 'formik';
 import { CircularProgress, withStyles } from '@material-ui/core';
 import { toast } from 'react-toastify';
 import clone from 'lodash/clone';
+import { withRouter } from 'next/router';
 
 import { COLORS } from '../../../styles';
 import Box from '../../../components/system/Box';
@@ -40,11 +41,14 @@ import {
 import { GovernanceSlateFormSchema } from '../../../utils/schemas';
 import RouterLink from '../../../components/RouterLink';
 import BackButton from '../../../components/BackButton';
+import { isSlateSubmittable } from '../../../utils/status';
 
-const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
+const CreateGovernanceSlate: StatelessPage<any> = ({ classes, router }) => {
   // modal opener
   const [isOpen, setOpenModal] = React.useState(false);
-  const { onRefreshSlates, onRefreshCurrentBallot }: IMainContext = React.useContext(MainContext);
+  const { onRefreshSlates, onRefreshCurrentBallot, currentBallot }: IMainContext = React.useContext(
+    MainContext
+  );
   // get eth context
   const {
     account,
@@ -52,6 +56,14 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes }) => {
     onRefreshBalances,
     slateStakeAmount,
   }: IEthereumContext = React.useContext(EthereumContext);
+
+  React.useEffect(() => {
+    if (!isSlateSubmittable(currentBallot, 'GOVERNANCE')) {
+      toast.error('Governance slate submission deadline has passed');
+      router.push('/slates');
+    }
+  }, []);
+
   // pending tx loader
   const [txPending, setTxPending] = React.useState(false);
 
@@ -409,4 +421,4 @@ const styles = (theme: any) => ({
   },
 });
 
-export default withStyles(styles)(CreateGovernanceSlate);
+export default withStyles(styles)(withRouter(CreateGovernanceSlate));

@@ -44,6 +44,13 @@ export function isPendingVote(status: string) {
 export function isCurrentBallot(ballot: IBallotDates) {
   return dateHasPassed(ballot.startDate) && !dateHasPassed(ballot.finalityDate);
 }
+// weeks 1 - [5.5]
+export function isSlateSubmittable(ballot: IBallotDates, category: string): boolean {
+  if (ballot.slateSubmissionDeadline && category) {
+    return dateHasPassed(ballot.slateSubmissionDeadline[category]);
+  }
+  return false;
+}
 // weeks 1 - 11
 export function isPreVoting(ballot: IBallotDates) {
   return dateHasPassed(ballot.startDate) && !dateHasPassed(ballot.votingOpenDate);

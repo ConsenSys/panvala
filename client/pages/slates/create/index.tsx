@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { toast } from 'react-toastify';
 
 import Box from '../../../components/system/Box';
 import CenteredTitle from '../../../components/CenteredTitle';
@@ -7,9 +8,13 @@ import FieldSelect from '../../../components/FieldSelect';
 import SectionLabel from '../../../components/SectionLabel';
 import RouteActions from '../../../components/RouteActions';
 import { Separator } from '../../../components/Separator';
+import { MainContext } from '../../../components/MainProvider';
+import { isSlateSubmittable } from '../../../utils/status';
 
 const CreateSlate: React.SFC = () => {
   const [category, setCategory] = React.useState('');
+  const { currentBallot } = React.useContext(MainContext);
+
   return (
     <>
       <CenteredTitle title="Create a Slate" />
@@ -22,7 +27,13 @@ const CreateSlate: React.SFC = () => {
             label={'Select the type of slate you would like to create'}
             name="category"
             placeholder="Select slate category"
-            handleChange={(e: any) => setCategory(e.target.value)}
+            handleChange={(e: any) => {
+              if (isSlateSubmittable(currentBallot, e.target.value.toUpperCase())) {
+                setCategory(e.target.value);
+              } else {
+                toast.error(`${e.target.value} submission deadline has passed`);
+              }
+            }}
             value={category}
           />
         </Box>
@@ -32,7 +43,7 @@ const CreateSlate: React.SFC = () => {
           href={`/slates/create/${category}`}
           as={`/slates/create/${category}`}
           text="Begin"
-          disabled={!category}
+          disabled={!category || !isSlateSubmittable(currentBallot, category.toUpperCase())}
         />
       </CenteredWrapper>
     </>

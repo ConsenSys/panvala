@@ -7,6 +7,7 @@ import { toast } from 'react-toastify';
 import * as yup from 'yup';
 import { CircularProgress, withStyles } from '@material-ui/core';
 import isEmpty from 'lodash/isEmpty';
+import { withRouter } from 'next/router';
 
 import { COLORS } from '../../../styles';
 import CenteredTitle from '../../../components/CenteredTitle';
@@ -42,6 +43,7 @@ import { PROPOSAL } from '../../../utils/constants';
 import Flex from '../../../components/system/Flex';
 import BackButton from '../../../components/BackButton';
 import Box from '../../../components/system/Box';
+import { isSlateSubmittable } from '../../../utils/status';
 
 const Separator = styled.div`
   border: 1px solid ${COLORS.grey5};
@@ -84,17 +86,27 @@ interface IProps {
   classes: any;
 }
 
-const CreateGrantSlate: StatelessPage<IProps> = ({ query, classes }) => {
+const CreateGrantSlate: StatelessPage<IProps> = ({ query, classes, router }) => {
   // get proposals and eth context
-  const { proposals, onRefreshSlates, onRefreshCurrentBallot }: IMainContext = React.useContext(
-    MainContext
-  );
+  const {
+    proposals,
+    onRefreshSlates,
+    onRefreshCurrentBallot,
+    currentBallot,
+  }: IMainContext = React.useContext(MainContext);
   const {
     account,
     contracts,
     onRefreshBalances,
     slateStakeAmount,
   }: IEthereumContext = React.useContext(EthereumContext);
+
+  React.useEffect(() => {
+    if (!isSlateSubmittable(currentBallot, 'GRANT')) {
+      toast.error('Grant slate submission deadline has passed');
+      router.push('/slates');
+    }
+  }, []);
 
   // modal opener
   const [isOpen, setOpenModal] = React.useState(false);
@@ -554,4 +566,4 @@ const styles = (theme: any) => ({
   },
 });
 
-export default withStyles(styles)(CreateGrantSlate);
+export default withStyles(styles)(withRouter(CreateGrantSlate));
