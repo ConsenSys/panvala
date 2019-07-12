@@ -3,12 +3,13 @@ const path = require('path');
 const ethers = require('ethers');
 const readline = require('readline');
 
-
 const currentDir = path.resolve(__dirname);
 const readDir = `${currentDir}/../governance-contracts/build/contracts`;
-const Gatekeeper = JSON.parse(fs.readFileSync(`${readDir}/Gatekeeper.json`));
+const Gatekeeper = JSON.parse(fs.readFileSync(`${readDir}/TimeTravelingGatekeeper.json`));
+const TokenCapacitor = JSON.parse(fs.readFileSync(`${readDir}/TokenCapacitor.json`));
 
 const gatekeeperAddress = process.env.GATEKEEPER_ADDRESS;
+const tokenCapacitorAddress = process.env.TOKEN_CAPACITOR_ADDRESS;
 const rpcEndpoint = process.env.RPC_ENDPOINT;
 const mnemonic = process.env.MNEMONIC;
 
@@ -33,7 +34,6 @@ if (argv[2] === 'weeks' && argv[3]) {
 }
 
 timeTravel(days);
-
 
 function getSigner(provider) {
   if (typeof mnemonic === 'undefined') {
@@ -64,6 +64,7 @@ async function timeTravel(days) {
   const signer = getSigner(provider);
 
   const gatekeeper = new ethers.Contract(gatekeeperAddress, Gatekeeper.abi, signer);
+  const tokenCapacitor = new ethers.Contract(tokenCapacitorAddress, TokenCapacitor.abi, signer);
 
   // Print timings
   const epoch = await gatekeeper.functions.currentEpochNumber();
@@ -75,17 +76,51 @@ async function timeTravel(days) {
   console.log(`Epoch time: \n  ${(now - epochStart.toNumber()) / ONE_DAY} days`);
   console.log(`  ${(now - epochStart.toNumber()) / (ONE_DAY * 7)} weeks`);
 
+  console.log('step (1/3): gatekeeper.timeTravel');
+
   // Send the tx, with confirmation from the user
-  rl.question(`Do you want to time travel ${days} days? [y/N]`, async (answer) => {
+  rl.question(`Do you want to time travel ${days} days? [y/N]`, async answer => {
     if (answer === 'y') {
       console.log('traveling');
+      console.log(Object.keys(gatekeeper.functions));
       const receipt = await gatekeeper.functions.timeTravel(daysInSeconds);
-      console.log(receipt);
+      console.log('receipt:', receipt);
     } else {
-      console.log('exiting');
+      console.log('skipping gatekeeper.timeTravel');
     }
 
-    rl.close();
+    console.log('moving to step (2/3): evm_increaseTime');
+
+    // sets forward the block.timestamp
+    rl.question(`Do you want to increase EVM time ${days} days? [y/N]`, async answer => {
+      if (answer === 'y') {
+        console.log('increasing evm time');
+        const network = await provider.getNetwork();
+        if (network.chainId !== 4) {
+          const adjustment = await provider.send('evm_increaseTime', [daysInSeconds.toNumber()]);
+          await provider.send('evm_mine', []);
+          console.log('adjustment:', adjustment);
+        }
+      } else {
+        console.log('skipping evm_increaseTime');
+      }
+
+      console.log('moving to step (3/3): tokeCapacitor.updateBalances');
+
+      // updates token capacitor balances
+      rl.question(`Do you want to update the tokenCapacitor balances? [y/N]`, async answer => {
+        if (answer === 'y') {
+          console.log('updating unlocked and locked tokens');
+          const receipt = await tokenCapacitor.updateBalances();
+          console.log('receipt:', receipt);
+        } else {
+          console.log('skipping tokenCapacitor.updateBalances');
+        }
+
+        console.log('exiting');
+        rl.close();
+      });
+    });
   });
 }
 

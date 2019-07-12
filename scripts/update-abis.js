@@ -11,8 +11,9 @@ const Gatekeeper = fs.readFileSync(`${readDir}/Gatekeeper.json`);
 const ParameterStore = fs.readFileSync(`${readDir}/ParameterStore.json`);
 const TokenCapacitor = fs.readFileSync(`${readDir}/TokenCapacitor.json`);
 const BasicToken = fs.readFileSync(`${readDir}/BasicToken.json`);
+const TimeTravelingGatekeeper = fs.readFileSync(`${readDir}/TimeTravelingGatekeeper.json`);
 
-const contracts = [Gatekeeper, ParameterStore, TokenCapacitor, BasicToken];
+const contracts = [Gatekeeper, ParameterStore, TokenCapacitor, BasicToken, TimeTravelingGatekeeper];
 
 prettier.resolveConfig(prettierConfig).then(options => {
   contracts.forEach(contract => {
