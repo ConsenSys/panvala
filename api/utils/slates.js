@@ -76,6 +76,12 @@ async function getAllSlates() {
       ) {
         incumbent = true;
       }
+
+      // manually reject slates that are old and not accepted
+      if (BN(slate.epochNumber).lt(currentEpoch) && slate.status !== 3) {
+        slate.status = 2;
+      }
+
       console.log('slate:', slate);
       return getSlateWithMetadata(slateID, slate, decoded, incumbent, requiredStake);
     },

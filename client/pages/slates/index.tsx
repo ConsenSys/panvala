@@ -21,7 +21,7 @@ const VisibilityFilterContainer = styled.div`
 const Slates: React.SFC = () => {
   const { slates, currentBallot }: IMainContext = React.useContext(MainContext);
   const [visibleSlates, setVisibleSlates] = React.useState(slates);
-  const [visibilityFilter, setVisibilityFilter] = React.useState('ALL');
+  const [visibilityFilter, setVisibilityFilter] = React.useState('CURRENT');
   const [createable, setCreateable] = React.useState(false);
 
   function handleSelectVisibilityFilter(filter: string) {
@@ -29,10 +29,8 @@ const Slates: React.SFC = () => {
   }
 
   React.useEffect(() => {
-    if (slates.length > 0) {
-      if (visibilityFilter === 'ALL') {
-        setVisibleSlates(slates);
-      } else if (visibilityFilter === 'CURRENT') {
+    if (slates.length > 0 && currentBallot.epochNumber) {
+      if (visibilityFilter === 'CURRENT') {
         setVisibleSlates(
           slates.filter((s: ISlate) => BN(s.epochNumber).eq(currentBallot.epochNumber))
         );
@@ -42,7 +40,7 @@ const Slates: React.SFC = () => {
         );
       }
     }
-  }, [slates, visibilityFilter]);
+  }, [slates, visibilityFilter, currentBallot.epochNumber]);
 
   React.useEffect(() => {
     if (
@@ -69,13 +67,6 @@ const Slates: React.SFC = () => {
       </Flex>
 
       <VisibilityFilterContainer>
-        <Button
-          onClick={() => handleSelectVisibilityFilter('ALL')}
-          active={visibilityFilter === 'ALL'}
-        >
-          {'All'}
-        </Button>
-
         <Button
           onClick={() => handleSelectVisibilityFilter('CURRENT')}
           active={visibilityFilter === 'CURRENT'}
