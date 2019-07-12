@@ -62,9 +62,7 @@ async function getNormalizedNotificationsByEvents(events, address) {
   const tokenCapacitor = new ethers.Contract(tokenCapacitorAddress, TokenCapacitor.abi, provider);
 
   // get all events for 'Slate Accepted'
-  const slateAcceptedEvents = events.filter(
-    e => e.name === 'ConfidenceVoteFinalized' || e.name === 'RunoffFinalized'
-  );
+  const slateAcceptedEvents = events.filter(e => e.name.includes('Finalized'));
   const slateAcceptedNotifications = flatten(
     await Promise.all(
       slateAcceptedEvents.map(async event => {

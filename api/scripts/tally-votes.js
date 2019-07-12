@@ -20,7 +20,11 @@ async function tally(gatekeeper, ballotID, resource, index) {
 
   if (status.toString() === ContestStatus.NoContest) {
     console.log(`No challenger for resource ${resource} -- automatically finalizing`);
-    await gatekeeper.functions.countVotes(ballotID, resource);
+    if (gatekeeper.functions.hasOwnProperty('finalizeContest')) {
+      await gatekeeper.functions.finalizeContest(ballotID, resource);
+    } else {
+      await gatekeeper.functions.countVotes(ballotID, resource);
+    }
 
     status = await gatekeeper.functions.contestStatus(ballotID, resource);
     console.log('new status', status);
@@ -28,7 +32,11 @@ async function tally(gatekeeper, ballotID, resource, index) {
 
   if (status.toString() === ContestStatus.Active) {
     console.log('Counting votes for ballotID, resource, status', ballotID, resource, status);
-    await gatekeeper.functions.countVotes(ballotID, resource);
+    if (gatekeeper.functions.hasOwnProperty('finalizeContest')) {
+      await gatekeeper.functions.finalizeContest(ballotID, resource);
+    } else {
+      await gatekeeper.functions.countVotes(ballotID, resource);
+    }
     console.log('counted votes!');
 
     status = await gatekeeper.functions.contestStatus(ballotID, resource);
