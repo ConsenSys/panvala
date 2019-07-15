@@ -35,7 +35,7 @@ const Header: React.FunctionComponent<any> = ({ router }: any) => {
     <StyledHeader>
       <nav>
         <NavWrapper>
-          <Flex width={['200px', '250px', '300px']}>
+          <Flex width={['150px']}>
             <RouterLink href="/slates" as="/slates">
               <Image src="/static/black-logo.png" alt="panvala logo" />
             </RouterLink>

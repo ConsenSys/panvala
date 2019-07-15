@@ -18,8 +18,6 @@ const VisibilityFilterContainer = styled.div`
   margin-bottom: 2rem;
 `;
 const CardsWrapper = styled.div`
-  display: table;
-  margin: -0.5rem;
 `;
 
 const Slates: React.SFC = () => {
@@ -84,22 +82,20 @@ const Slates: React.SFC = () => {
       <CardsWrapper>
         {visibleSlates && visibleSlates.length > 0
           ? visibleSlates.map((slate: ISlate) => (
-              <div key={slate.id}>
-                <RouterLink href={`/slates/slate?id=${slate.id}`} as={`/slates/${slate.id}`}>
-                  <Card
-                    key={slate.id}
-                    subtitle={slate.proposals.length + ' Grants Included'}
-                    description={slate.description}
-                    category={slate.category}
-                    status={convertEVMSlateStatus(slate.status)}
-                    address={slate.recommender}
-                    recommender={slate.organization}
-                    verifiedRecommender={slate.verifiedRecommender}
-                    type={SLATE}
-                    incumbent={slate.incumbent}
-                  />
-                </RouterLink>
-              </div>
+              <RouterLink href={`/slates/slate?id=${slate.id}`} as={`/slates/${slate.id}`} key={slate.id}>
+                <Card
+                  key={slate.id}
+                  subtitle={slate.proposals.length + ' Grants Included'}
+                  description={slate.description}
+                  category={slate.category}
+                  status={convertEVMSlateStatus(slate.status)}
+                  address={slate.recommender}
+                  recommender={slate.organization}
+                  verifiedRecommender={slate.verifiedRecommender}
+                  type={SLATE}
+                  incumbent={slate.incumbent}
+                />
+              </RouterLink>
             ))
           : null}
       </CardsWrapper>

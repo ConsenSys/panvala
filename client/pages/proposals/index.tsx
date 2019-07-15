@@ -11,8 +11,6 @@ import { PROPOSAL } from '../../utils/constants';
 import Flex from '../../components/system/Flex';
 
 const CardsWrapper = styled.div`
-  display: flex;
-  flex-flow: row wrap;
 `;
 
 const Proposals: React.SFC = () => {
@@ -33,20 +31,19 @@ const Proposals: React.SFC = () => {
       <CardsWrapper>
         {proposals && proposals.length > 0
           ? proposals.map((proposal: IProposal) => (
-              <div key={proposal.id}>
-                <RouterLink
-                  href={`/proposals/proposal?id=${proposal.id}`}
-                  as={`/proposals/${proposal.id}`}
-                >
-                  <Card
-                    title={proposal.title}
-                    subtitle={proposal.tokensRequested + ' Tokens Requested'}
-                    description={proposal.summary}
-                    category={`${proposal.category} PROPOSAL`}
-                    type={PROPOSAL}
-                  />
-                </RouterLink>
-              </div>
+              <RouterLink
+                href={`/proposals/proposal?id=${proposal.id}`}
+                as={`/proposals/${proposal.id}`}
+                key={proposal.id}
+              >
+                <Card
+                  title={proposal.title}
+                  subtitle={proposal.tokensRequested + ' Tokens Requested'}
+                  description={proposal.summary}
+                  category={`${proposal.category} PROPOSAL`}
+                  type={PROPOSAL}
+                />
+              </RouterLink>
             ))
           : null}
       </CardsWrapper>
