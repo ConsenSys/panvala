@@ -45,6 +45,7 @@ export const colors: any = {
     border: '#E5ECED',
     light: '#F0F5F6',
     veryLight: '#FCFDFE',
+    disabled: '#C5D3D9',
   },
   white: '#FFF',
   transparent: 'transparent',

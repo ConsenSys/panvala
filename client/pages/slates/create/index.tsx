@@ -14,6 +14,13 @@ import { isSlateSubmittable } from '../../../utils/status';
 const CreateSlate: React.SFC = () => {
   const [category, setCategory] = React.useState('');
   const { currentBallot } = React.useContext(MainContext);
+  const [createable, setCreateable] = React.useState(false);
+  React.useEffect(() => {
+    if (isSlateSubmittable(currentBallot, category.toUpperCase())) {
+      setCreateable(true);
+    }
+    setCreateable(false);
+  }, [currentBallot.slateSubmissionDeadline, category]);
 
   return (
     <>
@@ -43,7 +50,7 @@ const CreateSlate: React.SFC = () => {
           href={`/slates/create/${category}`}
           as={`/slates/create/${category}`}
           text="Begin"
-          disabled={!category || !isSlateSubmittable(currentBallot, category.toUpperCase())}
+          disabled={!category || !createable}
         />
       </CenteredWrapper>
     </>

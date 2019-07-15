@@ -62,7 +62,7 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes, router }) => {
       toast.error('Governance slate submission deadline has passed');
       router.push('/slates');
     }
-  }, []);
+  }, [currentBallot.slateSubmissionDeadline]);
 
   // pending tx loader
   const [txPending, setTxPending] = React.useState(false);

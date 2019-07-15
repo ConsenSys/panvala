@@ -1,6 +1,6 @@
 import React, { Children } from 'react';
 import styled, { css } from 'styled-components';
-import { COLORS, BUTTON_COLORS } from '../styles';
+import { COLORS, BUTTON_COLORS, colors } from '../styles';
 import { IButton } from '../interfaces';
 import { color, layout, space } from 'styled-system';
 
@@ -19,7 +19,8 @@ const StyledButton: any = styled(BaseButton)`
     if (type && BUTTON_COLORS[type]) return BUTTON_COLORS[type];
     return COLORS.white;
   }};
-  color: ${({ active }: any) => (active ? COLORS.primary : COLORS.text)};
+  color: ${({ active, disabled }: any) =>
+    active ? colors.blue : disabled ? colors.greys.disabled : colors.greys.dark};
 
   ${({ active }: any) => {
     return (

@@ -47,7 +47,7 @@ export function isCurrentBallot(ballot: IBallotDates) {
 // weeks 1 - [5.5]
 export function isSlateSubmittable(ballot: IBallotDates, category: string): boolean {
   if (ballot.slateSubmissionDeadline && category) {
-    return dateHasPassed(ballot.slateSubmissionDeadline[category]);
+    return !dateHasPassed(ballot.slateSubmissionDeadline[category]);
   }
   return false;
 }

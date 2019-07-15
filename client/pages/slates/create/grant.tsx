@@ -106,7 +106,7 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, classes, router }) => 
       toast.error('Grant slate submission deadline has passed');
       router.push('/slates');
     }
-  }, []);
+  }, [currentBallot.slateSubmissionDeadline]);
 
   // modal opener
   const [isOpen, setOpenModal] = React.useState(false);

@@ -9,7 +9,7 @@ import Flex from '../../components/system/Flex';
 import RouteTitle from '../../components/RouteTitle';
 import RouterLink from '../../components/RouterLink';
 import { ISlate } from '../../interfaces';
-import { convertEVMSlateStatus } from '../../utils/status';
+import { convertEVMSlateStatus, isSlateSubmittable } from '../../utils/status';
 import { SLATE } from '../../utils/constants';
 import { BN } from '../../utils/format';
 
@@ -22,6 +22,7 @@ const Slates: React.SFC = () => {
   const { slates, currentBallot }: IMainContext = React.useContext(MainContext);
   const [visibleSlates, setVisibleSlates] = React.useState(slates);
   const [visibilityFilter, setVisibilityFilter] = React.useState('ALL');
+  const [createable, setCreateable] = React.useState(false);
 
   function handleSelectVisibilityFilter(filter: string) {
     setVisibilityFilter(filter);
@@ -43,13 +44,25 @@ const Slates: React.SFC = () => {
     }
   }, [slates, visibilityFilter]);
 
+  React.useEffect(() => {
+    if (
+      isSlateSubmittable(currentBallot, 'GRANT') ||
+      isSlateSubmittable(currentBallot, 'GOVERNANCE')
+    ) {
+      setCreateable(true);
+    }
+    setCreateable(false);
+  }, [currentBallot.slateSubmissionDeadline]);
+
   return (
     <>
       <Flex justifyBetween alignCenter wrap="true" mb={2}>
         <Flex alignCenter>
           <RouteTitle mr={3}>{'Slates'}</RouteTitle>
           <RouterLink href="/slates/create" as="/slates/create">
-            <Button type="default">{'Add Slate'}</Button>
+            <Button type="default" disabled={!createable}>
+              {'Add Slate'}
+            </Button>
           </RouterLink>
         </Flex>
         <Deadline ballot={currentBallot} route="slates" />
