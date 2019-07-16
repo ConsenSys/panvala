@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { Formik, Form, FormikContext } from 'formik';
 import { TransactionResponse, TransactionReceipt } from 'ethers/providers';
 import { utils } from 'ethers';
+import { ContractReceipt } from 'ethers/contract';
 import { toast } from 'react-toastify';
 import * as yup from 'yup';
 import { CircularProgress, withStyles } from '@material-ui/core';
@@ -48,9 +49,9 @@ import { PROPOSAL } from '../../../utils/constants';
 import Flex from '../../../components/system/Flex';
 import BackButton from '../../../components/BackButton';
 import Box from '../../../components/system/Box';
-import { isSlateSubmittable, SlateStatus } from '../../../utils/status';
-import { projectedAvailableTokens } from '../../../utils/tokens';
 import Text from '../../../components/system/Text';
+import { isSlateSubmittable } from '../../../utils/status';
+import { projectedAvailableTokens } from '../../../utils/tokens';
 
 const Separator = styled.div`
   border: 1px solid ${COLORS.grey5};
@@ -164,13 +165,13 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, classes, router }) => 
 
     try {
       // send tx (pending)
+      setTxPending(true);
       const response: TransactionResponse = await sendCreateManyProposalsTransaction(
         tokenCapacitor,
         beneficiaries,
         tokenAmounts,
         proposalMultihashes
       );
-      setTxPending(true);
 
       // wait for tx to get mined
       const receipt: TransactionReceipt = await response.wait();
@@ -202,18 +203,18 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, classes, router }) => 
         gasLimit: estimate.add('100000').toHexString(),
         gasPrice: utils.parseUnits('9.0', 'gwei'),
       };
+      setTxPending(true);
       const response = await (contracts.gatekeeper as any).functions.recommendSlate(
         contracts.tokenCapacitor.address,
         requestIDs,
         Buffer.from(metadataHash),
         txOptions
       );
-      setTxPending(true);
 
-      const receipt = await response.wait();
+      const receipt: ContractReceipt = await response.wait();
       setTxPending(false);
 
-      if ('events' in receipt) {
+      if (typeof receipt.events !== 'undefined') {
         // Get the SlateCreated logs from the receipt
         // Extract the slateID
         const slateID = receipt.events
@@ -333,8 +334,8 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, classes, router }) => 
 
             // stake immediately after creating slate
             if (values.stake === 'yes') {
-              const res = await sendStakeTokensTransaction(contracts.gatekeeper, slate.slateID);
               setTxPending(true);
+              const res = await sendStakeTokensTransaction(contracts.gatekeeper, slate.slateID);
 
               await res.wait();
               setTxPending(false);

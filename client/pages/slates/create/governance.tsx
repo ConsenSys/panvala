@@ -179,8 +179,8 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes, router }) => {
         console.log('Saved slate info');
         toast.success('Saved slate');
         if (values.stake === 'yes') {
-          const res = await contracts.gatekeeper.functions.stakeTokens(slate.slateID);
           setTxPending(true);
+          const res = await contracts.gatekeeper.functions.stakeTokens(slate.slateID);
 
           await res.wait();
           setTxPending(false);

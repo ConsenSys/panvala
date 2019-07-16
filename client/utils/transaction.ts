@@ -1,6 +1,7 @@
 import { TransactionReceipt, TransactionResponse, Web3Provider } from 'ethers/providers';
 import { LogDescription } from 'ethers/utils';
 import { Contract, utils } from 'ethers';
+import { ContractReceipt } from 'ethers/contract';
 import { BasicToken, Gatekeeper, TokenCapacitor, ParameterStore } from '../types';
 import { abiEncode } from './values';
 import { IGovernanceProposalInfo } from '../interfaces';
@@ -89,17 +90,17 @@ export async function sendRecommendGovernanceSlateTx(
   metadataHash: string,
   setTxPending: any
 ): Promise<any> {
+  setTxPending(true);
   const response = await (gatekeeper as any).functions.recommendSlate(
     parameterStoreAddress,
     requestIDs,
     Buffer.from(metadataHash)
   );
-  setTxPending(true);
 
-  const receipt = await response.wait();
+  const receipt: ContractReceipt = await response.wait();
   setTxPending(false);
 
-  if ('events' in receipt) {
+  if (typeof receipt.events !== 'undefined') {
     // Get the SlateCreated logs from the receipt
     // Extract the slateID
     const slateID = receipt.events
@@ -124,15 +125,15 @@ export async function sendCreateManyGovernanceProposals(
   );
   // submit to the capacitor, get requestIDs
   console.log('keys, values:', keys, values);
+  setTxPending(true);
   // prettier-ignore
   const response: TransactionResponse = await parameterStore.functions.createManyProposals(keys, values, multihashes);
-  setTxPending(true);
 
   // wait for tx to get mined
-  const receipt: any = await response.wait();
+  const receipt: ContractReceipt = await response.wait();
   setTxPending(false);
 
-  if ('events' in receipt) {
+  if (typeof receipt.events !== 'undefined') {
     // Get the ProposalCreated logs from the receipt
     // Extract the requestID
     const requestIDs = receipt.events

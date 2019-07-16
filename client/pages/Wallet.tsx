@@ -131,8 +131,8 @@ const Wallet: React.SFC = () => {
     if (!isEmpty(gatekeeper)) {
       try {
         if (typeof gatekeeper.functions.delegateVotingRights !== 'undefined') {
-          const response = await gatekeeper.functions.delegateVotingRights(hotWallet);
           setTxPending(true);
+          const response = await gatekeeper.functions.delegateVotingRights(hotWallet);
 
           await response.wait();
           setTxPending(false);

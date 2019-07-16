@@ -86,12 +86,12 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
 
     if (contracts) {
       // send tx (pending)
+      setTxPending(true);
       const response: TransactionResponse = await sendApproveTransaction(
         contracts.token,
         contracts.gatekeeper.address,
         ethers.constants.MaxUint256
       );
-      setTxPending(true);
 
       // wait for tx to get mined
       await response.wait();
@@ -116,8 +116,8 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
     if (contracts && contracts.hasOwnProperty('gatekeeper')) {
       const slateID = parseInt(query.id);
       // send tx (pending)
-      const response = await sendStakeTokensTransaction(contracts.gatekeeper, slateID);
       setTxPending(true);
+      const response = await sendStakeTokensTransaction(contracts.gatekeeper, slateID);
 
       // wait for tx to get mined
       await response.wait();
