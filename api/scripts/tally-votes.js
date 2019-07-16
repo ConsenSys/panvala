@@ -23,6 +23,9 @@ async function tally(gatekeeper, ballotID, resource, index) {
     if (gatekeeper.functions.hasOwnProperty('finalizeContest')) {
       await gatekeeper.functions.finalizeContest(ballotID, resource);
     } else {
+      console.log(
+        'Gatekeeper ABI does not support method: `finalizeContest`. running `countVotes`..'
+      );
       await gatekeeper.functions.countVotes(ballotID, resource);
     }
 
@@ -35,6 +38,9 @@ async function tally(gatekeeper, ballotID, resource, index) {
     if (gatekeeper.functions.hasOwnProperty('finalizeContest')) {
       await gatekeeper.functions.finalizeContest(ballotID, resource);
     } else {
+      console.log(
+        'Gatekeeper ABI does not support method: `finalizeContest`. running `countVotes`..'
+      );
       await gatekeeper.functions.countVotes(ballotID, resource);
     }
     console.log('counted votes!');
@@ -45,7 +51,14 @@ async function tally(gatekeeper, ballotID, resource, index) {
 
   if (status.toString() === ContestStatus.RunoffPending) {
     console.log(`Counting runoff votes for category ${categoryName[index]}`);
-    await gatekeeper.functions.countRunoffVotes(ballotID, resource);
+    if (gatekeeper.functions.hasOwnProperty('finalizeRunoff')) {
+      await gatekeeper.functions.finalizeRunoff(ballotID, resource);
+    } else {
+      console.log(
+        'Gatekeeper ABI does not support method: `finalizeRunoff`. running `countRunoffVotes`..'
+      );
+      await gatekeeper.functions.countRunoffVotes(ballotID, resource);
+    }
   }
 }
 
