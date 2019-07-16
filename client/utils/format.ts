@@ -35,7 +35,11 @@ export function convertedToBaseUnits(converted: string, decimals: number = 18): 
 
 export function baseToConvertedUnits(base: BigNumberish, decimals: number = 18): string {
   // expects base: BigNumberish, throws on failure to convert
-  return utils.formatUnits(base, decimals).toString();
+  const converted = utils.formatUnits(base, decimals).toString();
+  const point = converted.indexOf('.');
+  const integer = converted.slice(0, point);
+  const fractional = converted.slice(point, point + 3);
+  return integer + fractional;
 }
 
 export function formatPanvalaUnits(base: BigNumberish): string {

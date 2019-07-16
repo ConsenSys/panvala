@@ -66,7 +66,6 @@ const FormSchema = yup.object().shape({
     .max(5000, 'Too Long!')
     .required('Required'),
   recommendation: yup.string().required('Required'),
-  proposals: yup.object().required('Required'),
   stake: yup.string().required('Required'),
 });
 
@@ -443,7 +442,10 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, classes, router }) => 
                     .add(convertedToBaseUnits(val.tokensRequested))
                     .toString();
                 }, '0');
-                if (utils.bigNumberify(totalTokens).gt(availableTokens)) {
+                if (
+                  contracts.tokenCapacitor.functions.hasOwnProperty('projectedUnlockedBalance') &&
+                  utils.bigNumberify(totalTokens).gt(availableTokens)
+                ) {
                   setFieldError(
                     'proposals',
                     `token amount exceeds the projected available tokens (${baseToConvertedUnits(
