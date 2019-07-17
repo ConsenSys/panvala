@@ -245,6 +245,7 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, classes, router }) => 
       toast.error(msg);
       return;
     }
+    setTxPending(true);
 
     // save proposal metadata to IPFS to be included in the slate metadata
     console.log('preparing proposals...');

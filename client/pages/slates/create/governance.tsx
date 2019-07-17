@@ -75,6 +75,7 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes, router }) => {
       toast.error(msg);
       return;
     }
+    setTxPending(true);
 
     // filter for only changes in parameters
     const parameterChanges: IParameterChangesObject = Object.keys(values.parameters).reduce(
