@@ -4,7 +4,7 @@ describe('Datetime', () => {
   test('should return the correct datetime string when provided a unix block.timestamp', () => {
     const ts = 1539044131;
     const deadline = tsToDeadline(ts, 'America/New_York');
-    expect(deadline).toBe('2018-10-08 AT 20:15 PM');
+    expect(deadline).toBe('2018-10-08 AT 20:15 EDT');
   });
 
   test('should return with error message when given an invalid timestamp', () => {
