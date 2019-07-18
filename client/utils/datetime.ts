@@ -2,13 +2,13 @@ import { isAfter } from 'date-fns';
 import moment, { Moment } from 'moment-timezone';
 
 export const tsToDeadline = (unixTimestamp: number, customTimezone?: string): string => {
-  const fmt: string = 'YYYY-MM-DD [AT] HH:mm A';
+  const fmt: string = 'YYYY-MM-DD [AT] HH:mm z';
   const deadline: Moment = moment(new Date(unixTimestamp * 1000));
 
   // format in local timezone
-  if (!customTimezone) {
+  if (typeof customTimezone === 'undefined') {
+    customTimezone = moment.tz.guess();
     // console.log('deadline:', deadline.format(fmt));
-    return deadline.format(fmt);
   }
 
   // format according to given timezone
