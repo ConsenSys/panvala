@@ -19,7 +19,7 @@ export async function projectedAvailableTokens(
   console.log('projected unlocked balance:', baseToConvertedUnits(pUnlockedBalance));
 
   let unredeemedTokens = '0';
-  if (winningSlate && winningSlate.category === 'GRANT' && winningSlate.proposals.length) {
+  if (winningSlate && winningSlate.proposals.length) {
     // filter out all the proposals that have been withdrawn already
     const unredeemedGrantsPromises = winningSlate.proposals.filter(async p => {
       const proposal = await tokenCapacitor.functions.proposals(p.id);

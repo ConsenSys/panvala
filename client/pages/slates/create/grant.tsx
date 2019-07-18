@@ -7,7 +7,7 @@ import { toast } from 'react-toastify';
 import * as yup from 'yup';
 import { CircularProgress, withStyles } from '@material-ui/core';
 import isEmpty from 'lodash/isEmpty';
-import { withRouter } from 'next/router';
+import { withRouter, SingletonRouter } from 'next/router';
 
 import { COLORS } from '../../../styles';
 import CenteredTitle from '../../../components/CenteredTitle';
@@ -30,6 +30,7 @@ import {
   ISlateMetadata,
   ISaveSlate,
   StatelessPage,
+  ISlate,
 } from '../../../interfaces';
 import { TokenCapacitor } from '../../../types';
 import {
@@ -47,7 +48,7 @@ import { PROPOSAL } from '../../../utils/constants';
 import Flex from '../../../components/system/Flex';
 import BackButton from '../../../components/BackButton';
 import Box from '../../../components/system/Box';
-import { isSlateSubmittable } from '../../../utils/status';
+import { isSlateSubmittable, SlateStatus } from '../../../utils/status';
 import { projectedAvailableTokens } from '../../../utils/tokens';
 import Text from '../../../components/system/Text';
 
@@ -90,12 +91,14 @@ interface IFormValues {
 interface IProps {
   query: any;
   classes: any;
+  router?: SingletonRouter;
 }
 
 const CreateGrantSlate: StatelessPage<IProps> = ({ query, classes, router }) => {
   // get proposals and eth context
   const {
     slates,
+    slatesByID,
     proposals,
     currentBallot,
     onRefreshSlates,
@@ -123,9 +126,21 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, classes, router }) => 
 
   React.useEffect(() => {
     async function getProjectedAvailableTokens() {
-      const winningSlate: any = slates.find(
-        s => s.status === 3 && s.epochNumber === currentBallot.epochNumber - 1
-      );
+      let winningSlate: ISlate | undefined;
+      const lastEpoch = currentBallot.epochNumber - 1;
+      try {
+        const winningSlateID = await contracts.gatekeeper.functions.getWinningSlate(
+          lastEpoch,
+          contracts.tokenCapacitor.address
+        );
+        winningSlate = slatesByID[winningSlateID.toString()];
+      } catch {
+        // if the query reverts, try to find the slate manually
+        winningSlate = slates.find(
+          s => s.status === SlateStatus.Accepted && s.epochNumber === lastEpoch
+        );
+      }
+
       const tokens = await projectedAvailableTokens(
         contracts.tokenCapacitor,
         contracts.gatekeeper,
