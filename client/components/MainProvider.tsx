@@ -7,8 +7,10 @@ import isEmpty from 'lodash/isEmpty';
 import { EthereumContext } from './EthereumProvider';
 import { IProposal, ISlate, IBallotDates } from '../interfaces';
 import { getAllProposals, getAllSlates } from '../utils/api';
-import { baseToConvertedUnits } from '../utils/format';
+import { baseToConvertedUnits, BN } from '../utils/format';
 import { ballotDates } from '../utils/voting';
+import { currentBallot } from './stories/data';
+import { SlateStatus } from '../utils/status';
 
 export interface IMainContext {
   slates: ISlate[];
@@ -40,10 +42,16 @@ async function handleGetAllProposals() {
   return [];
 }
 
-async function handleGetAllSlates() {
+async function handleGetAllSlates(currentEpoch) {
   const slates: ISlate[] | AxiosResponse = await getAllSlates();
   if (Array.isArray(slates)) {
-    return slates;
+    return slates.map(slate => {
+      // manually reject slates that are old and not accepted
+      if (BN(slate.epochNumber).lt(currentEpoch) && slate.status !== SlateStatus.Accepted) {
+        slate.status = 2;
+      }
+      return slate;
+    });
   }
 
   return [];
@@ -148,7 +156,7 @@ const MainProvider: React.FC<any> = (props: any) => {
   }
 
   async function refreshSlates() {
-    const slates: ISlate[] = await handleGetAllSlates();
+    const slates: ISlate[] = await handleGetAllSlates(currentBallot.epochNumber);
     const slatesByID = keyBy(slates, 'id');
 
     console.log('slates:', slates);
