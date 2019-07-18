@@ -18,7 +18,7 @@ export default (props: any) => (
   <Flex justifyCenter>
     <CenteredWrapper
       mx={['1em', '3em', '3em', '4em']}
-      width={['100%', '85%', '80%', '75%', '850px']}
+      width={['100%', '85%', '80%', '80%', '850px']}
       {...props}
     >
       {props.children}
