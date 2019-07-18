@@ -29,7 +29,7 @@ const Slates: React.SFC = () => {
   }
 
   React.useEffect(() => {
-    if (slates.length > 0 && currentBallot.epochNumber) {
+    if (slates.length > 0) {
       if (visibilityFilter === 'CURRENT') {
         setVisibleSlates(
           slates.filter((s: ISlate) => BN(s.epochNumber).eq(currentBallot.epochNumber))

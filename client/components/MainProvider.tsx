@@ -84,6 +84,12 @@ const MainProvider: React.FC<any> = (props: any) => {
       votingOpenDate: 0,
       votingCloseDate: 0,
       finalityDate: 0,
+      epochNumber: 0,
+      initialSlateSubmissionDeadline: 0,
+      slateSubmissionDeadline: {
+        GRANT: 0,
+        GOVERNANCE: 0,
+      },
     },
   });
   const {
