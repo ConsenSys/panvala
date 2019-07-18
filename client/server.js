@@ -85,6 +85,15 @@ app.prepare().then(() => {
   });
 
   // ----------------------------------------------
+  // LIVENESS and READINESS
+  // ----------------------------------------------
+
+  // Use this to check if the application is alive
+  server.get('/liveness', (req, res) => {
+    return app.render(req, res, '/Liveness');
+  });
+
+  // ----------------------------------------------
   // HOUSEKEEPING
   // ----------------------------------------------
 

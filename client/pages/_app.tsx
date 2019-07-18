@@ -61,6 +61,12 @@ export default class MyApp extends App<IProps, IState> {
       return <ErrorPage statusCode={errorCode} />;
     }
 
+    // If this is a liveness check, do not render the full context. We just want to check that
+    // the application is running.
+    if (typeof pageProps.asPath !== 'undefined' && pageProps.asPath.startsWith('/liveness')) {
+      return <Component {...pageProps} />;
+    }
+
     return (
       <Container>
         <EthereumProvider>
