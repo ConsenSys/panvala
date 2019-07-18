@@ -14,7 +14,7 @@ const abis: any = panvala_utils.contractABIs;
 export async function connectContracts(provider: providers.Web3Provider): Promise<IContracts> {
   const [tcAbi, gcAbi, tokenAbi, paramsAbi]: [any[], any[], any[], any[]] = [
     abis.TokenCapacitor.abi,
-    abis.TimeTravelingGatekeeper.abi,
+    abis.Gatekeeper.abi,
     abis.BasicToken.abi,
     abis.ParameterStore.abi,
   ];

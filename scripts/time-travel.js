@@ -76,7 +76,13 @@ async function timeTravel(days) {
   console.log(`Epoch time: \n  ${(now - epochStart.toNumber()) / ONE_DAY} days`);
   console.log(`  ${(now - epochStart.toNumber()) / (ONE_DAY * 7)} weeks`);
 
-  console.log('step (1/3): gatekeeper.timeTravel');
+  function stepLogger(step) {
+    console.log();
+    console.log(step);
+    console.log();
+  }
+
+  stepLogger('   step (1/3): gatekeeper.timeTravel');
 
   // Send the tx, with confirmation from the user
   rl.question(`Do you want to time travel ${days} days? [y/N]`, async answer => {
@@ -86,41 +92,48 @@ async function timeTravel(days) {
       const receipt = await gatekeeper.functions.timeTravel(daysInSeconds);
       console.log('receipt:', receipt);
     } else {
-      console.log('skipping gatekeeper.timeTravel');
+      console.log('-X- skipping gatekeeper.timeTravel');
     }
 
-    console.log('moving to step (2/3): evm_increaseTime');
+    const network = await provider.getNetwork();
+    if (network.chainId !== 4) {
+      stepLogger('   step (2/3): evm_increaseTime');
 
-    // sets forward the block.timestamp
-    rl.question(`Do you want to increase EVM time ${days} days? [y/N]`, async answer => {
-      if (answer === 'y') {
-        console.log('increasing evm time');
-        const network = await provider.getNetwork();
-        if (network.chainId !== 4) {
-          const adjustment = await provider.send('evm_increaseTime', [daysInSeconds.toNumber()]);
-          await provider.send('evm_mine', []);
-          console.log('adjustment:', adjustment);
+      // sets forward the block.timestamp
+      rl.question(
+        `Do you want to increase EVM time ${days} days?\n(You should do this if you want to simulate changes in unlocked/locked tokens) [y/N]`,
+        async answer => {
+          if (answer === 'y') {
+            console.log('increasing evm time');
+            const adjustment = await provider.send('evm_increaseTime', [daysInSeconds.toNumber()]);
+            await provider.send('evm_mine', []);
+            console.log('adjustment:', adjustment);
+          } else {
+            console.log('-X- skipping evm_increaseTime');
+          }
+
+          stepLogger('   step (3/3): tokenCapacitor.updateBalances');
+
+          // updates token capacitor balances
+          rl.question(`Do you want to update the tokenCapacitor balances? [y/N]`, async answer => {
+            if (answer === 'y') {
+              console.log('updating unlocked and locked tokens');
+              const receipt = await tokenCapacitor.updateBalances();
+              console.log('receipt:', receipt);
+            } else {
+              console.log('-X- skipping tokenCapacitor.updateBalances');
+            }
+
+            console.log();
+            console.log('exiting');
+            rl.close();
+          });
         }
-      } else {
-        console.log('skipping evm_increaseTime');
-      }
-
-      console.log('moving to step (3/3): tokeCapacitor.updateBalances');
-
-      // updates token capacitor balances
-      rl.question(`Do you want to update the tokenCapacitor balances? [y/N]`, async answer => {
-        if (answer === 'y') {
-          console.log('updating unlocked and locked tokens');
-          const receipt = await tokenCapacitor.updateBalances();
-          console.log('receipt:', receipt);
-        } else {
-          console.log('skipping tokenCapacitor.updateBalances');
-        }
-
-        console.log('exiting');
-        rl.close();
-      });
-    });
+      );
+    } else {
+      console.log('exiting');
+      rl.close();
+    }
   });
 }
 
