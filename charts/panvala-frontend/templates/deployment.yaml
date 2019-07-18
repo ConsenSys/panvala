@@ -43,7 +43,7 @@ spec:
                   key: tokenCapacitor
           livenessProbe:
             httpGet:
-              path: /
+              path: /liveness
               port: http
             initialDelaySeconds: 10
             periodSeconds: 15
