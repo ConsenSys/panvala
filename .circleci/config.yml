@@ -99,7 +99,8 @@ jobs:
            . venv/bin/activate
            sh ./scripts/publish-api.sh
 
-  dev-deploy-api:
+  # NOTE: namespace still needs to be "development"
+  prod-deploy-api:
     <<: *defaults
     docker:
       - image: circleci/python:3.6.1
@@ -130,6 +131,38 @@ jobs:
           command: |
             . venv/bin/activate
             sh ./scripts/deploy-api.sh development
+
+  staging-deploy-api:
+    <<: *defaults
+    docker:
+      - image: circleci/python:3.6.1
+    steps:
+      - checkout
+      - setup_remote_docker
+      - restore_cache:
+          key: v1-{{ checksum "scripts/requirements.txt" }}
+      - run:
+          <<: *install-aws
+      - save_cache:
+          key: v1-{{ checksum "scripts/requirements.txt" }}
+          paths:
+            - "venv"
+      - run:
+          <<: *install-kubectl
+      - run:
+          <<: *install-iam-authenticator
+      - run:
+          name: Prepare
+          command: |
+            . venv/bin/activate
+            . ./scripts/helpers.sh
+            kube_config
+            install_helm
+      - run:
+          name: Deploy API
+          command: |
+            . venv/bin/activate
+            sh ./scripts/deploy-api.sh staging
 
   # run api tests
   api:
@@ -219,7 +252,8 @@ jobs:
            . venv/bin/activate
            sh ./scripts/publish-frontend.sh
 
-  dev-deploy-frontend:
+  # NOTE: namespace still needs to be "development"
+  prod-deploy-frontend:
     <<: *defaults
     docker:
       - image: circleci/python:3.6.1
@@ -250,6 +284,38 @@ jobs:
           command: |
             . venv/bin/activate
             sh ./scripts/deploy-frontend.sh development
+
+  staging-deploy-frontend:
+    <<: *defaults
+    docker:
+      - image: circleci/python:3.6.1
+    steps:
+      - checkout
+      - setup_remote_docker
+      - restore_cache:
+          key: v1-{{ checksum "scripts/requirements.txt" }}
+      - run:
+          <<: *install-aws
+      - save_cache:
+          key: v1-{{ checksum "scripts/requirements.txt" }}
+          paths:
+            - "venv"
+      - run:
+          <<: *install-kubectl
+      - run:
+          <<: *install-iam-authenticator
+      - run:
+          name: Prepare
+          command: |
+            . venv/bin/activate
+            . ./scripts/helpers.sh
+            kube_config
+            install_helm
+      - run:
+          name: Deploy frontend
+          command: |
+            . venv/bin/activate
+            sh ./scripts/deploy-frontend.sh staging
 
   # run client tests
   frontend:
@@ -373,8 +439,9 @@ workflows:
       - restricted-token
       - governance-contracts
 
-  # build and push on commit to develop
-  # deploy to development
+  # build, publish, and deploy on commit to develop or master
+  # develop --> staging
+  # master --> live
   build-and-deploy:
     jobs:
       - build-api-image:
@@ -382,11 +449,13 @@ workflows:
             branches:
               only:
                 - develop
+                - master
       - publish-api-image:
           filters:
             branches:
               only:
                 - develop
+                - master
           requires:
             - build-api-image
       - build-frontend-image:
@@ -394,26 +463,49 @@ workflows:
             branches:
               only:
                 - develop
+                - master
       - publish-frontend-image:
           filters:
             branches:
               only:
                 - develop
+                - master
           requires:
             - build-frontend-image
-      # deploy to development
-      - dev-deploy-api:
+
+      # deploy to staging on push to develop
+      - staging-deploy-api:
           requires:
             - publish-api-image
           filters:
             branches:
               only:
                 - develop
-      - dev-deploy-frontend:
+      - staging-deploy-frontend:
           requires:
             - publish-frontend-image
           filters:
             branches:
               only:
                 - develop
+      # deploy to live on push to master
+    #   - approve:
+    #       type: approval
+    #       requires:
+    #         - publish-api-image
+    #         - publish-frontend-image
+      - prod-deploy-api:
+          requires:
+            - publish-api-image
+          filters:
+            branches:
+              only:
+                - master
+      - prod-deploy-frontend:
+          requires:
+            - publish-frontend-image
+          filters:
+            branches:
+              only:
+                - master
 
