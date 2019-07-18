@@ -18,8 +18,9 @@ const CreateSlate: React.SFC = () => {
   React.useEffect(() => {
     if (isSlateSubmittable(currentBallot, category.toUpperCase())) {
       setCreateable(true);
+    } else {
+      setCreateable(false);
     }
-    setCreateable(false);
   }, [currentBallot.slateSubmissionDeadline, category]);
 
   return (

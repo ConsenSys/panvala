@@ -50,8 +50,9 @@ const Slates: React.SFC = () => {
       isSlateSubmittable(currentBallot, 'GOVERNANCE')
     ) {
       setCreateable(true);
+    } else {
+      setCreateable(false);
     }
-    setCreateable(false);
   }, [currentBallot.slateSubmissionDeadline]);
 
   return (

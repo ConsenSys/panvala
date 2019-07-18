@@ -525,13 +525,17 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, classes, router }) => 
                       </Label>
                       <ErrorMessage name="proposals" component="span" />
 
-                      <Text fontSize="0.75rem" color="grey">
-                        {`(There are currently `}
-                        <strong>{`${baseToConvertedUnits(
-                          availableTokens
-                        )} PAN tokens available`}</strong>
-                        {` for grant proposals at this time.)`}
-                      </Text>
+                      {contracts.tokenCapacitor.functions.hasOwnProperty(
+                        'projectedUnlockedBalance'
+                      ) && (
+                        <Text fontSize="0.75rem" color="grey">
+                          {`(There are currently `}
+                          <strong>{`${baseToConvertedUnits(
+                            availableTokens
+                          )} PAN tokens available`}</strong>
+                          {` for grant proposals at this time.)`}
+                        </Text>
+                      )}
 
                       <FlexContainer>
                         {proposals &&
