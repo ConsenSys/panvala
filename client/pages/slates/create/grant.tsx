@@ -134,12 +134,7 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, classes, router }) => 
           contracts.tokenCapacitor.address
         );
         winningSlate = slatesByID[winningSlateID.toString()];
-      } catch {
-        // if the query reverts, try to find the slate manually
-        winningSlate = slates.find(
-          s => s.status === SlateStatus.Accepted && s.epochNumber === lastEpoch
-        );
-      }
+      } catch {} // if the query reverts, epoch hasn't been finalized yet
 
       const tokens = await projectedAvailableTokens(
         contracts.tokenCapacitor,
