@@ -97,15 +97,31 @@ contract('TimeTravelGatekeeper', (accounts) => {
       assert.strictEqual(finalTime.toString(), expectedTime.toString());
     });
 
-    it('should revert if someone other than the owner tries to time travel', async () => {
+    it('should allow a whitelisted account other than the owner to time travel', async () => {
+      await gatekeeper.addToWhitelist(alice, { from: creator });
+
+      const now = getTime();
+      const initialTime = await utils.epochTime(gatekeeper, now, 'seconds');
+
+      // Go forward
+      const timeJump = ONE_WEEK;
+      await gatekeeper.timeTravel(timeJump, { from: alice });
+
+      const finalTime = await utils.epochTime(gatekeeper, now, 'seconds');
+      assert(finalTime > initialTime, 'Should have moved forward in time');
+      const expectedTime = new BN(initialTime).add(timeJump);
+      assert.strictEqual(finalTime.toString(), expectedTime.toString());
+    });
+
+    it('should revert if an account that is not on the whitelist tries to time travel', async () => {
       try {
         await gatekeeper.timeTravel(ONE_WEEK, { from: alice });
       } catch (error) {
         expectRevert(error);
-        expectErrorLike(error, 'Only the owner');
+        expectErrorLike(error, 'Only whitelisted');
         return;
       }
-      assert.fail('Allowed someone other than the owner to time travel');
+      assert.fail('Allowed someone who was not whitelisted to time travel');
     });
 
     it('should go back before a deadline', async () => {
@@ -142,6 +158,64 @@ contract('TimeTravelGatekeeper', (accounts) => {
 
     afterEach(async () => {
       await utils.evm.revert(snapshotID);
+    });
+  });
+
+  describe('addToWhitelist', () => {
+    const [, alice, bob] = accounts;
+
+    it('should allow the owner to add an account to the whitelist', async () => {
+      const initialStatus = await gatekeeper.isWhitelisted(alice);
+      assert.strictEqual(initialStatus, false, 'Should not have been whitelisted');
+
+      const receipt = await gatekeeper.addToWhitelist(alice, { from: creator });
+      const { account } = receipt.logs[0].args;
+      assert.strictEqual(account, alice, 'Emitted wrong account');
+
+      const status = await gatekeeper.isWhitelisted(alice);
+      assert.strictEqual(status, true, 'Should have been whitelisted');
+    });
+
+    it('should revert if someone other than the owner tries to add someone to the whitelist', async () => {
+      try {
+        await gatekeeper.addToWhitelist(bob, { from: alice });
+      } catch (error) {
+        expectRevert(error);
+        expectErrorLike(error, 'only owner');
+        return;
+      }
+      assert.fail('Allowed non-owner to add to whitelist');
+    });
+  });
+
+  describe('removeFromWhitelist', () => {
+    const [, alice, bob] = accounts;
+
+    beforeEach(async () => {
+      await gatekeeper.addToWhitelist(alice, { from: creator });
+    });
+
+    it('should allow the owner to remove an account from the whitelist', async () => {
+      const initialStatus = await gatekeeper.isWhitelisted(alice);
+      assert.strictEqual(initialStatus, true, 'Should have been whitelisted');
+
+      const receipt = await gatekeeper.removeFromWhitelist(alice, { from: creator });
+      const { account } = receipt.logs[0].args;
+      assert.strictEqual(account, alice, 'Emitted wrong account');
+
+      const status = await gatekeeper.isWhitelisted(alice);
+      assert.strictEqual(status, false, 'Should not have been whitelisted');
+    });
+
+    it('should revert if someone other than the owner tries to remove someone from the whitelist', async () => {
+      try {
+        await gatekeeper.removeFromWhitelist(alice, { from: bob });
+      } catch (error) {
+        expectRevert(error);
+        expectErrorLike(error, 'only owner');
+        return;
+      }
+      assert.fail('Allowed non-owner to remove from whitelist');
     });
   });
 });
