@@ -1,11 +1,13 @@
 /* eslint-disable no-console */
 /* eslint-disable consistent-return */
-/* globals artifacts */
+/* globals artifacts assert */
 const fs = require('fs');
 
 const BasicToken = artifacts.require('BasicToken');
 
 const { BN, isValidAddress } = require('ethereumjs-util');
+const { parseUnits } = require('ethers').utils;
+
 
 function ensure(statement, msg) {
   if (!statement) {
@@ -13,7 +15,7 @@ function ensure(statement, msg) {
   }
 }
 
-function validateConfig(config) {
+async function validateConfig(config) {
   const { token, capacitor } = config;
 
   // Cannot charge with more than the token supply
@@ -27,14 +29,35 @@ function validateConfig(config) {
   } else {
     ensure(isValidAddress(token.address), `Invalid token address ${token.address}`);
   }
+
+  // If we are not deploying a token, then the deployed token should have the same parameters
+  if (!token.deploy) {
+    const { decimals, supply } = token;
+    const deployed = await BasicToken.at(token.address);
+
+    const deployedDecimals = await deployed.decimals();
+    assert.strictEqual(
+      deployedDecimals.toString(),
+      decimals.toString(),
+      'Deployed token decimals does not match config',
+    );
+
+    const deployedSupply = await deployed.totalSupply();
+    const baseSupply = parseUnits(supply, decimals);
+    assert.strictEqual(
+      deployedSupply.toString(),
+      baseSupply.toString(),
+      'Deployed token supply does not match config',
+    );
+  }
 }
 
 // eslint-disable-next-line func-names
-module.exports = function (deployer, network) {
+module.exports = async function (deployer, network) {
   // Read config and save for later
   const configFile = fs.readFileSync('./conf/config.json');
   const config = JSON.parse(configFile);
-  validateConfig(config);
+  await validateConfig(config);
 
   global.panvalaConfig = config;
   // console.log(config);
@@ -53,7 +76,7 @@ module.exports = function (deployer, network) {
 
     // remove commas and convert to base units
     const totalTokens = formattedTokens.replace(/,/g, '');
-    const supply = `${totalTokens}${'0'.repeat(decimals)}`;
+    const supply = parseUnits(totalTokens, decimals);
 
     const tokenAddress = token.deploy ? '' : token.address;
     if (!token.deploy) {

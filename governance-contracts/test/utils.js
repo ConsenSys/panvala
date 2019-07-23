@@ -158,6 +158,11 @@ function dateToTimestamp(date) {
 }
 
 /**
+ * Create a new BN
+ */
+const asBN = small => new BN(small);
+
+/**
  *@param {number} n
  */
 function range(n) {
@@ -608,16 +613,19 @@ async function getLosingSlates(gatekeeper, slateIDs) {
   return ls.filter(s => s.status.toString() === SlateStatus.Rejected);
 }
 
-function loadDecayMultipliers() {
-  const filePath = path.join(__dirname, 'multipliers.json');
+function loadJSON(filePath) {
   const doc = fs.readFileSync(filePath, { encoding: 'utf-8' });
   return JSON.parse(doc);
 }
 
+function loadDecayMultipliers() {
+  const filePath = path.join(__dirname, 'multipliers.json');
+  return loadJSON(filePath);
+}
+
 function loadTokenReleases() {
   const filePath = path.join(__dirname, 'tokenReleases.json');
-  const doc = fs.readFileSync(filePath, { encoding: 'utf-8' });
-  return JSON.parse(doc);
+  return loadJSON(filePath);
 }
 
 async function chargeCapacitor(capacitor, numTokens, token, txOptions) {
@@ -649,6 +657,7 @@ const utils = {
   epochTime,
   printDate,
   dateToTimestamp,
+  asBN,
   range,
   all,
   chain,
@@ -681,6 +690,7 @@ const utils = {
   categories: proposalCategories,
   getLosingSlates,
   timing,
+  loadJSON,
   loadDecayMultipliers,
   loadTokenReleases,
   capacitorBalances,

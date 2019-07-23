@@ -18,11 +18,13 @@ module.exports = async function(deployer, _, accounts) {
     : await BasicToken.at(tokenInfo.address);
 
   const { charge, initialBalance, initialUnlockedBalance } = config;
+
+  const baseInitialUnlocked = utils.parseUnits(initialUnlockedBalance, tokenInfo.decimals);
   const capacitor = await deployer.deploy(
     TokenCapacitor,
     parameters.address,
     token.address,
-    initialUnlockedBalance,
+    baseInitialUnlocked,
   );
 
   await parameters.setInitialValue(
