@@ -12,6 +12,7 @@ import { ISlate } from '../../interfaces';
 import { convertEVMSlateStatus, isSlateSubmittable } from '../../utils/status';
 import { SLATE } from '../../utils/constants';
 import { BN } from '../../utils/format';
+import MainnetModal from '../../components/MainnetModal';
 
 const VisibilityFilterContainer = styled.div`
   display: flex;
@@ -107,6 +108,8 @@ const Slates: React.SFC = () => {
             ))
           : null}
       </>
+
+      <MainnetModal />
     </>
   );
 };

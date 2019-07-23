@@ -1,25 +1,25 @@
 import * as React from 'react';
 import styled from 'styled-components';
-import { COLORS } from '../styles';
+import { colors } from '../styles';
 import Flex from './system/Flex';
 
 export const ModalTitle = styled.div`
   font-size: 1.5em;
-  color: ${COLORS.grey2};
-  margin: 1em 0;
+  color: ${colors.greys.dark};
+  margin: 0.7rem 0;
 `;
 
 export const ModalDescription = styled.div`
-  font-size: 1em;
-  color: ${COLORS.grey3};
-  line-height: 1.5em;
-  margin-bottom: 1em;
-  text-align: center;
+  font-size: 0.9rem;
+  color: ${colors.greys.dark};
+  line-height: 1.8rem;
+  margin-bottom: 1.5em;
+  text-align: left;
 `;
 
 const ModalBody = styled.div`
   position: fixed;
-  top: 50px;
+  top: 200px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -27,9 +27,9 @@ const ModalBody = styled.div`
   align-items: center;
   overflow: hidden;
   width: 400px;
-  padding: 2.4em;
+  padding: 1.8rem;
   background: white;
-  color: ${COLORS.grey2};
+  color: ${colors.greys.dark};
   border-radius: 10px;
   box-shadow: 0px 5px 20px rgba(0, 0, 0, 0.1);
   z-index: 100;
