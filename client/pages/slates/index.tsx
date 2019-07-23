@@ -1,5 +1,6 @@
 import * as React from 'react';
 import styled from 'styled-components';
+import isEmpty from 'lodash/isEmpty';
 
 import { MainContext, IMainContext } from '../../components/MainProvider';
 import Button from '../../components/Button';
@@ -13,6 +14,7 @@ import { convertEVMSlateStatus, isSlateSubmittable } from '../../utils/status';
 import { SLATE } from '../../utils/constants';
 import { BN } from '../../utils/format';
 import MainnetModal from '../../components/MainnetModal';
+import { EthereumContext } from '../../components/EthereumProvider';
 
 const VisibilityFilterContainer = styled.div`
   display: flex;
@@ -21,9 +23,11 @@ const VisibilityFilterContainer = styled.div`
 
 const Slates: React.SFC = () => {
   const { slates, currentBallot }: IMainContext = React.useContext(MainContext);
+  const { ethProvider } = React.useContext(EthereumContext);
   const [visibleSlates, setVisibleSlates] = React.useState(slates);
   const [visibilityFilter, setVisibilityFilter] = React.useState('CURRENT');
   const [createable, setCreateable] = React.useState(false);
+  const [modalIsOpen, setMainnetModalOpen] = React.useState(false);
 
   function handleSelectVisibilityFilter(filter: string) {
     setVisibilityFilter(filter);
@@ -42,6 +46,18 @@ const Slates: React.SFC = () => {
       }
     }
   }, [slates, visibilityFilter, currentBallot.epochNumber]);
+
+  React.useEffect(() => {
+    async function checkNetwork() {
+      const network = await ethProvider.getNetwork();
+      if (network.chainId === 1) {
+        setMainnetModalOpen(true);
+      }
+    }
+    if (!isEmpty(ethProvider)) {
+      checkNetwork();
+    }
+  }, [ethProvider]);
 
   React.useEffect(() => {
     if (
@@ -109,7 +125,7 @@ const Slates: React.SFC = () => {
           : null}
       </>
 
-      <MainnetModal />
+      <MainnetModal modalIsOpen={modalIsOpen} setMainnetModalOpen={setMainnetModalOpen} />
     </>
   );
 };
