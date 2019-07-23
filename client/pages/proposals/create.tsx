@@ -12,7 +12,7 @@ import ProposalForm from '../../components/ProposalForm';
 import { postProposal } from '../../utils/api';
 import { IProposal } from '../../interfaces';
 import RouterLink from '../../components/RouterLink';
-import PendingTransaction from '../../components/PendingTransaction';
+import Loader from '../../components/Loader';
 
 const CreateProposal: React.FC = () => {
   const { onRefreshProposals }: IMainContext = React.useContext(MainContext);
@@ -55,7 +55,7 @@ const CreateProposal: React.FC = () => {
         <ProposalForm onHandleSubmit={handleSubmit} />
       </CenteredWrapper>
 
-      <PendingTransaction isOpen={txPending} setOpen={setTxPending} />
+      <Loader isOpen={txPending} setOpen={setTxPending} />
     </>
   );
 };

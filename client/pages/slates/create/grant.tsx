@@ -6,7 +6,7 @@ import { utils } from 'ethers';
 import { ContractReceipt } from 'ethers/contract';
 import { toast } from 'react-toastify';
 import * as yup from 'yup';
-import { CircularProgress, withStyles } from '@material-ui/core';
+import { withStyles } from '@material-ui/core';
 import isEmpty from 'lodash/isEmpty';
 import { withRouter, SingletonRouter } from 'next/router';
 
@@ -52,6 +52,8 @@ import Box from '../../../components/system/Box';
 import Text from '../../../components/system/Text';
 import { isSlateSubmittable } from '../../../utils/status';
 import { projectedAvailableTokens } from '../../../utils/tokens';
+import Loader from '../../../components/Loader';
+import PendingTransaction from '../../../components/PendingTransaction';
 
 const Separator = styled.div`
   border: 1px solid ${COLORS.grey5};
@@ -91,11 +93,10 @@ interface IFormValues {
 }
 interface IProps {
   query: any;
-  classes: any;
   router?: SingletonRouter;
 }
 
-const CreateGrantSlate: StatelessPage<IProps> = ({ query, classes, router }) => {
+const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
   // get proposals and eth context
   const {
     slates,
@@ -365,8 +366,6 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, classes, router }) => 
       console.error(errorMessage);
       toast.error(errorMessage);
     }
-
-    // TODO: Should take us to all slates view after successful submission
   }
 
   const initialValues =
@@ -396,31 +395,19 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, classes, router }) => 
 
   return (
     <div>
-      <Modal handleClick={() => setOpenModal(false)} isOpen={txPending || isOpen}>
-        {txPending ? (
-          <>
-            <Image src="/static/metamask-fox.svg" alt="metamask logo" width="80px" />
-            <ModalTitle>{'Transaction Processing'}</ModalTitle>
-            <ModalDescription className="flex flex-wrap">
-              Please wait a few moments while MetaMask processes your transaction. This will only
-              take a few moments.
-            </ModalDescription>
-            <CircularProgress className={classes.progress} />
-          </>
-        ) : (
-          <>
-            <Image src="/static/check.svg" alt="slate submitted" width="80px" />
-            <ModalTitle>{'Slate submitted.'}</ModalTitle>
-            <ModalDescription className="flex flex-wrap">
-              Now that your slate has been created you and others have the ability to stake tokens
-              on it to propose it to token holders. Once there are tokens staked on the slate it
-              will be eligible for a vote.
-            </ModalDescription>
-            <RouterLink href="/slates" as="/slates">
-              <Button type="default">{'Done'}</Button>
-            </RouterLink>
-          </>
-        )}
+      <Modal handleClick={() => setOpenModal(false)} isOpen={isOpen}>
+        <>
+          <Image src="/static/check.svg" alt="slate submitted" width="80px" />
+          <ModalTitle>{'Slate submitted.'}</ModalTitle>
+          <ModalDescription className="flex flex-wrap">
+            Now that your slate has been created you and others have the ability to stake tokens on
+            it to propose it to token holders. Once there are tokens staked on the slate it will be
+            eligible for a vote.
+          </ModalDescription>
+          <RouterLink href="/slates" as="/slates">
+            <Button type="default">{'Done'}</Button>
+          </RouterLink>
+        </>
       </Modal>
 
       <CenteredTitle title="Create a Grant Slate" />
@@ -606,6 +593,8 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, classes, router }) => 
                   {'Create Slate'}
                 </Button>
               </Flex>
+              <Loader isOpen={txPending} setOpen={setTxPending} />
+              <PendingTransaction isOpen={txPending} setOpen={setTxPending} />
             </Box>
           )}
         </Formik>

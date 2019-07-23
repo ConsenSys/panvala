@@ -1,7 +1,8 @@
 import { withStyles, CircularProgress } from '@material-ui/core';
-import Modal, { ModalTitle, ModalDescription } from './Modal';
+import Modal, { ModalTitle } from './Modal';
 import Image from './Image';
 import { colors } from '../styles';
+import Copy from './Copy';
 
 interface IProps {
   classes: any;
@@ -15,9 +16,9 @@ const PendingTransaction: React.SFC<IProps> = ({ classes, isOpen, setOpen }) => 
       <>
         <Image src="/static/metamask-fox.svg" alt="metamask logo" width="80px" />
         <ModalTitle>{'Transaction Processing'}</ModalTitle>
-        <ModalDescription className="flex flex-wrap">
+        <Copy fontSize={1} textAlign="left">
           Please wait a few moments while MetaMask processes your transaction.
-        </ModalDescription>
+        </Copy>
         <CircularProgress className={classes.progress} />
       </>
     </Modal>

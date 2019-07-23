@@ -62,3 +62,5 @@ stories.add('Step 2/2: stake', () => {
     </Stepper>
   );
 });
+
+stories.add('Metamask dialog', () => <StepperMetamaskDialog />);
