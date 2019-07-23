@@ -130,11 +130,6 @@ const ProposalForm: React.SFC<IProps> = ({ onHandleSubmit }) => {
                   placeholder="Enter project proposal"
                 />
                 <FieldTextarea
-                  label={'Project Plan'}
-                  name="projectPlan"
-                  placeholder="Enter project plan"
-                />
-                <FieldTextarea
                   label={'Timeline and Milestones'}
                   name="projectTimeline"
                   placeholder="Enter project timeline and milestones"
@@ -146,7 +141,7 @@ const ProposalForm: React.SFC<IProps> = ({ onHandleSubmit }) => {
                 />
 
                 <Label htmlFor="file">{'File upload'}</Label>
-                <div className="mt2">
+                <Box mt={2}>
                   <input
                     type="file"
                     name="file"
@@ -164,7 +159,7 @@ const ProposalForm: React.SFC<IProps> = ({ onHandleSubmit }) => {
                     }}
                     placeholder="Choose file"
                   />
-                </div>
+                </Box>
               </PaddedDiv>
 
               <Separator />
@@ -187,7 +182,7 @@ const ProposalForm: React.SFC<IProps> = ({ onHandleSubmit }) => {
 
                 <FieldText
                   required
-                  label={'Award address'}
+                  label={'Ethereum wallet address for award'}
                   name="awardAddress"
                   placeholder="Enter the address of the token recipient for this proposal"
                 />
