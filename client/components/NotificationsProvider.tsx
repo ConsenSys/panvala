@@ -12,16 +12,16 @@ export const NotificationsContext: React.Context<INotificationsContext> = React.
 export default function NotificationsProvider(props: any) {
   const [notifications, setNotifications] = React.useState<INotification[]>([]);
   const { account } = React.useContext(EthereumContext);
-  const { proposalsByID, slatesByID } = React.useContext(MainContext);
+  const { proposalsByID, slates } = React.useContext(MainContext);
 
   /**
    * Handler for getting all notifications for an address
    * and replaces the global notifications state
    * @param address ethereum address of user
    */
-  async function getUnreadNotifications(address: string, proposalsByID: any) {
+  async function getUnreadNotifications() {
     // fetch notifications from api
-    const result: any[] = await getNotificationsByAddress(address);
+    const result: any[] = await getNotificationsByAddress(account);
     // normalize api return data
     const normalized: INotification[] = normalizeNotifications(result, proposalsByID);
     console.info('normalized notifications:', normalized);
@@ -29,12 +29,12 @@ export default function NotificationsProvider(props: any) {
     setNotifications(normalized);
   }
 
-  // runs whenever account changes
+  // runs whenever account changes or
   React.useEffect(() => {
     if (account && !isEmpty(proposalsByID)) {
-      getUnreadNotifications(account, proposalsByID);
+      getUnreadNotifications();
     }
-  }, [account, slatesByID]);
+  }, [account, slates]);
 
   return (
     <NotificationsContext.Provider

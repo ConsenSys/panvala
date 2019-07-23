@@ -5,6 +5,7 @@ import Flex from '../components/system/Flex';
 import { EthereumContext } from '../components/EthereumProvider';
 import { BN, convertedToBaseUnits } from '../utils/format';
 import { ipfsAddObject } from '../utils/ipfs';
+import PendingTransaction from '../components/PendingTransaction';
 
 const Donate: React.FC = () => {
   const {
@@ -15,6 +16,7 @@ const Donate: React.FC = () => {
   } = React.useContext(EthereumContext);
   const [amount, setAmount] = React.useState(0);
   const [donor, setDonor] = React.useState('');
+  const [txPending, setTxPending] = React.useState(false);
 
   async function handleDonate() {
     setAmount(100);
@@ -26,6 +28,7 @@ const Donate: React.FC = () => {
       return;
     }
 
+    setTxPending(true);
     if (tcAllowance.lt(numTokens) && panBalance.gte(numTokens)) {
       await token.functions.approve(tokenCapacitor.address, numTokens);
     }
@@ -41,16 +44,24 @@ const Donate: React.FC = () => {
       };
       const multihash = await ipfsAddObject(metadata);
       const metadataHash = Buffer.from(multihash);
-      await (tokenCapacitor as any).functions.donate(metadata.donor, metadata.panAmount, metadataHash);
+      await (tokenCapacitor as any).functions.donate(
+        metadata.donor,
+        metadata.panAmount,
+        metadataHash
+      );
+      setTxPending(false);
     }
   }
 
   return (
-    <Flex justifyCenter>
-      <Button type="default" onClick={handleDonate}>
-        Donate
-      </Button>
-    </Flex>
+    <>
+      <Flex justifyCenter>
+        <Button type="default" onClick={handleDonate}>
+          Donate
+        </Button>
+      </Flex>
+      <PendingTransaction isOpen={txPending} setOpen={setTxPending} />
+    </>
   );
 };
 

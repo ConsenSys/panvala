@@ -14,7 +14,7 @@ const StepperMetamaskDialog: React.SFC = () => {
   return (
     <Wrapper>
       {'MetaMask will open a new window to confirm. If you don’t see it, please click the '}
-      <InlineImage src={'/static/metamask-logo.svg'} alt={'metamask icon'} />
+      <InlineImage src={'/static/metamask-profile.png'} alt={'metamask icon'} />
       {' icon in the browser.'}
     </Wrapper>
   );

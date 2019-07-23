@@ -10,10 +10,10 @@ import Actions from '../components/Actions';
 import A from '../components/A';
 import { EthereumContext, IEthereumContext } from '../components/EthereumProvider';
 import { MainContext, IMainContext } from '../components/MainProvider';
-import { NotificationsContext } from '../components/NotificationsProvider';
 import { StatelessPage } from '../interfaces';
 import { sendAndWaitForTransaction } from '../utils/transaction';
 import { tsToDeadline } from '../utils/datetime';
+import PendingTransaction from '../components/PendingTransaction';
 
 const CenteredSection = styled.div`
   padding: 2rem;
@@ -30,7 +30,7 @@ interface IProps {
 }
 
 const Withdraw: StatelessPage<IProps> = ({ query, asPath }) => {
-  const { onRefreshSlates, proposalsByID }: IMainContext = React.useContext(MainContext);
+  const { onRefreshSlates }: IMainContext = React.useContext(MainContext);
   const {
     account,
     contracts: { gatekeeper, tokenCapacitor },
@@ -38,8 +38,8 @@ const Withdraw: StatelessPage<IProps> = ({ query, asPath }) => {
     ethProvider,
     onRefreshBalances,
   }: IEthereumContext = React.useContext(EthereumContext);
-  const { onHandleGetUnreadNotifications } = React.useContext(NotificationsContext);
   const [deadline, setDeadline] = React.useState(0);
+  const [txPending, setTxPending] = React.useState(false);
 
   React.useEffect(() => {
     if (!isEmpty(gatekeeper) && asPath.includes('grant')) {
@@ -51,12 +51,13 @@ const Withdraw: StatelessPage<IProps> = ({ query, asPath }) => {
 
   async function handleWithdraw(method: string, args: string) {
     try {
-      if (account && !isEmpty(gatekeeper) && !isEmpty(proposalsByID)) {
+      if (account && !isEmpty(gatekeeper)) {
         const contract = method === 'withdrawTokens' ? tokenCapacitor : gatekeeper;
+        setTxPending(true);
         await sendAndWaitForTransaction(ethProvider, contract, method, [args]);
+        setTxPending(false);
         onRefreshBalances();
         onRefreshSlates();
-        onHandleGetUnreadNotifications(account, proposalsByID);
       }
     } catch (error) {
       console.error(`ERROR failed to withdraw tokens: ${error.message}`);
@@ -125,6 +126,8 @@ const Withdraw: StatelessPage<IProps> = ({ query, asPath }) => {
           actionText={'Confirm and Withdraw'}
         />
       </CenteredWrapper>
+
+      <PendingTransaction isOpen={txPending} setOpen={setTxPending} />
     </>
   );
 };

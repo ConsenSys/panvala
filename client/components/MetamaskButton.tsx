@@ -16,7 +16,7 @@ const MetamaskButton: React.SFC<any> = props => {
     <ButtonWrapper>
       <Button type="default" large onClick={props.handleClick}>
         <Flex mr={2} justifyCenter alignCenter>
-          <Image src="/static/metamask-logo.svg" alt="metamask icon" />
+          <Image src="/static/metamask-profile.png" alt="metamask icon" />
         </Flex>
         {props.text}
       </Button>

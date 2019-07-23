@@ -9,7 +9,6 @@ const InlineImageWrapper = styled.span`
   width: 1.3rem;
   margin: 0 5px;
   border: 1px solid ${COLORS.grey4};
-  padding: 2px;
 `;
 
 const InlineImage: React.SFC<any> = ({ src, alt }) => {

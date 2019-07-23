@@ -29,6 +29,7 @@ import Actions from '../../components/Actions';
 import { loadState, LINKED_WALLETS } from '../../utils/localStorage';
 import { SLATE } from '../../utils/constants';
 import RouterLink from '../../components/RouterLink';
+import PendingTransaction from '../../components/PendingTransaction';
 
 const Separator = styled.div`
   border: 1px solid ${COLORS.grey5};
@@ -108,6 +109,7 @@ const Vote: React.FC = () => {
   const [salt]: [string, any] = React.useState(randomSalt().toString());
   // modal opener
   const [isOpen, setOpenModal] = React.useState(false);
+  const [txPending, setTxPending] = React.useState(false);
 
   // (GRANT | GOVERNANCE) => [slates]
   const availableSlates = {};
@@ -184,6 +186,8 @@ const Vote: React.FC = () => {
       }
     });
 
+    setTxPending(true);
+
     // Put choices in the format to submit
     const submitChoices = {};
     Object.keys(choices).forEach(category => {
@@ -255,6 +259,7 @@ const Vote: React.FC = () => {
             };
             await gatekeeper.functions.commitBallot(tokenHolder, commitHash, numTokens, txOptions);
 
+            setTxPending(false);
             setOpenModal(true);
             toast.success('Successfully submitted a ballot');
           }
@@ -273,7 +278,7 @@ const Vote: React.FC = () => {
   }
 
   return (
-    <div>
+    <>
       <Modal handleClick={() => setOpenModal(false)} isOpen={isOpen}>
         <Image src="/static/check.svg" alt="vote submitted" width="80px" />
         <ModalTitle>{'Vote submitted.'}</ModalTitle>
@@ -311,7 +316,9 @@ const Vote: React.FC = () => {
         <Separator />
         <Actions handleClick={handleSubmitVote} actionText={'Confirm and Submit'} />
       </CenteredWrapper>
-    </div>
+
+      <PendingTransaction isOpen={txPending} setOpen={setTxPending} />
+    </>
   );
 };
 
