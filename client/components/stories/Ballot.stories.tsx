@@ -3,7 +3,7 @@ import { storiesOf } from '@storybook/react';
 import Vote from '../../pages/ballots/vote';
 import Layout from '../Layout';
 import NotificationsProvider from '../NotificationsProvider';
-import { StoryWrapper } from './utils.stories';
+import { Wrapper } from './utils.stories';
 import { ISlate } from '../../interfaces';
 import { unstakedSlate } from './data';
 
@@ -46,34 +46,22 @@ const governanceSlates = [slate2, slate3];
 storiesOf('Ballot', module)
   .add('Both categories', () => {
     return (
-      <StoryWrapper slates={slates}>
-        <NotificationsProvider>
-          <Layout>
-            <Vote />
-          </Layout>
-        </NotificationsProvider>
-      </StoryWrapper>
+      <Wrapper slates={slates}>
+        <Vote />
+      </Wrapper>
     );
   })
   .add('Grants only', () => {
     return (
-      <StoryWrapper slates={grantSlates}>
-        <NotificationsProvider>
-          <Layout>
-            <Vote />
-          </Layout>
-        </NotificationsProvider>
-      </StoryWrapper>
+      <Wrapper slates={grantSlates}>
+        <Vote />
+      </Wrapper>
     );
   })
   .add('Governance only', () => {
     return (
-      <StoryWrapper slates={governanceSlates}>
-        <NotificationsProvider>
-          <Layout>
-            <Vote />
-          </Layout>
-        </NotificationsProvider>
-      </StoryWrapper>
+      <Wrapper slates={governanceSlates}>
+        <Vote />
+      </Wrapper>
     );
   });

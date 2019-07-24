@@ -381,7 +381,7 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes, router }) => {
           <>
             <Image src="/static/metamask-fox.svg" alt="metamask logo" width="80px" />
             <ModalTitle>{'Transaction Processing'}</ModalTitle>
-            <ModalDescription className="flex flex-wrap">
+            <ModalDescription>
               Please wait a few moments while MetaMask processes your transaction. This will only
               take a few moments.
             </ModalDescription>
@@ -391,7 +391,7 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes, router }) => {
           <>
             <Image src="/static/check.svg" alt="slate submitted" width="80px" />
             <ModalTitle>{'Slate submitted.'}</ModalTitle>
-            <ModalDescription className="flex flex-wrap">
+            <ModalDescription>
               Now that your slate has been created you and others have the ability to stake tokens
               on it to propose it to token holders. Once there are tokens staked on the slate it
               will be eligible for a vote.

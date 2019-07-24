@@ -1,14 +1,15 @@
 import * as React from 'react';
 import { storiesOf } from '@storybook/react';
 
+import Slates from '../../pages/slates';
 import Slate from '../../pages/slates/slate';
 import SlateHeader from '../SlateHeader';
 import SlateSidebar from '../SlateSidebar';
 import { ISlate } from '../../interfaces';
-import { currentBallot, unstakedSlate } from './data';
+import { currentBallot, unstakedSlate, makeSlate, makeBallot } from './data';
 import { SlateStatus } from '../../utils/status';
 import { convertedToBaseUnits } from '../../utils/format';
-import { StoryWrapper } from './utils.stories';
+import { StoryWrapper, Wrapper } from './utils.stories';
 
 const unstakedIncumbent: ISlate = {
   ...unstakedSlate,
@@ -60,7 +61,7 @@ storiesOf('SlateSidebar', module)
     <SlateSidebar slate={stakedSlate} requiredStake={requiredStake} currentBallot={currentBallot} />
   ));
 
-storiesOf('Slate with contexts', module)
+storiesOf('Slate', module)
   .add('unstaked', () => (
     <StoryWrapper slates={[unstakedSlate]}>
       <Slate query={{ id: '0' }} />
@@ -91,3 +92,121 @@ storiesOf('Slate with contexts', module)
       <Slate query={{ id: '0' }} />
     </StoryWrapper>
   ));
+
+const ballot = makeBallot();
+const acceptedGrantSlate = makeSlate({
+  verifiedRecommender: true,
+  status: 3,
+  epochNumber: 0,
+});
+const rejectedGrantSlate = makeSlate(
+  {
+    status: 2,
+  },
+  acceptedGrantSlate
+);
+const acceptedGovSlate = makeSlate(
+  {
+    category: 'GOVERNANCE',
+    verifiedRecommender: true,
+    status: 3,
+  },
+  acceptedGrantSlate
+);
+const rejectedGovSlate = makeSlate(
+  {
+    status: 2,
+  },
+  acceptedGovSlate
+);
+
+storiesOf('Slates', module)
+  .add('only grants', () => {
+    return (
+      <Wrapper
+        slates={[
+          acceptedGrantSlate,
+          rejectedGrantSlate,
+          rejectedGrantSlate,
+          rejectedGrantSlate,
+          rejectedGrantSlate,
+        ]}
+        ballot={ballot}
+      >
+        <Slates />
+      </Wrapper>
+    );
+  })
+  .add('only governance', () => {
+    return (
+      <Wrapper slates={[acceptedGovSlate, rejectedGovSlate, rejectedGovSlate]} ballot={ballot}>
+        <Slates />
+      </Wrapper>
+    );
+  })
+  .add('multiple categories', () => {
+    return (
+      <Wrapper
+        slates={[
+          acceptedGrantSlate,
+          rejectedGrantSlate,
+          rejectedGrantSlate,
+          rejectedGrantSlate,
+          rejectedGrantSlate,
+          acceptedGovSlate,
+          rejectedGovSlate,
+          rejectedGovSlate,
+        ]}
+        ballot={ballot}
+      >
+        <Slates />
+      </Wrapper>
+    );
+  })
+  .add('only old epochs', () => {
+    const newEpochBallot = makeBallot({ epochNumber: 420 });
+    return (
+      <Wrapper
+        slates={[
+          acceptedGrantSlate,
+          rejectedGrantSlate,
+          rejectedGrantSlate,
+          rejectedGrantSlate,
+          rejectedGrantSlate,
+          acceptedGovSlate,
+          rejectedGovSlate,
+          rejectedGovSlate,
+        ]}
+        ballot={newEpochBallot}
+      >
+        <Slates />
+      </Wrapper>
+    );
+  })
+  .add('multiple epochs', () => {
+    const newEpochBallot = makeBallot({ epochNumber: 420 });
+    const newAcceptedSlate = makeSlate(
+      { epochNumber: 420, organization: 'New Slate Organization' },
+      acceptedGrantSlate
+    );
+    const newRejectedSlate = makeSlate({ status: 2 }, newAcceptedSlate);
+    return (
+      <Wrapper
+        slates={[
+          acceptedGrantSlate,
+          rejectedGrantSlate,
+          rejectedGrantSlate,
+          rejectedGrantSlate,
+          rejectedGrantSlate,
+          acceptedGovSlate,
+          rejectedGovSlate,
+          rejectedGovSlate,
+          newAcceptedSlate,
+          newRejectedSlate,
+        ]}
+        ballot={newEpochBallot}
+      >
+        <Slates />
+      </Wrapper>
+    );
+  });

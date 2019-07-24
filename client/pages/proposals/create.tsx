@@ -41,7 +41,7 @@ const CreateProposal: React.FC = () => {
       <Modal handleClick={() => setOpenModal(false)} isOpen={isOpen}>
         <Image src="/static/check.svg" alt="grant proposal created" width="80px" />
         <ModalTitle>{'Grant proposal created.'}</ModalTitle>
-        <ModalDescription className="flex flex-wrap">
+        <ModalDescription>
           You have successfully created a Panvala Grant Proposal. Now groups that are creating
           slates can attach your grant to their slate.
         </ModalDescription>

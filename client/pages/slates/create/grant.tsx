@@ -557,6 +557,7 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
                               }}
                               isActive={values.proposals[proposal.id]}
                               type={PROPOSAL}
+                              width={['98%', '47%']}
                             />
                           ))}
                       </FlexContainer>

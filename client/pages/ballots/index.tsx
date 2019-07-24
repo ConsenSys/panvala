@@ -63,7 +63,7 @@ const Ballots: React.FunctionComponent<any> = () => {
         <>
           <Flex justifyBetween>
             <Flex>
-              <RouteTitle className="mr3">{'Ballots'}</RouteTitle>
+              <RouteTitle mr={3}>{'Ballots'}</RouteTitle>
             </Flex>
             <Deadline ballot={currentBallot} route="ballots" />
           </Flex>

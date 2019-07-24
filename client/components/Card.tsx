@@ -26,7 +26,6 @@ const CardBody = styled.div<{ isActive?: boolean; asPath?: string; animated: boo
   box-shadow: 0px 5px 5px ${COLORS.grey5};
   margin: 0.5rem;
   max-height: 100%;
-  float: left;
   ${({ asPath }) => asPath && asPath.startsWith('/ballots') && 'height: 100%'};
   ${({ asPath }) => !asPath && 'cursor: pointer'};
 
@@ -157,7 +156,7 @@ const Card: React.FunctionComponent<ICardProps> = props => {
   const cardChoices = props.choices ? props.choices[category] : null;
 
   return (
-    <Box display="inline-block" padding="0.5rem" verticalAlign="top" width={props.width}>
+    <Box display="inline-block" margin="0.5rem" verticalAlign="top" width={props.width}>
       <CardBody
         onClick={props.onClick}
         isActive={props.isActive}

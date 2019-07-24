@@ -171,7 +171,7 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
           <>
             <Image src="/static/metamask-fox.svg" alt="metamask logo" width="80px" />
             <ModalTitle>{'Transaction Processing'}</ModalTitle>
-            <ModalDescription className="flex flex-wrap">
+            <ModalDescription>
               Please wait a few moments while MetaMask processes your transaction. This will only
               take a few moments.
             </ModalDescription>
@@ -181,7 +181,7 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
           <>
             <Image src="/static/check.svg" alt="tokens staked" width="80px" />
             <ModalTitle>{'Tokens staked.'}</ModalTitle>
-            <ModalDescription className="flex flex-wrap">
+            <ModalDescription>
               Now that you have staked tokens on this slate the Panvala token holding community will
               have the ability to vote for or against the slate when the voting period begins.
             </ModalDescription>
