@@ -1,5 +1,6 @@
 const { voting } = require('../../packages/panvala-utils');
 const ethers = require('ethers');
+const sortBy = require('lodash/sortBy');
 const { SubmittedBallot, VoteChoice } = require('../models');
 const { getContracts } = require('../utils/eth');
 
@@ -23,7 +24,8 @@ function encode(choices) {
   const firstChoices = [];
   const secondChoices = [];
 
-  choices.forEach(choice => {
+  const sorted = sortBy(choices, 'resource');
+  sorted.forEach(choice => {
     resources.push(choice.resource);
     firstChoices.push(choice.firstChoice);
     secondChoices.push(choice.secondChoice);
