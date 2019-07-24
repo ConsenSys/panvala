@@ -6,6 +6,7 @@ import { connectProvider, connectContracts } from '../utils/provider';
 import { IContracts } from '../interfaces';
 import { baseToConvertedUnits, BN } from '../utils/format';
 import { saveState, loadState, ENABLED_ACCOUNTS } from '../utils/localStorage';
+import MainnetModal from './MainnetModal';
 
 export interface IEthereumContext {
   account: string;
@@ -205,12 +206,33 @@ const EthereumProvider: React.FC<any> = (props: any) => {
     }
   }, [state.account, state.contracts.token]);
 
+  // render warning modal if on mainnet
+  const [modalIsOpen, setMainnetModalOpen] = React.useState(false);
+  React.useEffect(() => {
+    async function checkNetwork() {
+      const network = await state.ethProvider.getNetwork();
+      if (network.chainId === 1) {
+        setMainnetModalOpen(true);
+      }
+    }
+
+    if (!isEmpty(state.ethProvider)) {
+      checkNetwork();
+    }
+  }, [state.ethProvider]);
+
   const ethContext: IEthereumContext = {
     ...state,
     onRefreshBalances: handleRefreshBalances,
   };
 
-  return <EthereumContext.Provider value={ethContext}>{props.children}</EthereumContext.Provider>;
+  return (
+    <EthereumContext.Provider value={ethContext}>
+      {props.children}
+
+      <MainnetModal modalIsOpen={modalIsOpen} setMainnetModalOpen={setMainnetModalOpen} />
+    </EthereumContext.Provider>
+  );
 };
 
 export default React.memo(EthereumProvider);

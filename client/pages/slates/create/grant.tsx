@@ -593,7 +593,6 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
                   {'Create Slate'}
                 </Button>
               </Flex>
-              <Loader isOpen={txPending} setOpen={setTxPending} />
               <PendingTransaction isOpen={txPending} setOpen={setTxPending} />
             </Box>
           )}
