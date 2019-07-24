@@ -5,7 +5,14 @@ import isEmpty from 'lodash/isEmpty';
 import { connectProvider, connectContracts } from '../utils/provider';
 import { IContracts } from '../interfaces';
 import { baseToConvertedUnits, BN } from '../utils/format';
-import { saveState, loadState, ENABLED_ACCOUNTS } from '../utils/localStorage';
+import {
+  saveState,
+  loadState,
+  ENABLED_ACCOUNTS,
+  saveSessionState,
+  CLOSED_MAINNET_MODAL,
+  loadSessionState,
+} from '../utils/localStorage';
 import MainnetModal from './MainnetModal';
 
 export interface IEthereumContext {
@@ -212,7 +219,10 @@ const EthereumProvider: React.FC<any> = (props: any) => {
     async function checkNetwork() {
       const network = await state.ethProvider.getNetwork();
       if (network.chainId === 1) {
-        setMainnetModalOpen(true);
+        const sessionState = loadSessionState(CLOSED_MAINNET_MODAL);
+        if (sessionState !== 'TRUE') {
+          setMainnetModalOpen(true);
+        }
       }
     }
 
@@ -226,11 +236,16 @@ const EthereumProvider: React.FC<any> = (props: any) => {
     onRefreshBalances: handleRefreshBalances,
   };
 
+  function closeModal() {
+    saveSessionState(CLOSED_MAINNET_MODAL, 'TRUE');
+    setMainnetModalOpen(false);
+  }
+
   return (
     <EthereumContext.Provider value={ethContext}>
       {props.children}
 
-      <MainnetModal modalIsOpen={modalIsOpen} setMainnetModalOpen={setMainnetModalOpen} />
+      <MainnetModal modalIsOpen={modalIsOpen} handleClick={closeModal} />
     </EthereumContext.Provider>
   );
 };

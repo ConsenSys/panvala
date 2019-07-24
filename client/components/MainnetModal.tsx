@@ -3,9 +3,9 @@ import Modal, { ModalTitle, ModalDescription } from './Modal';
 import React from 'react';
 import Button from './Button';
 
-const MainnetModal = ({ setMainnetModalOpen, modalIsOpen }) => {
+const MainnetModal = ({ handleClick, modalIsOpen }) => {
   return (
-    <Modal handleClick={() => setMainnetModalOpen(false)} isOpen={modalIsOpen}>
+    <Modal handleClick={handleClick} isOpen={modalIsOpen}>
       <>
         <ModalTitle>{'Hello'}</ModalTitle>
         <ModalDescription className="flex flex-wrap">
@@ -13,7 +13,7 @@ const MainnetModal = ({ setMainnetModalOpen, modalIsOpen }) => {
           than you need and only share data with people you trust. By using the app you assume full
           responsibility for all risks concerning your data and funds.
         </ModalDescription>
-        <Button type="default" onClick={() => setMainnetModalOpen(false)} large>
+        <Button type="default" onClick={handleClick} large>
           {'Confirm and Continue'}
         </Button>
       </>
