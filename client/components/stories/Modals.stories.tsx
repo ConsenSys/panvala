@@ -9,7 +9,7 @@ storiesOf('Modals', module)
   .add('Mainnet warning', () => {
     return (
       <StoryWrapper>
-        <MainnetModal modalIsOpen={true} setMainnetModalOpen={() => null} />
+        <MainnetModal modalIsOpen={true} handleClick={() => null} />
       </StoryWrapper>
     );
   })

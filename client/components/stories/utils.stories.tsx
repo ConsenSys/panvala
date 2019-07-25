@@ -7,7 +7,7 @@ import Layout from '../Layout';
 import { theme } from '../../styles';
 import { currentBallot } from './data';
 
-export const StoryWrapper = ({ children, proposals, slates }: any) => {
+export const StoryWrapper = ({ children, proposals, slates, ballot }: any) => {
   return (
     <EthereumProvider>
       <MainContext.Provider
@@ -16,7 +16,7 @@ export const StoryWrapper = ({ children, proposals, slates }: any) => {
           slates: !!slates ? slates : [],
           slatesByID: !!slates ? keyBy(slates, 'id') : {},
           proposalsByID: !!proposals ? keyBy(proposals, 'id') : {},
-          currentBallot,
+          currentBallot: ballot || currentBallot,
           onRefreshProposals: () => null,
           onRefreshSlates: () => null,
           onRefreshCurrentBallot: () => null,

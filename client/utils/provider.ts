@@ -12,15 +12,16 @@ const abis: any = panvala_utils.contractABIs;
 
 // contract abstractions for gate_keeper and token_capacitor
 export async function connectContracts(provider: providers.Web3Provider): Promise<IContracts> {
-  const [tcAbi, gcAbi, tokenAbi, paramsAbi]: [any[], any[], any[], any[]] = [
+  const [tcAbi, tokenAbi, paramsAbi]: [any[], any[], any[]] = [
     abis.TokenCapacitor.abi,
-    abis.Gatekeeper.abi,
     abis.BasicToken.abi,
     abis.ParameterStore.abi,
   ];
+  const gkAbi: any[] =
+    process.env.NODE_ENV === 'development' ? abis.TimeTravelingGatekeeper.abi : abis.Gatekeeper.abi;
 
   // read addresses from env vars
-  const gcAddress: string =
+  const gkAddress: string =
     publicRuntimeConfig.gatekeeperAddress || process.env.STORYBOOK_GATEKEEPER_ADDRESS;
   const tcAddress: string =
     publicRuntimeConfig.tokenCapacitorAddress || process.env.STORYBOOK_TOKEN_CAPACITOR_ADDRESS;
@@ -31,22 +32,22 @@ export async function connectContracts(provider: providers.Web3Provider): Promis
     throw new Error(`ERROR no code at: ${tcAddress}`);
   }
   // init ethers contract abstractions
+  const gk: ethers.Contract = new ethers.Contract(gkAddress, gkAbi, provider);
   const tc: ethers.Contract = new ethers.Contract(tcAddress, tcAbi, provider);
-  const gc: ethers.Contract = new ethers.Contract(gcAddress, gcAbi, provider);
 
   // connect metamask wallet/signer to contracts
   const signer: providers.JsonRpcSigner = provider.getSigner();
   const tokenCapacitor: TokenCapacitor = tc.connect(signer) as TokenCapacitor;
-  const gatekeeper: Gatekeeper = gc.connect(signer) as Gatekeeper;
+  const gatekeeper: Gatekeeper = gk.connect(signer) as Gatekeeper;
 
   // get the token and parameter_store associated with the gate_keeper
   try {
-    const tokenAddress: string = await gc.functions.token();
+    const tokenAddress: string = await gatekeeper.functions.token();
     const tokenContract: ethers.Contract = new ethers.Contract(tokenAddress, tokenAbi, provider);
     // connect metamask wallet/signer to token contract
     const token: BasicToken = tokenContract.connect(signer) as BasicToken;
 
-    const paramsAddress: string = await gc.functions.parameters();
+    const paramsAddress: string = await gatekeeper.functions.parameters();
     const parameterStoreContract: ethers.Contract = new ethers.Contract(
       paramsAddress,
       paramsAbi,

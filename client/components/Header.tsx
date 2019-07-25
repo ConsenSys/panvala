@@ -7,6 +7,7 @@ import RouterLink from './RouterLink';
 import NotificationPanel from './NotificationPanel';
 import { NotificationsContext } from './NotificationsProvider';
 import Flex from './system/Flex';
+import TimeTraveler from './TimeTraveler';
 
 const StyledHeader = styled.header`
   width: 100%;
@@ -40,7 +41,6 @@ const Header: React.FunctionComponent<any> = ({ router }: any) => {
               <Image src="/static/black-logo.png" alt="panvala logo" />
             </RouterLink>
           </Flex>
-
           <NavItems>
             <NavItem>
               <RouterLink href="/slates" as="/slates">
@@ -80,6 +80,7 @@ const Header: React.FunctionComponent<any> = ({ router }: any) => {
           </NavItems>
         </NavWrapper>
       </nav>
+      <TimeTraveler />
     </StyledHeader>
   );
 };
