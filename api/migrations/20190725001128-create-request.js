@@ -8,25 +8,20 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER,
       },
-      metadataHash: {
+      requestID: {
+        allowNull: false,
+        type: Sequelize.STRING,
+      },
+      proposalID: {
+        allowNull: false,
         type: Sequelize.STRING,
       },
       resource: {
+        allowNull: false,
         type: Sequelize.STRING,
       },
-      approved: {
-        type: Sequelize.BOOLEAN,
-      },
-      expirationTime: {
-        type: Sequelize.INTEGER,
-      },
-      proposalID: {
-        type: Sequelize.STRING,
-      },
-      proposer: {
-        type: Sequelize.STRING,
-      },
-      requestID: {
+      metadataHash: {
+        allowNull: false,
         type: Sequelize.STRING,
       },
       createdAt: {

@@ -5,10 +5,7 @@ module.exports = (sequelize, DataTypes) => {
     {
       metadataHash: DataTypes.STRING,
       resource: DataTypes.STRING,
-      approved: DataTypes.BOOLEAN,
-      expirationTime: DataTypes.INTEGER,
       proposalID: DataTypes.STRING,
-      proposer: DataTypes.STRING,
       requestID: DataTypes.STRING,
     },
     {}
