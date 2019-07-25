@@ -24,19 +24,33 @@ function range(n) {
   return Array.from(Array(n).keys());
 }
 
-function getTimings(startTime) {
+
+/**
+ * Given the start of an epoch, return important times
+ * @param {number} epochStart UNIX timestamp in seconds
+ */
+function getTimingsForEpoch(epochStart) {
   const epochTimings = {
-    epochStart: startTime,
-    slateSubmissionDeadline: startTime + timings.SLATE_SUBMISSION_DEADLINE,
-    votingStart: startTime + timings.VOTING_PERIOD_START,
-    votingEnd: startTime + timings.REVEAL_PERIOD_START,
+    epochStart: epochStart,
+    slateSubmissionDeadline: epochStart + timings.SLATE_SUBMISSION_DEADLINE,
+    votingStart: epochStart + timings.VOTING_PERIOD_START,
+    votingEnd: epochStart + timings.REVEAL_PERIOD_START,
   };
   return epochTimings;
 }
 
 
 function usage() {
-  const usage = 'Usage: node epoch-timing.js [START_TIME] [NUM_EPOCHS]';
+  const usage = 'Usage: node epoch-timing.js [START_TIME] [NUM_EPOCHS] \
+  \n \
+  \nSTART_TIME: YYYY-MM-DD | YYYY-MM-DD HH:MMZ | YYYY-MM-DD HH:MM+-HH:mm | ISO 8601 \
+  \n \
+  \nExamples\
+  \n 2019-01-01 -- midnight on the first day of the year, GMT\
+  \n 2019-01-01 17:00Z -- 5 PM on the first day of the year, GMT\
+  \n 2019-01-01 12:00-05:00 -- noon EST / 5PM GMT on the first day of the year\
+  \n \
+  \nSee https://en.wikipedia.org/wiki/ISO_8601 and https://momentjs.com/docs/#/parsing/string/ for more';
   console.log(usage);
 }
 
@@ -81,7 +95,7 @@ function run() {
   // console.log(startTime, numEpochs);
 
   const epochs = range(numEpochs);
-  const epochTimings = epochs.map(e => startTime + timings.EPOCH_LENGTH * e).map(getTimings);
+  const epochTimings = epochs.map(e => startTime + timings.EPOCH_LENGTH * e).map(getTimingsForEpoch);
   // console.log(epochTimings);
 
   for (let i = 0; i < epochTimings.length; i += 1) {
