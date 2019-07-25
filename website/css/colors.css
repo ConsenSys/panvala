@@ -1,0 +1,43 @@
+/* Colors */
+
+/* Util Colors */
+.teal {
+  color: #46B0AA;
+}
+
+.blue {
+  color: #2138B7;
+}
+
+.secondary-blue {
+  color: #D1D5F4;
+}
+
+.yellow {
+  color: #F6D869;
+}
+
+.gray {
+  color: #F9FAFE;
+}
+
+/* Background Colors */
+.bg-teal {
+  background-color: #46B0AA;
+}
+
+.bg-blue {
+  background-color: #2138B7;
+}
+
+.bg-secondary-blue {
+  background-color: #D1D5F4;
+}
+
+.bg-yellow {
+  background-color: #F6D869;
+}
+
+.bg-gray {
+  background-color: #F9FAFE;
+}
