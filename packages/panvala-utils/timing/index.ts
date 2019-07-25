@@ -77,7 +77,7 @@ function epochStageByTime(epochDates: EpochDates, time: number): number {
     return EpochStages.RevealVoting;
   }
 
-  throw new Error('Invalid time (try 0-3)');
+  throw new Error(`Time ${time} not in epoch range ${epochStart} - ${epochEnd}`);
 }
 
 function getNextStage(currStage: number) {

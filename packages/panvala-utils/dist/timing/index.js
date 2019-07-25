@@ -54,7 +54,7 @@ function epochStageByTime(epochDates, time) {
     if (time >= votingEnd && time <= epochEnd) {
         return EpochStages.RevealVoting;
     }
-    throw new Error('Invalid time (try 0-3)');
+    throw new Error(`Time ${time} not in epoch range ${epochStart} - ${epochEnd}`);
 }
 function getNextStage(currStage) {
     return currStage === EpochStages.SlateSubmission
