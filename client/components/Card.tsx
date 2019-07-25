@@ -147,9 +147,11 @@ const ChoiceButton: any = styled(Button)`
 const Card: React.FunctionComponent<ICardProps> = props => {
   const [animated, setAnimated] = React.useState(false);
   React.useEffect(() => {
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       setAnimated(true);
     }, 100);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const category = props.category.toUpperCase();

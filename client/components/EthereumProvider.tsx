@@ -162,8 +162,9 @@ const EthereumProvider: React.FC<any> = (props: any) => {
         console.error(error);
       }
     }
-
     handleConnectEthereum();
+
+    return () => window.ethereum.removeAllListeners();
   }, []);
 
   async function handleRefreshBalances() {
