@@ -44,6 +44,22 @@ body {
   border-top: 100px solid #2138B7;
 }
 
+.triangle-top-3-blue {
+  width: 0;
+  height: 0;
+  border-left: 1500px solid transparent;
+  border-right: 0 solid transparent;
+  border-bottom: 100px solid #2138B7;
+}
+
+.triangle-bottom-3-blue {
+  width: 0;
+  height: 0;
+  border-left: 0 solid transparent;
+  border-right: 1500px solid transparent;
+  border-top: 100px solid #2138B7;
+}
+
 .lh-text {
   line-height: 2;
 }
@@ -69,4 +85,10 @@ body {
   border-top: none;
   border-left: none;
   border-right: none;
+}
+
+.hr-white {
+  display: block; height: 1px;
+  border: 0; border-top: 1px solid #A8B3E3;
+  margin: 1em 0; padding: 0;
 }
