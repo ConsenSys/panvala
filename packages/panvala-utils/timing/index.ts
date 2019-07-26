@@ -32,7 +32,7 @@ interface EpochDates {
   epochEnd: number;
 }
 
-function epochDatesByEpochStart(epochStart: BigNumberish): EpochDates {
+function getTimingsForEpoch(epochStart: BigNumberish): EpochDates {
   epochStart = utils.bigNumberify(epochStart).toNumber();
   return {
     epochStart,
@@ -61,26 +61,29 @@ export enum EpochStages {
   RevealVoting,
 }
 
-function epochStageByTime(epochDates: EpochDates, time: number): number {
+function calculateEpochStage(epochDates: EpochDates, timestamp: number): number {
   const { epochStart, slateSubmissionDeadline, votingStart, votingEnd, epochEnd } = epochDates;
 
-  if (time >= epochStart && time < slateSubmissionDeadline) {
+  if (timestamp >= epochStart && timestamp < slateSubmissionDeadline) {
     return EpochStages.SlateSubmission;
   }
-  if (time >= slateSubmissionDeadline && time < votingStart) {
+  if (timestamp >= slateSubmissionDeadline && timestamp < votingStart) {
     return EpochStages.Intermission;
   }
-  if (time >= votingStart && time < votingEnd) {
+  if (timestamp >= votingStart && timestamp < votingEnd) {
     return EpochStages.CommitVoting;
   }
-  if (time >= votingEnd && time <= epochEnd) {
+  if (timestamp >= votingEnd && timestamp <= epochEnd) {
     return EpochStages.RevealVoting;
   }
 
-  throw new Error(`Time ${time} not in epoch range ${epochStart} - ${epochEnd}`);
+  throw new Error(`Timestamp ${timestamp} not in epoch range ${epochStart} - ${epochEnd}`);
 }
 
-function getNextStage(currStage: number) {
+function nextEpochStage(currStage: number) {
+  if (!EpochStages[currStage]) {
+    throw new Error('Invalid stage number. try 0-3');
+  }
   return currStage === EpochStages.SlateSubmission
     ? EpochStages.CommitVoting
     : currStage === EpochStages.RevealVoting
@@ -89,9 +92,9 @@ function getNextStage(currStage: number) {
 }
 
 module.exports = {
-  epochDatesByEpochStart,
-  epochStageByTime,
+  getTimingsForEpoch,
+  calculateEpochStage,
   EpochStages,
   EpochStageDates,
-  getNextStage,
+  nextEpochStage,
 };

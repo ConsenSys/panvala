@@ -119,3 +119,4 @@ module.exports = {
     slateSubmissionDeadline,
     ballotDates,
 };
+//# sourceMappingURL=index.js.map

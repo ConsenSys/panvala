@@ -8,9 +8,16 @@ import { panvala_utils } from '../utils';
 import { EthereumContext } from './EthereumProvider';
 import { timestamp } from '../utils/datetime';
 import Flex from './system/Flex';
+import { toast } from 'react-toastify';
 
 const {
-  timing: { epochDatesByEpochStart, epochStageByTime, EpochStages, EpochStageDates, getNextStage },
+  timing: {
+    getTimingsForEpoch,
+    calculateEpochStage,
+    EpochStages,
+    EpochStageDates,
+    nextEpochStage,
+  },
 } = panvala_utils;
 
 const TimeTraveler: React.SFC = () => {
@@ -24,14 +31,13 @@ const TimeTraveler: React.SFC = () => {
   const [stage, setStage] = React.useState(0);
 
   React.useEffect(() => {
-    async function getCurrentEpochStage() {
-      const currentEpochStart = currentBallot.startDate;
-      const currentEpochDates = epochDatesByEpochStart(currentEpochStart);
+    async function initDefaults() {
+      const currentEpochDates = getTimingsForEpoch(currentBallot.startDate);
       const nowTime = timestamp();
-      const currStage = epochStageByTime(currentEpochDates, nowTime);
+      const currStage = calculateEpochStage(currentEpochDates, nowTime);
       setCurrentStage(currStage);
 
-      const nextStage = getNextStage(currStage);
+      const nextStage = nextEpochStage(currStage);
       setStage(nextStage);
 
       if (currStage === EpochStages.RevealVoting) {
@@ -41,21 +47,28 @@ const TimeTraveler: React.SFC = () => {
       }
     }
     if (!isEmpty(gatekeeper) && currentBallot.startDate) {
-      getCurrentEpochStage();
+      initDefaults();
     }
   }, [currentBallot, gatekeeper]);
 
   async function handleClick() {
     const goalEpoch = epoch || currentBallot.epochNumber;
     const goalEpochStart = await gatekeeper.functions.epochStart(goalEpoch);
-    const goalEpochDates = epochDatesByEpochStart(goalEpochStart);
+    const goalEpochDates = getTimingsForEpoch(goalEpochStart);
     const goalTiming = EpochStageDates[EpochStages[stage]];
     const goalDate = goalEpochDates[goalTiming];
     const timeDiff = goalDate - timestamp();
 
     if (gatekeeper.functions.hasOwnProperty('timeTravel')) {
-      await gatekeeper.functions.timeTravel(timeDiff);
-      window.location.reload();
+      try {
+        await gatekeeper.functions.timeTravel(timeDiff);
+        window.location.reload();
+      } catch (error) {
+        if (error.message.includes('invalid number value')) {
+          toast.error('Invalid stage number value. Valid numbers include 0-3');
+        }
+        console.error('error:', error.message);
+      }
     }
   }
 

@@ -12,7 +12,7 @@
     "pretty": true,
     "removeComments": false,
     "skipLibCheck": true,
-    "sourceMap": false,
+    "sourceMap": true,
     "strict": true,
     "target": "es6"
   },

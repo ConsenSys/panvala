@@ -13,7 +13,7 @@ const timings = {
     REVEAL_PERIOD_START: ONE_WEEK * 12,
     EPOCH_LENGTH: ONE_WEEK * 13,
 };
-function epochDatesByEpochStart(epochStart) {
+function getTimingsForEpoch(epochStart) {
     epochStart = ethers_1.utils.bigNumberify(epochStart).toNumber();
     return {
         epochStart,
@@ -40,23 +40,27 @@ var EpochStages;
     EpochStages[EpochStages["CommitVoting"] = 2] = "CommitVoting";
     EpochStages[EpochStages["RevealVoting"] = 3] = "RevealVoting";
 })(EpochStages = exports.EpochStages || (exports.EpochStages = {}));
-function epochStageByTime(epochDates, time) {
+function calculateEpochStage(epochDates, timestamp) {
     const { epochStart, slateSubmissionDeadline, votingStart, votingEnd, epochEnd } = epochDates;
-    if (time >= epochStart && time < slateSubmissionDeadline) {
+    if (timestamp >= epochStart && timestamp < slateSubmissionDeadline) {
         return EpochStages.SlateSubmission;
     }
-    if (time >= slateSubmissionDeadline && time < votingStart) {
+    if (timestamp >= slateSubmissionDeadline && timestamp < votingStart) {
         return EpochStages.Intermission;
     }
-    if (time >= votingStart && time < votingEnd) {
+    if (timestamp >= votingStart && timestamp < votingEnd) {
         return EpochStages.CommitVoting;
     }
-    if (time >= votingEnd && time <= epochEnd) {
+    if (timestamp >= votingEnd && timestamp <= epochEnd) {
         return EpochStages.RevealVoting;
     }
-    throw new Error(`Time ${time} not in epoch range ${epochStart} - ${epochEnd}`);
+    throw new Error(`Timestamp ${timestamp} not in epoch range ${epochStart} - ${epochEnd}`);
 }
-function getNextStage(currStage) {
+function nextEpochStage(currStage) {
+    console.log("currStage:", currStage);
+    if (!EpochStages[currStage]) {
+        throw new Error('Invalid stage number. try 0-3');
+    }
     return currStage === EpochStages.SlateSubmission
         ? EpochStages.CommitVoting
         : currStage === EpochStages.RevealVoting
@@ -64,9 +68,10 @@ function getNextStage(currStage) {
             : currStage + 1;
 }
 module.exports = {
-    epochDatesByEpochStart,
-    epochStageByTime,
+    getTimingsForEpoch,
+    calculateEpochStage,
     EpochStages,
     EpochStageDates,
-    getNextStage,
+    nextEpochStage,
 };
+//# sourceMappingURL=index.js.map
