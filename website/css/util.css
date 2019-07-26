@@ -60,3 +60,13 @@ body {
   border-top-left-radius: 1rem;
   border-top-right-radius: 1rem;
 }
+
+.clip-angle {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 92%);
+}
+
+.border-input {
+  border-top: none;
+  border-left: none;
+  border-right: none;
+}
