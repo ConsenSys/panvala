@@ -82,7 +82,7 @@ const BallotSection: React.FunctionComponent<ISectionProps> = ({
                   incumbent={slate.incumbent}
                   recommender={slate.organization}
                   verifiedRecommender={slate.verifiedRecommender}
-                  width={['98%', '98%', '47%']}
+                  width={['98%', '98%', '98%', '46%']}
                 />
               ))
           : null}

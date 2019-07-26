@@ -79,7 +79,11 @@ const Slates: React.SFC = () => {
         <>
           <SlateSectionLabel text="GRANT" />
           {visibleGrantSlates.map((slate: ISlate) => (
-            <SlateCard slate={slate} subtitle={slate.proposals.length + ' Grants Included'} />
+            <SlateCard
+              key={slate.id}
+              slate={slate}
+              subtitle={slate.proposals.length + ' Grants Included'}
+            />
           ))}
         </>
       ) : null}
@@ -91,6 +95,7 @@ const Slates: React.SFC = () => {
           <SlateSectionLabel text="GOVERNANCE" />
           {visibleGovernanceSlates.map((slate: ISlate) => (
             <SlateCard
+              key={slate.id}
               slate={slate}
               subtitle={`${slate.proposals.length || ''} Governance Changes Included`}
             />

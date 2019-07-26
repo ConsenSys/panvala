@@ -164,7 +164,10 @@ const EthereumProvider: React.FC<any> = (props: any) => {
     }
     handleConnectEthereum();
 
-    return () => window.ethereum.removeAllListeners();
+    return () =>
+      typeof window !== 'undefined' &&
+      typeof window.ethereum !== 'undefined' &&
+      window.ethereum.removeAllListeners();
   }, []);
 
   async function handleRefreshBalances() {

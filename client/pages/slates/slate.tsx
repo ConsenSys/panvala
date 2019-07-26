@@ -99,7 +99,7 @@ const Slate: StatelessPage<IProps> = ({ query: { id } }) => {
                         title={proposal.title}
                         subtitle={proposal.tokensRequested + ' Tokens Requested'}
                         description={proposal.summary}
-                        category={`${proposal.category} PROPOSAL`}
+                        category={`${slate.category} PROPOSAL`}
                         type={PROPOSAL}
                         width={['100%', '100%', '100%', '50%']}
                       />
