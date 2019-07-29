@@ -30,6 +30,8 @@ spec:
           env:
             - name: NODE_ENV
               value: {{ .Values.node_env }}
+            - name: PANVALA_ENV
+              value: {{ .Values.panvala_env }}
             # Database values (from config map)
             - name: PRODUCTION_HOST
               valueFrom:

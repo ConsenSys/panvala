@@ -18,6 +18,7 @@ deploy() {
     APP="panvala-frontend"
 
     HOST=${API_HOST}
+    PANVALA_ENV=${ENVIRONMENT}
 
     # HACK: if staging, use a different variable
     if [ "${ENVIRONMENT}" = "staging" ]
@@ -25,10 +26,16 @@ deploy() {
        HOST=${STAGING_API_HOST}
     fi
 
+    # NOTE: current prod environment has namespace development
+    if [ "${ENVIRONMENT}" = "development" ]
+    then
+        PANVALA_ENV=production
+    fi
 
     helm upgrade --install \
         --namespace ${ENVIRONMENT} \
         --set environment=${ENVIRONMENT} \
+        --set panvala_env=${PANVALA_ENV} \
         --set image.tag=${TAG} \
         --set image.repository=${REPO} \
         --set service.type=LoadBalancer \

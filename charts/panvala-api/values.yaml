@@ -6,6 +6,7 @@
 environment: production
 node_env: production
 containerPort: 5000
+panvala_env: production
 
 ipfsHost: ipfs.infura.io
 ipfsPort: 5001

@@ -30,6 +30,10 @@ spec:
           env:
             - name: API_HOST
               value: {{ .Values.apiHost }}
+            - name: NODE_ENV
+              value: {{ .Values.node_env }}
+            - name: PANVALA_ENV
+              value: {{ .Values.panvala_env }}
             # Contract info
             - name: GATEKEEPER_ADDRESS
               valueFrom:

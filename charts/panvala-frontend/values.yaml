@@ -8,6 +8,8 @@ containerPort: 3000
 # the API host - the name of the service with the API
 apiHost: http://panvala-api
 
+node_env: production
+panvala_env: production
 ###
 
 replicaCount: 1
