@@ -18,7 +18,9 @@ export async function connectContracts(provider: providers.Web3Provider): Promis
     abis.ParameterStore.abi,
   ];
   const gkAbi: any[] =
-    process.env.NODE_ENV === 'development' ? abis.TimeTravelingGatekeeper.abi : abis.Gatekeeper.abi;
+    process.env.PANVALA_ENV === 'production'
+      ? abis.TimeTravelingGatekeeper.abi
+      : abis.Gatekeeper.abi;
 
   // read addresses from env vars
   const gkAddress: string =
