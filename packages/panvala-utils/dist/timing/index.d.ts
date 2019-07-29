@@ -1,8 +1,4 @@
 import { BigNumberish } from 'ethers/utils';
-/**
- *
- * @param {number} ts UNIX timestamp in seconds
- */
 export interface EpochDates {
   epochStart: number;
   slateSubmissionDeadline: number;

@@ -1,8 +1,6 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
 const ethers_1 = require('ethers');
-// import * as moment from 'moment';
-// import { Contract } from 'ethers';
 const ONE_DAY = 86400;
 const ONE_WEEK = ONE_DAY * 7;
 const timings = {
@@ -24,9 +22,6 @@ function getTimingsForEpoch(epochStart) {
   };
 }
 exports.getTimingsForEpoch = getTimingsForEpoch;
-// function currentTime() {
-//   return Math.floor(Date.now() / 1000);
-// }
 var EpochStageDates;
 (function(EpochStageDates) {
   EpochStageDates['SlateSubmission'] = 'epochStart';

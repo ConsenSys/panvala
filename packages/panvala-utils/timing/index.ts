@@ -1,8 +1,7 @@
+'use strict';
+
 import { BigNumberish } from 'ethers/utils';
 import { utils } from 'ethers';
-
-// import * as moment from 'moment';
-// import { Contract } from 'ethers';
 
 const ONE_DAY = 86400;
 const ONE_WEEK = ONE_DAY * 7;
@@ -15,14 +14,6 @@ const timings = {
   REVEAL_PERIOD_START: ONE_WEEK * 12,
   EPOCH_LENGTH: ONE_WEEK * 13,
 };
-
-/**
- *
- * @param {number} ts UNIX timestamp in seconds
- */
-// function toDate(ts: number): moment.Moment {
-//   return moment.unix(ts).utc();
-// }
 
 export interface EpochDates {
   epochStart: number;
@@ -42,10 +33,6 @@ export function getTimingsForEpoch(epochStart: BigNumberish): EpochDates {
     epochEnd: epochStart + timings.EPOCH_LENGTH - 1,
   };
 }
-
-// function currentTime() {
-//   return Math.floor(Date.now() / 1000);
-// }
 
 export enum EpochStageDates {
   SlateSubmission = 'epochStart',

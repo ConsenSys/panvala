@@ -1,3 +1,5 @@
+'use strict';
+
 import { utils } from 'ethers';
 const { solidityKeccak256, randomBytes, bigNumberify } = utils;
 
@@ -48,8 +50,6 @@ export function generateCommitHash(votes: IChoices, salt: utils.BigNumber): stri
   types.push('uint');
   values.push(salt);
 
-  // const packed = ethers.utils.solidityPack(types, values);
-  // console.log(packed);
   return solidityKeccak256(types, values);
 }
 

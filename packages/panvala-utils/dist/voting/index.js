@@ -36,8 +36,6 @@ function generateCommitHash(votes, salt) {
   });
   types.push('uint');
   values.push(salt);
-  // const packed = ethers.utils.solidityPack(types, values);
-  // console.log(packed);
   return solidityKeccak256(types, values);
 }
 exports.generateCommitHash = generateCommitHash;
