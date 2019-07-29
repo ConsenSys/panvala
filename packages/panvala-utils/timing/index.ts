@@ -24,7 +24,7 @@ const timings = {
 //   return moment.unix(ts).utc();
 // }
 
-interface EpochDates {
+export interface EpochDates {
   epochStart: number;
   slateSubmissionDeadline: number;
   votingStart: number;
@@ -32,7 +32,7 @@ interface EpochDates {
   epochEnd: number;
 }
 
-function getTimingsForEpoch(epochStart: BigNumberish): EpochDates {
+export function getTimingsForEpoch(epochStart: BigNumberish): EpochDates {
   epochStart = utils.bigNumberify(epochStart).toNumber();
   return {
     epochStart,
@@ -61,7 +61,7 @@ export enum EpochStages {
   RevealVoting,
 }
 
-function calculateEpochStage(epochDates: EpochDates, timestamp: number): number {
+export function calculateEpochStage(epochDates: EpochDates, timestamp: number): number {
   const { epochStart, slateSubmissionDeadline, votingStart, votingEnd, epochEnd } = epochDates;
 
   if (timestamp >= epochStart && timestamp < slateSubmissionDeadline) {
@@ -80,7 +80,7 @@ function calculateEpochStage(epochDates: EpochDates, timestamp: number): number 
   throw new Error(`Timestamp ${timestamp} not in epoch range ${epochStart} - ${epochEnd}`);
 }
 
-function nextEpochStage(currStage: number) {
+export function nextEpochStage(currStage: number) {
   if (!EpochStages[currStage]) {
     throw new Error('Invalid stage number. try 0-3');
   }

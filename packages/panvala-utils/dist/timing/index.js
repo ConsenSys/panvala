@@ -23,6 +23,7 @@ function getTimingsForEpoch(epochStart) {
     epochEnd: epochStart + timings.EPOCH_LENGTH - 1,
   };
 }
+exports.getTimingsForEpoch = getTimingsForEpoch;
 // function currentTime() {
 //   return Math.floor(Date.now() / 1000);
 // }
@@ -56,6 +57,7 @@ function calculateEpochStage(epochDates, timestamp) {
   }
   throw new Error(`Timestamp ${timestamp} not in epoch range ${epochStart} - ${epochEnd}`);
 }
+exports.calculateEpochStage = calculateEpochStage;
 function nextEpochStage(currStage) {
   if (!EpochStages[currStage]) {
     throw new Error('Invalid stage number. try 0-3');
@@ -66,6 +68,7 @@ function nextEpochStage(currStage) {
     ? EpochStages.SlateSubmission
     : currStage + 1;
 }
+exports.nextEpochStage = nextEpochStage;
 module.exports = {
   getTimingsForEpoch,
   calculateEpochStage,

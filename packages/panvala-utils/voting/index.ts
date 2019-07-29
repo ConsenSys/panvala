@@ -1,11 +1,11 @@
 import { utils } from 'ethers';
 const { solidityKeccak256, randomBytes, bigNumberify } = utils;
 
-interface IChoices {
+export interface IChoices {
   [resource: string]: {
     firstChoice: string;
     secondChoice: string;
-  }
+  };
 }
 
 const SlateCategories = {
@@ -21,9 +21,8 @@ const ContestStatus = {
   Finalized: '4',
 };
 
-
 function sortedResources(choices: IChoices): Array<string> {
-    return Object.keys(choices).sort();
+  return Object.keys(choices).sort();
 }
 
 /**
@@ -36,7 +35,7 @@ function sortedResources(choices: IChoices): Array<string> {
  * @param {IChoices} votes { resource: { firstChoice, secondChoice }}
  * @param {ethers.BN} salt Random 256-bit number
  */
-function generateCommitHash(votes: IChoices, salt: utils.BigNumber): string {
+export function generateCommitHash(votes: IChoices, salt: utils.BigNumber): string {
   const types: string[] = [];
   const values: any[] = [];
 
@@ -58,7 +57,7 @@ function generateCommitHash(votes: IChoices, salt: utils.BigNumber): string {
  * Calculate a random number w/ 32 bytes of entropy
  * @return {ethers.BN}
  */
-function randomSalt(): utils.BigNumber {
+export function randomSalt(): utils.BigNumber {
   const salt: utils.BigNumber = bigNumberify(randomBytes(32));
   return salt;
 }
@@ -70,7 +69,7 @@ function randomSalt(): utils.BigNumber {
  * @param {IChoices} ballotChoices { resource: { firstChoice, secondChoice } }
  * @param {string} salt Random 256-bit number
  */
-function generateCommitMessage(commitHash: string, ballotChoices: IChoices, salt: string) {
+export function generateCommitMessage(commitHash: string, ballotChoices: IChoices, salt: string) {
   const choiceStrings = sortedResources(ballotChoices).map((resource: string) => {
     const { firstChoice, secondChoice } = ballotChoices[resource];
     return `    Resource: ${resource}. First choice: ${firstChoice}. Second choice: ${secondChoice}`;
@@ -87,7 +86,7 @@ function generateCommitMessage(commitHash: string, ballotChoices: IChoices, salt
  * @param {*} firstChoices
  * @param {*} secondChoices
  */
-function encodeBallot(resources: string[], firstChoices: string[], secondChoices: string[]) {
+export function encodeBallot(resources: string[], firstChoices: string[], secondChoices: string[]) {
   const types = ['address[]', 'uint256[]', 'uint256[]'];
   const values = [resources, firstChoices, secondChoices];
 
@@ -101,7 +100,7 @@ const BN = (small: utils.BigNumberish) => utils.bigNumberify(small);
  * Calculate the next slate submission deadline as halfway between now and the start of the
  * commit period.
  */
-function slateSubmissionDeadline(votingOpenDate: number, lastStaked: number) {
+export function slateSubmissionDeadline(votingOpenDate: number, lastStaked: number) {
   // prettier-ignore
   const extraTime = BN(votingOpenDate).sub(BN(lastStaked)).div('2');
   return BN(lastStaked)
@@ -109,7 +108,7 @@ function slateSubmissionDeadline(votingOpenDate: number, lastStaked: number) {
     .toNumber();
 }
 
-interface IBallotDates {
+export interface IBallotDates {
   startDate: number;
   votingOpenDate: number;
   votingCloseDate: number;
@@ -121,7 +120,7 @@ interface IBallotDates {
   epochNumber: number;
 }
 
-function ballotDates(startDate: number = 1549040400): IBallotDates {
+export function ballotDates(startDate: number = 1549040400): IBallotDates {
   const oneWeekSeconds = 604800;
   const epochStartDate = utils.bigNumberify(startDate).toNumber();
   const week11EndDate: number = epochStartDate + oneWeekSeconds * 11; // 1555689600
@@ -143,7 +142,6 @@ function ballotDates(startDate: number = 1549040400): IBallotDates {
     epochNumber: 0,
   };
 }
-
 
 module.exports = {
   generateCommitHash,
