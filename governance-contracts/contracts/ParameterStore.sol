@@ -37,10 +37,8 @@ contract ParameterStore {
         bool executed;
     }
 
-    mapping(uint => Proposal) public proposals;
-
-    // The total number of proposals
-    uint public proposalCount;
+    // All submitted proposals
+    Proposal[] public proposals;
 
     // IMPLEMENTATION
     /**
@@ -146,9 +144,8 @@ contract ParameterStore {
         // proposalID.
         uint requestID = gatekeeper.requestPermission(metadataHash);
         p.requestID = requestID;
-        uint proposalID = proposalCount;
-        proposals[proposalID] = p;
-        proposalCount = proposalCount.add(1);
+        uint proposalID = proposalCount();
+        proposals.push(p);
 
         emit ProposalCreated(proposalID, msg.sender, requestID, key, value, metadataHash);
         return proposalID;
@@ -182,7 +179,7 @@ contract ParameterStore {
      @param proposalID The proposal
      */
     function setValue(uint256 proposalID) public returns(bool) {
-        require(proposalID < proposalCount, "Invalid proposalID");
+        require(proposalID < proposalCount(), "Invalid proposalID");
 
         Proposal memory p = proposals[proposalID];
         Gatekeeper gatekeeper = Gatekeeper(p.gatekeeper);
@@ -196,6 +193,10 @@ contract ParameterStore {
 
         emit ProposalAccepted(proposalID, p.key, p.value);
         return true;
+    }
+
+    function proposalCount() public view returns(uint256) {
+        return proposals.length;
     }
 
     function _gatekeeper() private view returns(Gatekeeper) {

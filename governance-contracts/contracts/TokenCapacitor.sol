@@ -44,11 +44,8 @@ contract TokenCapacitor {
         bool withdrawn;
     }
 
-    // The proposals created for the TokenCapacitor. Maps requestIDs to proposals.
-    mapping(uint => Proposal) public proposals;
-
-    // The total number of proposals
-    uint public proposalCount;
+    // The proposals created for the TokenCapacitor.
+    Proposal[] public proposals;
 
     // Token decay table
     uint256 constant PRECISION = 12;
@@ -126,9 +123,8 @@ contract TokenCapacitor {
         // proposalID.
         uint requestID = gatekeeper.requestPermission(metadataHash);
         p.requestID = requestID;
-        uint proposalID = proposalCount;
-        proposals[proposalID] = p;
-        proposalCount = proposalCount.add(1);
+        uint proposalID = proposalCount();
+        proposals.push(p);
 
         emit ProposalCreated(proposalID, msg.sender, requestID, to, tokens, metadataHash);
         return proposalID;
@@ -162,7 +158,7 @@ contract TokenCapacitor {
     @param proposalID The proposal
     */
     function withdrawTokens(uint proposalID) public returns(bool) {
-        require(proposalID < proposalCount, "Invalid proposalID");
+        require(proposalID < proposalCount(), "Invalid proposalID");
 
         Proposal memory p = proposals[proposalID];
         Gatekeeper gatekeeper = Gatekeeper(p.gatekeeper);
@@ -292,5 +288,9 @@ contract TokenCapacitor {
      */
     function updateBalances() public {
         updateBalancesUntil(now);
+    }
+
+    function proposalCount() public view returns(uint256) {
+        return proposals.length;
     }
 }
