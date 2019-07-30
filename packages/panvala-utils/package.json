@@ -8,15 +8,18 @@
   },
   "author": "",
   "dependencies": {
-    "ethers": "4.0.27",
-    "lodash": "^4.17.14"
+    "ethers": "^4.0.33",
+    "lodash": "^4.17.15"
   },
   "devDependencies": {
+    "@types/jest": "^24.0.16",
+    "@types/lodash": "^4.14.136",
+    "@types/node": "^12.6.8",
     "husky": "1.3.1",
     "jest": "^24.5.0",
     "lint-staged": "^8.1.5",
     "prettier": "^1.16.4",
-    "typescript": "3.4.5"
+    "typescript": "^3.5.3"
   },
   "husky": {
     "hooks": {
