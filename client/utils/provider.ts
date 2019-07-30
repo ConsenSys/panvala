@@ -18,7 +18,7 @@ export async function connectContracts(provider: providers.Web3Provider): Promis
     abis.ParameterStore.abi,
   ];
   const gkAbi: any[] =
-    process.env.PANVALA_ENV === 'production'
+    publicRuntimeConfig.panvalaEnv !== 'production'
       ? abis.TimeTravelingGatekeeper.abi
       : abis.Gatekeeper.abi;
 
