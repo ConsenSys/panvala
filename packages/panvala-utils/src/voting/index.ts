@@ -140,13 +140,3 @@ export function ballotDates(startDate: number = 1549040400): IBallotDates {
     epochNumber: 0,
   };
 }
-
-module.exports = {
-  generateCommitHash,
-  randomSalt,
-  generateCommitMessage,
-  encodeBallot,
-  ContestStatus,
-  slateSubmissionDeadline,
-  ballotDates,
-};

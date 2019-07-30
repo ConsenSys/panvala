@@ -1,5 +1,5 @@
 const { utils } = require('ethers');
-const { timing } = require('..');
+const { timing } = require('../..');
 const { durations } = timing;
 
 describe('nextEpochStage', () => {

@@ -1,5 +1,5 @@
 const { utils } = require('ethers');
-const { voting } = require('..');
+const { voting } = require('../..');
 
 const resource1 = '0xcccccccccccccccccccccccccccccccccccccccc';
 const resource2 = '0xdddddddddddddddddddddddddddddddddddddddd';

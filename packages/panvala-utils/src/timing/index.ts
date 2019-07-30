@@ -6,15 +6,6 @@ import { utils } from 'ethers';
 const ONE_DAY: number = 86400;
 const ONE_WEEK: number = ONE_DAY * 7;
 
-export interface Durations {
-  ONE_DAY: number;
-  ONE_WEEK: number;
-  SLATE_SUBMISSION_DEADLINE: number;
-  VOTING_PERIOD_START: number;
-  REVEAL_PERIOD_START: number;
-  EPOCH_LENGTH: number;
-}
-
 export interface EpochDates {
   epochStart: number;
   slateSubmissionDeadline: number;
@@ -23,7 +14,7 @@ export interface EpochDates {
   epochEnd: number;
 }
 
-const durations: Durations = {
+export const durations = {
   ONE_DAY,
   ONE_WEEK,
   SLATE_SUBMISSION_DEADLINE: ONE_WEEK * 5.5,
@@ -90,12 +81,3 @@ export function nextEpochStage(currStage: number): number {
     ? EpochStages.SlateSubmission
     : currStage + 1;
 }
-
-module.exports = {
-  durations,
-  EpochStages,
-  EpochStageDates,
-  getTimingsForEpoch,
-  calculateEpochStage,
-  nextEpochStage,
-};
