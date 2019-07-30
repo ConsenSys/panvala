@@ -913,9 +913,12 @@ contract Gatekeeper {
     function requestPermission(bytes memory metadataHash) public returns(uint) {
         require(metadataHash.length > 0, "metadataHash cannot be empty");
         address resource = msg.sender;
+        uint256 epochNumber = currentEpochNumber();
+
+        require(now < slateSubmissionDeadline(epochNumber, resource), "deadline passed");
 
         // If the request is created in epoch n, expire at the start of epoch n + 2
-        uint256 expirationTime = epochStart(currentEpochNumber().add(2));
+        uint256 expirationTime = epochStart(epochNumber.add(2));
 
         // Create new request
         Request memory r = Request({

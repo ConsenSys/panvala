@@ -810,11 +810,13 @@ contract('Gatekeeper', (accounts) => {
   describe('requestPermission', () => {
     const [creator, requestor] = accounts;
     let gatekeeper;
+    let snapshotID;
     const metadataHash = utils.createMultihash('my request data');
     const decode = utils.bytesAsString;
 
     beforeEach(async () => {
       gatekeeper = await utils.newGatekeeper({ from: creator });
+      snapshotID = await utils.evm.snapshot();
     });
 
     it('should create a new Request', async () => {
@@ -873,6 +875,70 @@ contract('Gatekeeper', (accounts) => {
         return;
       }
       assert.fail('allowed creation of a request with an empty metadataHash');
+    });
+
+    it('should not allow if the slate submission deadline has passed (deliberation stage)', async () => {
+      // move to deliberation stage
+      await increaseTime(timing.ONE_WEEK.mul(new BN(6)));
+
+      try {
+        await gatekeeper.requestPermission(
+          utils.asBytes(metadataHash),
+          { from: requestor },
+        );
+      } catch (error) {
+        expectRevert(error);
+        expectErrorLike(error, 'deadline passed');
+        // Request count was incremented
+        const requestCount = await gatekeeper.requestCount();
+        assert.strictEqual(requestCount.toString(), '0', 'Request count is incorrect');
+        return;
+      }
+      assert.fail('allowed creation of a request after the deadline passed (deliberation stage)');
+    });
+
+    it('should not allow if the slate submission deadline has passed (commit vote stage)', async () => {
+      // move to commit vote stage
+      await increaseTime(timing.VOTING_PERIOD_START);
+
+      try {
+        await gatekeeper.requestPermission(
+          utils.asBytes(metadataHash),
+          { from: requestor },
+        );
+      } catch (error) {
+        expectRevert(error);
+        expectErrorLike(error, 'deadline passed');
+        // Request count was incremented
+        const requestCount = await gatekeeper.requestCount();
+        assert.strictEqual(requestCount.toString(), '0', 'Request count is incorrect');
+        return;
+      }
+      assert.fail('allowed creation of a request after the deadline passed (commit vote stage)');
+    });
+
+    it('should not allow if the slate submission deadline has passed (reveal vote stage)', async () => {
+      // move to reveal vote stage
+      await increaseTime(timing.VOTING_PERIOD_START.add(timing.COMMIT_PERIOD_LENGTH));
+
+      try {
+        await gatekeeper.requestPermission(
+          utils.asBytes(metadataHash),
+          { from: requestor },
+        );
+      } catch (error) {
+        expectRevert(error);
+        expectErrorLike(error, 'deadline passed');
+        // Request count was incremented
+        const requestCount = await gatekeeper.requestCount();
+        assert.strictEqual(requestCount.toString(), '0', 'Request count is incorrect');
+        return;
+      }
+      assert.fail('allowed creation of a request after the deadline passed (reveal vote stage)');
+    });
+
+    afterEach(async () => {
+      await utils.evm.revert(snapshotID);
     });
   });
 
