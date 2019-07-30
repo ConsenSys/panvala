@@ -16,6 +16,7 @@ import {
   acceptedGrantSlate,
   rejectedGovSlate,
   acceptedGovSlate,
+  proposals,
 } from './data';
 import { SlateStatus } from '../../utils/status';
 import { convertedToBaseUnits } from '../../utils/format';
@@ -101,7 +102,27 @@ storiesOf('Slate', module)
     <StoryWrapper slates={[rejectedSlate]}>
       <Slate query={{ id: '0' }} />
     </StoryWrapper>
-  ));
+  ))
+  .add('multiple proposals with small summaries', () => {
+    const proposal = proposals[0];
+    const p1 = {
+      ...proposal,
+      summary: 'A tiny summary',
+    };
+    const p2 = {
+      ...proposal,
+      summary: 'A small summary',
+    };
+    const newSlate = {
+      ...acceptedSlate,
+      proposals: [p1, p2],
+    };
+    return (
+      <StoryWrapper slates={[newSlate]} proposals={[p1, p2]}>
+        <Slate query={{ id: '0' }} />
+      </StoryWrapper>
+    );
+  });
 
 const ballot = makeBallot();
 
