@@ -54,6 +54,7 @@ function calculateEpochStage(epochDates, timestamp) {
 }
 exports.calculateEpochStage = calculateEpochStage;
 function nextEpochStage(currStage) {
+  currStage = ethers_1.utils.bigNumberify(currStage).toNumber();
   if (!EpochStages[currStage]) {
     throw new Error('Invalid stage number. try 0-3');
   }

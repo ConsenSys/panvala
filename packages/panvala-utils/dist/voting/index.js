@@ -2,17 +2,14 @@
 Object.defineProperty(exports, '__esModule', { value: true });
 const ethers_1 = require('ethers');
 const { solidityKeccak256, randomBytes, bigNumberify } = ethers_1.utils;
-const SlateCategories = {
-  GRANT: '0',
-  GOVERNANCE: '1',
-};
-const ContestStatus = {
-  Empty: '0',
-  NoContest: '1',
-  Active: '2',
-  RunoffPending: '3',
-  Finalized: '4',
-};
+var ContestStatus;
+(function(ContestStatus) {
+  ContestStatus['Empty'] = '0';
+  ContestStatus['NoContest'] = '1';
+  ContestStatus['Active'] = '2';
+  ContestStatus['RunoffPending'] = '3';
+  ContestStatus['Finalized'] = '4';
+})((ContestStatus = exports.ContestStatus || (exports.ContestStatus = {})));
 function sortedResources(choices) {
   return Object.keys(choices).sort();
 }
@@ -41,7 +38,6 @@ function generateCommitHash(votes, salt) {
 exports.generateCommitHash = generateCommitHash;
 /**
  * Calculate a random number w/ 32 bytes of entropy
- * @return {ethers.BN}
  */
 function randomSalt() {
   const salt = bigNumberify(randomBytes(32));
@@ -67,15 +63,11 @@ function generateCommitMessage(commitHash, ballotChoices, salt) {
 exports.generateCommitMessage = generateCommitMessage;
 /**
  * Encode a ballot to be submitted to Gatekeeper.revealManyBallots()
- * @param {*} resources
- * @param {*} firstChoices
- * @param {*} secondChoices
  */
 function encodeBallot(resources, firstChoices, secondChoices) {
   const types = ['address[]', 'uint256[]', 'uint256[]'];
   const values = [resources, firstChoices, secondChoices];
-  const encoded = ethers_1.utils.defaultAbiCoder.encode(types, values);
-  return encoded;
+  return ethers_1.utils.defaultAbiCoder.encode(types, values);
 }
 exports.encodeBallot = encodeBallot;
 const BN = small => ethers_1.utils.bigNumberify(small);
@@ -91,10 +83,11 @@ function slateSubmissionDeadline(votingOpenDate, lastStaked) {
     .toNumber();
 }
 exports.slateSubmissionDeadline = slateSubmissionDeadline;
+// TODO when refactoring state: use timing.getTimingsForEpoch(epochStart)
 function ballotDates(startDate = 1549040400) {
   const oneWeekSeconds = 604800;
   const epochStartDate = ethers_1.utils.bigNumberify(startDate).toNumber();
-  const week11EndDate = epochStartDate + oneWeekSeconds * 11; // 1555689600
+  const week11EndDate = epochStartDate + oneWeekSeconds * 11;
   const week12EndDate = week11EndDate + oneWeekSeconds;
   const week13EndDate = week12EndDate + oneWeekSeconds;
   const initialSlateSubmissionDeadline = slateSubmissionDeadline(week11EndDate, startDate);
@@ -104,7 +97,6 @@ function ballotDates(startDate = 1549040400) {
     votingCloseDate: week12EndDate,
     finalityDate: week13EndDate,
     initialSlateSubmissionDeadline,
-    // TODO: use the resource (addresses) instead of GRANT/GOVERNANCE
     slateSubmissionDeadline: {
       GRANT: 0,
       GOVERNANCE: 0,
@@ -118,7 +110,6 @@ module.exports = {
   randomSalt,
   generateCommitMessage,
   encodeBallot,
-  SlateCategories,
   ContestStatus,
   slateSubmissionDeadline,
   ballotDates,

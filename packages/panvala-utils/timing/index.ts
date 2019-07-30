@@ -48,6 +48,7 @@ export enum EpochStages {
 
 export function getTimingsForEpoch(epochStart: BigNumberish): EpochDates {
   epochStart = utils.bigNumberify(epochStart).toNumber();
+
   return {
     epochStart,
     slateSubmissionDeadline: epochStart + durations.SLATE_SUBMISSION_DEADLINE,
@@ -77,9 +78,12 @@ export function calculateEpochStage(epochDates: EpochDates, timestamp: number): 
 }
 
 export function nextEpochStage(currStage: number): number {
+  currStage = utils.bigNumberify(currStage).toNumber();
+
   if (!EpochStages[currStage]) {
     throw new Error('Invalid stage number. try 0-3');
   }
+
   return currStage === EpochStages.SlateSubmission
     ? EpochStages.CommitVoting
     : currStage === EpochStages.RevealVoting

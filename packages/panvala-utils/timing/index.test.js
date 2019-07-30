@@ -16,21 +16,17 @@ describe('nextEpochStage', () => {
 
   test('should throw if given an invalid value', () => {
     function expectFailure(val) {
-      try {
+      expect(() => {
         timing.nextEpochStage(val);
-      } catch (error) {
-        expect(error.message).toBe('Invalid stage number. try 0-3');
-      }
+      }).toThrow();
     }
 
     const invalidValues = [
       7,
       -1,
       '523414321',
-      utils.bigNumberify(1),
       utils.bigNumberify(1234556234),
       utils.bigNumberify(-1),
-      utils.bigNumberify('1'),
       utils.bigNumberify('12345235'),
       'SlateSubmission',
       'Intermission',

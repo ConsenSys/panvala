@@ -5,6 +5,13 @@ export interface IChoices {
     secondChoice: string;
   };
 }
+export declare enum ContestStatus {
+  Empty = '0',
+  NoContest = '1',
+  Active = '2',
+  RunoffPending = '3',
+  Finalized = '4',
+}
 /**
  * generateCommitHash
  *
@@ -18,7 +25,6 @@ export interface IChoices {
 export declare function generateCommitHash(votes: IChoices, salt: utils.BigNumber): string;
 /**
  * Calculate a random number w/ 32 bytes of entropy
- * @return {ethers.BN}
  */
 export declare function randomSalt(): utils.BigNumber;
 /**
@@ -35,9 +41,6 @@ export declare function generateCommitMessage(
 ): string;
 /**
  * Encode a ballot to be submitted to Gatekeeper.revealManyBallots()
- * @param {*} resources
- * @param {*} firstChoices
- * @param {*} secondChoices
  */
 export declare function encodeBallot(
   resources: string[],
