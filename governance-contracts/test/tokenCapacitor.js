@@ -775,7 +775,7 @@ contract('TokenCapacitor', (accounts) => {
       before(async () => {
         ({ token, capacitor } = await utils.newPanvala({ from: creator }));
         await utils.chargeCapacitor(capacitor, supply, token, { from: creator });
-        scale = await capacitor.scale();
+        scale = await capacitor.SCALE();
       });
 
       beforeEach(async () => {
@@ -926,7 +926,7 @@ contract('TokenCapacitor', (accounts) => {
         ({ token, capacitor } = await utils.newPanvala({ from: creator }));
         await token.transfer(capacitor.address, supply, { from: creator });
         await capacitor.updateBalances({ from: creator });
-        scale = await capacitor.scale();
+        scale = await capacitor.SCALE();
       });
 
       const tests = [
@@ -1006,7 +1006,7 @@ contract('TokenCapacitor', (accounts) => {
         await token.transfer(capacitor.address, supply, { from: creator });
         await capacitor.updateBalances();
 
-        scale = await capacitor.scale();
+        scale = await capacitor.SCALE();
       });
 
       const tests = [

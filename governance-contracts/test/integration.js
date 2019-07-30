@@ -59,7 +59,7 @@ contract('integration', (accounts) => {
       await utils.chargeCapacitor(capacitor, 50e6, token, { from: creator });
 
       GRANT = await getResource(gatekeeper, 'GRANT');
-      scale = await capacitor.scale();
+      scale = await capacitor.SCALE();
 
       // Make sure the recommender has tokens
       const recommenderTokens = toPanBase('50000000');

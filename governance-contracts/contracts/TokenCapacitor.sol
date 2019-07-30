@@ -48,8 +48,7 @@ contract TokenCapacitor {
     Proposal[] public proposals;
 
     // Token decay table
-    uint256 constant PRECISION = 12;
-    uint256 public scale;
+    uint256 public constant SCALE = 10 ** 12;
     uint256[12] decayMultipliers;
 
     // Balances
@@ -88,8 +87,6 @@ contract TokenCapacitor {
         decayMultipliers[9] = 783688183013;
         decayMultipliers[10] = 614167168195;
         decayMultipliers[11] = 377201310488;
-
-        scale = 10 ** PRECISION;
 
         unlockedBalance = initialUnlockedBalance;
         lastLockedTime = now;
@@ -227,7 +224,7 @@ contract TokenCapacitor {
         // Based on the elapsed time (in days), calculate the decay factor
         uint256 decayFactor = calculateDecay(elapsedTime.div(86400));
 
-        return lastLockedBalance.mul(decayFactor).div(scale);
+        return lastLockedBalance.mul(decayFactor).div(SCALE);
     }
 
     /**
@@ -236,7 +233,7 @@ contract TokenCapacitor {
     function calculateDecay(uint256 _days) public view returns(uint256) {
         require(_days <= (2 ** decayMultipliers.length) - 1, "Time interval too large");
 
-        uint256 decay = scale;
+        uint256 decay = SCALE;
         uint256 d = _days;
 
         for (uint256 i = 0; i < decayMultipliers.length; i++) {
@@ -245,7 +242,7 @@ contract TokenCapacitor {
 
            if (remainder == 1) {
                 uint256 multiplier = decayMultipliers[i];
-                decay = decay.mul(multiplier).div(scale);
+                decay = decay.mul(multiplier).div(SCALE);
            } else if (quotient == 0) {
                // Exit early if both quotient and remainder are zero
                break;
