@@ -69,7 +69,11 @@ export function randomSalt(): utils.BigNumber {
  * @param {IChoices} ballotChoices { resource: { firstChoice, secondChoice } }
  * @param {string} salt Random 256-bit number
  */
-export function generateCommitMessage(commitHash: string, ballotChoices: IChoices, salt: string) {
+export function generateCommitMessage(
+  commitHash: string,
+  ballotChoices: IChoices,
+  salt: string
+): string {
   const choiceStrings = sortedResources(ballotChoices).map((resource: string) => {
     const { firstChoice, secondChoice } = ballotChoices[resource];
     return `    Resource: ${resource}. First choice: ${firstChoice}. Second choice: ${secondChoice}`;
@@ -86,7 +90,11 @@ export function generateCommitMessage(commitHash: string, ballotChoices: IChoice
  * @param {*} firstChoices
  * @param {*} secondChoices
  */
-export function encodeBallot(resources: string[], firstChoices: string[], secondChoices: string[]) {
+export function encodeBallot(
+  resources: string[],
+  firstChoices: string[],
+  secondChoices: string[]
+): string {
   const types = ['address[]', 'uint256[]', 'uint256[]'];
   const values = [resources, firstChoices, secondChoices];
 
@@ -100,7 +108,7 @@ const BN = (small: utils.BigNumberish) => utils.bigNumberify(small);
  * Calculate the next slate submission deadline as halfway between now and the start of the
  * commit period.
  */
-export function slateSubmissionDeadline(votingOpenDate: number, lastStaked: number) {
+export function slateSubmissionDeadline(votingOpenDate: number, lastStaked: number): number {
   // prettier-ignore
   const extraTime = BN(votingOpenDate).sub(BN(lastStaked)).div('2');
   return BN(lastStaked)

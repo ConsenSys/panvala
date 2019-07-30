@@ -1,5 +1,5 @@
-const { utils } = require('ethers')
-const { voting } = require('../index.js');
+const { utils } = require('ethers');
+const { voting } = require('..');
 
 const resource1 = '0xcccccccccccccccccccccccccccccccccccccccc';
 const resource2 = '0xdddddddddddddddddddddddddddddddddddddddd';
@@ -42,7 +42,7 @@ test('should get the same commit hash for different orderings', () => {
     [resource3]: {
       firstChoice: '4',
       secondChoice: '5',
-    }
+    },
   };
 
   const votes2 = {
@@ -68,7 +68,6 @@ test('should get the same commit hash for different orderings', () => {
   expect(commitHash).toEqual(commitHash2);
 });
 
-
 test('should create a commit message', () => {
   const votes = {
     [resource2]: {
@@ -82,7 +81,7 @@ test('should create a commit message', () => {
     [resource3]: {
       firstChoice: '4',
       secondChoice: '5',
-    }
+    },
   };
   const salt = utils.bigNumberify('2000');
   const commitHash = voting.generateCommitHash(votes, salt);

@@ -3,17 +3,17 @@
 import { BigNumberish } from 'ethers/utils';
 import { utils } from 'ethers';
 
-const ONE_DAY = 86400;
-const ONE_WEEK = ONE_DAY * 7;
+const ONE_DAY: number = 86400;
+const ONE_WEEK: number = ONE_DAY * 7;
 
-const timings = {
-  ONE_DAY,
-  ONE_WEEK,
-  SLATE_SUBMISSION_DEADLINE: ONE_WEEK * 5.5,
-  VOTING_PERIOD_START: ONE_WEEK * 11,
-  REVEAL_PERIOD_START: ONE_WEEK * 12,
-  EPOCH_LENGTH: ONE_WEEK * 13,
-};
+export interface Durations {
+  ONE_DAY: number;
+  ONE_WEEK: number;
+  SLATE_SUBMISSION_DEADLINE: number;
+  VOTING_PERIOD_START: number;
+  REVEAL_PERIOD_START: number;
+  EPOCH_LENGTH: number;
+}
 
 export interface EpochDates {
   epochStart: number;
@@ -23,16 +23,14 @@ export interface EpochDates {
   epochEnd: number;
 }
 
-export function getTimingsForEpoch(epochStart: BigNumberish): EpochDates {
-  epochStart = utils.bigNumberify(epochStart).toNumber();
-  return {
-    epochStart,
-    slateSubmissionDeadline: epochStart + timings.SLATE_SUBMISSION_DEADLINE,
-    votingStart: epochStart + timings.VOTING_PERIOD_START,
-    votingEnd: epochStart + timings.REVEAL_PERIOD_START,
-    epochEnd: epochStart + timings.EPOCH_LENGTH - 1,
-  };
-}
+const durations: Durations = {
+  ONE_DAY,
+  ONE_WEEK,
+  SLATE_SUBMISSION_DEADLINE: ONE_WEEK * 5.5,
+  VOTING_PERIOD_START: ONE_WEEK * 11,
+  REVEAL_PERIOD_START: ONE_WEEK * 12,
+  EPOCH_LENGTH: ONE_WEEK * 13,
+};
 
 export enum EpochStageDates {
   SlateSubmission = 'epochStart',
@@ -46,6 +44,17 @@ export enum EpochStages {
   Intermission,
   CommitVoting,
   RevealVoting,
+}
+
+export function getTimingsForEpoch(epochStart: BigNumberish): EpochDates {
+  epochStart = utils.bigNumberify(epochStart).toNumber();
+  return {
+    epochStart,
+    slateSubmissionDeadline: epochStart + durations.SLATE_SUBMISSION_DEADLINE,
+    votingStart: epochStart + durations.VOTING_PERIOD_START,
+    votingEnd: epochStart + durations.REVEAL_PERIOD_START,
+    epochEnd: epochStart + durations.EPOCH_LENGTH - 1,
+  };
 }
 
 export function calculateEpochStage(epochDates: EpochDates, timestamp: number): number {
@@ -67,7 +76,7 @@ export function calculateEpochStage(epochDates: EpochDates, timestamp: number): 
   throw new Error(`Timestamp ${timestamp} not in epoch range ${epochStart} - ${epochEnd}`);
 }
 
-export function nextEpochStage(currStage: number) {
+export function nextEpochStage(currStage: number): number {
   if (!EpochStages[currStage]) {
     throw new Error('Invalid stage number. try 0-3');
   }
@@ -79,9 +88,10 @@ export function nextEpochStage(currStage: number) {
 }
 
 module.exports = {
-  getTimingsForEpoch,
-  calculateEpochStage,
+  durations,
   EpochStages,
   EpochStageDates,
+  getTimingsForEpoch,
+  calculateEpochStage,
   nextEpochStage,
 };
