@@ -379,7 +379,7 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes, router }) => {
       <Modal handleClick={() => setOpenModal(false)} isOpen={txPending || isOpen}>
         {txPending ? (
           <>
-            <Image src="/static/metamask-fox.svg" alt="metamask logo" width="80px" />
+            <Image src="/static/metamask-fox.png" alt="metamask logo" width="80px" />
             <ModalTitle>{'Transaction Processing'}</ModalTitle>
             <ModalDescription>
               Please wait a few moments while MetaMask processes your transaction. This will only

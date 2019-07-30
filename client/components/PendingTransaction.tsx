@@ -14,7 +14,7 @@ const PendingTransaction: React.SFC<IProps> = ({ classes, isOpen, setOpen }) => 
   return (
     <Modal handleClick={() => setOpen(false)} isOpen={isOpen}>
       <>
-        <Image src="/static/metamask-fox.svg" alt="metamask logo" width="80px" />
+        <Image src="/static/metamask-fox.png" alt="metamask logo" width="80px" />
         <ModalTitle>{'Transaction Processing'}</ModalTitle>
         <Copy fontSize={1} textAlign="left">
           Please wait a few moments while MetaMask processes your transaction.
