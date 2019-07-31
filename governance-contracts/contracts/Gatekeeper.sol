@@ -81,11 +81,8 @@ contract Gatekeeper {
         uint expirationTime;
     }
 
-    // The requests made to the Gatekeeper. Maps requestID -> Request.
-    mapping(uint => Request) public requests;
-
-    // The total number of requests created
-    uint public requestCount;
+    // The requests made to the Gatekeeper.
+    Request[] public requests;
 
     // Voting
     enum SlateStatus {
@@ -108,11 +105,9 @@ contract Gatekeeper {
         uint256 epochNumber;
         address resource;
     }
-    // The slates created by the Gatekeeper. Maps slateID -> Slate.
-    mapping(uint => Slate) public slates;
 
-    // The total number of slates created
-    uint public slateCount;
+    // The slates created by the Gatekeeper.
+    Slate[] public slates;
 
     // The number of tokens each account has available for voting
     mapping(address => uint) public voteTokenBalance;
@@ -248,14 +243,13 @@ contract Gatekeeper {
         });
 
         // Record slate and return its ID
-        uint slateID = slateCount;
-        slates[slateID] = s;
-        slateCount = slateCount.add(1);
+        uint slateID = slateCount();
+        slates.push(s);
 
         // Set up the requests
         for (uint i = 0; i < requestIDs.length; i++) {
             uint requestID = requestIDs[i];
-            require(requestID < requestCount, "Invalid requestID");
+            require(requestID < requestCount(), "Invalid requestID");
 
             // Every request's resource must match the one passed in
             require(requests[requestID].resource == resource, "Resource does not match");
@@ -285,7 +279,7 @@ contract Gatekeeper {
     @param slateID The slate to stake on
      */
     function stakeTokens(uint slateID) public returns(bool) {
-        require(slateID < slateCount, "No slate exists with that slateID");
+        require(slateID < slateCount(), "No slate exists with that slateID");
         require(slates[slateID].status == SlateStatus.Unstaked, "Slate has already been staked");
 
         address staker = msg.sender;
@@ -332,7 +326,7 @@ contract Gatekeeper {
     @param slateID The slate to withdraw the stake from
      */
     function withdrawStake(uint slateID) public returns(bool) {
-        require(slateID < slateCount, "No slate exists with that slateID");
+        require(slateID < slateCount(), "No slate exists with that slateID");
 
         // get slate
         Slate memory slate = slates[slateID];
@@ -930,9 +924,8 @@ contract Gatekeeper {
         });
 
         // Record request and return its ID
-        uint requestID = requestCount;
-        requests[requestID] = r;
-        requestCount = requestCount.add(1);
+        uint requestID = requestCount();
+        requests.push(r);
 
         emit PermissionRequested(resource, requestID, metadataHash);
         return requestID;
@@ -970,6 +963,14 @@ contract Gatekeeper {
 
 
     // MISCELLANEOUS GETTERS
+    function slateCount() public view returns(uint256) {
+        return slates.length;
+    }
+
+    function requestCount() public view returns (uint256) {
+        return requests.length;
+    }
+
     /**
     @dev Return the slate submission deadline for the given resource
     @param epochNumber The epoch
