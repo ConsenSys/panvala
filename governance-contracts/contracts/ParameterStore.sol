@@ -48,7 +48,7 @@ contract ParameterStore {
     */
     constructor(string[] memory _names, bytes32[] memory _values) public {
         owner = msg.sender;
-        // NOTE: _keys and _values must have the same length
+        require(_names.length == _values.length, "All inputs must have the same length");
 
         for (uint i = 0; i < _names.length; i++) {
             string memory name = _names[i];

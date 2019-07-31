@@ -44,6 +44,21 @@ contract('ParameterStore', (accounts) => {
     it('should be okay with no initial values', async () => {
       await ParameterStore.new([], []);
     });
+
+    it('should revert if the length of keys and values is not equal', async () => {
+      try {
+        await ParameterStore.new(
+          names.slice(0, 1),
+          values,
+          { from: creator },
+        );
+      } catch (error) {
+        expectRevert(error);
+        expectErrorLike(error, 'same length');
+        return;
+      }
+      assert.fail('Allowed construction with uneven key/value lengths');
+    });
   });
 
   describe('init', () => {
