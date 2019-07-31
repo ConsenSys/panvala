@@ -240,7 +240,7 @@ contract('Gatekeeper', (accounts) => {
     const halfVotingPeriod = votingPeriodLength.div(new BN(2));
 
     beforeEach(async () => {
-      gatekeeper = await utils.newGatekeeper({ startTime, from: creator });
+      gatekeeper = await utils.newGatekeeper({ startTime, from: creator, init: true });
 
       GRANT = await getResource(gatekeeper, 'GRANT');
     });
@@ -1695,6 +1695,7 @@ contract('Gatekeeper', (accounts) => {
       } = await utils.newPanvala({
         from: creator,
       }));
+      await parameters.init();
       epochNumber = await gatekeeper.currentEpochNumber();
       GRANT = await getResource(gatekeeper, 'GRANT');
       GOVERNANCE = await getResource(gatekeeper, 'GOVERNANCE');
@@ -2126,6 +2127,7 @@ contract('Gatekeeper', (accounts) => {
       ({
         gatekeeper, capacitor, token, parameters,
       } = await utils.newPanvala({ from: creator }));
+      await parameters.init();
       epochNumber = await gatekeeper.currentEpochNumber();
       GRANT = await getResource(gatekeeper, 'GRANT');
       GOVERNANCE = await getResource(gatekeeper, 'GOVERNANCE');
@@ -2346,6 +2348,7 @@ contract('Gatekeeper', (accounts) => {
       } = await utils.newPanvala({
         from: creator,
       }));
+      await parameterStore.init();
       epochNumber = await gatekeeper.currentEpochNumber();
 
       GRANT = await getResource(gatekeeper, 'GRANT');
@@ -2499,6 +2502,7 @@ contract('Gatekeeper', (accounts) => {
       ({
         gatekeeper, token, capacitor, parameters: parameterStore,
       } = await utils.newPanvala({ from: creator }));
+      await parameterStore.init();
       epochNumber = await gatekeeper.currentEpochNumber();
 
       GRANT = await getResource(gatekeeper, 'GRANT');

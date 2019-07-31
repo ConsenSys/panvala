@@ -181,6 +181,8 @@ contract('ParameterStore', (accounts) => {
       const encodedValue = abiEncode('uint256', value);
       const metadataHash = utils.createMultihash('my request data');
 
+      await parameters.init();
+
       const receipt = await parameters.createProposal(
         key,
         encodedValue,
@@ -237,6 +239,8 @@ contract('ParameterStore', (accounts) => {
       const encodedValue = abiEncode('uint256', value);
       const emptyHash = '';
 
+      await parameters.init();
+
       try {
         await parameters.createProposal(
           key,
@@ -252,6 +256,27 @@ contract('ParameterStore', (accounts) => {
       assert.fail('allowed creation of a proposal with an empty metadataHash');
     });
 
+    it('should not allow creation of a proposal before initialization', async () => {
+      const key = 'myKey';
+      const value = 5;
+      const encodedValue = abiEncode('uint256', value);
+      const metadataHash = utils.createMultihash('uninitialized parameter store proposal');
+
+      try {
+        await parameters.createProposal(
+          key,
+          encodedValue,
+          utils.asBytes(metadataHash),
+          { from: creator },
+        );
+      } catch (error) {
+        expectRevert(error);
+        expectErrorLike(error, 'Contract has not yet been initialized');
+        return;
+      }
+      assert.fail('allowed creation of a proposal before initialization');
+    });
+
     describe('createManyProposals', () => {
       it('should create proposals and emit an event for each', async () => {
         const keys = ['number1', 'number2', 'address'];
@@ -261,6 +286,8 @@ contract('ParameterStore', (accounts) => {
           abiEncode('address', utils.zeroAddress()),
         ];
         const metadataHashes = ['request1', 'request2', 'request3'].map(utils.createMultihash);
+
+        await parameters.init();
 
         const receipt = await parameters.createManyProposals(
           keys,
@@ -326,6 +353,8 @@ contract('ParameterStore', (accounts) => {
       ({ gatekeeper, token, parameters } = await utils.newPanvala({
         from: creator,
       }));
+
+      await parameters.init();
 
       epochNumber = await gatekeeper.currentEpochNumber();
       const GOVERNANCE = await getResource(gatekeeper, 'GOVERNANCE');
