@@ -120,16 +120,7 @@ contract ParameterStore {
         set(_name, _value);
     }
 
-    /**
-     @dev Create a proposal to set a value.
-     @param key The key to set
-     @param value The value to set
-     @param metadataHash A reference to metadata describing the proposal
-     */
-    function createProposal(string memory key, bytes32 value, bytes memory metadataHash) public returns(uint256) {
-        require(metadataHash.length > 0, "metadataHash cannot be empty");
-
-        Gatekeeper gatekeeper = _gatekeeper();
+    function _createProposal(Gatekeeper gatekeeper, string memory key, bytes32 value, bytes memory metadataHash) internal returns(uint256) {
         Proposal memory p = Proposal({
             gatekeeper: address(gatekeeper),
             requestID: 0,
@@ -152,24 +143,40 @@ contract ParameterStore {
     }
 
     /**
+     @dev Create a proposal to set a value.
+     @param key The key to set
+     @param value The value to set
+     @param metadataHash A reference to metadata describing the proposal
+     */
+    function createProposal(string calldata key, bytes32 value, bytes calldata metadataHash) external returns(uint256) {
+        require(metadataHash.length > 0, "metadataHash cannot be empty");
+
+        Gatekeeper gatekeeper = _gatekeeper();
+        return _createProposal(gatekeeper, key, value, metadataHash);
+    }
+
+    /**
      @dev Create multiple proposals to set values.
      @param keys The keys to set
      @param values The values to set for the keys
      @param metadataHashes Metadata hashes describing the proposals
     */
     function createManyProposals(
-        string[] memory keys,
-        bytes32[] memory values,
-        bytes[] memory metadataHashes
-    ) public {
-        require(keys.length == values.length, "All inputs must have the same length");
-        require(values.length == metadataHashes.length, "All inputs must have the same length");
+        string[] calldata keys,
+        bytes32[] calldata values,
+        bytes[] calldata metadataHashes
+    ) external {
+        require(
+            keys.length == values.length && values.length == metadataHashes.length,
+            "All inputs must have the same length"
+        );
 
+        Gatekeeper gatekeeper = _gatekeeper();
         for (uint i = 0; i < keys.length; i++) {
             string memory key = keys[i];
             bytes32 value = values[i];
             bytes memory metadataHash = metadataHashes[i];
-            createProposal(key, value, metadataHash);
+            _createProposal(gatekeeper, key, value, metadataHash);
         }
     }
 

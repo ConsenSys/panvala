@@ -96,16 +96,7 @@ contract TokenCapacitor {
         return Gatekeeper(parameters.getAsAddress("gatekeeperAddress"));
     }
 
-    /**
-     @dev Create a proposal to send tokens to a beneficiary.
-     @param to The account to send the tokens to
-     @param tokens The number of tokens to send
-     @param metadataHash A reference to metadata describing the proposal
-    */
-    function createProposal(address to, uint tokens, bytes memory metadataHash) public returns(uint) {
-        require(metadataHash.length > 0, "metadataHash cannot be empty");
-
-        Gatekeeper gatekeeper = _gatekeeper();
+    function _createProposal(Gatekeeper gatekeeper, address to, uint tokens, bytes memory metadataHash) internal returns(uint256) {
         Proposal memory p = Proposal({
             gatekeeper: address(gatekeeper),
             requestID: 0,
@@ -128,24 +119,40 @@ contract TokenCapacitor {
     }
 
     /**
+     @dev Create a proposal to send tokens to a beneficiary.
+     @param to The account to send the tokens to
+     @param tokens The number of tokens to send
+     @param metadataHash A reference to metadata describing the proposal
+    */
+    function createProposal(address to, uint tokens, bytes calldata metadataHash) external returns(uint) {
+        require(metadataHash.length > 0, "metadataHash cannot be empty");
+
+        Gatekeeper gatekeeper = _gatekeeper();
+        return _createProposal(gatekeeper, to, tokens, metadataHash);
+    }
+
+    /**
      @dev Create multiple proposals to send tokens to beneficiaries.
      @param beneficiaries The accounts to send tokens to
      @param tokenAmounts The number of tokens to send to each beneficiary
      @param metadataHashes Metadata hashes describing the proposals
     */
     function createManyProposals(
-        address[] memory beneficiaries,
-        uint[] memory tokenAmounts,
-        bytes[] memory metadataHashes
-    ) public {
-        require(beneficiaries.length == tokenAmounts.length, "All inputs must have the same length");
-        require(tokenAmounts.length == metadataHashes.length, "All inputs must have the same length");
+        address[] calldata beneficiaries,
+        uint[] calldata tokenAmounts,
+        bytes[] calldata metadataHashes
+    ) external {
+        require(
+            beneficiaries.length == tokenAmounts.length && tokenAmounts.length == metadataHashes.length,
+            "All inputs must have the same length"
+        );
 
+        Gatekeeper gatekeeper = _gatekeeper();
         for (uint i = 0; i < beneficiaries.length; i++) {
             address to = beneficiaries[i];
             uint tokens = tokenAmounts[i];
             bytes memory metadataHash = metadataHashes[i];
-            createProposal(to, tokens, metadataHash);
+            _createProposal(gatekeeper, to, tokens, metadataHash);
         }
     }
 
