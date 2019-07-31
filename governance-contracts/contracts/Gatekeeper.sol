@@ -620,16 +620,16 @@ contract Gatekeeper {
      @param resource The resource to finalize for
      */
     function finalizeContest(uint epochNumber, address resource) public {
+        // Finalization must be after the vote period (i.e when the given epoch is over)
+        require(currentEpochNumber() > epochNumber, "Contest epoch still active");
+
         // Make sure the ballot has a contest for this resource
         Contest storage contest = ballots[epochNumber].contests[resource];
         require(contest.status == ContestStatus.Active || contest.status == ContestStatus.NoContest,
             "Either no contest is in progress for this resource, or it has been finalized");
 
-        // Handle the case of a single staked slate in the contest -- it should automatically win
-        // Finalization should be possible as soon as the slate submission period is over
+        // A single staked slate in the contest automatically wins
         if (contest.status == ContestStatus.NoContest) {
-            require(now > slateSubmissionDeadline(epochNumber, resource), "Slate submission still active");
-
             uint256 winningSlate = contest.stakedSlates[0];
             assert(slates[winningSlate].status == SlateStatus.Staked);
 
@@ -640,10 +640,6 @@ contract Gatekeeper {
             emit ContestAutomaticallyFinalized(epochNumber, resource, winningSlate);
             return;
         }
-
-        // Non-automatic finalization must be after the vote period (i.e when the given epoch
-        // is over)
-        require(currentEpochNumber() > epochNumber, "Reveal period still active");
 
         // Iterate through the slates and get the one with the most votes
         uint winner = 0;

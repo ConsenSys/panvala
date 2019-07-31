@@ -2861,7 +2861,7 @@ contract('Gatekeeper', (accounts) => {
       assert.fail('Called finalizeContest() more than once');
     });
 
-    it('should revert if the contest has multiple slates and the reveal period is still active', async () => {
+    it('should revert if the contest has multiple slates and the epoch is not over', async () => {
       // Advance to reveal period
       await increaseTime(timing.VOTING_PERIOD_START);
 
@@ -2869,14 +2869,14 @@ contract('Gatekeeper', (accounts) => {
         await gatekeeper.finalizeContest(epochNumber, GRANT);
       } catch (error) {
         expectRevert(error);
-        expectErrorLike(error, 'Reveal period still active');
+        expectErrorLike(error, 'epoch still active');
         return;
       }
 
-      assert.fail('Counted votes while reveal period was still active');
+      assert.fail('Finalized while contest epoch was still active');
     });
 
-    it('should allow finalization during the reveal period if the contest has an unopposed slate', async () => {
+    it('should revert if the contest has an unopposed slate and the epoch is not over', async () => {
       const slateID = await gatekeeper.slateCount();
 
       // Add a new governance slate
@@ -2893,12 +2893,15 @@ contract('Gatekeeper', (accounts) => {
       await increaseTime(timing.VOTING_PERIOD_START);
 
       // Finalize
-      await gatekeeper.finalizeContest(epochNumber, GOVERNANCE);
-      const status = await gatekeeper.contestStatus(epochNumber, GOVERNANCE);
-      assert.strictEqual(status.toString(), ContestStatus.Finalized);
+      try {
+        await gatekeeper.finalizeContest(epochNumber, GOVERNANCE);
+      } catch (error) {
+        expectRevert(error);
+        expectErrorLike(error, 'epoch still active');
+        return;
+      }
 
-      const slateIDs = await gatekeeper.contestSlates(epochNumber, GOVERNANCE);
-      await verifyFinalizedSlates(gatekeeper, slateIDs);
+      assert.fail('Finalized while contest epoch was still active');
     });
 
     afterEach(async () => utils.evm.revert(snapshotID));
@@ -4586,7 +4589,7 @@ contract('Gatekeeper', (accounts) => {
 
       const resource = await getResource(gatekeeper, 'GRANT');
 
-      await increaseTime(timing.VOTING_PERIOD_START);
+      await increaseTime(timing.EPOCH_LENGTH);
       await gatekeeper.finalizeContest(epoch, resource);
 
       // Check
