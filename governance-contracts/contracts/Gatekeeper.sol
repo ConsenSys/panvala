@@ -554,6 +554,10 @@ contract Gatekeeper {
         uint[] memory _salts
     ) public {
         uint numBallots = _voters.length;
+        require(
+            _salts.length == _voters.length && _ballots.length == _voters.length,
+            "Inputs must have the same length"
+        );
 
         for (uint i = 0; i < numBallots; i++) {
             // extract resources, firstChoices, secondChoices from the ballot
