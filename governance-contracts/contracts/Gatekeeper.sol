@@ -95,7 +95,6 @@ contract Gatekeeper {
     enum SlateStatus {
         Unstaked,
         Staked,
-        Rejected,
         Accepted
     }
 
@@ -695,10 +694,6 @@ contract Gatekeeper {
 
         // If no one voted, reject all participating slates
         if (noVotes) {
-            // No more active slates
-            uint256[] memory activeSlates = new uint256[](0);
-
-            rejectSlates(contest.stakedSlates, activeSlates);
             contest.status = ContestStatus.Finalized;
             emit ContestFinalizedWithoutWinner(epochNumber, resource);
             return;
@@ -714,18 +709,9 @@ contract Gatekeeper {
             contest.winner = winner;
             acceptSlate(winner);
 
-            uint256[] memory activeSlates = new uint256[](1);
-            activeSlates[0] = contest.winner;
-            rejectSlates(contest.stakedSlates, activeSlates);
-
             contest.status = ContestStatus.Finalized;
             emit VoteFinalized(epochNumber, resource, winner, winnerVotes, total);
         } else {
-            uint256[] memory activeSlates = new uint256[](2);
-            activeSlates[0] = contest.voteWinner;
-            activeSlates[1] = contest.voteRunnerUp;
-            rejectSlates(contest.stakedSlates, activeSlates);
-
             contest.status = ContestStatus.RunoffPending;
             emit VoteFailed(epochNumber, resource, winner, winnerVotes, runnerUp, runnerUpVotes, total);
         }
@@ -840,9 +826,6 @@ contract Gatekeeper {
         updatedContest.status = ContestStatus.Finalized;
         acceptSlate(runoffWinner);
 
-        // Reject the losing slate
-        slates[runoffLoser].status = SlateStatus.Rejected;
-
         emit RunoffFinalized(epochNumber, resource, runoffWinner, runoffWinnerVotes, runoffLoser, runoffLoserVotes);
     }
 
@@ -872,7 +855,7 @@ contract Gatekeeper {
         for (uint256 i = startIndex; i < endIndex; i++) {
             uint256 slateID = contest.stakedSlates[i];
             Slate storage slate = slates[slateID];
-            if (slate.status == SlateStatus.Rejected) {
+            if (slate.status != SlateStatus.Accepted) {
                 uint256 donationAmount = slate.stake;
                 slate.stake = 0;
 
@@ -889,30 +872,6 @@ contract Gatekeeper {
 
         // Update state
         contest.stakesDonated = endIndex;
-    }
-
-    /**
-    @dev Mark slates as rejected, except for those in _exclude
-     */
-    function rejectSlates(uint256[] memory _slates, uint256[] memory _exclude) private {
-        uint256 numSlates = _slates.length;
-        uint256 excludeCount = _exclude.length;
-
-        for (uint i = 0; i < numSlates; i++) {
-            uint slateID = _slates[i];
-
-            bool isExcluded = false;
-            for (uint j = 0; j < excludeCount; j++) {
-                if (_exclude[j] == slateID) {
-                    isExcluded = true;
-                    break;
-                }
-            }
-
-            if (!isExcluded) {
-                slates[slateID].status = SlateStatus.Rejected;
-            }
-        }
     }
 
     /**

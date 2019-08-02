@@ -629,14 +629,17 @@ const ContestStatus = {
 const SlateStatus = {
   Unstaked: '0',
   Staked: '1',
-  Rejected: '2',
-  Accepted: '3',
+  Accepted: '2',
 };
 
 
 async function getLosingSlates(gatekeeper, slateIDs) {
   const ls = await Promise.all(slateIDs.map(id => gatekeeper.slates(id)));
-  return ls.filter(s => s.status.toString() === SlateStatus.Rejected);
+  return ls.filter(s => s.status.toString() !== SlateStatus.Accepted);
+}
+
+function isRejected(slateStatus) {
+  return slateStatus.toString() !== SlateStatus.Accepted;
 }
 
 function loadDecayMultipliers() {
@@ -729,6 +732,7 @@ const utils = {
   getVotes,
   categories: proposalCategories,
   getLosingSlates,
+  isRejected,
   timing,
   loadDecayMultipliers,
   loadTokenReleases,

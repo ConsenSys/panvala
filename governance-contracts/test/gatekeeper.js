@@ -26,6 +26,7 @@ const {
   createMultihash,
   toPanBase,
   epochPeriods,
+  isRejected,
 } = utils;
 
 const { increaseTime, goToPeriod } = utils.evm;
@@ -98,9 +99,9 @@ async function verifyFinalizedSlates(gatekeeper, slateIDs) {
   statuses.forEach((_status) => {
     const s = _status.toString();
     const isValid = s === SlateStatus.Accepted
-      || s === SlateStatus.Rejected
+      || s === SlateStatus.Staked
       || s === SlateStatus.Unstaked;
-    assert(isValid, 'All slates should have status Accepted, Rejected, or Unstaked');
+    assert(isValid, 'All slates should have status Accepted, Staked, or Unstaked');
   });
 }
 
@@ -2610,7 +2611,7 @@ contract('Gatekeeper', (accounts) => {
         'Winning slate status should have been Accepted',
       );
 
-      // All the other slates should have status Rejected
+      // All the other slates should be rejected
       const contestSlates = await gatekeeper.contestSlates(epochNumber, GRANT);
       assert.deepStrictEqual(
         contestSlates.map(i => i.toString()),
@@ -2624,13 +2625,8 @@ contract('Gatekeeper', (accounts) => {
       );
 
       statuses.forEach((_status) => {
-        assert.strictEqual(
-          _status.toString(),
-          SlateStatus.Rejected,
-          'Non-winning slate should have status Rejected',
-        );
+        assert(isRejected(_status), 'Non-winning slate should be rejected');
       });
-      await verifyFinalizedSlates(gatekeeper, contestSlates);
 
       // requests in the slate should all return true for hasPermission
       const slateRequests = await gatekeeper.slateRequests(winningSlate);
@@ -2867,9 +2863,7 @@ contract('Gatekeeper', (accounts) => {
       const statuses = await Promise.all(statusPromises);
 
       statuses.forEach((_status) => {
-        const s = _status.toString();
-        const isRejectedOrUnstaked = s === SlateStatus.Rejected || s === SlateStatus.Unstaked;
-        assert(isRejectedOrUnstaked, 'All slates should have status Rejected or Unstaked');
+        assert(isRejected(_status), 'All slates should be rejected');
       });
     });
 
@@ -3679,7 +3673,7 @@ contract('Gatekeeper', (accounts) => {
         'Winning slate status should have been Accepted',
       );
 
-      // All the other slates should have status Rejected
+      // All the other slates should be rejected
       const contestSlates = await gatekeeper.contestSlates(epochNumber, GRANT);
       assert.deepStrictEqual(
         contestSlates.map(i => i.toString()),
@@ -4482,8 +4476,10 @@ contract('Gatekeeper', (accounts) => {
         );
 
         const losingSlates = await utils.getLosingSlates(gatekeeper, slateIDs);
+        assert(losingSlates.length > 0, 'Should have losing slates');
         const totalDonation = losingSlates.map(s => s.stake)
           .reduce((total, num) => total.add(num), new BN(0));
+        assert(totalDonation.gt(new BN(0)), 'Donation should be nonzero');
 
         // Donate tokens
         await gatekeeper.donateChallengerStakes(epochNumber, GRANT, 0, numGrantSlates, {
@@ -4684,8 +4680,10 @@ contract('Gatekeeper', (accounts) => {
         );
 
         const losingSlates = await utils.getLosingSlates(gatekeeper, slateIDs);
+        assert(losingSlates.length > 0, 'Should have losing slates');
         const totalDonation = losingSlates.map(s => s.stake)
           .reduce((total, num) => total.add(num), new BN(0));
+        assert(totalDonation.gt(new BN(0)), 'Donation should be nonzero');
 
         // Donate tokens
         await gatekeeper.donateChallengerStakes(epochNumber, GRANT, 0, numGrantSlates, {
