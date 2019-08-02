@@ -668,7 +668,11 @@ contract('integration', (accounts) => {
             // contests
             const transferredContest = await newGatekeeper.contestDetails(transferEpoch, resource);
             const expectedContest = await gatekeeper.contestDetails(transferEpoch, resource);
-            assert.deepStrictEqual(transferredContest, expectedContest, `${name} contest should have been transferred`);
+            // assert.deepStrictEqual(
+            //   transferredContest,
+            //   expectedContest,
+            //   `${name} contest should have been transferred`
+            // );
 
             // console.log(expectedContest);
             assert.strictEqual(
