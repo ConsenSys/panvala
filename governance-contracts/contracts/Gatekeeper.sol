@@ -155,6 +155,7 @@ contract Gatekeeper {
 
         // slateID -> tally
         mapping(uint => SlateVotes) votes;
+        uint256 stakesDonated;
 
         // Intermediate results
         uint voteWinner;
@@ -851,16 +852,24 @@ contract Gatekeeper {
      @param epochNumber The epoch
      @param resource The resource
      */
-    function donateChallengerStakes(uint256 epochNumber, address resource) public {
-        Contest memory contest = ballots[epochNumber].contests[resource];
+    function donateChallengerStakes(uint256 epochNumber, address resource, uint256 startIndex, uint256 count) public {
+        Contest storage contest = ballots[epochNumber].contests[resource];
         require(contest.status == ContestStatus.Finalized, "Contest is not finalized");
+
+        uint256 numSlates = contest.stakedSlates.length;
+        require(contest.stakesDonated != numSlates, "All stakes donated");
+
+        // If there are still stakes to be donated, continue
+        require(startIndex == contest.stakesDonated, "Invalid start index");
+
+        uint256 endIndex = startIndex.add(count);
+        require(endIndex <= numSlates, "Invalid end index");
 
         address tokenCapacitorAddress = parameters.getAsAddress("tokenCapacitorAddress");
         TokenCapacitor capacitor = TokenCapacitor(tokenCapacitorAddress);
         bytes memory stakeDonationHash = "Qmepxeh4KVkyHYgt3vTjmodB5RKZgUEmdohBZ37oKXCUCm";
 
-        uint256 numSlates = contest.stakedSlates.length;
-        for (uint256 i = 0; i < numSlates; i++) {
+        for (uint256 i = startIndex; i < endIndex; i++) {
             uint256 slateID = contest.stakedSlates[i];
             Slate storage slate = slates[slateID];
             if (slate.status == SlateStatus.Rejected) {
@@ -877,6 +886,9 @@ contract Gatekeeper {
                 }
             }
         }
+
+        // Update state
+        contest.stakesDonated = endIndex;
     }
 
     /**

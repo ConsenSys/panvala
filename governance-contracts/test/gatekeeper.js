@@ -4405,6 +4405,7 @@ contract('Gatekeeper', (accounts) => {
     let gatekeeper;
     let token;
     let capacitor;
+    let numGrantSlates;
 
     let epochNumber;
     let GRANT;
@@ -4460,6 +4461,7 @@ contract('Gatekeeper', (accounts) => {
       await gatekeeper.stakeTokens(0, { from: alice });
       await gatekeeper.stakeTokens(1, { from: carol });
       await gatekeeper.stakeTokens(2, { from: bob });
+      numGrantSlates = 3;
     });
 
 
@@ -4484,7 +4486,9 @@ contract('Gatekeeper', (accounts) => {
           .reduce((total, num) => total.add(num), new BN(0));
 
         // Donate tokens
-        await gatekeeper.donateChallengerStakes(epochNumber, GRANT, { from: creator });
+        await gatekeeper.donateChallengerStakes(epochNumber, GRANT, 0, numGrantSlates, {
+          from: creator,
+        });
 
         // Tokens should have been transferred
         const expectedTokenCapacitorBalance = initialTokenCapacitorBalance.add(totalDonation);
@@ -4519,13 +4523,146 @@ contract('Gatekeeper', (accounts) => {
 
         // Try to donate
         try {
-          await gatekeeper.donateChallengerStakes(epochNumber, GRANT, { from: creator });
+          await gatekeeper.donateChallengerStakes(epochNumber, GRANT, 0, numGrantSlates, {
+            from: creator,
+          });
         } catch (error) {
           expectRevert(error);
           expectErrorLike(error, 'not finalized');
           return;
         }
         assert.fail('Allowed donation of challenger stakes for an unfinalized contest');
+      });
+
+      it('should revert if all the stakes have already been donated', async () => {
+        await doVote(gatekeeper, epochNumber, [alice, bob, carol], numGrantSlates);
+
+        // Donate
+        await gatekeeper.donateChallengerStakes(epochNumber, GRANT, 0, numGrantSlates, {
+          from: creator,
+        });
+
+        // Try to donate again
+        try {
+          await gatekeeper.donateChallengerStakes(epochNumber, GRANT, 0, numGrantSlates, {
+            from: creator,
+          });
+        } catch (error) {
+          expectRevert(error);
+          expectErrorLike(error, 'all stakes donated');
+          return;
+        }
+        assert.fail('Allowed donation of challenger stakes after all stakes were donated');
+      });
+
+      describe('incremental donation', () => {
+        beforeEach(async () => {
+          await doVote(gatekeeper, epochNumber, [alice, bob, carol], numGrantSlates);
+
+          // We have 3 grant slates
+          assert.strictEqual(numGrantSlates, 3, 'Wrong number of slates');
+        });
+
+        it('should allow incremental donation of stakes', async () => {
+          // initial capacitor balance
+          const initialTokenCapacitorBalance = await token.balanceOf(capacitor.address);
+          const stakeAmount = await parameters.getAsUint('slateStakeAmount');
+
+          // Donate some
+          await gatekeeper.donateChallengerStakes(epochNumber, GRANT, 0, 2);
+
+          // should increase by stake amount
+          const incrementalTokenCapacitorBalance = await token.balanceOf(capacitor.address);
+          let expectedTokenCapacitorBalance = initialTokenCapacitorBalance.add(stakeAmount);
+          assert.strictEqual(
+            incrementalTokenCapacitorBalance.toString(),
+            expectedTokenCapacitorBalance.toString(),
+            'Incremental donation not made',
+          );
+
+          // Donate the rest
+          await gatekeeper.donateChallengerStakes(epochNumber, GRANT, 2, 1);
+
+          // should increase by stake amount
+          const finalTokenCapacitorBalance = await token.balanceOf(capacitor.address);
+          expectedTokenCapacitorBalance = initialTokenCapacitorBalance.add(
+            stakeAmount.mul(new BN(2)),
+          );
+          assert.strictEqual(
+            finalTokenCapacitorBalance.toString(),
+            expectedTokenCapacitorBalance.toString(),
+            'Final donation not made',
+          );
+        });
+
+        it('should revert if you skip an index at the start', async () => {
+          try {
+            await gatekeeper.donateChallengerStakes(epochNumber, GRANT, 1, 1);
+          } catch (error) {
+            expectRevert(error);
+            expectErrorLike(error, 'invalid start index');
+            return;
+          }
+
+          assert.fail('Skipped an index at the start');
+        });
+
+        it('should revert if you skip an index in the middle', async () => {
+          await gatekeeper.donateChallengerStakes(epochNumber, GRANT, 0, 1);
+
+          try {
+            await gatekeeper.donateChallengerStakes(epochNumber, GRANT, 2, 1);
+          } catch (error) {
+            expectRevert(error);
+            expectErrorLike(error, 'invalid start index');
+            return;
+          }
+
+          assert.fail('Skipped an index in the middle');
+        });
+
+        it('should revert if you repeat an index', async () => {
+          await gatekeeper.donateChallengerStakes(epochNumber, GRANT, 0, 1);
+
+          try {
+            await gatekeeper.donateChallengerStakes(epochNumber, GRANT, 0, 1);
+          } catch (error) {
+            expectRevert(error);
+            expectErrorLike(error, 'invalid start index');
+            return;
+          }
+
+          assert.fail('Repeated an index');
+        });
+
+        it('should revert if the count would process more than the number of slates (from start)', async () => {
+          // Try to process 4
+          try {
+            await gatekeeper.donateChallengerStakes(epochNumber, GRANT, 0, 4);
+          } catch (error) {
+            expectRevert(error);
+            expectErrorLike(error, 'invalid end index');
+            return;
+          }
+
+          assert.fail('Processed more than the number of slates');
+        });
+
+        it('should revert if the count would process more than the number of slates (continuing)', async () => {
+          // Process 1
+          await gatekeeper.donateChallengerStakes(epochNumber, GRANT, 0, 1);
+
+          // Try to process 3 more
+          try {
+            await gatekeeper.donateChallengerStakes(epochNumber, GRANT, 1, 3);
+          } catch (error) {
+            expectRevert(error);
+            expectErrorLike(error, 'invalid end index');
+            return;
+          }
+
+          assert.fail('Processed more than the number of slates');
+        });
       });
     });
 
@@ -4551,7 +4688,9 @@ contract('Gatekeeper', (accounts) => {
           .reduce((total, num) => total.add(num), new BN(0));
 
         // Donate tokens
-        await gatekeeper.donateChallengerStakes(epochNumber, GRANT, { from: creator });
+        await gatekeeper.donateChallengerStakes(epochNumber, GRANT, 0, numGrantSlates, {
+          from: creator,
+        });
 
         // Tokens should have been transferred
         const expectedTokenCapacitorBalance = initialTokenCapacitorBalance.add(totalDonation);
@@ -4586,7 +4725,9 @@ contract('Gatekeeper', (accounts) => {
 
         // Try to donate
         try {
-          await gatekeeper.donateChallengerStakes(epochNumber, GRANT, { from: creator });
+          await gatekeeper.donateChallengerStakes(epochNumber, GRANT, 0, numGrantSlates, {
+            from: creator,
+          });
         } catch (error) {
           expectRevert(error);
           expectErrorLike(error, 'not finalized');
