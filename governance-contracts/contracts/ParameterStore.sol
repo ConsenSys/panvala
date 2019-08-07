@@ -24,7 +24,7 @@ contract ParameterStore {
     using SafeMath for uint256;
 
     address owner;
-    bool initialized;
+    bool public initialized;
     mapping(bytes32 => bytes32) public params;
 
     // A proposal to change a value
