@@ -26,6 +26,13 @@ contract('TokenCapacitor', (accounts) => {
   const multipliers = loadDecayMultipliers();
   const getMultiplier = days => new BN(multipliers[days]);
   const halfLife = 1456;
+  let snapshotID;
+
+  beforeEach(async () => {
+    snapshotID = await utils.evm.snapshot();
+  });
+
+  afterEach(async () => utils.evm.revert(snapshotID));
 
   describe('constructor', () => {
     const [creator] = accounts;
@@ -286,7 +293,6 @@ contract('TokenCapacitor', (accounts) => {
     let gatekeeper;
     let token;
     let capacitor;
-    let snapshotID;
 
     const capacitorSupply = '50000000';
     let epochNumber;
@@ -299,8 +305,6 @@ contract('TokenCapacitor', (accounts) => {
     let loserPermissions;
 
     beforeEach(async () => {
-      snapshotID = await utils.evm.snapshot();
-
       ({ gatekeeper, token, capacitor } = await utils.newPanvala({ from: creator }));
       epochNumber = await gatekeeper.currentEpochNumber();
       const GRANT = await utils.getResource(gatekeeper, 'GRANT');
@@ -521,8 +525,6 @@ contract('TokenCapacitor', (accounts) => {
       }
       assert.fail('Allowed withdrawal of more tokens than have been unlocked');
     });
-
-    afterEach(async () => utils.evm.revert(snapshotID));
   });
 
   describe('donate', () => {
@@ -773,7 +775,6 @@ contract('TokenCapacitor', (accounts) => {
       let capacitor;
       let token;
       let scale;
-      let snapshotID;
       let initialLockedTime;
 
       beforeEach(async () => {
@@ -782,7 +783,6 @@ contract('TokenCapacitor', (accounts) => {
 
         await utils.chargeCapacitor(capacitor, supply, token, { from: creator });
         scale = await capacitor.SCALE();
-        snapshotID = await utils.evm.snapshot();
       });
 
       const tests = [
@@ -973,8 +973,6 @@ contract('TokenCapacitor', (accounts) => {
         const { unlocked: finalUnlocked } = await utils.capacitorBalances(capacitor);
         assert(finalUnlocked.gt(unlocked), 'Tokens should have been unlocked');
       });
-
-      afterEach(async () => utils.evm.revert(snapshotID));
     });
 
     describe('projectedLockedBalance', () => {

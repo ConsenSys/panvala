@@ -107,6 +107,7 @@ const expectedVotes = (first, second) => `${toPanBase(first)},${toPanBase(second
 
 contract('Gatekeeper', (accounts) => {
   let parameters;
+  let snapshotID;
 
   before(async () => {
     const { slateStakeAmount } = defaultParams;
@@ -125,6 +126,12 @@ contract('Gatekeeper', (accounts) => {
     );
     await parameters.init({ from: creator });
   });
+
+  beforeEach(async () => {
+    snapshotID = await utils.evm.snapshot();
+  });
+
+  afterEach(async () => utils.evm.revert(snapshotID));
 
   describe('constructor', () => {
     const [creator] = accounts;
@@ -273,12 +280,9 @@ contract('Gatekeeper', (accounts) => {
     });
 
     describe('future epoch', () => {
-      let snapshotID;
       const numEpochs = new BN(3.5);
 
       before(async () => {
-        snapshotID = await utils.evm.snapshot();
-
         // Go forward in time
         const offset = timing.EPOCH_LENGTH.mul(numEpochs);
         await increaseTime(offset);
@@ -320,10 +324,6 @@ contract('Gatekeeper', (accounts) => {
           expectedDeadline.toString(),
           'Initial deadline should be 5.5 weeks in',
         );
-      });
-
-      after(async () => {
-        await utils.evm.revert(snapshotID);
       });
     });
   });
@@ -525,12 +525,6 @@ contract('Gatekeeper', (accounts) => {
     });
 
     describe('timing', () => {
-      let snapshotID;
-
-      beforeEach(async () => {
-        snapshotID = await utils.evm.snapshot();
-      });
-
       it('should revert if the slate submission period is not active', async () => {
         const resource = GRANT;
         const deadline = await gatekeeper.slateSubmissionDeadline(epochNumber, resource);
@@ -553,10 +547,6 @@ contract('Gatekeeper', (accounts) => {
         }
         assert.fail('Allowed slate submission after the slate submission deadline');
       });
-
-      afterEach(async () => {
-        await utils.evm.revert(snapshotID);
-      });
     });
   });
 
@@ -570,13 +560,10 @@ contract('Gatekeeper', (accounts) => {
     let epochNumber;
     const slateID = 0;
     let stakeAmount;
-    let snapshotID;
 
     beforeEach(async () => {
       ({ gatekeeper, capacitor, token } = await utils.newPanvala({ from: creator }));
       GRANT = await getResource(gatekeeper, 'GRANT');
-
-      snapshotID = await utils.evm.snapshot();
 
       epochNumber = await gatekeeper.currentEpochNumber();
 
@@ -800,10 +787,6 @@ contract('Gatekeeper', (accounts) => {
         expectedExtendedDeadline.toString(),
         'Extension was wrong',
       );
-    });
-
-    afterEach(async () => {
-      await utils.evm.revert(snapshotID);
     });
   });
 
@@ -1094,12 +1077,7 @@ contract('Gatekeeper', (accounts) => {
     it('should fail if the token transfer fails');
 
     describe('timing', () => {
-      let snapshotID;
       const numTokens = toPanBase('1000');
-
-      beforeEach(async () => {
-        snapshotID = await utils.evm.snapshot();
-      });
 
       it('should revert if the commit period is active (and the user has committed?)', async () => {
         // Go to the commit period
@@ -1123,10 +1101,6 @@ contract('Gatekeeper', (accounts) => {
         await increaseTime(offset);
 
         await gatekeeper.withdrawVoteTokens(numTokens, { from: voter });
-      });
-
-      afterEach(async () => {
-        await utils.evm.revert(snapshotID);
       });
     });
   });
@@ -1182,11 +1156,8 @@ contract('Gatekeeper', (accounts) => {
     let token;
     const initialTokens = '20000000';
     let epochNumber;
-    let snapshotID;
 
     beforeEach(async () => {
-      snapshotID = await utils.evm.snapshot();
-
       token = await utils.newToken({ initialTokens, from: creator });
       gatekeeper = await utils.newGatekeeper({ tokenAddress: token.address, from: creator });
       epochNumber = await gatekeeper.currentEpochNumber();
@@ -1403,21 +1374,14 @@ contract('Gatekeeper', (accounts) => {
         assert.fail('Allowed someone other than the delegate to commit a ballot for the voter');
       });
     });
-
-    afterEach(async () => {
-      await utils.evm.revert(snapshotID);
-    });
   });
 
   describe('didCommit', () => {
     const [creator, voter] = accounts;
     let gatekeeper;
     let epochNumber;
-    let snapshotID;
 
     beforeEach(async () => {
-      snapshotID = await utils.evm.snapshot();
-
       gatekeeper = await utils.newGatekeeper({
         // parameterStoreAddress: parameters.address,
         from: creator,
@@ -1469,19 +1433,14 @@ contract('Gatekeeper', (accounts) => {
       const didCommit = await gatekeeper.didCommit(epochNumber, voter);
       assert(didCommit, 'Voter committed, but didCommit returned false');
     });
-
-    afterEach(async () => utils.evm.revert(snapshotID));
   });
 
   describe('getCommitHash', () => {
     const [creator, voter] = accounts;
     let gatekeeper;
     let epochNumber;
-    let snapshotID;
 
     beforeEach(async () => {
-      snapshotID = await utils.evm.snapshot();
-
       gatekeeper = await utils.newGatekeeper({ from: creator });
       epochNumber = await gatekeeper.currentEpochNumber();
 
@@ -1523,8 +1482,6 @@ contract('Gatekeeper', (accounts) => {
       }
       assert.fail('Voter did not commit for the given ballot');
     });
-
-    afterEach(async () => utils.evm.revert(snapshotID));
   });
 
 
@@ -1534,7 +1491,6 @@ contract('Gatekeeper', (accounts) => {
     let gatekeeper;
     let token;
     let capacitor;
-    let snapshotID;
     let GRANT;
     let GOVERNANCE;
 
@@ -1545,8 +1501,6 @@ contract('Gatekeeper', (accounts) => {
     let revealData;
 
     beforeEach(async () => {
-      snapshotID = await utils.evm.snapshot();
-
       ({
         gatekeeper, capacitor, token, parameters,
       } = await utils.newPanvala({
@@ -1966,10 +1920,6 @@ contract('Gatekeeper', (accounts) => {
       }
       assert.fail('Revealed ballot after the reveal period');
     });
-
-    afterEach(async () => {
-      await utils.evm.revert(snapshotID);
-    });
   });
 
   describe('revealManyBallots', () => {
@@ -1979,13 +1929,10 @@ contract('Gatekeeper', (accounts) => {
     let token;
     let capacitor;
     let epochNumber;
-    let snapshotID;
     let GRANT;
     let GOVERNANCE;
 
     beforeEach(async () => {
-      snapshotID = await utils.evm.snapshot();
-
       ({
         gatekeeper, capacitor, token, parameters,
       } = await utils.newPanvala({ from: creator }));
@@ -2184,8 +2131,6 @@ contract('Gatekeeper', (accounts) => {
         assert.fail('Allowed revealManyBallots with short ballots');
       });
     });
-
-    afterEach(async () => utils.evm.revert(snapshotID));
   });
 
   describe('didReveal', () => {
@@ -2195,7 +2140,6 @@ contract('Gatekeeper', (accounts) => {
     let token;
     let capacitor;
     let parameterStore;
-    let snapshotID;
     let GRANT;
     let GOVERNANCE;
 
@@ -2206,8 +2150,6 @@ contract('Gatekeeper', (accounts) => {
     let revealData;
 
     beforeEach(async () => {
-      snapshotID = await utils.evm.snapshot();
-
       ({
         gatekeeper, token, capacitor, parameters: parameterStore,
       } = await utils.newPanvala({
@@ -2340,8 +2282,6 @@ contract('Gatekeeper', (accounts) => {
       const didReveal = await gatekeeper.didReveal(epochNumber, nonvoter);
       assert.strictEqual(didReveal, false, 'didReveal returned true when the voter has NOT COMMITTED');
     });
-
-    afterEach(async () => utils.evm.revert(snapshotID));
   });
 
   describe('finalizeContest', () => {
@@ -2352,7 +2292,6 @@ contract('Gatekeeper', (accounts) => {
     let capacitor;
     let parameterStore;
     let epochNumber;
-    let snapshotID;
     let GRANT;
     let GOVERNANCE;
 
@@ -2365,8 +2304,6 @@ contract('Gatekeeper', (accounts) => {
     ];
 
     beforeEach(async () => {
-      snapshotID = await utils.evm.snapshot();
-
       ({
         gatekeeper, token, capacitor, parameters: parameterStore,
       } = await utils.newPanvala({ from: creator }));
@@ -2903,8 +2840,6 @@ contract('Gatekeeper', (accounts) => {
 
       assert.fail('Finalized while contest epoch was still active');
     });
-
-    afterEach(async () => utils.evm.revert(snapshotID));
   });
 
   describe('getFirstChoiceVotes', () => {
@@ -2914,13 +2849,10 @@ contract('Gatekeeper', (accounts) => {
     let token;
     let capacitor;
     let epochNumber;
-    let snapshotID;
     let GRANT;
 
 
     beforeEach(async () => {
-      snapshotID = await utils.evm.snapshot();
-
       ({ gatekeeper, token, capacitor } = await utils.newPanvala({ from: creator }));
       epochNumber = await gatekeeper.currentEpochNumber();
 
@@ -2998,8 +2930,6 @@ contract('Gatekeeper', (accounts) => {
       const slate2Votes = await gatekeeper.getFirstChoiceVotes(epochNumber, GRANT, 2);
       assert.strictEqual(slate2Votes.toString(), toPanBase('0'));
     });
-
-    afterEach(async () => utils.evm.revert(snapshotID));
   });
 
   describe('contestStatus', () => {
@@ -3118,13 +3048,11 @@ contract('Gatekeeper', (accounts) => {
     const grantProposals = [{
       to: recommender, tokens: '1000', metadataHash: createMultihash('grant'),
     }];
-    let snapshotID;
 
 
     beforeEach(async () => {
       ({ gatekeeper, token, capacitor } = await utils.newPanvala({ from: creator }));
       epochNumber = await gatekeeper.currentEpochNumber();
-      snapshotID = await utils.evm.snapshot();
 
       GRANT = await getResource(gatekeeper, 'GRANT');
 
@@ -3425,8 +3353,6 @@ contract('Gatekeeper', (accounts) => {
         assert.strictEqual(winner.toString(), expected.winner, 'Wrong contest winner');
       });
     });
-
-    afterEach(async () => utils.evm.revert(snapshotID));
   });
 
   describe('finalizeRunoff', () => {
@@ -3435,7 +3361,6 @@ contract('Gatekeeper', (accounts) => {
     let gatekeeper;
     let token;
     let capacitor;
-    let snapshotID;
 
     let epochNumber;
     let GRANT;
@@ -3445,8 +3370,6 @@ contract('Gatekeeper', (accounts) => {
 
 
     beforeEach(async () => {
-      snapshotID = await utils.evm.snapshot();
-
       ({ gatekeeper, capacitor, token } = await utils.newPanvala({ from: creator }));
       epochNumber = await gatekeeper.currentEpochNumber();
 
@@ -3689,8 +3612,6 @@ contract('Gatekeeper', (accounts) => {
       }
       assert.fail('Ran runoff even though none was pending');
     });
-
-    afterEach(async () => utils.evm.revert(snapshotID));
   });
 
   describe('getWinningSlate', () => {
@@ -3699,7 +3620,6 @@ contract('Gatekeeper', (accounts) => {
     let gatekeeper;
     let token;
     let capacitor;
-    let snapshotID;
 
     let epochNumber;
     let GRANT;
@@ -3709,8 +3629,6 @@ contract('Gatekeeper', (accounts) => {
 
 
     beforeEach(async () => {
-      snapshotID = await utils.evm.snapshot();
-
       ({ gatekeeper, capacitor, token } = await utils.newPanvala({ from: creator }));
       epochNumber = await gatekeeper.currentEpochNumber();
 
@@ -3800,8 +3718,6 @@ contract('Gatekeeper', (accounts) => {
       }
       assert.fail('Returned a winner even though the contest has not been finalized');
     });
-
-    afterEach(async () => utils.evm.revert(snapshotID));
   });
 
   describe('hasPermission', () => {
@@ -3811,7 +3727,6 @@ contract('Gatekeeper', (accounts) => {
     let token;
     let capacitor;
     let epochNumber;
-    let snapshotID;
     let GRANT;
     const grantProposals = [
       { to: recommender, tokens: '1000', metadataHash: createMultihash('grant') },
@@ -3821,8 +3736,6 @@ contract('Gatekeeper', (accounts) => {
 
 
     beforeEach(async () => {
-      snapshotID = await utils.evm.snapshot();
-
       ({ token, gatekeeper, capacitor } = await utils.newPanvala({ from: creator }));
       epochNumber = await gatekeeper.currentEpochNumber();
 
@@ -3986,8 +3899,6 @@ contract('Gatekeeper', (accounts) => {
         assert.strictEqual(hasPermission, false, 'Expired request should not have been approved');
       });
     });
-
-    afterEach(async () => utils.evm.revert(snapshotID));
   });
 
   describe('withdrawStake', () => {
@@ -3997,7 +3908,6 @@ contract('Gatekeeper', (accounts) => {
     let token;
     let capacitor;
     let stakeAmount;
-    let snapshotID;
 
     let epochNumber;
     let GRANT;
@@ -4006,8 +3916,6 @@ contract('Gatekeeper', (accounts) => {
     }];
 
     beforeEach(async () => {
-      snapshotID = await utils.evm.snapshot();
-
       ({ gatekeeper, token, capacitor } = await utils.newPanvala({ from: creator }));
       epochNumber = await gatekeeper.currentEpochNumber();
 
@@ -4285,8 +4193,6 @@ contract('Gatekeeper', (accounts) => {
         assert.fail('Allowed withdrawal from a slate that has not been accepted');
       });
     });
-
-    afterEach(async () => utils.evm.revert(snapshotID));
   });
 
   describe('donateChallengerStakes', () => {
@@ -4295,7 +4201,6 @@ contract('Gatekeeper', (accounts) => {
     let gatekeeper;
     let token;
     let capacitor;
-    let snapshotID;
 
     let epochNumber;
     let GRANT;
@@ -4304,8 +4209,6 @@ contract('Gatekeeper', (accounts) => {
     }];
 
     beforeEach(async () => {
-      snapshotID = await utils.evm.snapshot();
-
       ({ gatekeeper, token, capacitor } = await utils.newPanvala({ from: creator }));
       epochNumber = await gatekeeper.currentEpochNumber();
 
@@ -4487,8 +4390,6 @@ contract('Gatekeeper', (accounts) => {
         assert.fail('Allowed donation of challenger stakes for an unfinalized contest');
       });
     });
-
-    afterEach(async () => utils.evm.revert(snapshotID));
   });
 
   describe('incumbent', () => {
@@ -4497,7 +4398,6 @@ contract('Gatekeeper', (accounts) => {
     let gatekeeper;
     let token;
     let capacitor;
-    let snapshotID;
 
     let epochNumber;
     let GRANT;
@@ -4506,8 +4406,6 @@ contract('Gatekeeper', (accounts) => {
     }];
 
     beforeEach(async () => {
-      snapshotID = await utils.evm.snapshot();
-
       ({ gatekeeper, token, capacitor } = await utils.newPanvala({ from: creator }));
       epochNumber = await gatekeeper.currentEpochNumber();
 
@@ -4614,7 +4512,5 @@ contract('Gatekeeper', (accounts) => {
       const incumbent = await gatekeeper.incumbent(GRANT);
       assert.strictEqual(incumbent, previousIncumbent, 'Incumbent should have stayed the same');
     });
-
-    afterEach(async () => utils.evm.revert(snapshotID));
   });
 });

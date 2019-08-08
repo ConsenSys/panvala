@@ -38,6 +38,14 @@ function lockedTokens(multipliers, scale, startingBalance, days) {
 
 contract('integration', (accounts) => {
   const multipliers = loadDecayMultipliers();
+  let snapshotID;
+
+  beforeEach(async () => {
+    snapshotID = await utils.evm.snapshot();
+  });
+
+  afterEach(async () => utils.evm.revert(snapshotID));
+
 
   describe('withdraw over time', () => {
     const [creator, recommender] = accounts;
@@ -47,7 +55,6 @@ contract('integration', (accounts) => {
     let token;
     let GRANT;
     let scale;
-    let snapshotID;
     const initialBalance = new BN(toPanBase(50e6));
     const zero = new BN(0);
     const tokenReleases = utils.loadTokenReleases();
@@ -55,7 +62,6 @@ contract('integration', (accounts) => {
 
     beforeEach(async () => {
       ({ gatekeeper, token, capacitor } = await utils.newPanvala({ from: creator }));
-      snapshotID = await utils.evm.snapshot();
       await utils.chargeCapacitor(capacitor, 50e6, token, { from: creator });
 
       GRANT = await getResource(gatekeeper, 'GRANT');
@@ -253,8 +259,6 @@ contract('integration', (accounts) => {
       const epochs = utils.range(numEpochs).map(i => (() => runEpoch(i)));
       await utils.chain(epochs);
     });
-
-    afterEach(async () => utils.evm.revert(snapshotID));
   });
 
   describe('full epoch cycles', () => {
@@ -266,14 +270,12 @@ contract('integration', (accounts) => {
     let parameters;
     let GRANT;
     let GOVERNANCE;
-    let snapshotID;
     const initialBalance = new BN(50e6);
 
     beforeEach(async () => {
       ({
         gatekeeper, token, capacitor, parameters,
       } = await utils.newPanvala({ from: creator }));
-      snapshotID = await utils.evm.snapshot();
       await utils.chargeCapacitor(capacitor, initialBalance, token, { from: creator });
 
       GRANT = await getResource(gatekeeper, 'GRANT');
@@ -819,8 +821,6 @@ contract('integration', (accounts) => {
         });
       });
     });
-
-    afterEach(async () => utils.evm.revert(snapshotID));
   });
 
   describe('finalization stress testing', () => {
@@ -830,7 +830,6 @@ contract('integration', (accounts) => {
     let capacitor;
     let token;
     let GRANT;
-    let snapshotID;
     const initialBalance = new BN(50e6);
     let epochNumber;
 
@@ -838,7 +837,6 @@ contract('integration', (accounts) => {
       ({
         gatekeeper, token, capacitor,
       } = await utils.newPanvala({ from: creator }));
-      snapshotID = await utils.evm.snapshot();
       await utils.chargeCapacitor(capacitor, initialBalance, token, { from: creator });
 
       GRANT = await getResource(gatekeeper, 'GRANT');
@@ -919,17 +917,10 @@ contract('integration', (accounts) => {
       const tokenThreshold = new BN(toPanBase(10000000));
       assert(spent.gte(tokenThreshold), 'Spent less than the threshold');
     });
-
-    afterEach(async () => utils.evm.revert(snapshotID));
   });
 
   describe('capacitor releases', () => {
     const [creator, recommender, partner] = accounts;
-    let snapshotID;
-
-    beforeEach(async () => {
-      snapshotID = await utils.evm.snapshot();
-    });
 
     it('deployment - should allow withdrawal of the correct number of tokens on Nov 1', async () => {
       const initialTokens = 49906303;
