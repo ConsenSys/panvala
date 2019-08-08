@@ -1,4 +1,4 @@
-pragma solidity 0.5.10;
+pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
 import "./Gatekeeper.sol";
@@ -37,8 +37,10 @@ contract ParameterStore {
         bool executed;
     }
 
-    // All submitted proposals
-    Proposal[] public proposals;
+    mapping(uint => Proposal) public proposals;
+
+    // The total number of proposals
+    uint public proposalCount;
 
     // IMPLEMENTATION
     /**
@@ -48,7 +50,7 @@ contract ParameterStore {
     */
     constructor(string[] memory _names, bytes32[] memory _values) public {
         owner = msg.sender;
-        require(_names.length == _values.length, "All inputs must have the same length");
+        // NOTE: _keys and _values must have the same length
 
         for (uint i = 0; i < _names.length; i++) {
             string memory name = _names[i];
@@ -120,7 +122,16 @@ contract ParameterStore {
         set(_name, _value);
     }
 
-    function _createProposal(Gatekeeper gatekeeper, string memory key, bytes32 value, bytes memory metadataHash) internal returns(uint256) {
+    /**
+     @dev Create a proposal to set a value.
+     @param key The key to set
+     @param value The value to set
+     @param metadataHash A reference to metadata describing the proposal
+     */
+    function createProposal(string memory key, bytes32 value, bytes memory metadataHash) public returns(uint256) {
+        require(metadataHash.length > 0, "metadataHash cannot be empty");
+
+        Gatekeeper gatekeeper = _gatekeeper();
         Proposal memory p = Proposal({
             gatekeeper: address(gatekeeper),
             requestID: 0,
@@ -135,24 +146,12 @@ contract ParameterStore {
         // proposalID.
         uint requestID = gatekeeper.requestPermission(metadataHash);
         p.requestID = requestID;
-        uint proposalID = proposalCount();
-        proposals.push(p);
+        uint proposalID = proposalCount;
+        proposals[proposalID] = p;
+        proposalCount = proposalCount.add(1);
 
         emit ProposalCreated(proposalID, msg.sender, requestID, key, value, metadataHash);
         return proposalID;
-    }
-
-    /**
-     @dev Create a proposal to set a value.
-     @param key The key to set
-     @param value The value to set
-     @param metadataHash A reference to metadata describing the proposal
-     */
-    function createProposal(string calldata key, bytes32 value, bytes calldata metadataHash) external returns(uint256) {
-        require(metadataHash.length > 0, "metadataHash cannot be empty");
-
-        Gatekeeper gatekeeper = _gatekeeper();
-        return _createProposal(gatekeeper, key, value, metadataHash);
     }
 
     /**
@@ -162,21 +161,18 @@ contract ParameterStore {
      @param metadataHashes Metadata hashes describing the proposals
     */
     function createManyProposals(
-        string[] calldata keys,
-        bytes32[] calldata values,
-        bytes[] calldata metadataHashes
-    ) external {
-        require(
-            keys.length == values.length && values.length == metadataHashes.length,
-            "All inputs must have the same length"
-        );
+        string[] memory keys,
+        bytes32[] memory values,
+        bytes[] memory metadataHashes
+    ) public {
+        require(keys.length == values.length, "All inputs must have the same length");
+        require(values.length == metadataHashes.length, "All inputs must have the same length");
 
-        Gatekeeper gatekeeper = _gatekeeper();
         for (uint i = 0; i < keys.length; i++) {
             string memory key = keys[i];
             bytes32 value = values[i];
             bytes memory metadataHash = metadataHashes[i];
-            _createProposal(gatekeeper, key, value, metadataHash);
+            createProposal(key, value, metadataHash);
         }
     }
 
@@ -186,7 +182,7 @@ contract ParameterStore {
      @param proposalID The proposal
      */
     function setValue(uint256 proposalID) public returns(bool) {
-        require(proposalID < proposalCount(), "Invalid proposalID");
+        require(proposalID < proposalCount, "Invalid proposalID");
 
         Proposal memory p = proposals[proposalID];
         Gatekeeper gatekeeper = Gatekeeper(p.gatekeeper);
@@ -200,10 +196,6 @@ contract ParameterStore {
 
         emit ProposalAccepted(proposalID, p.key, p.value);
         return true;
-    }
-
-    function proposalCount() public view returns(uint256) {
-        return proposals.length;
     }
 
     function _gatekeeper() private view returns(Gatekeeper) {

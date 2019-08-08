@@ -68,8 +68,8 @@ contract UpgradedGatekeeper is Gatekeeper {
         // Note that some of the slates and requests will be uninitialized
         // If you were to use this pattern, then you would need to make sure to get the slates from
         // the appropriate gatekeepers
-        slates.length = previousGatekeeper.slateCount();
-        requests.length = previousGatekeeper.requestCount();
+        slateCount = previousGatekeeper.slateCount();
+        requestCount = previousGatekeeper.requestCount();
 
         // Handle contests we care about
         address capacitor = parameters.getAsAddress("tokenCapacitorAddress");

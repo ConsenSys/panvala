@@ -1,4 +1,4 @@
-pragma solidity 0.5.10;
+pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
 import "./Gatekeeper.sol";
@@ -44,11 +44,15 @@ contract TokenCapacitor {
         bool withdrawn;
     }
 
-    // The proposals created for the TokenCapacitor.
-    Proposal[] public proposals;
+    // The proposals created for the TokenCapacitor. Maps requestIDs to proposals.
+    mapping(uint => Proposal) public proposals;
+
+    // The total number of proposals
+    uint public proposalCount;
 
     // Token decay table
-    uint256 public constant SCALE = 10 ** 12;
+    uint256 constant PRECISION = 12;
+    uint256 public scale;
     uint256[12] decayMultipliers;
 
     // Balances
@@ -88,6 +92,8 @@ contract TokenCapacitor {
         decayMultipliers[10] = 614167168195;
         decayMultipliers[11] = 377201310488;
 
+        scale = 10 ** PRECISION;
+
         unlockedBalance = initialUnlockedBalance;
         lastLockedTime = now;
     }
@@ -96,7 +102,16 @@ contract TokenCapacitor {
         return Gatekeeper(parameters.getAsAddress("gatekeeperAddress"));
     }
 
-    function _createProposal(Gatekeeper gatekeeper, address to, uint tokens, bytes memory metadataHash) internal returns(uint256) {
+    /**
+     @dev Create a proposal to send tokens to a beneficiary.
+     @param to The account to send the tokens to
+     @param tokens The number of tokens to send
+     @param metadataHash A reference to metadata describing the proposal
+    */
+    function createProposal(address to, uint tokens, bytes memory metadataHash) public returns(uint) {
+        require(metadataHash.length > 0, "metadataHash cannot be empty");
+
+        Gatekeeper gatekeeper = _gatekeeper();
         Proposal memory p = Proposal({
             gatekeeper: address(gatekeeper),
             requestID: 0,
@@ -111,24 +126,12 @@ contract TokenCapacitor {
         // proposalID.
         uint requestID = gatekeeper.requestPermission(metadataHash);
         p.requestID = requestID;
-        uint proposalID = proposalCount();
-        proposals.push(p);
+        uint proposalID = proposalCount;
+        proposals[proposalID] = p;
+        proposalCount = proposalCount.add(1);
 
         emit ProposalCreated(proposalID, msg.sender, requestID, to, tokens, metadataHash);
         return proposalID;
-    }
-
-    /**
-     @dev Create a proposal to send tokens to a beneficiary.
-     @param to The account to send the tokens to
-     @param tokens The number of tokens to send
-     @param metadataHash A reference to metadata describing the proposal
-    */
-    function createProposal(address to, uint tokens, bytes calldata metadataHash) external returns(uint) {
-        require(metadataHash.length > 0, "metadataHash cannot be empty");
-
-        Gatekeeper gatekeeper = _gatekeeper();
-        return _createProposal(gatekeeper, to, tokens, metadataHash);
     }
 
     /**
@@ -138,21 +141,18 @@ contract TokenCapacitor {
      @param metadataHashes Metadata hashes describing the proposals
     */
     function createManyProposals(
-        address[] calldata beneficiaries,
-        uint[] calldata tokenAmounts,
-        bytes[] calldata metadataHashes
-    ) external {
-        require(
-            beneficiaries.length == tokenAmounts.length && tokenAmounts.length == metadataHashes.length,
-            "All inputs must have the same length"
-        );
+        address[] memory beneficiaries,
+        uint[] memory tokenAmounts,
+        bytes[] memory metadataHashes
+    ) public {
+        require(beneficiaries.length == tokenAmounts.length, "All inputs must have the same length");
+        require(tokenAmounts.length == metadataHashes.length, "All inputs must have the same length");
 
-        Gatekeeper gatekeeper = _gatekeeper();
         for (uint i = 0; i < beneficiaries.length; i++) {
             address to = beneficiaries[i];
             uint tokens = tokenAmounts[i];
             bytes memory metadataHash = metadataHashes[i];
-            _createProposal(gatekeeper, to, tokens, metadataHash);
+            createProposal(to, tokens, metadataHash);
         }
     }
 
@@ -162,7 +162,7 @@ contract TokenCapacitor {
     @param proposalID The proposal
     */
     function withdrawTokens(uint proposalID) public returns(bool) {
-        require(proposalID < proposalCount(), "Invalid proposalID");
+        require(proposalID < proposalCount, "Invalid proposalID");
 
         Proposal memory p = proposals[proposalID];
         Gatekeeper gatekeeper = Gatekeeper(p.gatekeeper);
@@ -231,7 +231,7 @@ contract TokenCapacitor {
         // Based on the elapsed time (in days), calculate the decay factor
         uint256 decayFactor = calculateDecay(elapsedTime.div(86400));
 
-        return lastLockedBalance.mul(decayFactor).div(SCALE);
+        return lastLockedBalance.mul(decayFactor).div(scale);
     }
 
     /**
@@ -240,7 +240,7 @@ contract TokenCapacitor {
     function calculateDecay(uint256 _days) public view returns(uint256) {
         require(_days <= (2 ** decayMultipliers.length) - 1, "Time interval too large");
 
-        uint256 decay = SCALE;
+        uint256 decay = scale;
         uint256 d = _days;
 
         for (uint256 i = 0; i < decayMultipliers.length; i++) {
@@ -249,7 +249,7 @@ contract TokenCapacitor {
 
            if (remainder == 1) {
                 uint256 multiplier = decayMultipliers[i];
-                decay = decay.mul(multiplier).div(SCALE);
+                decay = decay.mul(multiplier).div(scale);
            } else if (quotient == 0) {
                // Exit early if both quotient and remainder are zero
                break;
@@ -268,8 +268,6 @@ contract TokenCapacitor {
      @param time The time to update until. Must be less than 4096 days from the lastLockedTime.
      */
     function updateBalancesUntil(uint256 time) public {
-        require(time <= now, "No future updates");
-
         uint256 totalBalance = token.balanceOf(address(this));
 
         // Sweep the released tokens from locked into unlocked
@@ -292,9 +290,5 @@ contract TokenCapacitor {
      */
     function updateBalances() public {
         updateBalancesUntil(now);
-    }
-
-    function proposalCount() public view returns(uint256) {
-        return proposals.length;
     }
 }
