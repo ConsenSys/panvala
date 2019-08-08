@@ -25,9 +25,10 @@ const {
   asBytes,
   createMultihash,
   toPanBase,
+  epochPeriods,
 } = utils;
 
-const { increaseTime } = utils.evm;
+const { increaseTime, goToPeriod } = utils.evm;
 const { ONE_WEEK } = timing;
 const { defaultParams } = utils.pan;
 
@@ -39,7 +40,7 @@ async function doRunoff(gatekeeper, epochNumber, voters, options) {
   const resource = await getResource(gatekeeper, 'GRANT');
 
   // Run a vote that triggers a runoff
-  await increaseTime(timing.VOTING_PERIOD_START);
+  await goToPeriod(gatekeeper, epochPeriods.COMMIT);
   const aliceReveal = await voteSingle(gatekeeper, alice, resource, 0, 1, '800', '1234');
   const bobReveal = await voteSingle(gatekeeper, bob, resource, 1, 2, '900', '5678');
   const carolReveal = await voteSingle(gatekeeper, carol, resource, 2, 0, '1000', '9012');
@@ -64,7 +65,7 @@ async function doVote(gatekeeper, epochNumber, voters, options) {
 
   const resource = await getResource(gatekeeper, 'GRANT');
 
-  await increaseTime(timing.VOTING_PERIOD_START);
+  await goToPeriod(gatekeeper, epochPeriods.COMMIT);
   const aliceReveal = await voteSingle(gatekeeper, alice, resource, 0, 1, '1000', '1234');
   const bobReveal = await voteSingle(gatekeeper, bob, resource, 0, 1, '1000', '5678');
   const carolReveal = await voteSingle(gatekeeper, carol, resource, 1, 0, '1000', '9012');
@@ -282,7 +283,7 @@ contract('Gatekeeper', (accounts) => {
     describe('future epoch', () => {
       const numEpochs = new BN(3.5);
 
-      before(async () => {
+      beforeEach(async () => {
         // Go forward in time
         const offset = timing.EPOCH_LENGTH.mul(numEpochs);
         await increaseTime(offset);
@@ -343,189 +344,240 @@ contract('Gatekeeper', (accounts) => {
       epochNumber = await gatekeeper.currentEpochNumber();
 
       GRANT = await getResource(gatekeeper, 'GRANT');
-
-      // Get requestIDs for the slate
-      const tokenAmounts = ['1000', '1000', '2000', '2000'].map(toPanBase);
-      const proposalsReceipt = await capacitor.createManyProposals(
-        [creator, recommender, creator, recommender],
-        tokenAmounts,
-        ['proposal1', 'proposal2', 'proposal3', 'proposal4'].map(p => utils.asBytes(utils.createMultihash(p))),
-        { from: recommender },
-      );
-
-      requestIDs = proposalsReceipt.logs.map(l => l.args.requestID);
     });
 
-    it('should create a new slate with the provided data', async () => {
-      const resource = GRANT;
+    describe('in submission period', () => {
+      beforeEach(async () => {
+        await increaseTime(timing.SLATE_SUBMISSION_PERIOD_START);
 
-      // Initial status should be Empty
-      const initialStatus = await gatekeeper.contestStatus(epochNumber, resource);
-      assert.strictEqual(initialStatus.toString(), '0', 'Initial contest status should be Empty (0)');
+        // Get requestIDs for the slate
+        const tokenAmounts = ['1000', '1000', '2000', '2000'].map(toPanBase);
+        const proposalsReceipt = await capacitor.createManyProposals(
+          [creator, recommender, creator, recommender],
+          tokenAmounts,
+          ['proposal1', 'proposal2', 'proposal3', 'proposal4'].map(p => utils.asBytes(utils.createMultihash(p))),
+          { from: recommender },
+        );
 
-      // Create a slate
-      const receipt = await gatekeeper.recommendSlate(
-        resource,
-        requestIDs,
-        utils.asBytes(metadataHash),
-        { from: recommender },
-      );
+        requestIDs = proposalsReceipt.logs.map(l => l.args.requestID);
+      });
 
-      // Verify log values
-      expectEvents(receipt, ['SlateCreated']);
-      const {
-        slateID,
-        recommender: emittedRecommender,
-        requestIDs: emittedRequestIDs,
-        metadataHash: emittedHash,
-      } = receipt.logs[0].args;
+      it('should create a new slate with the provided data', async () => {
+        const resource = GRANT;
 
-      assert.strictEqual(slateID.toString(), '0', 'SlateID is incorrect');
-      assert.strictEqual(emittedRecommender, recommender, 'Recommender is incorrect');
-      assert.deepStrictEqual(emittedRequestIDs, requestIDs, 'RequestIDs are incorrect');
-      assert.strictEqual(utils.bytesAsString(emittedHash), metadataHash, 'Metadata hash is incorrect');
+        // Initial status should be Empty
+        const initialStatus = await gatekeeper.contestStatus(epochNumber, resource);
+        assert.strictEqual(initialStatus.toString(), '0', 'Initial contest status should be Empty (0)');
 
-      // Incremented slate count
-      const slateCount = await gatekeeper.slateCount();
-      assert.strictEqual(slateCount.toString(), '1', 'Slate count was not properly incremented');
-
-      // Check that the slate was initialized properly
-      const slate = await gatekeeper.slates(slateID);
-      assert.strictEqual(slate.recommender, recommender, 'Recommender was not properly set');
-      assert.strictEqual(utils.bytesAsString(slate.metadataHash), metadataHash, 'Metadata hash is incorrect');
-      const storedRequests = await gatekeeper.slateRequests(slateID);
-      assert.deepStrictEqual(
-        storedRequests.map(r => r.toString()),
-        requestIDs.map(r => r.toString()),
-        'Requests were not properly stored',
-      );
-      // requestIncluded
-      assert.strictEqual(slate.status.toString(), SlateStatus.Unstaked, 'Status should have been `Unstaked`');
-      assert.strictEqual(slate.staker.toString(), utils.zeroAddress(), 'Staker should have been zero');
-      assert.strictEqual(slate.stake.toString(), '0', 'Initial stake should have been zero');
-      assert.strictEqual(slate.epochNumber.toString(), epochNumber.toString(), 'Incorrect epoch number');
-      assert.strictEqual(slate.resource.toString(), resource.toString(), 'Incorrect resource');
-
-      // Adding a slate without staking it should not change the contest status
-      const status = await gatekeeper.contestStatus(epochNumber, resource);
-      assert.strictEqual(status.toString(), ContestStatus.Empty, 'Contest status should be Empty (0)');
-    });
-
-    it('should allow creation of an empty slate', async () => {
-      const resource = GRANT;
-      const noRequests = [];
-
-      // Create a slate
-      const receipt = await gatekeeper.recommendSlate(
-        resource,
-        noRequests,
-        utils.asBytes(metadataHash),
-        { from: recommender },
-      );
-
-      const { slateID } = receipt.logs[0].args;
-      const requests = await gatekeeper.slateRequests(slateID);
-      assert.deepStrictEqual(requests, noRequests);
-    });
-
-    it('should revert if the metadataHash is empty', async () => {
-      const resource = GRANT;
-      const emptyHash = '';
-
-      try {
-        await gatekeeper.recommendSlate(
+        // Create a slate
+        const receipt = await gatekeeper.recommendSlate(
           resource,
           requestIDs,
-          utils.asBytes(emptyHash),
-          { from: recommender },
-        );
-      } catch (error) {
-        expectRevert(error);
-        expectErrorLike(error, 'metadataHash cannot be empty');
-        return;
-      }
-      assert.fail('Recommended a slate with an empty metadataHash');
-    });
-
-    it('should revert if any of the requestIDs is invalid', async () => {
-      const resource = GRANT;
-      const invalidRequestIDs = [...requestIDs, requestIDs.length];
-
-      try {
-        await gatekeeper.recommendSlate(
-          resource,
-          invalidRequestIDs,
           utils.asBytes(metadataHash),
           { from: recommender },
         );
-      } catch (error) {
-        expectRevert(error);
-        expectErrorLike(error, 'invalid requestID');
-        return;
-      }
-      assert.fail('Recommended a slate with an invalid requestID');
-    });
 
-    it('should revert if there are duplicate requestIDs', async () => {
-      const resource = GRANT;
-      const invalidRequestIDs = [...requestIDs, requestIDs[0]];
+        // Verify log values
+        expectEvents(receipt, ['SlateCreated']);
+        const {
+          slateID,
+          recommender: emittedRecommender,
+          requestIDs: emittedRequestIDs,
+          metadataHash: emittedHash,
+        } = receipt.logs[0].args;
 
-      try {
-        await gatekeeper.recommendSlate(
+        assert.strictEqual(slateID.toString(), '0', 'SlateID is incorrect');
+        assert.strictEqual(emittedRecommender, recommender, 'Recommender is incorrect');
+        assert.deepStrictEqual(emittedRequestIDs, requestIDs, 'RequestIDs are incorrect');
+        assert.strictEqual(utils.bytesAsString(emittedHash), metadataHash, 'Metadata hash is incorrect');
+
+        // Incremented slate count
+        const slateCount = await gatekeeper.slateCount();
+        assert.strictEqual(slateCount.toString(), '1', 'Slate count was not properly incremented');
+
+        // Check that the slate was initialized properly
+        const slate = await gatekeeper.slates(slateID);
+        assert.strictEqual(slate.recommender, recommender, 'Recommender was not properly set');
+        assert.strictEqual(utils.bytesAsString(slate.metadataHash), metadataHash, 'Metadata hash is incorrect');
+        const storedRequests = await gatekeeper.slateRequests(slateID);
+        assert.deepStrictEqual(
+          storedRequests.map(r => r.toString()),
+          requestIDs.map(r => r.toString()),
+          'Requests were not properly stored',
+        );
+        // requestIncluded
+        assert.strictEqual(slate.status.toString(), SlateStatus.Unstaked, 'Status should have been `Unstaked`');
+        assert.strictEqual(slate.staker.toString(), utils.zeroAddress(), 'Staker should have been zero');
+        assert.strictEqual(slate.stake.toString(), '0', 'Initial stake should have been zero');
+        assert.strictEqual(slate.epochNumber.toString(), epochNumber.toString(), 'Incorrect epoch number');
+        assert.strictEqual(slate.resource.toString(), resource.toString(), 'Incorrect resource');
+
+        // Adding a slate without staking it should not change the contest status
+        const status = await gatekeeper.contestStatus(epochNumber, resource);
+        assert.strictEqual(status.toString(), ContestStatus.Empty, 'Contest status should be Empty (0)');
+      });
+
+      it('should allow creation of an empty slate', async () => {
+        const resource = GRANT;
+        const noRequests = [];
+
+        // Create a slate
+        const receipt = await gatekeeper.recommendSlate(
           resource,
-          invalidRequestIDs,
+          noRequests,
           utils.asBytes(metadataHash),
           { from: recommender },
         );
-      } catch (error) {
-        expectRevert(error);
-        expectErrorLike(error, 'Duplicate requests');
-        return;
-      }
-      assert.fail('Recommended a slate with duplicate requestIDs');
+
+        const { slateID } = receipt.logs[0].args;
+        const requests = await gatekeeper.slateRequests(slateID);
+        assert.deepStrictEqual(requests, noRequests);
+      });
+
+      it('should revert if the metadataHash is empty', async () => {
+        const resource = GRANT;
+        const emptyHash = '';
+
+        try {
+          await gatekeeper.recommendSlate(
+            resource,
+            requestIDs,
+            utils.asBytes(emptyHash),
+            { from: recommender },
+          );
+        } catch (error) {
+          expectRevert(error);
+          expectErrorLike(error, 'metadataHash cannot be empty');
+          return;
+        }
+        assert.fail('Recommended a slate with an empty metadataHash');
+      });
+
+      it('should revert if any of the requestIDs is invalid', async () => {
+        const resource = GRANT;
+        const invalidRequestIDs = [...requestIDs, requestIDs.length];
+
+        try {
+          await gatekeeper.recommendSlate(
+            resource,
+            invalidRequestIDs,
+            utils.asBytes(metadataHash),
+            { from: recommender },
+          );
+        } catch (error) {
+          expectRevert(error);
+          expectErrorLike(error, 'invalid requestID');
+          return;
+        }
+        assert.fail('Recommended a slate with an invalid requestID');
+      });
+
+      it('should revert if there are duplicate requestIDs', async () => {
+        const resource = GRANT;
+        const invalidRequestIDs = [...requestIDs, requestIDs[0]];
+
+        try {
+          await gatekeeper.recommendSlate(
+            resource,
+            invalidRequestIDs,
+            utils.asBytes(metadataHash),
+            { from: recommender },
+          );
+        } catch (error) {
+          expectRevert(error);
+          expectErrorLike(error, 'Duplicate requests');
+          return;
+        }
+        assert.fail('Recommended a slate with duplicate requestIDs');
+      });
+
+      it('should revert if any of the requests have resources that do not match the one provided', async () => {
+        const parameterStore = await ParameterStore.at(await gatekeeper.parameters());
+
+        // Create grant proposal
+        const grantRequestReceipt = await capacitor.createProposal(
+          recommender,
+          toPanBase('1000'),
+          asBytes(utils.createMultihash('grant proposal')),
+        );
+
+        const { requestID: grantRequestID } = grantRequestReceipt.logs[0].args;
+
+        // Create governance proposal
+        const governanceRequestReceipt = await parameterStore.createProposal(
+          'param',
+          utils.abiEncode('uint256', '1000'),
+          asBytes(utils.createMultihash('governance proposal')),
+        );
+
+        const { requestID: governanceRequestID } = governanceRequestReceipt.logs[0].args;
+
+        // Try to create a grant slate with a governance request included
+        const resource = capacitor.address;
+        try {
+          await gatekeeper.recommendSlate(
+            resource,
+            [grantRequestID, governanceRequestID],
+            asBytes('mixed slate'),
+            { from: recommender },
+          );
+        } catch (error) {
+          expectRevert(error);
+          expectErrorLike(error, 'does not match');
+          return;
+        }
+
+        assert.fail('Allowed creation of a slate with mixed proposal types');
+      });
     });
 
-    it('should revert if any of the requests have resources that do not match the one provided', async () => {
-      const parameterStore = await ParameterStore.at(await gatekeeper.parameters());
+    describe('outside submission period', () => {
+      it('should revert if the slate submission period has not started', async () => {
+        const epochStart = await gatekeeper.epochStart(epochNumber);
+        const now = new BN(await utils.evm.timestamp());
+        const epochTime = now.sub(epochStart);
 
-      // Create grant proposal
-      const grantRequestReceipt = await capacitor.createProposal(
-        recommender,
-        toPanBase('1000'),
-        asBytes(utils.createMultihash('grant proposal')),
-      );
+        assert(epochTime.lt(timing.SLATE_SUBMISSION_PERIOD_START), 'Time is not before submission period');
 
-      const { requestID: grantRequestID } = grantRequestReceipt.logs[0].args;
+        try {
+          // Get requestIDs for the slate
+          const tokenAmounts = ['1000', '1000', '2000', '2000'].map(toPanBase);
+          const proposalsReceipt = await capacitor.createManyProposals(
+            [creator, recommender, creator, recommender],
+            tokenAmounts,
+            ['proposal1', 'proposal2', 'proposal3', 'proposal4'].map(p => utils.asBytes(utils.createMultihash(p))),
+            { from: recommender },
+          );
 
-      // Create governance proposal
-      const governanceRequestReceipt = await parameterStore.createProposal(
-        'param',
-        utils.abiEncode('uint256', '1000'),
-        asBytes(utils.createMultihash('governance proposal')),
-      );
+          requestIDs = proposalsReceipt.logs.map(l => l.args.requestID);
 
-      const { requestID: governanceRequestID } = governanceRequestReceipt.logs[0].args;
+          await gatekeeper.recommendSlate(GRANT, requestIDs, utils.asBytes(metadataHash), {
+            from: recommender,
+          });
+        } catch (error) {
+          expectRevert(error);
+          expectErrorLike(error, 'Submission period not active');
+          return;
+        }
+        assert.fail('Created a slate before the slate submission period');
+      });
 
-      // Try to create a grant slate with a governance request included
-      const resource = capacitor.address;
-      try {
-        await gatekeeper.recommendSlate(
-          resource,
-          [grantRequestID, governanceRequestID],
-          asBytes('mixed slate'),
+      it('should revert if the slate submission period has ended', async () => {
+        // Prepare proposals
+        await increaseTime(timing.SLATE_SUBMISSION_PERIOD_START);
+
+        // Get requestIDs for the slate
+        const tokenAmounts = ['1000', '1000', '2000', '2000'].map(toPanBase);
+        const proposalsReceipt = await capacitor.createManyProposals(
+          [creator, recommender, creator, recommender],
+          tokenAmounts,
+          ['proposal1', 'proposal2', 'proposal3', 'proposal4'].map(p => utils.asBytes(utils.createMultihash(p))),
           { from: recommender },
         );
-      } catch (error) {
-        expectRevert(error);
-        expectErrorLike(error, 'does not match');
-        return;
-      }
 
-      assert.fail('Allowed creation of a slate with mixed proposal types');
-    });
+        requestIDs = proposalsReceipt.logs.map(l => l.args.requestID);
 
-    describe('timing', () => {
-      it('should revert if the slate submission period is not active', async () => {
+        // Submit slate
         const resource = GRANT;
         const deadline = await gatekeeper.slateSubmissionDeadline(epochNumber, resource);
 
@@ -542,7 +594,7 @@ contract('Gatekeeper', (accounts) => {
           });
         } catch (error) {
           expectRevert(error);
-          expectErrorLike(error, 'deadline passed');
+          expectErrorLike(error, 'Submission period not active');
           return;
         }
         assert.fail('Allowed slate submission after the slate submission deadline');
@@ -567,21 +619,6 @@ contract('Gatekeeper', (accounts) => {
 
       epochNumber = await gatekeeper.currentEpochNumber();
 
-      const tokens = '1000';
-      const proposals = [
-        { to: staker, tokens, metadataHash: createMultihash('a') },
-        { to: staker, tokens, metadataHash: createMultihash('b') },
-        { to: staker, tokens, metadataHash: createMultihash('c') },
-      ];
-      const metadata = asBytes(createMultihash('grant slate'));
-
-      await utils.grantSlateFromProposals({
-        gatekeeper,
-        proposals,
-        capacitor,
-        metadata,
-        recommender,
-      });
 
       stakeAmount = await parameters.getAsUint('slateStakeAmount');
 
@@ -591,147 +628,206 @@ contract('Gatekeeper', (accounts) => {
       await token.approve(gatekeeper.address, allocatedTokens, { from: staker });
     });
 
-    it('should allow a user to stake tokens on a slate', async () => {
-      const votingLength = timing.VOTING_PERIOD_START;
+    describe('in submission period', () => {
+      beforeEach(async () => {
+        await increaseTime(timing.SLATE_SUBMISSION_PERIOD_START);
 
-      const epochStart = await currentEpochStart(gatekeeper);
+        const tokens = '1000';
+        const proposals = [
+          { to: staker, tokens, metadataHash: createMultihash('a') },
+          { to: staker, tokens, metadataHash: createMultihash('b') },
+          { to: staker, tokens, metadataHash: createMultihash('c') },
+        ];
+        const metadata = asBytes(createMultihash('grant slate'));
 
-      // move forward in the slate submission period
-      const offset = ONE_WEEK;
-      await increaseTime(offset);
-
-      // Stake tokens
-      const initialBalance = await token.balanceOf(staker);
-      const receipt = await gatekeeper.stakeTokens(slateID, { from: staker });
-      const { blockNumber: stakingBlock } = receipt.receipt;
-      const stakingTime = new BN(await utils.evm.timestamp(stakingBlock));
-
-      // Check logs
-      const {
-        slateID: emittedSlateID,
-        staker: emittedStaker,
-        numTokens: emittedTokens,
-      } = receipt.logs[0].args;
-
-      assert.strictEqual(emittedSlateID.toString(), slateID.toString(), 'Emitted wrong slateID');
-      assert.strictEqual(emittedStaker, staker, 'Emitted wrong staker');
-      assert.strictEqual(emittedTokens.toString(), stakeAmount.toString(), 'Emitted wrong stake amount');
-
-      // Slate should be staked, with staking info recorded
-      const slate = await gatekeeper.slates(slateID);
-      assert.strictEqual(slate.status.toString(), SlateStatus.Staked, 'Slate should be staked');
-      assert.strictEqual(slate.stake.toString(), stakeAmount.toString(), 'Wrong stake was saved');
-      assert.strictEqual(slate.staker, staker, 'Wrong staker was saved');
-
-      // User's balance should have changed
-      const finalBalance = await token.balanceOf(staker);
-      const expectedBalance = initialBalance.sub(new BN(stakeAmount));
-      assert.strictEqual(finalBalance.toString(), expectedBalance.toString(), 'Tokens were not transferred');
-
-      const gatekeeperBalance = await token.balanceOf(gatekeeper.address);
-      assert.strictEqual(
-        gatekeeperBalance.toString(),
-        stakeAmount.toString(),
-        'Gatekeeper did not get the tokens',
-      );
-
-      // Should extend the slate submission deadline
-      const finalSlateDeadline = await gatekeeper.slateSubmissionDeadline(epochNumber, GRANT);
-
-      const votingStart = epochStart.add(votingLength);
-      const timeLeft = votingStart.sub(stakingTime);
-      const expectedDeadline = stakingTime.add(timeLeft.div(new BN(2)));
-      assert.strictEqual(
-        finalSlateDeadline.toString(),
-        expectedDeadline.toString(),
-        'Wrong deadline',
-      );
-    });
-
-    it('should revert if the slate does not exist', async () => {
-      const badSlateID = 500;
-      try {
-        await gatekeeper.stakeTokens(badSlateID, { from: staker });
-      } catch (error) {
-        expectRevert(error);
-        expectErrorLike(error, 'No slate exists');
-        return;
-      }
-      assert.fail('Staked on a non-existent stake');
-    });
-
-    it('should revert if the user does not have enough tokens', async () => {
-      const poorStaker = staker2;
-      await token.transfer(poorStaker, stakeAmount.sub(new BN('1')), { from: creator });
-
-      const initialBalance = await token.balanceOf(poorStaker);
-      assert(initialBalance.lt(stakeAmount), 'Initial balance was not less than the stake amount');
-
-      try {
-        await gatekeeper.stakeTokens(slateID, { from: poorStaker });
-      } catch (error) {
-        expectRevert(error);
-        expectErrorLike(error, 'Insufficient token balance');
-        return;
-      }
-      assert.fail('Staked with insufficient balance');
-    });
-
-    it('should revert if the token transfer fails', async () => {
-      const thisStaker = staker2;
-      // Give the staker a sufficient balance, but don't approve the Gatekeeper to spend
-      await token.transfer(thisStaker, stakeAmount, { from: creator });
-      const initialBalance = await token.balanceOf(thisStaker);
-      assert(initialBalance.gte(stakeAmount), 'Initial balance was not sufficient for staking');
-
-      try {
-        await gatekeeper.stakeTokens(slateID, { from: thisStaker });
-      } catch (error) {
-        expectRevert(error);
-        // No message - SafeMath
-        return;
-      }
-      assert.fail('Staked even though token transfer failed');
-    });
-
-    it('should revert if the slate has already been staked on', async () => {
-      const amount = defaultParams.slateStakeAmount;
-      await token.transfer(staker, amount, { from: creator });
-      await token.approve(gatekeeper.address, amount, { from: staker });
-
-      await gatekeeper.stakeTokens(slateID, { from: staker });
-
-      try {
-        await gatekeeper.stakeTokens(slateID, { from: staker });
-      } catch (error) {
-        expectRevert(error);
-        expectErrorLike(error, 'already been staked');
-        return;
-      }
-      assert.fail('Allowed a slate to be staked multiple times');
-    });
-
-    it('should revert if the slate submission period is not active', async () => {
-      const resource = GRANT;
-      const deadline = await gatekeeper.slateSubmissionDeadline(epochNumber, resource);
-
-      // move forward
-      const offset = ONE_WEEK.mul(new BN(6));
-      await increaseTime(offset);
-      const now = await utils.evm.timestamp();
-      const submissionTime = new BN(now);
-      assert(submissionTime.gt(deadline), 'Time is not after deadline');
-
-      try {
-        await gatekeeper.stakeTokens(slateID, {
-          from: staker,
+        await utils.grantSlateFromProposals({
+          gatekeeper,
+          proposals,
+          capacitor,
+          metadata,
+          recommender,
         });
-      } catch (error) {
-        expectRevert(error);
-        expectErrorLike(error, 'deadline passed');
-        return;
-      }
-      assert.fail('Allowed slate staking after the slate submission deadline');
+      });
+
+      it('should allow a user to stake tokens on a slate', async () => {
+        const votingLength = timing.VOTING_PERIOD_START;
+
+        const epochStart = await currentEpochStart(gatekeeper);
+
+        // move forward in the slate submission period
+        const offset = ONE_WEEK;
+        await increaseTime(offset);
+
+        // Stake tokens
+        const initialBalance = await token.balanceOf(staker);
+        const receipt = await gatekeeper.stakeTokens(slateID, { from: staker });
+        const { blockNumber: stakingBlock } = receipt.receipt;
+        const stakingTime = new BN(await utils.evm.timestamp(stakingBlock));
+
+        // Check logs
+        const {
+          slateID: emittedSlateID,
+          staker: emittedStaker,
+          numTokens: emittedTokens,
+        } = receipt.logs[0].args;
+
+        assert.strictEqual(emittedSlateID.toString(), slateID.toString(), 'Emitted wrong slateID');
+        assert.strictEqual(emittedStaker, staker, 'Emitted wrong staker');
+        assert.strictEqual(emittedTokens.toString(), stakeAmount.toString(), 'Emitted wrong stake amount');
+
+        // Slate should be staked, with staking info recorded
+        const slate = await gatekeeper.slates(slateID);
+        assert.strictEqual(slate.status.toString(), SlateStatus.Staked, 'Slate should be staked');
+        assert.strictEqual(slate.stake.toString(), stakeAmount.toString(), 'Wrong stake was saved');
+        assert.strictEqual(slate.staker, staker, 'Wrong staker was saved');
+
+        // User's balance should have changed
+        const finalBalance = await token.balanceOf(staker);
+        const expectedBalance = initialBalance.sub(new BN(stakeAmount));
+        assert.strictEqual(finalBalance.toString(), expectedBalance.toString(), 'Tokens were not transferred');
+
+        const gatekeeperBalance = await token.balanceOf(gatekeeper.address);
+        assert.strictEqual(
+          gatekeeperBalance.toString(),
+          stakeAmount.toString(),
+          'Gatekeeper did not get the tokens',
+        );
+
+        // Should extend the slate submission deadline
+        const finalSlateDeadline = await gatekeeper.slateSubmissionDeadline(epochNumber, GRANT);
+
+        const votingStart = epochStart.add(votingLength);
+        const timeLeft = votingStart.sub(stakingTime);
+        const expectedDeadline = stakingTime.add(timeLeft.div(new BN(2)));
+        assert.strictEqual(
+          finalSlateDeadline.toString(),
+          expectedDeadline.toString(),
+          'Wrong deadline',
+        );
+      });
+
+      it('should revert if the slate does not exist', async () => {
+        const badSlateID = 500;
+        try {
+          await gatekeeper.stakeTokens(badSlateID, { from: staker });
+        } catch (error) {
+          expectRevert(error);
+          expectErrorLike(error, 'No slate exists');
+          return;
+        }
+        assert.fail('Staked on a non-existent stake');
+      });
+
+      it('should revert if the user does not have enough tokens', async () => {
+        const poorStaker = staker2;
+        await token.transfer(poorStaker, stakeAmount.sub(new BN('1')), { from: creator });
+
+        const initialBalance = await token.balanceOf(poorStaker);
+        assert(initialBalance.lt(stakeAmount), 'Initial balance was not less than the stake amount');
+
+        try {
+          await gatekeeper.stakeTokens(slateID, { from: poorStaker });
+        } catch (error) {
+          expectRevert(error);
+          expectErrorLike(error, 'Insufficient token balance');
+          return;
+        }
+        assert.fail('Staked with insufficient balance');
+      });
+
+      it('should revert if the token transfer fails', async () => {
+        const thisStaker = staker2;
+        // Give the staker a sufficient balance, but don't approve the Gatekeeper to spend
+        await token.transfer(thisStaker, stakeAmount, { from: creator });
+        const initialBalance = await token.balanceOf(thisStaker);
+        assert(initialBalance.gte(stakeAmount), 'Initial balance was not sufficient for staking');
+
+        try {
+          await gatekeeper.stakeTokens(slateID, { from: thisStaker });
+        } catch (error) {
+          expectRevert(error);
+          // No message - SafeMath
+          return;
+        }
+        assert.fail('Staked even though token transfer failed');
+      });
+
+      it('should revert if the slate has already been staked on', async () => {
+        const amount = defaultParams.slateStakeAmount;
+        await token.transfer(staker, amount, { from: creator });
+        await token.approve(gatekeeper.address, amount, { from: staker });
+
+        await gatekeeper.stakeTokens(slateID, { from: staker });
+
+        try {
+          await gatekeeper.stakeTokens(slateID, { from: staker });
+        } catch (error) {
+          expectRevert(error);
+          expectErrorLike(error, 'already been staked');
+          return;
+        }
+        assert.fail('Allowed a slate to be staked multiple times');
+      });
+    });
+
+    describe('outside submission period', () => {
+      const tokens = '1000';
+      const proposals = [
+        { to: staker, tokens, metadataHash: createMultihash('a') },
+        { to: staker, tokens, metadataHash: createMultihash('b') },
+        { to: staker, tokens, metadataHash: createMultihash('c') },
+      ];
+      const metadata = asBytes(createMultihash('grant slate'));
+
+      it('should revert if the slate submission period has not started', async () => {
+        try {
+          await utils.grantSlateFromProposals({
+            gatekeeper,
+            proposals,
+            capacitor,
+            metadata,
+            recommender,
+          });
+          await gatekeeper.stakeTokens(slateID, { from: staker });
+        } catch (error) {
+          expectRevert(error);
+          expectErrorLike(error, 'Submission period not active');
+          return;
+        }
+        assert.fail('Staked tokens before submission period');
+      });
+
+      it('should revert if the slate submission period has ended', async () => {
+        await increaseTime(timing.SLATE_SUBMISSION_PERIOD_START);
+        await utils.grantSlateFromProposals({
+          gatekeeper,
+          proposals,
+          capacitor,
+          metadata,
+          recommender,
+        });
+
+        const resource = GRANT;
+        const deadline = await gatekeeper.slateSubmissionDeadline(epochNumber, resource);
+
+        // move forward
+        const offset = ONE_WEEK.mul(new BN(6));
+        await increaseTime(offset);
+        const now = await utils.evm.timestamp();
+        const submissionTime = new BN(now);
+        assert(submissionTime.gt(deadline), 'Time is not after deadline');
+
+        try {
+          await gatekeeper.stakeTokens(slateID, {
+            from: staker,
+          });
+        } catch (error) {
+          expectRevert(error);
+          expectErrorLike(error, 'Submission period not active');
+          return;
+        }
+        assert.fail('Allowed slate staking after the slate submission deadline');
+      });
     });
 
     it('should correctly extend the deadline in future epochs', async () => {
@@ -743,6 +839,8 @@ contract('Gatekeeper', (accounts) => {
       const resource = GRANT;
 
       // Create a new slate
+      await increaseTime(timing.SLATE_SUBMISSION_PERIOD_START);
+
       const proposals = [
         { to: staker, tokens: '1000', metadataHash: createMultihash('a') },
       ];
@@ -793,71 +891,108 @@ contract('Gatekeeper', (accounts) => {
   describe('requestPermission', () => {
     const [creator, requestor] = accounts;
     let gatekeeper;
-    let snapshotID;
     const metadataHash = utils.createMultihash('my request data');
     const decode = utils.bytesAsString;
+    let epochNumber;
 
     beforeEach(async () => {
       gatekeeper = await utils.newGatekeeper({ from: creator });
-      snapshotID = await utils.evm.snapshot();
+      epochNumber = await gatekeeper.currentEpochNumber();
     });
 
-    it('should create a new Request', async () => {
-      const receipt = await gatekeeper.requestPermission(
-        utils.asBytes(metadataHash),
-        { from: requestor },
-      );
+    describe('in submission period', () => {
+      beforeEach(async () => {
+        await increaseTime(timing.SLATE_SUBMISSION_PERIOD_START);
+      });
 
-      // Check log values
-      const {
-        resource: emittedResource,
-        requestID,
-        metadataHash: emittedHash,
-      } = receipt.logs[0].args;
-      // console.log(emittedHash, metadataHash);
-      assert.strictEqual(decode(emittedHash), metadataHash, 'Metadata hash is incorrect');
-      assert.strictEqual(emittedResource, requestor, 'Emitted resource should match caller address');
-
-      // Check Request
-      const {
-        metadataHash: requestHash,
-        resource,
-        approved,
-        expirationTime,
-      } = await gatekeeper.requests(requestID);
-      assert.strictEqual(decode(requestHash), metadataHash, 'Metadata hash is incorrect');
-      assert.strictEqual(approved, false);
-      assert.strictEqual(resource, requestor, 'Requestor is incorrect');
-
-      const epochNumber = await gatekeeper.currentEpochNumber();
-      const start = await gatekeeper.epochStart(epochNumber);
-      const expectedExpiration = start.add(timing.EPOCH_LENGTH.mul(new BN(2)));
-      assert.strictEqual(
-        expirationTime.toString(),
-        expectedExpiration.toString(),
-        "Expiration should have been the start of the epoch after the one of the request's creation",
-      );
-
-      // Request count was incremented
-      const requestCount = await gatekeeper.requestCount();
-      assert.strictEqual(requestCount.toString(), '1', 'Request count is incorrect');
-    });
-
-    // rejection criteria:
-    it('should not allow an empty metadataHash', async () => {
-      const emptyHash = '';
-
-      try {
-        await gatekeeper.requestPermission(
-          utils.asBytes(emptyHash),
+      it('should create a new Request', async () => {
+        const receipt = await gatekeeper.requestPermission(
+          utils.asBytes(metadataHash),
           { from: requestor },
         );
-      } catch (error) {
-        expectRevert(error);
-        expectErrorLike(error, 'metadataHash cannot be empty');
-        return;
-      }
-      assert.fail('allowed creation of a request with an empty metadataHash');
+
+        // Check log values
+        const {
+          resource: emittedResource,
+          requestID,
+          metadataHash: emittedHash,
+        } = receipt.logs[0].args;
+        // console.log(emittedHash, metadataHash);
+        assert.strictEqual(decode(emittedHash), metadataHash, 'Metadata hash is incorrect');
+        assert.strictEqual(emittedResource, requestor, 'Emitted resource should match caller address');
+
+        // Check Request
+        const {
+          metadataHash: requestHash,
+          resource,
+          approved,
+          expirationTime,
+        } = await gatekeeper.requests(requestID);
+        assert.strictEqual(decode(requestHash), metadataHash, 'Metadata hash is incorrect');
+        assert.strictEqual(approved, false);
+        assert.strictEqual(resource, requestor, 'Requestor is incorrect');
+
+        const start = await gatekeeper.epochStart(epochNumber);
+        const expectedExpiration = start.add(timing.EPOCH_LENGTH.mul(new BN(2)));
+        assert.strictEqual(
+          expirationTime.toString(),
+          expectedExpiration.toString(),
+          "Expiration should have been the start of the epoch after the one of the request's creation",
+        );
+
+        // Request count was incremented
+        const requestCount = await gatekeeper.requestCount();
+        assert.strictEqual(requestCount.toString(), '1', 'Request count is incorrect');
+      });
+
+      // rejection criteria:
+      it('should not allow an empty metadataHash', async () => {
+        const emptyHash = '';
+
+        try {
+          await gatekeeper.requestPermission(
+            utils.asBytes(emptyHash),
+            { from: requestor },
+          );
+        } catch (error) {
+          expectRevert(error);
+          expectErrorLike(error, 'metadataHash cannot be empty');
+          return;
+        }
+        assert.fail('allowed creation of a request with an empty metadataHash');
+      });
+    });
+
+    describe('outside submission period', () => {
+      it('should revert if the slate submission period has not started', async () => {
+        try {
+          await gatekeeper.requestPermission(utils.asBytes(metadataHash), {
+            from: requestor,
+          });
+        } catch (error) {
+          expectRevert(error);
+          expectErrorLike(error, 'Submission period not active');
+          return;
+        }
+        assert.fail('Requested permission before submission period');
+      });
+
+      it('should revert if the slate submission period has ended', async () => {
+        // move forward
+        const offset = ONE_WEEK.mul(new BN(10));
+        await increaseTime(offset);
+
+        try {
+          await gatekeeper.requestPermission(utils.asBytes(metadataHash), {
+            from: requestor,
+          });
+        } catch (error) {
+          expectRevert(error);
+          expectErrorLike(error, 'Submission period not active');
+          return;
+        }
+        assert.fail('Requested permission after submission period');
+      });
     });
 
     it('should not allow if the slate submission deadline has passed (deliberation stage)', async () => {
@@ -871,7 +1006,7 @@ contract('Gatekeeper', (accounts) => {
         );
       } catch (error) {
         expectRevert(error);
-        expectErrorLike(error, 'deadline passed');
+        expectErrorLike(error, 'Submission period not active');
         // Request count was incremented
         const requestCount = await gatekeeper.requestCount();
         assert.strictEqual(requestCount.toString(), '0', 'Request count is incorrect');
@@ -891,7 +1026,7 @@ contract('Gatekeeper', (accounts) => {
         );
       } catch (error) {
         expectRevert(error);
-        expectErrorLike(error, 'deadline passed');
+        expectErrorLike(error, 'Submission period not active');
         // Request count was incremented
         const requestCount = await gatekeeper.requestCount();
         assert.strictEqual(requestCount.toString(), '0', 'Request count is incorrect');
@@ -911,7 +1046,7 @@ contract('Gatekeeper', (accounts) => {
         );
       } catch (error) {
         expectRevert(error);
-        expectErrorLike(error, 'deadline passed');
+        expectErrorLike(error, 'Submission period not active');
         // Request count was incremented
         const requestCount = await gatekeeper.requestCount();
         assert.strictEqual(requestCount.toString(), '0', 'Request count is incorrect');
@@ -1081,8 +1216,7 @@ contract('Gatekeeper', (accounts) => {
 
       it('should revert if the commit period is active (and the user has committed?)', async () => {
         // Go to the commit period
-        const offset = timing.VOTING_PERIOD_START;
-        await increaseTime(offset);
+        await goToPeriod(gatekeeper, epochPeriods.COMMIT);
 
         // Try to withdraw
         try {
@@ -1097,7 +1231,8 @@ contract('Gatekeeper', (accounts) => {
 
       it('should allow withdrawal after the commit period', async () => {
         // Go after the commit period
-        const offset = timing.VOTING_PERIOD_START.add(timing.COMMIT_PERIOD_LENGTH);
+        await goToPeriod(gatekeeper, epochPeriods.COMMIT);
+        const offset = timing.COMMIT_PERIOD_LENGTH;
         await increaseTime(offset);
 
         await gatekeeper.withdrawVoteTokens(numTokens, { from: voter });
@@ -1175,7 +1310,7 @@ contract('Gatekeeper', (accounts) => {
 
       await gatekeeper.depositVoteTokens(numTokens, { from: voter });
 
-      await increaseTime(timing.VOTING_PERIOD_START);
+      await goToPeriod(gatekeeper, epochPeriods.COMMIT);
       const receipt = await gatekeeper.commitBallot(voter, commitHash, numTokens, { from: voter });
 
       // Emit an event with the correct values
@@ -1207,7 +1342,7 @@ contract('Gatekeeper', (accounts) => {
       assert.strictEqual(initialVotingBalance.toString(), '0');
 
       // Advance to commit period
-      await increaseTime(timing.VOTING_PERIOD_START);
+      await goToPeriod(gatekeeper, epochPeriods.COMMIT);
 
       // Do not deposit any vote tokens, but commit anyway
       await gatekeeper.commitBallot(voter, commitHash, numTokens, { from: voter });
@@ -1244,7 +1379,7 @@ contract('Gatekeeper', (accounts) => {
       await gatekeeper.depositVoteTokens(numTokens, { from: voter });
 
       // Advance to reveal period
-      await increaseTime(timing.VOTING_PERIOD_START.add(timing.COMMIT_PERIOD_LENGTH));
+      await goToPeriod(gatekeeper, epochPeriods.REVEAL);
 
       try {
         await gatekeeper.commitBallot(voter, commitHash, numTokens, { from: voter });
@@ -1261,7 +1396,7 @@ contract('Gatekeeper', (accounts) => {
       const numTokens = toPanBase('1000');
 
       // Advance to commit period
-      await increaseTime(timing.VOTING_PERIOD_START);
+      await goToPeriod(gatekeeper, epochPeriods.COMMIT);
 
       // commit
       await gatekeeper.commitBallot(voter, commitHash, numTokens, { from: voter });
@@ -1282,7 +1417,7 @@ contract('Gatekeeper', (accounts) => {
       const numTokens = toPanBase('1000');
 
       // Advance to commit period
-      await increaseTime(timing.VOTING_PERIOD_START);
+      await goToPeriod(gatekeeper, epochPeriods.COMMIT);
 
       try {
         await gatekeeper.commitBallot(voter, commitHash, numTokens, { from: voter });
@@ -1305,7 +1440,7 @@ contract('Gatekeeper', (accounts) => {
       it('should let a delegate commit a ballot for the voter', async () => {
         await gatekeeper.depositVoteTokens(numTokens, { from: voter });
 
-        await increaseTime(timing.VOTING_PERIOD_START);
+        await goToPeriod(gatekeeper, epochPeriods.COMMIT);
         const receipt = await gatekeeper.commitBallot(voter, commitHash, numTokens, {
           from: delegate,
         });
@@ -1346,7 +1481,7 @@ contract('Gatekeeper', (accounts) => {
         assert.strictEqual(voterBalance.toString(), '0', 'Voter should not have any voting tokens');
 
         // Try to commit for the voter
-        await increaseTime(timing.VOTING_PERIOD_START);
+        await goToPeriod(gatekeeper, epochPeriods.COMMIT);
 
         try {
           await gatekeeper.commitBallot(voter, commitHash, numTokens, { from: delegate });
@@ -1362,7 +1497,7 @@ contract('Gatekeeper', (accounts) => {
       it('should revert if the committer is not a delegate for the voter', async () => {
         await gatekeeper.depositVoteTokens(numTokens, { from: voter });
 
-        await increaseTime(timing.VOTING_PERIOD_START);
+        await goToPeriod(gatekeeper, epochPeriods.COMMIT);
 
         try {
           await gatekeeper.commitBallot(voter, commitHash, numTokens, { from: nonDelegate });
@@ -1403,7 +1538,7 @@ contract('Gatekeeper', (accounts) => {
       const numTokens = toPanBase('1000');
 
       // Advance to commit period
-      await increaseTime(timing.VOTING_PERIOD_START);
+      await goToPeriod(gatekeeper, epochPeriods.COMMIT);
 
       // commit
       await gatekeeper.commitBallot(voter, commitHash, numTokens, { from: voter });
@@ -1425,7 +1560,7 @@ contract('Gatekeeper', (accounts) => {
       const numTokens = toPanBase('1000');
 
       // Advance to commit period
-      await increaseTime(timing.VOTING_PERIOD_START);
+      await goToPeriod(gatekeeper, epochPeriods.COMMIT);
 
       // commit
       await gatekeeper.commitBallot(voter, commitHash, numTokens, { from: voter });
@@ -1459,7 +1594,7 @@ contract('Gatekeeper', (accounts) => {
       const numTokens = toPanBase('1000');
 
       // Advance to commit period
-      await increaseTime(timing.VOTING_PERIOD_START);
+      await goToPeriod(gatekeeper, epochPeriods.COMMIT);
 
       // commit
       await gatekeeper.commitBallot(voter, commitHash, numTokens, { from: voter });
@@ -1521,6 +1656,7 @@ contract('Gatekeeper', (accounts) => {
       await token.transfer(recommender, recommenderTokens, { from: creator });
       await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
 
+      await increaseTime(timing.SLATE_SUBMISSION_PERIOD_START);
       // New slates 0, 1
       // grant
       const grantProposals = [{
@@ -1586,7 +1722,7 @@ contract('Gatekeeper', (accounts) => {
       commitHash = utils.generateCommitHash(votes, salt);
 
       // commit here
-      await increaseTime(timing.VOTING_PERIOD_START);
+      await goToPeriod(gatekeeper, epochPeriods.COMMIT);
       await gatekeeper.commitBallot(voter, commitHash, numTokens, { from: voter });
 
       // set up reveal data
@@ -1946,6 +2082,7 @@ contract('Gatekeeper', (accounts) => {
       await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
 
       // Set up ballot
+      await increaseTime(timing.SLATE_SUBMISSION_PERIOD_START);
       // New slates 0, 1
       // grant
       const grantProposals = [{
@@ -2013,7 +2150,7 @@ contract('Gatekeeper', (accounts) => {
 
     it('should correctly reveal multiple ballots', async () => {
       // Advance to commit period
-      await increaseTime(timing.VOTING_PERIOD_START);
+      await goToPeriod(gatekeeper, epochPeriods.COMMIT);
 
       const [aliceSalt, bobSalt, carolSalt] = ['1234', '5678', '9012'];
 
@@ -2062,7 +2199,7 @@ contract('Gatekeeper', (accounts) => {
 
       beforeEach(async () => {
         // Advance to commit period
-        await increaseTime(timing.VOTING_PERIOD_START);
+        await goToPeriod(gatekeeper, epochPeriods.COMMIT);
 
         const [aliceSalt, bobSalt, carolSalt] = ['1234', '5678', '9012'];
 
@@ -2171,6 +2308,7 @@ contract('Gatekeeper', (accounts) => {
       await token.transfer(recommender, recommenderTokens, { from: creator });
       await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
 
+      await increaseTime(timing.SLATE_SUBMISSION_PERIOD_START);
       // grant - slates 0, 1
       const grantProposals = [{
         to: recommender, tokens: '1000', metadataHash: createMultihash('grant'),
@@ -2233,7 +2371,7 @@ contract('Gatekeeper', (accounts) => {
       commitHash = utils.generateCommitHash(votes, salt);
 
       // Advance to commit period
-      await increaseTime(timing.VOTING_PERIOD_START);
+      await goToPeriod(gatekeeper, epochPeriods.COMMIT);
 
       // commit
       await gatekeeper.commitBallot(voter, commitHash, numTokens, { from: voter });
@@ -2330,6 +2468,8 @@ contract('Gatekeeper', (accounts) => {
       await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
 
       // create simple ballot with just grants
+      await increaseTime(timing.SLATE_SUBMISSION_PERIOD_START);
+
       const grantProposals = [{
         to: recommender, tokens: '1000', metadataHash: createMultihash('grant'),
       }];
@@ -2358,7 +2498,7 @@ contract('Gatekeeper', (accounts) => {
       // slate 0 should win
 
       // Commit for voters
-      await increaseTime(timing.VOTING_PERIOD_START);
+      await goToPeriod(gatekeeper, epochPeriods.COMMIT);
 
       const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
       const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 0, 1, '1000', '5678');
@@ -2557,7 +2697,7 @@ contract('Gatekeeper', (accounts) => {
       await token.approve(gatekeeper.address, manyTokensBase, { from: david });
 
       // Commit for voters
-      await increaseTime(timing.VOTING_PERIOD_START);
+      await goToPeriod(gatekeeper, epochPeriods.COMMIT);
       const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
       const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 0, 1, '1000', '5678');
       const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '1000', '9012');
@@ -2594,7 +2734,7 @@ contract('Gatekeeper', (accounts) => {
 
     it('should finalize and not go to a runoff if a slate has 1 more than half of the votes', async () => {
       // Commit for voters
-      await increaseTime(timing.VOTING_PERIOD_START);
+      await goToPeriod(gatekeeper, epochPeriods.COMMIT);
 
       const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '250', '1234');
       const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 0, 1, '250', '5678');
@@ -2697,7 +2837,7 @@ contract('Gatekeeper', (accounts) => {
       await gatekeeper.stakeTokens(slateID, { from: recommender });
 
       // Split the votes among the three slates
-      await increaseTime(timing.VOTING_PERIOD_START);
+      await goToPeriod(gatekeeper, epochPeriods.COMMIT);
       const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
       const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 1, 2, '1000', '5678');
       const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 2, 1, '1000', '9012');
@@ -2726,7 +2866,7 @@ contract('Gatekeeper', (accounts) => {
 
     it('should wait for a runoff if the lead slate has exactly 50% of the votes', async () => {
       // Split the votes evenly
-      await increaseTime(timing.VOTING_PERIOD_START);
+      await goToPeriod(gatekeeper, epochPeriods.COMMIT);
       const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
       const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 1, 2, '500', '5678');
       const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '500', '9012');
@@ -2771,7 +2911,7 @@ contract('Gatekeeper', (accounts) => {
 
     it('should revert if called more than once', async () => {
       // Commit for voters
-      await increaseTime(timing.VOTING_PERIOD_START);
+      await goToPeriod(gatekeeper, epochPeriods.COMMIT);
       const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
       const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 0, 1, '1000', '5678');
       const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '1000', '9012');
@@ -2800,7 +2940,7 @@ contract('Gatekeeper', (accounts) => {
 
     it('should revert if the contest has multiple slates and the epoch is not over', async () => {
       // Advance to reveal period
-      await increaseTime(timing.VOTING_PERIOD_START);
+      await goToPeriod(gatekeeper, epochPeriods.REVEAL);
 
       try {
         await gatekeeper.finalizeContest(epochNumber, GRANT);
@@ -2876,6 +3016,8 @@ contract('Gatekeeper', (accounts) => {
       await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
 
       // create simple ballot with just grants
+      await increaseTime(timing.SLATE_SUBMISSION_PERIOD_START);
+
       const grantProposals = [{
         to: recommender, tokens: '1000', metadataHash: createMultihash('grant'),
       }];
@@ -2911,7 +3053,7 @@ contract('Gatekeeper', (accounts) => {
 
     it('should correctly get the number of first choice votes for a slate', async () => {
       // Commit for voters
-      await increaseTime(timing.VOTING_PERIOD_START);
+      await goToPeriod(gatekeeper, epochPeriods.COMMIT);
       const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
       const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 0, 1, '1000', '5678');
       const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '1000', '9012');
@@ -2956,6 +3098,9 @@ contract('Gatekeeper', (accounts) => {
       const recommenderTokens = toPanBase('500000');
       await token.transfer(recommender, recommenderTokens, { from: creator });
       await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
+
+      // Go to submission period
+      await increaseTime(timing.SLATE_SUBMISSION_PERIOD_START);
     });
 
     it('should return Empty if the resource has no staked slates', async () => {
@@ -3085,6 +3230,8 @@ contract('Gatekeeper', (accounts) => {
     });
 
     it('should return contest details for an initialized contest', async () => {
+      await increaseTime(timing.SLATE_SUBMISSION_PERIOD_START);
+
       await utils.grantSlateFromProposals({
         gatekeeper,
         proposals: grantProposals,
@@ -3145,7 +3292,7 @@ contract('Gatekeeper', (accounts) => {
         await token.transfer(carol, allocatedTokens, { from: creator });
         await token.approve(gatekeeper.address, allocatedTokens, { from: carol });
 
-        // epochNumber = await gatekeeper.currentEpochNumber();
+        await increaseTime(timing.SLATE_SUBMISSION_PERIOD_START);
 
         // set up three slates
         await utils.grantSlateFromProposals({
@@ -3185,7 +3332,7 @@ contract('Gatekeeper', (accounts) => {
 
       it('should return contest details for a contest after a vote', async () => {
         // Commit for voters
-        await increaseTime(timing.VOTING_PERIOD_START);
+        await goToPeriod(gatekeeper, epochPeriods.COMMIT);
 
         const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 2, 1, '1000', '1234');
         const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 2, 1, '1000', '5678');
@@ -3275,7 +3422,7 @@ contract('Gatekeeper', (accounts) => {
         stakingEpochTime = await utils.epochTime(gatekeeper, stakingTime, 'seconds');
 
         // Commit for voters
-        await increaseTime(timing.VOTING_PERIOD_START);
+        await goToPeriod(gatekeeper, epochPeriods.COMMIT);
 
         const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 3, 1, '1000', '1234');
         const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 2, 1, '400', '5678');
@@ -3381,6 +3528,7 @@ contract('Gatekeeper', (accounts) => {
       await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
 
       // create simple ballot with just grants
+      await increaseTime(timing.SLATE_SUBMISSION_PERIOD_START);
       await utils.grantSlateFromProposals({
         gatekeeper,
         proposals: grantProposals,
@@ -3423,7 +3571,7 @@ contract('Gatekeeper', (accounts) => {
     });
 
     it('should correctly tally and finalize a runoff vote', async () => {
-      await increaseTime(timing.VOTING_PERIOD_START);
+      await goToPeriod(gatekeeper, epochPeriods.COMMIT);
       const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '800', '1234');
       const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 1, 2, '900', '5678');
       const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 2, 0, '1000', '9012');
@@ -3504,7 +3652,7 @@ contract('Gatekeeper', (accounts) => {
     });
 
     it('should count correctly if the original leader wins the runoff', async () => {
-      await increaseTime(timing.VOTING_PERIOD_START);
+      await goToPeriod(gatekeeper, epochPeriods.COMMIT);
       const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 2, '101', '1234');
       const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 1, 2, '900', '5678');
       const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 2, 0, '1000', '9012');
@@ -3545,7 +3693,7 @@ contract('Gatekeeper', (accounts) => {
     });
 
     it('should assign the slate with the lowest ID if the runoff ends in a tie', async () => {
-      await increaseTime(timing.VOTING_PERIOD_START);
+      await goToPeriod(gatekeeper, epochPeriods.COMMIT);
       const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 2, '400', '1234');
       const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 2, 1, '600', '5678');
       const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '1000', '9012');
@@ -3582,7 +3730,7 @@ contract('Gatekeeper', (accounts) => {
 
     it('should revert if a runoff is not pending', async () => {
       // Run a straight-forward vote
-      await increaseTime(timing.VOTING_PERIOD_START);
+      await goToPeriod(gatekeeper, epochPeriods.COMMIT);
       const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '800', '1234');
       const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 1, 2, '900', '5678');
       const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '1000', '9012');
@@ -3640,6 +3788,7 @@ contract('Gatekeeper', (accounts) => {
       await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
 
       // create simple ballot with just grants
+      await increaseTime(timing.SLATE_SUBMISSION_PERIOD_START);
       await utils.grantSlateFromProposals({
         gatekeeper,
         proposals: grantProposals,
@@ -3759,6 +3908,7 @@ contract('Gatekeeper', (accounts) => {
       await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
 
       // create simple ballot with just grants
+      await increaseTime(timing.SLATE_SUBMISSION_PERIOD_START);
       // contains requests 0, 1, 2
       await utils.grantSlateFromProposals({
         gatekeeper,
@@ -3800,7 +3950,7 @@ contract('Gatekeeper', (accounts) => {
     describe('simple vote', () => {
       beforeEach(async () => {
         // Run a simple vote
-        await increaseTime(timing.VOTING_PERIOD_START);
+        await goToPeriod(gatekeeper, epochPeriods.COMMIT);
         const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
         const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 0, 1, '1000', '5678');
         const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '1000', '9012');
@@ -3850,7 +4000,7 @@ contract('Gatekeeper', (accounts) => {
     describe('runoff', () => {
       beforeEach(async () => {
         // Run a vote that triggers a runoff
-        await increaseTime(timing.VOTING_PERIOD_START);
+        await goToPeriod(gatekeeper, epochPeriods.COMMIT);
         const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '800', '1234');
         const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 1, 2, '900', '5678');
         const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 2, 0, '1000', '9012');
@@ -3927,6 +4077,7 @@ contract('Gatekeeper', (accounts) => {
       await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
 
       // create simple ballot with just grants
+      await increaseTime(timing.SLATE_SUBMISSION_PERIOD_START);
       await utils.grantSlateFromProposals({
         gatekeeper,
         proposals: grantProposals,
@@ -3975,7 +4126,7 @@ contract('Gatekeeper', (accounts) => {
 
     describe('initial vote', () => {
       beforeEach(async () => {
-        await increaseTime(timing.VOTING_PERIOD_START);
+        await goToPeriod(gatekeeper, epochPeriods.COMMIT);
         const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
         const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 0, 1, '1000', '5678');
         const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '1000', '9012');
@@ -4113,7 +4264,7 @@ contract('Gatekeeper', (accounts) => {
     describe('runoff vote', () => {
       beforeEach(async () => {
         // Run a vote that triggers a runoff
-        await increaseTime(timing.VOTING_PERIOD_START);
+        await goToPeriod(gatekeeper, epochPeriods.COMMIT);
         const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '800', '1234');
         const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 1, 2, '900', '5678');
         const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 2, 0, '1000', '9012');
@@ -4215,6 +4366,7 @@ contract('Gatekeeper', (accounts) => {
       GRANT = await getResource(gatekeeper, 'GRANT');
 
       // create simple ballot with just grants
+      await increaseTime(timing.SLATE_SUBMISSION_PERIOD_START);
       await utils.grantSlateFromProposals({
         gatekeeper,
         proposals: grantProposals,
@@ -4412,6 +4564,7 @@ contract('Gatekeeper', (accounts) => {
       GRANT = await getResource(gatekeeper, 'GRANT');
 
       // create simple ballot with just grants
+      await increaseTime(timing.SLATE_SUBMISSION_PERIOD_START);
       await utils.grantSlateFromProposals({
         gatekeeper,
         proposals: grantProposals,
@@ -4472,6 +4625,7 @@ contract('Gatekeeper', (accounts) => {
       assert.strictEqual(epoch.toString(), nextEpoch.add(offset).toString(), 'Wrong epoch number');
 
       // finalize contest for another another epoch
+      await increaseTime(timing.SLATE_SUBMISSION_PERIOD_START);
       const slateID = await gatekeeper.slateCount();
       await utils.grantSlateFromProposals({
         gatekeeper,

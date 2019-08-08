@@ -63,6 +63,7 @@ contract Gatekeeper {
     // The timestamp of the start of the first epoch
     uint public startTime;
     uint public constant EPOCH_LENGTH = ONE_WEEK * 13;
+    uint public constant SLATE_SUBMISSION_PERIOD_START = ONE_WEEK;
     uint public constant COMMIT_PERIOD_START = ONE_WEEK * 11;
     uint public constant REVEAL_PERIOD_START = ONE_WEEK * 12;
 
@@ -227,7 +228,7 @@ contract Gatekeeper {
     {
         uint256 epochNumber = currentEpochNumber();
 
-        require(now < slateSubmissionDeadline(epochNumber, resource), "Submission deadline passed");
+        require(slateSubmissionPeriodActive(resource), "Submission period not active");
         require(metadataHash.length > 0, "metadataHash cannot be empty");
 
         // create slate
@@ -291,7 +292,7 @@ contract Gatekeeper {
         Slate storage slate = slates[slateID];
 
         // Submission period must be active
-        require(now < slateSubmissionDeadline(slate.epochNumber, slate.resource), "deadline passed");
+        require(slateSubmissionPeriodActive(slate.resource), "Submission period not active");
         uint256 epochNumber = currentEpochNumber();
         assert(slate.epochNumber == epochNumber);
 
@@ -909,7 +910,7 @@ contract Gatekeeper {
         address resource = msg.sender;
         uint256 epochNumber = currentEpochNumber();
 
-        require(now < slateSubmissionDeadline(epochNumber, resource), "deadline passed");
+        require(slateSubmissionPeriodActive(resource), "Submission period not active");
 
         // If the request is created in epoch n, expire at the start of epoch n + 2
         uint256 expirationTime = epochStart(epochNumber.add(2));
@@ -980,6 +981,18 @@ contract Gatekeeper {
         uint256 offset = (contest.lastStaked.add(COMMIT_PERIOD_START)).div(2);
 
         return epochStart(epochNumber).add(offset);
+    }
+
+    /**
+    @dev Return true if the slate submission period is active for the given resource and the
+     current epoch.
+     */
+    function slateSubmissionPeriodActive(address resource) public view returns(bool) {
+        uint256 epochNumber = currentEpochNumber();
+        uint256 start = epochStart(epochNumber).add(SLATE_SUBMISSION_PERIOD_START);
+        uint256 end = slateSubmissionDeadline(epochNumber, resource);
+
+        return (start <= now) && (now < end);
     }
 
     /**

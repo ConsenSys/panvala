@@ -34,9 +34,17 @@ const timing = {
   ONE_DAY: new BN(3600 * 24),
   ONE_WEEK,
   EPOCH_LENGTH: ONE_WEEK.mul(new BN(13)),
+  SLATE_SUBMISSION_PERIOD_START: ONE_WEEK,
   VOTING_PERIOD_START: ONE_WEEK.mul(new BN(11)),
   COMMIT_PERIOD_LENGTH: ONE_WEEK,
   REVEAL_PERIOD_LENGTH: ONE_WEEK,
+};
+
+const epochPeriods = {
+  SUBMISSION: 0,
+  COMMIT: 1,
+  REVEAL: 2,
+  END: 3,
 };
 
 const ten = new BN(10);
@@ -137,6 +145,28 @@ async function goTo(timestamp) {
   // console.log(timestamp.toNumber(), now);
   const adjustment = timestamp.sub(new BN(now));
   await increaseTime(adjustment);
+}
+
+async function goToPeriod(gatekeeper, period) {
+  let target;
+  const epochNumber = await gatekeeper.currentEpochNumber();
+  const epochStart = await gatekeeper.epochStart(epochNumber);
+  if (period === epochPeriods.SUBMISSION) {
+    target = epochStart.add(timing.SLATE_SUBMISSION_PERIOD_START);
+  } else if (period === epochPeriods.COMMIT) {
+    target = epochStart.add(timing.VOTING_PERIOD_START);
+  } else if (period === epochPeriods.REVEAL) {
+    target = epochStart.add(timing.VOTING_PERIOD_START).add(timing.COMMIT_PERIOD_LENGTH);
+  } else if (period === epochPeriods.END) {
+    target = epochStart
+      .add(timing.VOTING_PERIOD_START)
+      .add(timing.COMMIT_PERIOD_LENGTH)
+      .add(timing.REVEAL_PERIOD_LENGTH);
+  } else {
+    throw new Error('invalid epoch period');
+  }
+
+  await goTo(target);
 }
 
 /**
@@ -652,8 +682,15 @@ const utils = {
   expectErrorLike,
   zeroAddress: ethUtils.zeroAddress,
   BN,
+  epochPeriods,
   evm: {
-    increaseTime, snapshot: evmSnapshot, revert: evmRevert, timestamp: blockTime, futureTime, goTo,
+    increaseTime,
+    snapshot: evmSnapshot,
+    revert: evmRevert,
+    timestamp: blockTime,
+    futureTime,
+    goTo,
+    goToPeriod,
   },
   createMultihash,
   newGatekeeper,

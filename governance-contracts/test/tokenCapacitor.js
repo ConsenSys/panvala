@@ -17,9 +17,10 @@ const {
   timing,
   loadDecayMultipliers,
   toPanBase,
+  epochPeriods,
 } = utils;
 
-const { increaseTime } = utils.evm;
+const { increaseTime, goToPeriod } = utils.evm;
 
 
 contract('TokenCapacitor', (accounts) => {
@@ -144,6 +145,7 @@ contract('TokenCapacitor', (accounts) => {
 
     beforeEach(async () => {
       ({ capacitor, gatekeeper } = await utils.newPanvala({ from: creator }));
+      await goToPeriod(gatekeeper, epochPeriods.SUBMISSION);
     });
 
     it('should create a proposal to the appropriate beneficiary', async () => {
@@ -236,9 +238,11 @@ contract('TokenCapacitor', (accounts) => {
   describe('createManyProposals', () => {
     const [creator, proposer, beneficiary1, beneficiary2] = accounts;
     let capacitor;
+    let gatekeeper;
 
     beforeEach(async () => {
-      ({ capacitor } = await utils.newPanvala({ from: creator }));
+      ({ capacitor, gatekeeper } = await utils.newPanvala({ from: creator }));
+      await goToPeriod(gatekeeper, epochPeriods.SUBMISSION);
     });
 
     it('should create proposals and emit an event for each', async () => {
@@ -323,6 +327,7 @@ contract('TokenCapacitor', (accounts) => {
       await token.approve(gatekeeper.address, allocatedTokens, { from: carol });
 
       // create simple ballot with just grants
+      await goToPeriod(gatekeeper, epochPeriods.SUBMISSION);
       proposals1 = [
         { to: alice, tokens: '1000', metadataHash: utils.createMultihash('grant for Alice') },
         { to: alice, tokens: '1000', metadataHash: utils.createMultihash('another grant for Alice') },
@@ -359,7 +364,7 @@ contract('TokenCapacitor', (accounts) => {
       await gatekeeper.stakeTokens(1, { from: recommender2 });
 
       // Commit ballots
-      await increaseTime(timing.VOTING_PERIOD_START);
+      await goToPeriod(gatekeeper, epochPeriods.COMMIT);
       const aliceReveal = await voteSingle(gatekeeper, alice, GRANT, 0, 1, '1000', '1234');
       const bobReveal = await voteSingle(gatekeeper, bob, GRANT, 0, 1, '1000', '5678');
       const carolReveal = await voteSingle(gatekeeper, carol, GRANT, 1, 0, '1000', '9012');

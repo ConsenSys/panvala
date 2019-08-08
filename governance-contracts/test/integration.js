@@ -18,9 +18,10 @@ const {
   expectErrorLike,
   ContestStatus,
   toPanBase,
+  epochPeriods,
 } = utils;
 
-const { increaseTime } = utils.evm;
+const { increaseTime, goToPeriod } = utils.evm;
 const { defaultParams } = utils.pan;
 
 /**
@@ -108,6 +109,7 @@ contract('integration', (accounts) => {
         );
         // console.log(`requesting ${tokens} tokens`);
 
+        await goToPeriod(gatekeeper, epochPeriods.SUBMISSION);
         const grantProposals = [{
           to: recommender, tokens: baseTokens, metadataHash: createMultihash('grant'), convertTokens: false,
         }];
@@ -125,7 +127,8 @@ contract('integration', (accounts) => {
         await gatekeeper.stakeTokens(slateID, { from: recommender });
 
         // go to the next epoch and finalize
-        await increaseTime(timing.EPOCH_LENGTH);
+        await goToPeriod(gatekeeper, epochPeriods.REVEAL);
+        await increaseTime(timing.REVEAL_PERIOD_LENGTH);
         assert.strictEqual(
           (await gatekeeper.currentEpochNumber()).toString(),
           nextEpoch.toString(),
@@ -200,6 +203,15 @@ contract('integration', (accounts) => {
         );
         // console.log(`requesting ${tokens} tokens`);
 
+        const updateAndMove = () => increaseTime(timing.ONE_DAY)
+          .then(() => capacitor.updateBalances());
+
+
+        // Go forward a week to the submission period, one day at a atime, with updates
+        const SUBMISSION_DAYS = 7;
+        const initialSteps = utils.range(SUBMISSION_DAYS).map(() => updateAndMove);
+        await utils.chain(initialSteps);
+
         const grantProposals = [{
           to: recommender, tokens: baseTokens, metadataHash: createMultihash('grant'), convertTokens: false,
         }];
@@ -216,10 +228,9 @@ contract('integration', (accounts) => {
         });
         await gatekeeper.stakeTokens(slateID, { from: recommender });
 
-        // go forward one day at a time to the next epoch and call updateBalances
-        const updateAndMove = () => increaseTime(timing.ONE_DAY)
-          .then(() => capacitor.updateBalances());
-        const steps = utils.range(daysPerEpoch).map(() => updateAndMove);
+
+        // Go the rest of the way through the epoch (starting from a week in)
+        const steps = utils.range(daysPerEpoch - SUBMISSION_DAYS).map(() => updateAndMove);
         await utils.chain(steps);
 
         assert.strictEqual(
@@ -292,6 +303,7 @@ contract('integration', (accounts) => {
       const startingEpoch = await gatekeeper.currentEpochNumber();
 
       // submit slates
+      await goToPeriod(gatekeeper, epochPeriods.SUBMISSION);
       const key = 'slateStakeAmount';
       const value = '6000';
       const proposals = [{
@@ -357,6 +369,7 @@ contract('integration', (accounts) => {
       });
 
       // create a slate with proposal to change the `gatekeeperAddress` parameter
+      await goToPeriod(gatekeeper, epochPeriods.SUBMISSION);
       const gatekeeperKey = 'gatekeeperAddress';
       const proposals = [{
         key: gatekeeperKey,
@@ -414,6 +427,7 @@ contract('integration', (accounts) => {
       await token.approve(newGatekeeper.address, recommenderTokens, { from: recommender });
 
       // create a grant slate and a governance slate
+      await goToPeriod(gatekeeper, epochPeriods.SUBMISSION);
       const oldGatekeeperRequestCount = await gatekeeper.requestCount();
       const newGatekeeperRequestCount = await newGatekeeper.requestCount();
 
@@ -504,6 +518,7 @@ contract('integration', (accounts) => {
         });
 
         // create a slate with proposal to change the `gatekeeperAddress` parameter
+        await goToPeriod(gatekeeper, epochPeriods.SUBMISSION);
         const proposals = [{
           key: gatekeeperKey,
           value: utils.abiEncode('address', newGatekeeper.address),
@@ -546,7 +561,7 @@ contract('integration', (accounts) => {
         await gatekeeper.stakeTokens(2, { from: creator });
 
         // Run vote for grant slates
-        await increaseTime(timing.VOTING_PERIOD_START);
+        await goToPeriod(gatekeeper, epochPeriods.COMMIT);
 
         // slate 1 wins
         const aReveal = await utils.voteSingle(gatekeeper, creator, GRANT, 2, 1, '1000', '1234');
@@ -708,6 +723,7 @@ contract('integration', (accounts) => {
           const newGatekeeperRequestCount = await newGatekeeper.requestCount();
 
           // create a grant slate and a governance slate
+          await goToPeriod(gatekeeper, epochPeriods.SUBMISSION);
           let slateID = slateCount.toNumber();
 
           const governanceProposals = [{
@@ -796,6 +812,7 @@ contract('integration', (accounts) => {
           const slateID = await newGatekeeper.slateCount();
 
           // recommend slate
+          await goToPeriod(gatekeeper, epochPeriods.SUBMISSION);
           await utils.grantSlateFromProposals({
             gatekeeper: newGatekeeper,
             proposals: [{
@@ -869,6 +886,7 @@ contract('integration', (accounts) => {
       assert.strictEqual(slateCount.toString(), '0', 'Should be no slates');
 
       // create `numSlates` slates
+      await goToPeriod(gatekeeper, epochPeriods.SUBMISSION);
       const createAndStake = async (slateID) => {
         await utils.grantSlateFromProposals({
           gatekeeper,
@@ -886,7 +904,7 @@ contract('integration', (accounts) => {
       await Promise.all(slates.map(createAndStake));
 
       // vote: slate 1 wins
-      await increaseTime(timing.VOTING_PERIOD_START);
+      await goToPeriod(gatekeeper, epochPeriods.COMMIT);
       const aReveal = await utils.voteSingle(gatekeeper, alice, GRANT, 0, 1, '50', '1234');
       const bReveal = await utils.voteSingle(gatekeeper, bob, GRANT, 1, 0, '100', '5678');
       await increaseTime(timing.COMMIT_PERIOD_LENGTH);
@@ -1083,6 +1101,7 @@ contract('integration', (accounts) => {
       await token.approve(gatekeeper.address, recommenderTokens, { from: recommender });
 
       // create a slate, dividing up the tokens into two proposals
+      await goToPeriod(gatekeeper, epochPeriods.SUBMISSION);
       const amount = tokens / 2;
       const proposalIDs = await utils.grantSlateFromProposals({
         gatekeeper,
@@ -1120,7 +1139,5 @@ contract('integration', (accounts) => {
         'Tokens not withdrawn',
       );
     });
-
-    afterEach(async () => utils.evm.revert(snapshotID));
   });
 });

@@ -4,10 +4,10 @@ const utils = require('./utils');
 
 const {
   abiCoder, abiEncode, expectErrorLike, expectRevert, governanceSlateFromProposals,
-  voteSingle, timing, revealVote, BN, getResource, toPanBase, expectEvents,
+  voteSingle, timing, revealVote, BN, getResource, toPanBase, expectEvents, epochPeriods,
 } = utils;
 
-const { increaseTime } = utils.evm;
+const { increaseTime, goToPeriod } = utils.evm;
 
 const ParameterStore = artifacts.require('ParameterStore');
 
@@ -172,6 +172,7 @@ contract('ParameterStore', (accounts) => {
     beforeEach(async () => {
       // deploy
       ({ parameters, gatekeeper } = await utils.newPanvala({ from: creator }));
+      await goToPeriod(gatekeeper, epochPeriods.SUBMISSION);
     });
 
     it('it should create a proposal to change a parameter', async () => {
@@ -340,6 +341,7 @@ contract('ParameterStore', (accounts) => {
       await token.approve(gatekeeper.address, allocatedTokens, { from: carol });
 
       // create simple ballot with just governance proposals
+      await goToPeriod(gatekeeper, epochPeriods.SUBMISSION);
       proposals1 = [
         {
           key: 'param',
@@ -387,7 +389,7 @@ contract('ParameterStore', (accounts) => {
       await gatekeeper.stakeTokens(1, { from: recommender2 });
 
       // Commit ballots
-      await increaseTime(timing.VOTING_PERIOD_START);
+      await goToPeriod(gatekeeper, epochPeriods.COMMIT);
       const aliceReveal = await voteSingle(gatekeeper, alice, GOVERNANCE, 0, 1, '1000', '1234');
       const bobReveal = await voteSingle(gatekeeper, bob, GOVERNANCE, 0, 1, '1000', '5678');
       const carolReveal = await voteSingle(gatekeeper, carol, GOVERNANCE, 1, 0, '1000', '9012');
