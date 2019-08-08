@@ -11,6 +11,14 @@ body {
   border-top: 500px solid #2138B7;
 }
 
+.triangle-hero-2 {
+  width: 0;
+  height: 0;
+  border-left: 0 solid transparent;
+  border-right: 1500px solid transparent;
+  border-top: 100px solid #2138B7;
+}
+
 .triangle-top {
   width: 0;
   height: 0;
@@ -65,6 +73,10 @@ body {
 
 .shadow {
   box-shadow: 0px 0px 70px rgba(0, 0, 0, 0.1);
+}
+
+.f1-5 {
+  font-size: 2.5rem;
 }
 
 .f2-5 {
