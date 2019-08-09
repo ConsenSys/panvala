@@ -333,6 +333,7 @@ contract('Gatekeeper', (accounts) => {
     const [creator, recommender] = accounts;
     let gatekeeper;
     let capacitor;
+    let token;
     let requestIDs;
     const metadataHash = utils.createMultihash('my slate');
     let epochNumber;
@@ -340,7 +341,7 @@ contract('Gatekeeper', (accounts) => {
     let GRANT;
 
     beforeEach(async () => {
-      ({ gatekeeper, capacitor } = await utils.newPanvala({ from: creator }));
+      ({ gatekeeper, capacitor, token } = await utils.newPanvala({ from: creator }));
       epochNumber = await gatekeeper.currentEpochNumber();
 
       GRANT = await getResource(gatekeeper, 'GRANT');
@@ -528,6 +529,58 @@ contract('Gatekeeper', (accounts) => {
         }
 
         assert.fail('Allowed creation of a slate with mixed proposal types');
+      });
+
+      it('should revert if any of the requests is not from the current epoch', async () => {
+        // Create a slate
+        const receipt = await gatekeeper.recommendSlate(
+          GRANT,
+          requestIDs,
+          utils.asBytes(metadataHash),
+          { from: recommender },
+        );
+        const { slateID } = receipt.logs[0].args;
+
+        const stakeAmount = await parameters.getAsUint('slateStakeAmount');
+        await token.approve(gatekeeper.address, stakeAmount.mul(new BN(2)), { from: creator });
+        await gatekeeper.stakeTokens(slateID, { from: creator });
+
+        // Next epoch
+        await increaseTime(timing.EPOCH_LENGTH);
+        await gatekeeper.finalizeContest(epochNumber, GRANT);
+
+        const oldRequestID = requestIDs[0];
+        const request = await gatekeeper.requests(oldRequestID);
+
+        const currentEpochNumber = await gatekeeper.currentEpochNumber();
+        assert(
+          !request.epochNumber.eq(currentEpochNumber),
+          'Request should have been from a different epoch',
+        );
+
+        // Prepare a new slate
+        await goToPeriod(gatekeeper, epochPeriods.SUBMISSION);
+        const tokenAmounts = ['1000', '1000'].map(toPanBase);
+        const proposalsReceipt = await capacitor.createManyProposals(
+          [creator, recommender],
+          tokenAmounts,
+          ['proposal1', 'proposal2'].map(p => utils.asBytes(utils.createMultihash(p))),
+          { from: recommender },
+        );
+
+        const newRequestIDs = proposalsReceipt.logs.map(l => l.args.requestID);
+        newRequestIDs.push(oldRequestID);
+
+        try {
+          await gatekeeper.recommendSlate(GRANT, requestIDs, utils.asBytes(metadataHash), {
+            from: recommender,
+          });
+        } catch (error) {
+          expectRevert(error);
+          expectErrorLike(error, 'Invalid epoch');
+          return;
+        }
+        assert.fail('Allowed creation of a slate with a request from an old epoch');
       });
     });
 

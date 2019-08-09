@@ -9,7 +9,12 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
 contract Gatekeeper {
     // EVENTS
-    event PermissionRequested(address resource, uint requestID, bytes metadataHash);
+    event PermissionRequested(
+        uint256 indexed epochNumber,
+        address indexed resource,
+        uint requestID,
+        bytes metadataHash
+    );
     event SlateCreated(uint slateID, address indexed recommender, uint[] requestIDs, bytes metadataHash);
     event SlateStaked(uint slateID, address indexed staker, uint numTokens);
     event VotingTokensDeposited(address indexed voter, uint numTokens);
@@ -80,6 +85,7 @@ contract Gatekeeper {
         address resource;
         bool approved;
         uint expirationTime;
+        uint epochNumber;
     }
 
     // The requests made to the Gatekeeper.
@@ -252,9 +258,14 @@ contract Gatekeeper {
             uint requestID = requestIDs[i];
             require(requestID < requestCount(), "Invalid requestID");
 
+            Request memory r = requests[requestID];
             // Every request's resource must match the one passed in
-            require(requests[requestID].resource == resource, "Resource does not match");
+            require(r.resource == resource, "Resource does not match");
 
+            // Requests must be current
+            require(r.epochNumber == epochNumber, "Invalid epoch");
+
+            // Requests cannot be duplicated
             require(slates[slateID].requestIncluded[requestID] == false, "Duplicate requests are not allowed");
             slates[slateID].requestIncluded[requestID] = true;
         }
@@ -927,14 +938,15 @@ contract Gatekeeper {
             metadataHash: metadataHash,
             resource: resource,
             approved: false,
-            expirationTime: expirationTime
+            expirationTime: expirationTime,
+            epochNumber: epochNumber
         });
 
         // Record request and return its ID
         uint requestID = requestCount();
         requests.push(r);
 
-        emit PermissionRequested(resource, requestID, metadataHash);
+        emit PermissionRequested(epochNumber, resource, requestID, metadataHash);
         return requestID;
     }
 

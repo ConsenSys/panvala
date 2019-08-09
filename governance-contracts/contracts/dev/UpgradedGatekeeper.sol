@@ -98,14 +98,16 @@ contract UpgradedGatekeeper is Gatekeeper {
                bytes memory metadataHash,
                address _resource,
                bool approved,
-               uint256 expirationTime
+               uint256 expirationTime,
+               // skip: epochNumber
            ) = previousGatekeeper.requests(requestID);
 
            requests[requestID] = Request({
                metadataHash: metadataHash,
                resource: _resource,
                approved: approved,
-               expirationTime: expirationTime
+               expirationTime: expirationTime,
+               epochNumber: epochNumber
            });
         }
 
