@@ -76,7 +76,7 @@ body {
 }
 
 .shadow-card {
-  box-shadow: 0px 5px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0px 10px 10px rgba(0, 0, 0, 0.08);
 }
 
 .f1-5 {
@@ -112,5 +112,5 @@ body {
 }
 
 .h6 {
-  min-height: 20rem;
+  min-height: 17rem;
 }
