@@ -3,6 +3,10 @@ body {
   font-family: 'Open Sans', sans-serif;
 }
 
+textarea {
+  resize: none;
+}
+
 .triangle-hero {
   width: 0;
   height: 0;
@@ -113,4 +117,9 @@ body {
 
 .h6 {
   min-height: 17rem;
+}
+
+.h3-5,
+.w3-5 {
+  height: 6rem;
 }
