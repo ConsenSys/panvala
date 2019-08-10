@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { Formik, Form, FormikContext } from 'formik';
 import { TransactionResponse, TransactionReceipt } from 'ethers/providers';
 import { utils } from 'ethers';
+import { MaxUint256 } from 'ethers/constants';
 import { ContractReceipt } from 'ethers/contract';
 import { toast } from 'react-toastify';
 import * as yup from 'yup';
@@ -111,6 +112,7 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
     contracts,
     onRefreshBalances,
     slateStakeAmount,
+    gkAllowance,
   }: IEthereumContext = React.useContext(EthereumContext);
 
   React.useEffect(() => {
@@ -337,6 +339,9 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
             // stake immediately after creating slate
             if (values.stake === 'yes') {
               setTxPending(true);
+              if (gkAllowance.lt(slateStakeAmount)) {
+                await contracts.token.approve(contracts.gatekeeper.address, MaxUint256);
+              }
               const res = await sendStakeTokensTransaction(contracts.gatekeeper, slate.slateID);
 
               await res.wait();
