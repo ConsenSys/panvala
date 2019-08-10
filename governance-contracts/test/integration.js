@@ -622,6 +622,71 @@ contract('integration', (accounts) => {
         assert.fail('Allowed initialization before gatekeeper was accepted');
       });
 
+      it('should not allow staking in the old gatekeeper after the switch', async () => {
+        await goToPeriod(gatekeeper, epochPeriods.SUBMISSION);
+
+        // create slate in the old gatekeeper
+        const grantProposals = [{
+          to: recommender, tokens: '1000', metadataHash: utils.createMultihash('grant'),
+        }];
+        await utils.grantSlateFromProposals({
+          gatekeeper,
+          proposals: grantProposals,
+          capacitor,
+          recommender,
+          metadata: utils.createMultihash('Important grant'),
+        });
+
+        // activate new gatekeeper
+        utils.pMap(p => parameters.setValue(p), oldGovernancePermissions);
+        await newGatekeeper.init({ from: creator });
+
+        // stake
+        try {
+          const slateID = await gatekeeper.slateCount();
+          await gatekeeper.stakeTokens(slateID.subn(1), { from: recommender });
+        } catch (error) {
+          expectRevert(error);
+          return;
+        }
+        assert.fail('Allowed staking in old gatekeeper after switch');
+      });
+
+      it('should not allow slates in the old gatekeeper to be accepted after the switch', async () => {
+        const currentEpochNumber = await gatekeeper.currentEpochNumber();
+        await goToPeriod(gatekeeper, epochPeriods.SUBMISSION);
+
+        // create slate in the old gatekeeper
+        const grantProposals = [{
+          to: recommender, tokens: '1000', metadataHash: utils.createMultihash('grant'),
+        }];
+        await utils.grantSlateFromProposals({
+          gatekeeper,
+          proposals: grantProposals,
+          capacitor,
+          recommender,
+          metadata: utils.createMultihash('Important grant'),
+        });
+        const slateID = await gatekeeper.slateCount();
+        await gatekeeper.stakeTokens(slateID.subn(1), { from: recommender });
+
+        // activate new gatekeeper
+        utils.pMap(p => parameters.setValue(p), oldGovernancePermissions);
+        await newGatekeeper.init({ from: creator });
+
+        // try to finalize
+        await goToPeriod(gatekeeper, epochPeriods.END);
+
+        try {
+          await gatekeeper.finalizeContest(currentEpochNumber, GRANT);
+        } catch (error) {
+          expectRevert(error);
+          expectErrorLike(error, 'not current gatekeeper');
+          return;
+        }
+        assert.fail('Allowed finalization in the old gatekeeper after the switch');
+      });
+
       describe('with upgrade accepted', () => {
         beforeEach(async () => {
           // Execute the governance proposals
@@ -839,6 +904,22 @@ contract('integration', (accounts) => {
             return;
           }
           assert.fail('Allowed a slate to be staked before initialization');
+        });
+
+        it('should not allow permission requests to the old gatekeeper after the switch', async () => {
+          await goToPeriod(gatekeeper, epochPeriods.SUBMISSION);
+          const isCurrent = await gatekeeper.isCurrentGatekeeper();
+          assert(!isCurrent, 'Should not be current');
+
+          try {
+            const hash = utils.createMultihash('grant');
+            await gatekeeper.requestPermission(utils.asBytes(hash));
+          } catch (error) {
+            expectRevert(error);
+            expectErrorLike(error, 'not current gatekeeper');
+            return;
+          }
+          assert.fail('Allowed permission requests in the old gatekeeper after the switch');
         });
       });
     });

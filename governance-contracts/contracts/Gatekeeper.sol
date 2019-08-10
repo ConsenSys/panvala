@@ -280,6 +280,7 @@ contract Gatekeeper {
     @param slateID The slate to stake on
      */
     function stakeTokens(uint slateID) public returns(bool) {
+        require(isCurrentGatekeeper(), "Not current gatekeeper");
         require(slateID < slateCount(), "No slate exists with that slateID");
         require(slates[slateID].status == SlateStatus.Unstaked, "Slate has already been staked");
 
@@ -350,6 +351,7 @@ contract Gatekeeper {
      @param numTokens The number of tokens to devote to voting
      */
     function depositVoteTokens(uint numTokens) public returns(bool) {
+        require(isCurrentGatekeeper(), "Not current gatekeeper");
         address voter = msg.sender;
 
         // Voter must have enough tokens
@@ -621,6 +623,8 @@ contract Gatekeeper {
      @param resource The resource to finalize for
      */
     function finalizeContest(uint epochNumber, address resource) public {
+        require(isCurrentGatekeeper(), "Not current gatekeeper");
+
         // Finalization must be after the vote period (i.e when the given epoch is over)
         require(currentEpochNumber() > epochNumber, "Contest epoch still active");
 
@@ -766,6 +770,8 @@ contract Gatekeeper {
      @param resource The resource to count votes for
      */
     function finalizeRunoff(uint epochNumber, address resource) public {
+        require(isCurrentGatekeeper(), "Not current gatekeeper");
+
         Contest memory contest = ballots[epochNumber].contests[resource];
         require(contest.status == ContestStatus.RunoffPending, "Runoff is not pending");
 
@@ -906,6 +912,7 @@ contract Gatekeeper {
     @param metadataHash A reference to metadata about the action
     */
     function requestPermission(bytes memory metadataHash) public returns(uint) {
+        require(isCurrentGatekeeper(), "Not current gatekeeper");
         require(metadataHash.length > 0, "metadataHash cannot be empty");
         address resource = msg.sender;
         uint256 epochNumber = currentEpochNumber();
@@ -1001,5 +1008,12 @@ contract Gatekeeper {
     function commitPeriodActive() private view returns(bool) {
         uint256 epochTime = now.sub(epochStart(currentEpochNumber()));
         return (COMMIT_PERIOD_START <= epochTime) && (epochTime < REVEAL_PERIOD_START);
+    }
+
+    /**
+    @dev Return true if this is the Gatekeeper currently pointed to by the ParameterStore
+     */
+    function isCurrentGatekeeper() public view returns(bool) {
+        return parameters.getAsAddress("gatekeeperAddress") == address(this);
     }
 }
