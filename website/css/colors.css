@@ -45,14 +45,26 @@
   background: linear-gradient(88.88deg, #4D90F2 -13.53%, #1E2DB0 49.88%);
 }
 
+.bottom-clip-hero {
+  clip-path: polygon(0 0, 100% 0, 100% 75%, 0 100%);
+}
+
 .full-clip-up {
+  clip-path: polygon(0 15%, 100% 0, 100% 85%, 0% 100%);
+}
+
+.full-clip-up-sm {
   clip-path: polygon(0 10%, 100% 0, 100% 90%, 0% 100%);
 }
 
 .full-clip-down {
-  clip-path: polygon(0 0, 100% 10%, 100% 100%, 0 90%);
+  clip-path: polygon(0 0, 100% 15%, 100% 100%, 0 85%);
 }
 
 .top-clip-up {
-  clip-path: polygon(0 10%, 100% 0, 100% 100%, 0 100%);
+  clip-path: polygon(0 15%, 100% 0, 100% 100%, 0 100%);
+}
+
+.bottom-clip-up {
+  clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%);
 }
