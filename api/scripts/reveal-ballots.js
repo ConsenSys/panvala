@@ -97,15 +97,16 @@ async function run() {
   const enriched = await Promise.all(ballotPromises);
   console.log('ENRICHED', enriched);
 
-  // const notCommitted = enriched.filter(e => e.didCommit === false);
-  const toReveal = enriched.filter(e => e.didReveal === false).filter(e => e.didCommit);
+  const notCommitted = enriched.filter(e => e.didCommit === false);
+  const toReveal = enriched.filter(e => e.didCommit && e.didReveal === false);
   console.log('TO REVEAL', toReveal);
+
+  if (notCommitted.length > 0) {
+    console.warn(`Some ballots have not been committed: ${JSON.stringify(notCommitted)}`);
+  }
 
   if (toReveal.length === 0) {
     console.log(`All ballots already revealed for batch ${epochNumber}`);
-    // if (notCommitted.length > 0) {
-    //   console.warn(`Some ballots have not been committed: ${JSON.stringify(notCommitted)}`);
-    // }
     process.exit(0);
   }
 
