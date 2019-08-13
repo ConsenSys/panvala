@@ -171,17 +171,17 @@ contract('ParameterStore', (accounts) => {
 
     beforeEach(async () => {
       // deploy
-      ({ parameters, gatekeeper } = await utils.newPanvala({ from: creator }));
+      ({ parameters, gatekeeper } = await utils.newPanvala({ from: creator, init: false }));
       await goToPeriod(gatekeeper, epochPeriods.SUBMISSION);
     });
 
     it('it should create a proposal to change a parameter', async () => {
-      const key = 'someKey';
+      await parameters.init({ from: creator });
+
+      const key = 'somekey';
       const value = 5;
       const encodedValue = abiEncode('uint256', value);
       const metadataHash = utils.createMultihash('my request data');
-
-      await parameters.init();
 
       const receipt = await parameters.createProposal(
         key,
@@ -234,12 +234,12 @@ contract('ParameterStore', (accounts) => {
 
     // rejection criteria
     it('should not allow creation of a proposal with an empty metadataHash', async () => {
+      await parameters.init({ from: creator });
+
       const key = 'someKey';
       const value = 5;
       const encodedValue = abiEncode('uint256', value);
       const emptyHash = '';
-
-      await parameters.init();
 
       try {
         await parameters.createProposal(
@@ -262,6 +262,9 @@ contract('ParameterStore', (accounts) => {
       const encodedValue = abiEncode('uint256', value);
       const metadataHash = utils.createMultihash('uninitialized parameter store proposal');
 
+      const initialized = await parameters.initialized();
+      assert(initialized === false, 'Should not be initialized');
+
       try {
         await parameters.createProposal(
           key,
@@ -279,6 +282,8 @@ contract('ParameterStore', (accounts) => {
 
     describe('createManyProposals', () => {
       it('should create proposals and emit an event for each', async () => {
+        await parameters.init({ from: creator });
+
         const keys = ['number1', 'number2', 'address'];
         const values = [
           abiEncode('uint256', 5),
@@ -286,8 +291,6 @@ contract('ParameterStore', (accounts) => {
           abiEncode('address', utils.zeroAddress()),
         ];
         const metadataHashes = ['request1', 'request2', 'request3'].map(utils.createMultihash);
-
-        await parameters.init();
 
         const receipt = await parameters.createManyProposals(
           keys,
@@ -351,10 +354,8 @@ contract('ParameterStore', (accounts) => {
       snapshotID = await utils.evm.snapshot();
 
       ({ gatekeeper, token, parameters } = await utils.newPanvala({
-        from: creator,
+        from: creator, init: true,
       }));
-
-      await parameters.init();
 
       epochNumber = await gatekeeper.currentEpochNumber();
       const GOVERNANCE = await getResource(gatekeeper, 'GOVERNANCE');

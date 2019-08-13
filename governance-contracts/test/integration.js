@@ -37,7 +37,7 @@ function lockedTokens(multipliers, scale, startingBalance, days) {
   return locked;
 }
 
-contract.skip('integration', (accounts) => {
+contract('integration', (accounts) => {
   const multipliers = loadDecayMultipliers();
   let snapshotID;
 

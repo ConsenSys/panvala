@@ -345,7 +345,12 @@ async function newGatekeeper(options) {
  * @param {*} options from, startTime, parameterStoreAddress, tokenAddress, initialUnlockedBalance
  */
 async function newPanvala(options) {
-  const { from: creator, initialTokens, initialUnlockedBalance = toPanBase('0') } = options;
+  const {
+    from: creator,
+    initialTokens,
+    initialUnlockedBalance = toPanBase('0'),
+    init = true,
+  } = options;
   assert(typeof initialTokens === 'undefined', 'should not have key initialTokens');
 
   const gatekeeper = await newGatekeeper({ ...options, init: false });
@@ -369,6 +374,10 @@ async function newPanvala(options) {
   // console.log(`Gatekeeper: ${gatekeeper.address}`);
   // console.log(`TokenCapacitor: ${capacitor.address}`);
   // console.log(`Token: ${token.address}`);
+
+  if (init) {
+    await parameters.init({ from: creator });
+  }
 
   return {
     gatekeeper, parameters, capacitor, token,
