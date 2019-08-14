@@ -11,7 +11,7 @@ const { abiEncode } = require('../utils');
 // eslint-disable-next-line func-names
 module.exports = async function (deployer, networks) {
   const { gatekeeper: config, token: tokenInfo } = global.panvalaConfig;
-  const { firstEpochStart } = config;
+  const { firstEpochStart, enableTimeTravel: timeTravel } = config;
 
   const firstEpochTime = new Date(firstEpochStart);
   const startTime = Math.floor(firstEpochTime / 1000);
@@ -25,11 +25,12 @@ module.exports = async function (deployer, networks) {
 
   console.log(`Deploying Gatekeeper with ParameterStore ${parameters.address} and token ${token.address}`);
 
-  // Enable time travel on development networks
-  // eslint-disable-next-line operator-linebreak
-  const GatekeeperArtifact =
-    networks === 'development' || networks === 'ganache' ? DevGatekeeper : Gatekeeper;
+  // Enable time travel if specified in config or this is a dev network
+  const isDevNetwork = networks === 'development' || networks === 'ganache';
+  const enableTimeTravel = isDevNetwork || timeTravel;
+  const GatekeeperArtifact = enableTimeTravel ? DevGatekeeper : Gatekeeper;
 
+  // Deploy and save value
   const gatekeeper = await deployer.deploy(
     GatekeeperArtifact,
     startTime,

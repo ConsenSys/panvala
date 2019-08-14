@@ -8,7 +8,8 @@
     "supply": "100000000"
   },
   "gatekeeper": {
-    "firstEpochStart": "17:00 02 Nov 2018 GMT"
+    "firstEpochStart": "17:00 02 Nov 2018 GMT",
+    "enableTimeTravel": false
   },
   "capacitor": {
     "charge": true,
