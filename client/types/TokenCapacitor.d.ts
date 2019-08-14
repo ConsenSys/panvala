@@ -11,15 +11,25 @@ export class TokenCapacitor extends Contract {
     proposals(
       arg0: number | string | BigNumber
     ): Promise<{
+      gatekeeper: string;
+      requestID: BigNumber;
       tokens: BigNumber;
       to: string;
       metadataHash: (string)[];
       withdrawn: boolean;
-      0: BigNumber;
-      1: string;
-      2: (string)[];
-      3: boolean;
+      0: string;
+      1: BigNumber;
+      2: BigNumber;
+      3: string;
+      4: (string)[];
+      5: boolean;
     }>;
+
+    projectedUnlockedBalance(time: number | string | BigNumber): Promise<BigNumber>;
+
+    projectedLockedBalance(time: number | string | BigNumber): Promise<BigNumber>;
+
+    calculateDecay(_days: number | string | BigNumber): Promise<BigNumber>;
 
     createProposal(
       to: string,
@@ -47,13 +57,27 @@ export class TokenCapacitor extends Contract {
       overrides?: TransactionOverrides
     ): Promise<ContractTransaction>;
 
+    updateBalancesUntil(
+      time: number | string | BigNumber,
+      overrides?: TransactionOverrides
+    ): Promise<ContractTransaction>;
+
+    updateBalances(overrides?: TransactionOverrides): Promise<ContractTransaction>;
+
     parameters(): Promise<string>;
+    lastLockedTime(): Promise<BigNumber>;
+    lifetimeReleasedTokens(): Promise<BigNumber>;
+    unlockedBalance(): Promise<BigNumber>;
+    lastLockedBalance(): Promise<BigNumber>;
     proposalCount(): Promise<BigNumber>;
+    scale(): Promise<BigNumber>;
+    token(): Promise<string>;
   };
   filters: {
     ProposalCreated(
+      proposalID: null,
       proposer: string | null,
-      requestID: number | string | BigNumber | null,
+      requestID: null,
       recipient: string | null,
       tokens: null,
       metadataHash: null
@@ -66,6 +90,13 @@ export class TokenCapacitor extends Contract {
       donor: string | null,
       numTokens: null,
       metadataHash: null
+    ): EventFilter;
+
+    BalancesUpdated(
+      unlockedBalance: null,
+      lastLockedBalance: null,
+      lastLockedTime: null,
+      totalBalance: null
     ): EventFilter;
   };
 }
