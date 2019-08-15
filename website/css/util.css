@@ -8,35 +8,6 @@ textarea {
   resize: none;
 }
 
-/* Clipping path utils */
-.bottom-clip-hero {
-  clip-path: polygon(0 0, 100% 0, 100% 75%, 0 100%);
-}
-
-.full-clip-up {
-  clip-path: polygon(0 15%, 100% 0, 100% 85%, 0% 100%);
-}
-
-.full-clip-up-sm {
-  clip-path: polygon(0 10%, 100% 0, 100% 90%, 0% 100%);
-}
-
-.full-clip-down {
-  clip-path: polygon(0 0, 100% 15%, 100% 100%, 0 85%);
-}
-
-.top-clip-up {
-  clip-path: polygon(0 15%, 100% 0, 100% 100%, 0 100%);
-}
-
-.bottom-clip-up {
-  clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%);
-}
-
-.clip-angle {
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 92%);
-}
-
 /* Font utils */
 .lh-text {
   line-height: 2;
@@ -87,68 +58,4 @@ textarea {
 .h3-5,
 .w3-5 {
   height: 6rem;
-}
-
-.triangle-hero {
-  width: 0;
-  height: 0;
-  border-left: 0 solid transparent;
-  border-right: 1500px solid transparent;
-  border-top: 500px solid #2138B7;
-}
-
-.triangle-hero-2 {
-  width: 0;
-  height: 0;
-  border-left: 0 solid transparent;
-  border-right: 1500px solid transparent;
-  border-top: 100px solid #2138B7;
-}
-
-.triangle-top {
-  width: 0;
-  height: 0;
-  border-left: 1500px solid transparent;
-  border-right: 0 solid transparent;
-  border-bottom: 100px solid #F9FAFE;
-}
-
-.triangle-bottom {
-  width: 0;
-  height: 0;
-  border-left: 0 solid transparent;
-  border-right: 1500px solid transparent;
-  border-top: 100px solid #F9FAFE;
-}
-
-.triangle-top-2 {
-  width: 0;
-  height: 0;
-  border-left: 0 solid transparent;
-  border-right: 1500px solid transparent;
-  border-bottom: 100px solid #2138B7;
-}
-
-.triangle-bottom-2 {
-  width: 0;
-  height: 0;
-  border-left: 1500px solid transparent;
-  border-right: 0 solid transparent;
-  border-top: 100px solid #2138B7;
-}
-
-.triangle-top-3-blue {
-  width: 0;
-  height: 0;
-  border-left: 1500px solid transparent;
-  border-right: 0 solid transparent;
-  border-bottom: 100px solid #2138B7;
-}
-
-.triangle-bottom-3-blue {
-  width: 0;
-  height: 0;
-  border-left: 0 solid transparent;
-  border-right: 1500px solid transparent;
-  border-top: 100px solid #2138B7;
 }

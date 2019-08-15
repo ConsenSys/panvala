@@ -9,12 +9,13 @@
   <link rel="stylesheet" href="https://unpkg.com/tachyons@4.10.0/css/tachyons.min.css" />
   <link rel="stylesheet" href="css/util.css" />
   <link rel="stylesheet" href="css/colors.css" />
+  <link rel="stylesheet" href="css/clip-path.css" />
 </head>
 
 <body class="overflow-x-hidden">
 
   <!-- Navigation -->
-  <section class="bg-blue">
+  <section class="bg-gradient">
     <nav class="dt w-70-l w-80-m w-90 border-box pv4 center">
       <a class="dtc v-mid link w-25" href="index.html" title="Home">
         <img src="img/logo-teal.png" class="dib w-60" />
@@ -37,7 +38,7 @@
   </section>
 
   <!-- Hero -->
-  <section class="bg-blue">
+  <section class="bg-gradient bottom-clip-hero-main relative z-0" style="height:1000px;">
     <div class="w-70-l w-80-m w-90 center dt pv5">
       <div class="dtc v-mid w-50-l w-80-m w-90">
         <h1 class="white f1 b ma0 mb3">
@@ -66,10 +67,9 @@
       </div>
     </div>
   </section>
-  <section class="triangle-hero"></section>
 
   <!-- Comparison Section -->
-  <section class="bg-white w-70-l w-80-m w-90 center br4 pa5 shadow" style="margin-top: -450px;">
+  <section class="bg-white w-70-l w-80-m w-90 center br4 pa5 shadow relative z-1" style="margin-top: -500px;">
     <h2 class="f2-5 ma0 tc">
       Sustainable Funding</h2>
     <div class="dt mt5">
@@ -121,8 +121,7 @@
       </div>
     </div>
 
-    <section class="triangle-top mt6"></section>
-    <div class="bg-gray pv3">
+    <div class="bg-gray pv6 full-clip-up mv6">
       <div class="dt w-70-l w-80-m w-90 center">
         <div class="dtc w-50 v-mid">
           <div class="h5 w5 bg-gray br-100 center ba"></div>
@@ -138,7 +137,6 @@
         </div>
       </div>
     </div>
-    <section class="triangle-bottom"></section>
 
     <div class="dt mt6 w-70-l w-80-m w-90 center">
       <div class="dtc w-50 v-mid tl pr4">
@@ -157,16 +155,13 @@
   </section>
 
   <!-- Quote Section -->
-  <section class="triangle-top-2 mt6"></section>
-  <div class="bg-blue">
+  <section class="full-clip-down-blue pv6 mv6">
     <div class="dt w-70-l w-80-m w-90 center">
       <div class="dtc w-50 v-mid tl pr4">
         <h2 class="f2-5 ma0 mv3 lh-copy white">
           Our supporters care about the future of Ethereum</h2>
         <p class="ma0 f4 white-60 lh-text mb3">
           “I'm donating to Panvala because new socially driven organisations could be the key to avoiding a tragedy of the commons for maintaining public networks like Ethereum.”</p>
-        <a href="" class="link dim blue f6 fw7">
-          Learn about slate governance</a>
       </div>
       <div class="dtc w-50 v-btm">
         <img src="img/simon.png" class="fr br-top shadow clip-angle w-90" style="margin-top: -300px;" />
@@ -176,8 +171,7 @@
           Token Engineering Pioneer</p>
       </div>
     </div>
-  </div>
-  <section class="triangle-bottom-2"></section>
+  </section>
 
   <!-- Newsletter CTA -->
   <section class="w-70-l w-80-m w-90 center tc mv5 pv5">
@@ -189,9 +183,8 @@
   </section>
 
   <!-- Apply For Grant -->
-  <section class="ml5 overflow-x-hidden w-80">
-    <section class="triangle-top-3-blue"></section>
-    <section class="bg-blue">
+  <section class="ml5 overflow-x-hidden w-80 z-1 relative">
+    <section class="bg-gradient full-clip-up pv5">
       <div class="w-70-l w-80-m w-90 nl5 center pt5">
         <div class="dib mr5 v-top">
           <h2 class="f2-5 ma0 mb4 white">
@@ -229,13 +222,11 @@
         </div>
       </div>
     </section>
-    <section class="triangle-bottom-3-blue"></section>
   </section>
 
   <!-- Donation CTA  -->
-  <section class="mr5 overflow-x-hidden w-40 fr" style="margin-top: -200px;">
-    <section class="triangle-top"></section>
-    <section class="bg-gray ph5 pt5">
+  <section class="mr5 overflow-x-hidden w-40 fr z-0" style="margin-top: -150px;">
+    <section class="bg-gray full-clip-up-sm ph5 pv6">
       <h2 class="f2-5 ma0 mb4 lh-copy">
         Become a donor today and support the projects that need the support</h2>
       <a href="donate.html">
@@ -243,11 +234,10 @@
           Donate</button>
       </a>
     </section>
-    <section class="triangle-bottom"></section>
   </section>
 
   <!-- Footer -->
-  <section class="bg-blue" style="margin-top: 350px;">
+  <section class="bg-gradient" style="margin-top: 350px;">
     <nav class="dt w-70-l w-80-m w-90 border-box pv4 center dt h-100">
       <div class="dtc flex flex-column justify-between h-100">
         <a class="dtc v-mid link w-100" href="index.html" title="Home">
@@ -262,7 +252,7 @@
             <a href="index.html" class="link dim white-60 f5 db mb3">Home</a>
             <a href="grants.html" class="link dim white-60 f5 db mb3">Grants</a>
             <a href="donate.html" class="link dim white-60 f5 db mb3">Donate</a>
-            <a href="" class="link dim white-60 f5 db mb3">Beta</a>
+            <a href="http://app.panvala.com/slates" target="_blank" class="link dim white-60 f5 db mb3">Live App</a>
         </div>
         <div class="dib v-top mr6 tl">
           <h2 class="f3 ma0 white mb3">
