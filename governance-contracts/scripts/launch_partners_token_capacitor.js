@@ -7,12 +7,12 @@ const { utils } = require('ethers');
 const fs = require('fs');
 const path = require('path');
 
-const { BN } = require('../utils');
-
 const configFile = path.resolve(__dirname, '../conf/config.json');
 const lptcConfigFile = path.resolve(__dirname, '../conf/launch_partners_config.json');
 const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
 const lptcConfig = JSON.parse(fs.readFileSync(lptcConfigFile, 'utf-8'));
+
+const { prettify } = require('./utils');
 
 // eslint-disable-next-line
 async function run(networkID) {
@@ -30,7 +30,7 @@ async function run(networkID) {
   console.log(lptcConfig);
 
   const { decimals, deploy, address: tokenInfoAddress } = config.token;
-  const { initialBalance, initialUnlockedBalance } = lptcConfig;
+  const { initialUnlockedBalance } = lptcConfig;
 
   const token = deploy ? await BasicToken.deployed() : await BasicToken.at(tokenInfoAddress);
 
@@ -52,21 +52,8 @@ async function run(networkID) {
       [networkID]: capacitor.address,
     },
   };
-  const json = JSON.stringify(updatedLptcConfig);
+  const json = await prettify(updatedLptcConfig);
   fs.writeFileSync(lptcConfigFile, json);
-
-  const initialCharge = initialBalance;
-  console.log(`Charging capacitor with ${initialCharge} tokens`);
-
-  // if the creator has enough balance, then charge
-  const balance = await token.balanceOf(creator);
-  if (balance.gte(new BN(initialCharge))) {
-    const baseInitialCharge = utils.parseUnits(initialCharge, decimals);
-    await token.transfer(capacitor.address, baseInitialCharge);
-    await capacitor.updateBalances();
-  } else {
-    throw new Error("You don't have enough tokens to charge the capacitor");
-  }
 
   return capacitor;
 }
