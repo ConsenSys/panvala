@@ -59,3 +59,8 @@ textarea {
 .w3-5 {
   height: 6rem;
 }
+
+/* Animations */
+.animate {
+  transition: all .15s;  
+}

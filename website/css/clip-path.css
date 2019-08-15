@@ -62,6 +62,10 @@
 }
 
 /* Bottom only clip paths */
+.bottom-clip-hero-main {
+  clip-path: polygon(0 0, 100% 0, 100% 55%, 0 100%);
+}
+
 .bottom-clip-hero {
   clip-path: polygon(0 0, 100% 0, 100% 75%, 0 100%);
 }

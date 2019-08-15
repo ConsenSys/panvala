@@ -44,3 +44,12 @@
 .bg-gradient {
   background: linear-gradient(88.88deg, #4D90F2 -13.53%, #1E2DB0 49.88%);
 }
+
+.grayscale {
+  filter: grayscale(100%);
+}
+
+.grayscale:hover {
+  filter: grayscale(0);
+  opacity: 1 !important;
+}
