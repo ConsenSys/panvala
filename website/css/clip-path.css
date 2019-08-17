@@ -74,6 +74,6 @@
   clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%);
 }
 
-.clip-angle {
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 92%);
+.bottom-clip-down {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 85%);
 }

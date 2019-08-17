@@ -8,6 +8,14 @@ textarea {
   resize: none;
 }
 
+.top-12 {
+  top: 12rem;
+}
+
+.top--12 {
+  top: -12rem;
+}
+
 /* Font utils */
 .lh-text {
   line-height: 2;
@@ -62,5 +70,5 @@ textarea {
 
 /* Animations */
 .animate {
-  transition: all .15s;  
+  transition: all .15s;
 }
