@@ -1,5 +1,5 @@
 const { utils } = require('ethers');
-const { getAllEvents } = require('../utils/transactions');
+const { getAllEvents } = require('../utils/events');
 const { getNormalizedNotificationsByEvents } = require('../utils/notifications');
 
 const numRegex = /^([^0-9]*)$/;

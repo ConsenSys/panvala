@@ -21,7 +21,7 @@
     "ajv": "^6.10.0",
     "bluebird": "^3.5.5",
     "cors": "^2.8.5",
-    "eth-events": "^0.7.0",
+    "eth-events": "^0.9.1",
     "ethers": "^4.0.26",
     "express": "^4.16.4",
     "express-validator": "^5.3.1",
