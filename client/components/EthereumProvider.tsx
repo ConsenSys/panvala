@@ -2,6 +2,7 @@ import * as React from 'react';
 import { utils, providers } from 'ethers';
 import { toast } from 'react-toastify';
 import isEmpty from 'lodash/isEmpty';
+import getConfig from 'next/config';
 import { connectProvider, connectContracts } from '../utils/provider';
 import { IContracts } from '../interfaces';
 import { baseToConvertedUnits, BN } from '../utils/format';
@@ -14,6 +15,7 @@ import {
   loadSessionState,
 } from '../utils/localStorage';
 import MainnetModal from './MainnetModal';
+const { publicRuntimeConfig = {} } = getConfig() || {};
 
 export interface IEthereumContext {
   account: string;
@@ -37,18 +39,17 @@ declare global {
 
 function reducer(state: any, action: any) {
   switch (action.type) {
-    case 'eth_state':
+    case 'chain':
       return {
         ...state,
         ethProvider: action.ethProvider,
-        contracts: action.contracts,
         account: action.account,
-        slateStakeAmount: action.slateStakeAmount,
       };
-    case 'account':
+    case 'contracts':
       return {
         ...state,
-        account: action.payload,
+        contracts: action.contracts,
+        slateStakeAmount: action.slateStakeAmount,
       };
     case 'balances':
       return {
@@ -82,6 +83,8 @@ const EthereumProvider: React.FC<any> = (props: any) => {
   });
 
   // runs once, on-load
+  // 1. get metamask / set account / set provider
+  // 2. set contracts
   React.useEffect(() => {
     async function handleConnectEthereum() {
       try {
@@ -107,56 +110,59 @@ const EthereumProvider: React.FC<any> = (props: any) => {
           // selected account
           const account = utils.getAddress(addresses[0]);
 
-          // wrap MetaMask with ethers
-          let ethProvider: providers.Web3Provider;
-          try {
-            ethProvider = await connectProvider(ethereum);
-          } catch (error) {
-            console.error(`ERROR failed to connect eth provider: ${error.message}`);
-            throw error;
-          }
-
-          // contract abstractions (w/ metamask signer)
-          let contracts: IContracts;
-          try {
-            contracts = await connectContracts(ethProvider);
-          } catch (error) {
-            console.error(`ERROR failed to connect contracts: ${error.message}`);
-            if (error.message.includes('contract not deployed')) {
-              toast.error(`Contracts not deployed on current network`);
-            }
-            throw error;
-          }
-
-          const slateStakeAmount = await contracts.parameterStore.functions.getAsUint(
-            'slateStakeAmount'
-          );
-
-          // set state
-          if (account && !isEmpty(ethProvider)) {
-            console.log('account:', account);
-            console.log('contracts:', contracts);
-            dispatch({
-              type: 'eth_state',
-              ethProvider,
-              contracts,
-              account,
-              slateStakeAmount,
-            });
-            if (contracts.hasOwnProperty('token')) {
-              // toast.success('MetaMask successfully connected!');
-            }
-          }
-
           // register an event listener to handle account-switching in metamask
           ethereum.once('accountsChanged', (accounts: string[]) => {
             console.info('MetaMask account changed:', accounts[0]);
             handleConnectEthereum();
           });
-          // ethereum.once('networkChanged', (network: any) => {
-          //   console.info('MetaMask network changed:', network);
-          //   handleConnectEthereum();
-          // });
+
+          // register an event listener to handle network-switching in metamask
+          ethereum.once('networkChanged', (network: any) => {
+            console.info('MetaMask network changed:', network);
+            window.location.reload();
+          });
+
+          try {
+            // wrap MetaMask with ethers
+            const ethProvider = await connectProvider(ethereum);
+            console.log('account:', account);
+
+            dispatch({
+              type: 'chain',
+              ethProvider,
+              account,
+            });
+
+            if (!isEmpty(ethProvider)) {
+              setupContracts(ethProvider);
+            }
+          } catch (error) {
+            console.error(`ERROR failed to connect eth provider: ${error.message}`);
+            throw error;
+          }
+
+          async function setupContracts(ethProvider) {
+            // contract abstractions (w/ metamask signer)
+            try {
+              const contracts = await connectContracts(ethProvider);
+              const slateStakeAmount = await contracts.parameterStore.functions.getAsUint(
+                'slateStakeAmount'
+              );
+              console.log('contracts:', contracts);
+
+              dispatch({
+                type: 'contracts',
+                contracts,
+                slateStakeAmount,
+              });
+            } catch (error) {
+              console.error(`ERROR failed to connect contracts: ${error.message}`);
+              if (error.message.includes('contract not deployed')) {
+                toast.error(`Contracts not deployed on current network`);
+              }
+              throw error;
+            }
+          }
         }
       } catch (error) {
         console.error(error);
@@ -164,6 +170,7 @@ const EthereumProvider: React.FC<any> = (props: any) => {
     }
     handleConnectEthereum();
 
+    // clean up
     return () =>
       typeof window !== 'undefined' &&
       typeof window.ethereum !== 'undefined' &&
@@ -222,7 +229,7 @@ const EthereumProvider: React.FC<any> = (props: any) => {
   React.useEffect(() => {
     async function checkNetwork() {
       const network = await state.ethProvider.getNetwork();
-      if (network.chainId === 1) {
+      if (network.chainId === 1 || publicRuntimeConfig.panvalaEnv === 'production') {
         const sessionState = loadSessionState(CLOSED_MAINNET_MODAL);
         if (sessionState !== 'TRUE') {
           setMainnetModalOpen(true);

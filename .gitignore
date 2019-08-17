@@ -7,5 +7,6 @@ docker/**/*.env
 **/node_modules/
 
 **/*.env
+.vscode
 
 .DS_Store
