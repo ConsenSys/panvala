@@ -38,7 +38,6 @@ contract ParameterStore {
     }
 
     mapping(uint => Proposal) public proposals;
-    mapping(uint => uint) public requestProposals;
 
     // The total number of proposals
     uint public proposalCount;
@@ -150,7 +149,6 @@ contract ParameterStore {
         uint proposalID = proposalCount;
         proposals[proposalID] = p;
         proposalCount = proposalCount.add(1);
-        requestProposals[requestID] = proposalID;
 
         emit ProposalCreated(proposalID, msg.sender, requestID, key, value, metadataHash);
         return proposalID;
