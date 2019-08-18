@@ -19,22 +19,25 @@ module.exports = {
 
     try {
       getAllEvents().then(events => {
-        events.map(e => {
-          // print out event name and block.timestamp
-          console.log(e.name, e.timestamp);
-          // print out event values for debugging
-          Object.keys(e.values).map(arg => {
-            let value = e.values[arg];
-            // filter out numerical duplicates, like { 0: '0x1234', voter: '0x1234' }, and the `length` field
-            if (numRegex.test(arg) && arg !== 'length') {
-              if (value.hasOwnProperty('_hex')) {
-                value = value.toString();
+        const print = false;
+        if (print) {
+          events.map(e => {
+            // print out event name and block.timestamp
+            console.log(e.name, e.timestamp);
+            // print out event values for debugging
+            Object.keys(e.values).map(arg => {
+              let value = e.values[arg];
+              // filter out numerical duplicates, like { 0: '0x1234', voter: '0x1234' }, and the `length` field
+              if (numRegex.test(arg) && arg !== 'length') {
+                if (value.hasOwnProperty('_hex')) {
+                  value = value.toString();
+                }
+                console.log(arg, value);
               }
-              console.log(arg, value);
-            }
+            });
+            console.log('');
           });
-          console.log('');
-        });
+        }
         console.log('events:', events.length);
         console.log('');
         getNormalizedNotificationsByEvents(events, address).then(notifications => {

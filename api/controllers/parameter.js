@@ -11,7 +11,7 @@ module.exports = {
     const psAddress = await gatekeeper.functions.parameters();
 
     // get parameter store events
-    const params = getParameterStoreEvents(psAddress, genesisBlockNumber);
+    const params = getParametersSet(psAddress, genesisBlockNumber);
     console.log('params:', params);
 
     res.send(JSON.stringify(params));
