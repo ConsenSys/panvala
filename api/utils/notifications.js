@@ -1,8 +1,6 @@
 const ethers = require('ethers');
 const flatten = require('lodash/flatten');
-const ipfs = require('./ipfs');
 const { utils } = ethers;
-const { IpfsMetadata } = require('../models');
 
 const {
   contractABIs: { Gatekeeper, TokenCapacitor },
@@ -11,6 +9,7 @@ const {
 const config = require('./config');
 const { rpcEndpoint } = config;
 const { gatekeeperAddress, tokenCapacitorAddress } = config.contracts;
+const { findOrSaveIpfsMetadata } = require('./ipfs');
 
 const notifications = {
   PROPOSAL_INCLUDED_IN_SLATE: {
@@ -120,47 +119,27 @@ async function getNormalizedNotificationsByEvents(events, address) {
     )
   );
 
-  // this is hacky. should compare against SlateCreated events
-  const proposalCreatedEvents = events.filter(
-    event =>
-      event.name === 'ProposalCreated' &&
-      utils.getAddress(event.values.recipient) === utils.getAddress(address)
-  );
-  const proposalIncludedInSlateNotifications = await Promise.all(
-    proposalCreatedEvents.map(async event => {
-      const { proposer, recipient, metadataHash } = event.values;
-      let proposalMetadata;
-      try {
-        const dbIpfsMetadata = await IpfsMetadata.findOne({
-          where: {
-            multihash: utils.toUtf8String(metadataHash),
-          },
-          raw: true,
-        });
-        proposalMetadata = dbIpfsMetadata.data;
-      } catch (error) {
-        console.log('Proposal metadata not found in db. Getting from ipfs..');
-        proposalMetadata = await ipfs.get(utils.toUtf8String(metadataHash), {
-          json: true,
-        });
-        // write to db since there's not a row already
-        await IpfsMetadata.create({
-          multihash: utils.toUtf8String(metadataHash),
-          data: proposalMetadata,
-        });
-      }
-      return {
-        ...notifications.PROPOSAL_INCLUDED_IN_SLATE,
-        proposalID: proposalMetadata.id,
-        event,
-        proposer,
-        recipient,
-        slateID: '0', // TEMPORARY HACK
-      };
-    })
-  );
+  const slateCreatedEvents = events.filter(event => event.name === 'SlateCreated');
+  // const proposalIncludedInSlateNotifications = await Promise.all(
+  //   slateCreatedEvents.map(async event => {
+  //     const { slateID, recommender, requestIDs, metadataHash } = event.values;
+  //     let slateMetadata = await findOrSaveIpfsMetadata(metadataHash);
 
-  return slateAcceptedNotifications.concat(proposalIncludedInSlateNotifications);
+  //     // find matching requestID:proposalID
+
+  //     // return {
+  //     //   ...notifications.PROPOSAL_INCLUDED_IN_SLATE,
+  //     //   // proposalID,
+  //     //   event,
+  //     //   proposer,
+  //     //   recipient,
+  //     //   slateID: '0', // TEMPORARY HACK
+  //     // };
+  //   })
+  // );
+
+  return slateAcceptedNotifications
+  // return slateAcceptedNotifications.concat(proposalIncludedInSlateNotifications);
 }
 
 module.exports = {

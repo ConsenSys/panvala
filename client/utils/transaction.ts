@@ -87,10 +87,8 @@ export async function sendRecommendGovernanceSlateTx(
   gatekeeper: Gatekeeper,
   parameterStoreAddress: string,
   requestIDs: any[],
-  metadataHash: string,
-  setTxPending: any
+  metadataHash: string
 ): Promise<any> {
-  setTxPending(true);
   const response = await (gatekeeper as any).functions.recommendSlate(
     parameterStoreAddress,
     requestIDs,
@@ -98,7 +96,6 @@ export async function sendRecommendGovernanceSlateTx(
   );
 
   const receipt: ContractReceipt = await response.wait();
-  setTxPending(false);
 
   if (typeof receipt.events !== 'undefined') {
     // Get the SlateCreated logs from the receipt
@@ -115,8 +112,7 @@ export async function sendRecommendGovernanceSlateTx(
 // Submit proposals to the token capacitor and get corresponding request IDs
 export async function sendCreateManyGovernanceProposals(
   parameterStore: ParameterStore,
-  proposalInfo: IGovernanceProposalInfo,
-  setTxPending: any
+  proposalInfo: IGovernanceProposalInfo
 ): Promise<any> {
   const { metadatas, multihashes } = proposalInfo as any;
   const keys: string[] = metadatas.map((p: any) => p.parameterChanges.key);
@@ -125,13 +121,11 @@ export async function sendCreateManyGovernanceProposals(
   );
   // submit to the capacitor, get requestIDs
   console.log('keys, values:', keys, values);
-  setTxPending(true);
   // prettier-ignore
   const response: TransactionResponse = await parameterStore.functions.createManyProposals(keys, values, multihashes);
 
   // wait for tx to get mined
   const receipt: ContractReceipt = await response.wait();
-  setTxPending(false);
 
   if (typeof receipt.events !== 'undefined') {
     // Get the ProposalCreated logs from the receipt

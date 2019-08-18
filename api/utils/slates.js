@@ -58,7 +58,7 @@ async function getAllSlates() {
     slateIDsToQuery = filtered;
   }
 
-  return Promise.map(
+  const slates = await Promise.map(
     slateIDsToQuery,
     async (slateID, index) => {
       if (index !== 0) await Promise.delay(1000);
@@ -87,6 +87,8 @@ async function getAllSlates() {
     },
     { concurrency: 5 }
   );
+
+  return slates;
 }
 
 /**

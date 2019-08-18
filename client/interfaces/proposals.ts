@@ -66,3 +66,8 @@ export interface IGovernanceProposalInfo {
   metadatas: IGovernanceProposalMetadata[];
   multihashes: Buffer[];
 }
+
+export interface IGrantProposalInfo {
+  metadatas: IGrantProposalMetadata[];
+  multihashes: Buffer[];
+}

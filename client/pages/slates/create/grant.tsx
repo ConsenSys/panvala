@@ -33,6 +33,7 @@ import {
   ISaveSlate,
   StatelessPage,
   ISlate,
+  IGrantProposalInfo,
 } from '../../../interfaces';
 import { TokenCapacitor } from '../../../types';
 import {
@@ -54,7 +55,6 @@ import Text from '../../../components/system/Text';
 import { isSlateSubmittable } from '../../../utils/status';
 import { projectedAvailableTokens } from '../../../utils/tokens';
 import Loader from '../../../components/Loader';
-import PendingTransaction from '../../../components/PendingTransaction';
 
 const Separator = styled.div`
   border: 1px solid ${COLORS.grey5};
@@ -74,10 +74,6 @@ const FormSchema = yup.object().shape({
   stake: yup.string().required('Required'),
 });
 
-interface IProposalInfo {
-  metadata: IGrantProposalMetadata[];
-  multihashes: Buffer[];
-}
 interface IProposalsObject {
   [key: string]: boolean;
 }
@@ -125,7 +121,7 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
   // modal opener
   const [isOpen, setOpenModal] = React.useState(false);
   // pending tx loader
-  const [txPending, setTxPending] = React.useState(false);
+  const [txsPending, setTxsPending] = React.useState(0);
   const [availableTokens, setAvailableTokens] = React.useState('0');
 
   React.useEffect(() => {
@@ -158,17 +154,15 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
   }, [contracts, currentBallot.epochNumber, slates]);
 
   //  Submit proposals to the token capacitor and get corresponding request IDs
-  async function getRequestIDs(proposalInfo: IProposalInfo, tokenCapacitor: TokenCapacitor) {
-    const { metadata, multihashes: proposalMultihashes } = proposalInfo;
+  async function getRequestIDs(proposalInfo: IGrantProposalInfo, tokenCapacitor: TokenCapacitor) {
+    const { metadatas, multihashes: proposalMultihashes } = proposalInfo;
     // submit to the capacitor, get requestIDs
     // token distribution details
-    const beneficiaries: string[] = metadata.map(p => p.awardAddress);
-    const tokenAmounts: string[] = metadata.map(p => convertedToBaseUnits(p.tokensRequested, 18));
+    const beneficiaries: string[] = metadatas.map(p => p.awardAddress);
+    const tokenAmounts: string[] = metadatas.map(p => convertedToBaseUnits(p.tokensRequested, 18));
     console.log('tokenAmounts:', tokenAmounts);
 
     try {
-      // send tx (pending)
-      setTxPending(true);
       const response: TransactionResponse = await sendCreateManyProposalsTransaction(
         tokenCapacitor,
         beneficiaries,
@@ -178,7 +172,6 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
 
       // wait for tx to get mined
       const receipt: TransactionReceipt = await response.wait();
-      setTxPending(false);
 
       if ('events' in receipt) {
         // Get the ProposalCreated logs from the receipt
@@ -206,7 +199,6 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
         gasLimit: estimate.add('100000').toHexString(),
         gasPrice: utils.parseUnits('9.0', 'gwei'),
       };
-      setTxPending(true);
       const response = await (contracts.gatekeeper as any).functions.recommendSlate(
         contracts.tokenCapacitor.address,
         requestIDs,
@@ -215,7 +207,6 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
       );
 
       const receipt: ContractReceipt = await response.wait();
-      setTxPending(false);
 
       if (typeof receipt.events !== 'undefined') {
         // Get the SlateCreated logs from the receipt
@@ -228,6 +219,23 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
         return slate;
       }
     }
+  }
+
+  async function calculateNumTxs(values, selectedProposals) {
+    let numTxs: number = 1; // gk.recommendSlate
+
+    if (selectedProposals.length > 0) {
+      numTxs += 1; // tc.createManyProposals
+    }
+
+    if (values.stake === 'yes') {
+      numTxs += 1; // gk.stakeSlate
+      if (gkAllowance.lt(slateStakeAmount)) {
+        numTxs += 1; // token.approve
+      }
+    }
+
+    return numTxs;
   }
 
   /**
@@ -248,10 +256,16 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
       toast.error(msg);
       return;
     }
-    setTxPending(true);
+    const numTxs = await calculateNumTxs(values, selectedProposals);
+    setTxsPending(numTxs);
 
     // save proposal metadata to IPFS to be included in the slate metadata
     console.log('preparing proposals...');
+
+    // const dataToPost = {
+    //   selectedProposals,
+
+    // }
 
     const proposalMultihashes: Buffer[] = await Promise.all(
       selectedProposals.map(async (metadata: IGrantProposalMetadata) => {
@@ -291,8 +305,8 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
     const emptySlate = proposalMetadatas.length === 0;
 
     // 1. batch create proposals and get request IDs
-    const proposalInfo: IProposalInfo = {
-      metadata: proposalMetadatas,
+    const proposalInfo: IGrantProposalInfo = {
+      metadatas: proposalMetadatas,
       multihashes: proposalMultihashes,
     };
 
@@ -339,16 +353,15 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
 
             // stake immediately after creating slate
             if (values.stake === 'yes') {
-              setTxPending(true);
               if (gkAllowance.lt(slateStakeAmount)) {
                 await contracts.token.approve(contracts.gatekeeper.address, MaxUint256);
               }
               const res = await sendStakeTokensTransaction(contracts.gatekeeper, slate.slateID);
 
               await res.wait();
-              setTxPending(false);
             }
 
+            setTxsPending(0);
             setOpenModal(true);
             onRefreshSlates();
             onRefreshCurrentBallot();
@@ -600,7 +613,11 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
                   {'Create Slate'}
                 </Button>
               </Flex>
-              <PendingTransaction isOpen={txPending} setOpen={setTxPending} />
+              <Loader
+                isOpen={txsPending > 0}
+                setOpen={() => setTxsPending(0)}
+                numTxs={txsPending}
+              />
             </Box>
           )}
         </Formik>

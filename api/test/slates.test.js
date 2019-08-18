@@ -26,7 +26,7 @@ describe('POST /api/slates', () => {
       email: 'jc@example.com',
       proposalInfo: {
         multihashes: [],
-        metadata: [],
+        metadatas: [],
       },
     };
 

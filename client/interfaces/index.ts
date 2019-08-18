@@ -7,6 +7,7 @@ import {
   IParameterChangesObject,
   IGovernanceProposalMetadata,
   IGovernanceProposalInfo,
+  IGrantProposalInfo,
 } from './proposals';
 import { ISlate, ISlateMetadata, ISaveSlate, IGovernanceSlateFormValues } from './slates';
 import { IChoices, ISubmitBallot, IBallotDates } from './voting';
@@ -22,6 +23,7 @@ export {
   IGovernanceProposalMetadata,
   IParameterChangesObject,
   IGovernanceProposalInfo,
+  IGrantProposalInfo,
   ISlateMetadata,
   IChoices,
   ISubmitBallot,

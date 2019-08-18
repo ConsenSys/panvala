@@ -1,7 +1,7 @@
 import * as React from 'react';
 import styled from 'styled-components';
 import { Formik, Form, FormikContext } from 'formik';
-import { CircularProgress, withStyles } from '@material-ui/core';
+import { withStyles } from '@material-ui/core';
 import { toast } from 'react-toastify';
 import clone from 'lodash/clone';
 import { withRouter } from 'next/router';
@@ -42,6 +42,7 @@ import { GovernanceSlateFormSchema } from '../../../utils/schemas';
 import RouterLink from '../../../components/RouterLink';
 import BackButton from '../../../components/BackButton';
 import { isSlateSubmittable } from '../../../utils/status';
+import Loader from '../../../components/Loader';
 
 const CreateGovernanceSlate: StatelessPage<any> = ({ classes, router }) => {
   // modal opener
@@ -55,6 +56,7 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes, router }) => {
     contracts,
     onRefreshBalances,
     slateStakeAmount,
+    gkAllowance,
   }: IEthereumContext = React.useContext(EthereumContext);
 
   React.useEffect(() => {
@@ -65,7 +67,24 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes, router }) => {
   }, [currentBallot.slateSubmissionDeadline]);
 
   // pending tx loader
-  const [txPending, setTxPending] = React.useState(false);
+  const [txsPending, setTxsPending] = React.useState(0);
+
+  async function calculateNumTxs(values) {
+    let numTxs: number = 1; // gk.recommendSlate
+
+    if (values.recommendation === 'governance') {
+      numTxs += 1; // ps.createManyProposals
+    }
+
+    if (values.stake === 'yes') {
+      numTxs += 1; // gk.stakeSlate
+      if (gkAllowance.lt(slateStakeAmount)) {
+        numTxs += 1; // token.approve
+      }
+    }
+
+    return numTxs;
+  }
 
   // Submit slate information to the Gatekeeper, saving metadata in IPFS
   async function handleSubmitSlate(values: IGovernanceSlateFormValues) {
@@ -75,7 +94,8 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes, router }) => {
       toast.error(msg);
       return;
     }
-    setTxPending(true);
+    const numTxs = await calculateNumTxs(values);
+    setTxsPending(numTxs);
 
     // filter for only changes in parameters
     const parameterChanges: IParameterChangesObject = Object.keys(values.parameters).reduce(
@@ -134,7 +154,7 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes, router }) => {
       const emptySlate = values.recommendation === 'noAction';
       const getRequests = emptySlate
         ? Promise.resolve([])
-        : sendCreateManyGovernanceProposals(contracts.parameterStore, proposalInfo, setTxPending);
+        : sendCreateManyGovernanceProposals(contracts.parameterStore, proposalInfo);
 
       errorMessage = 'error adding proposal metadata.';
       // console.log('creating proposals...');
@@ -162,8 +182,7 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes, router }) => {
         contracts.gatekeeper,
         slateMetadata.resource,
         requestIDs,
-        slateMetadataHash,
-        setTxPending
+        slateMetadataHash
       );
       console.log('Submitted slate', slate);
 
@@ -181,13 +200,12 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes, router }) => {
         console.log('Saved slate info');
         toast.success('Saved slate');
         if (values.stake === 'yes') {
-          setTxPending(true);
           const res = await contracts.gatekeeper.functions.stakeTokens(slate.slateID);
 
           await res.wait();
-          setTxPending(false);
         }
 
+        setTxsPending(0);
         setOpenModal(true);
         onRefreshSlates();
         onRefreshCurrentBallot();
@@ -377,31 +395,21 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes, router }) => {
         </Formik>
       </CenteredWrapper>
 
-      <Modal handleClick={() => setOpenModal(false)} isOpen={txPending || isOpen}>
-        {txPending ? (
-          <>
-            <Image src="/static/metamask-fox.png" alt="metamask logo" width="80px" />
-            <ModalTitle>{'Transaction Processing'}</ModalTitle>
-            <ModalDescription>
-              Please wait a few moments while MetaMask processes your transaction. This will only
-              take a few moments.
-            </ModalDescription>
-            <CircularProgress className={classes.progress} />
-          </>
-        ) : (
-          <>
-            <Image src="/static/check.svg" alt="slate submitted" width="80px" />
-            <ModalTitle>{'Slate submitted.'}</ModalTitle>
-            <ModalDescription>
-              Now that your slate has been created you and others have the ability to stake tokens
-              on it to propose it to token holders. Once there are tokens staked on the slate it
-              will be eligible for a vote.
-            </ModalDescription>
-            <RouterLink href="/slates" as="/slates">
-              <Button type="default">{'Done'}</Button>
-            </RouterLink>
-          </>
-        )}
+      <Loader isOpen={txsPending > 0} setOpen={() => setTxsPending(0)} numTxs={txsPending} />
+
+      <Modal handleClick={() => setOpenModal(false)} isOpen={isOpen}>
+        <>
+          <Image src="/static/check.svg" alt="slate submitted" width="80px" />
+          <ModalTitle>{'Slate submitted.'}</ModalTitle>
+          <ModalDescription>
+            Now that your slate has been created you and others have the ability to stake tokens on
+            it to propose it to token holders. Once there are tokens staked on the slate it will be
+            eligible for a vote.
+          </ModalDescription>
+          <RouterLink href="/slates" as="/slates">
+            <Button type="default">{'Done'}</Button>
+          </RouterLink>
+        </>
       </Modal>
     </>
   );

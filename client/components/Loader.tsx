@@ -14,7 +14,10 @@ const Loader: React.SFC<IProps> = ({ classes, isOpen, setOpen, numTxs }) => {
   const text = 'This action may take a few moments to process. ';
   const txText = `You will need to confirm ${numTxs} transactions with MetaMask.`;
   return (
-    <Modal handleClick={() => setOpen(false)} isOpen={isOpen}>
+    <Modal
+      handleClick={() => (numTxs ? numTxs === 0 && setOpen(false) : setOpen(false))}
+      isOpen={isOpen}
+    >
       <>
         <ModalTitle>{'Just a Moment'}</ModalTitle>
         <Copy fontSize={1} textAlign="left">
