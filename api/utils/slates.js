@@ -2,15 +2,11 @@ const ethers = require('ethers');
 const ipfs = require('./ipfs');
 const range = require('lodash/range');
 const { Promise } = require('bluebird');
-
 const { IpfsMetadata, Slate } = require('../models');
-
 const {
   contractABIs: { ParameterStore },
 } = require('../../packages/panvala-utils');
-
 const { toUtf8String } = ethers.utils;
-
 const { getContracts } = require('./eth');
 const config = require('./config');
 const { tokenCapacitorAddress } = config.contracts;

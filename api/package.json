@@ -10,6 +10,9 @@
   "scripts": {
     "dev": "PORT=5001 nodemon index.js",
     "start": "node index.js",
+    "nukedb": "node scripts/nukedb.js",
+    "reveal": "node scripts/reveal.js",
+    "finalize": "node scripts/finalize.js",
     "migrate": "sequelize db:migrate",
     "migrate:undo": "sequelize db:migrate:undo",
     "create-migration": "sequelize migration:generate --name",
