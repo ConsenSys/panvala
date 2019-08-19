@@ -2,6 +2,7 @@
 /* Html tag utils */
 body {
   font-family: 'Open Sans', sans-serif;
+  overflow-x: hidden;
 }
 
 textarea {
