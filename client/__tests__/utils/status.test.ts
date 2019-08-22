@@ -7,9 +7,9 @@ describe('Status', () => {
     const staked = convertEVMSlateStatus(1);
     expect(staked).toBe('PENDING VOTE');
     const rejected = convertEVMSlateStatus(2);
-    expect(rejected).toBe('REJECTED');
+    expect(rejected).toBe('ACCEPTED');
     const accepted = convertEVMSlateStatus(3);
-    expect(accepted).toBe('ACCEPTED');
+    expect(accepted).toBe('REJECTED');
   });
 
   test('should throw an error if given an invalid status', () => {
