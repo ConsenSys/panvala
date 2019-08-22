@@ -57,34 +57,39 @@ const BallotSection: React.FunctionComponent<ISectionProps> = ({
     return '';
   };
 
+  const filtered = slates.filter(s => s.status === SlateStatus.Staked);
+
+  // TODO: if length == 1, show the slate, but disable vote buttons (no contest / auto-win)
+  if (filtered.length < 2) {
+    return <></>;
+  }
+
   return (
     <Box p={4}>
       <SectionLabel>{title}</SectionLabel>
       <Label required>{'Select your first and second choice slate'}</Label>
       <Flex wrap="true" mt={3}>
-        {slates.length > 0
-          ? slates
-              .filter(s => s.status === SlateStatus.Staked)
-              .map((slate: ISlate) => (
-                <Card
-                  key={slate.id}
-                  subtitle={subtitle(slate)}
-                  description={slate.description}
-                  category={slate.category}
-                  status={convertEVMSlateStatus(slate.status)}
-                  choices={choices}
-                  address={slate.recommender}
-                  onSetChoice={onSetChoice}
-                  proposals={slate.proposals}
-                  slateID={slate.id.toString()}
-                  asPath={'/ballots/vote'}
-                  type={SLATE}
-                  incumbent={slate.incumbent}
-                  recommender={slate.organization}
-                  verifiedRecommender={slate.verifiedRecommender}
-                  width={['98%', '98%', '98%', '46%']}
-                />
-              ))
+        {filtered.length > 0
+          ? filtered.map((slate: ISlate) => (
+              <Card
+                key={slate.id}
+                subtitle={subtitle(slate)}
+                description={slate.description}
+                category={slate.category}
+                status={convertEVMSlateStatus(slate.status)}
+                choices={choices}
+                address={slate.recommender}
+                onSetChoice={onSetChoice}
+                proposals={slate.proposals}
+                slateID={slate.id.toString()}
+                asPath={'/ballots/vote'}
+                type={SLATE}
+                incumbent={slate.incumbent}
+                recommender={slate.organization}
+                verifiedRecommender={slate.verifiedRecommender}
+                width={['98%', '98%', '98%', '46%']}
+              />
+            ))
           : null}
       </Flex>
     </Box>
@@ -175,18 +180,22 @@ const Vote: React.FC = () => {
    */
   async function handleSubmitVote() {
     // enforce both first and second choices for each category
-    Object.keys(choices).forEach(category => {
-      const contest = choices[category];
-      if (contest.firstChoice === '' || typeof contest.firstChoice === 'undefined') {
-        toast.error(`Must select a first choice for ${category}`);
-        return;
-      }
+    try {
+      Object.keys(choices).forEach(category => {
+        const contest = choices[category];
+        if (contest.firstChoice === '' || typeof contest.firstChoice === 'undefined') {
+          toast.error(`Must select a first choice for ${category}`);
+          throw new Error(`Must select a first choice for ${category}`);
+        }
 
-      if (contest.secondChoice === '' || typeof contest.secondChoice === 'undefined') {
-        toast.error(`Must select a second choice for ${category}`);
-        return;
-      }
-    });
+        if (contest.secondChoice === '' || typeof contest.secondChoice === 'undefined') {
+          toast.error(`Must select a second choice for ${category}`);
+          throw new Error(`Must select a second choice for ${category}`);
+        }
+      });
+    } catch (error) {
+      return;
+    }
 
     setTxPending(true);
 
