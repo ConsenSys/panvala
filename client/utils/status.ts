@@ -20,6 +20,7 @@ export enum SlateStatus {
   Rejected = 3,
 }
 
+// TODO: pass epoch & contest status as arg and render PENDING FINALIZATION for past epochs
 export function convertEVMSlateStatus(status: number): string | undefined {
   switch (status) {
     case SlateStatus.Unstaked:

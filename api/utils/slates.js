@@ -75,12 +75,20 @@ async function getAllSlates() {
         incumbent = true;
       }
 
-      // manual slate rejection criteria:
-      // (1) from previous epoch, (2) slate not-accepted, and (3) contest finalized
-      if (BN(slate.epochNumber).lt(currentEpoch) && slate.status !== 2) {
-        const contest = await gatekeeper.contestStatus(slate.epochNumber, slate.resource);
-        if (contest.status === 2) {
+      // Manual slate rejection criteria:
+      // (1) from previous epoch, (2) not-accepted, (3) no-contest || contest finalized
+      if (BN(slate.epochNumber).lt(currentEpoch)) {
+        // Unstaked
+        if (slate.status === 0) {
           slate.status = 3;
+        }
+        // Staked
+        if (slate.status === 1) {
+          const contest = await gatekeeper.contestStatus(slate.epochNumber, slate.resource);
+          // No contest || contest finalized
+          if (contest.status !== 2) {
+            slate.status = 3;
+          }
         }
       }
 

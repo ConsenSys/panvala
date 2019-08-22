@@ -50,19 +50,24 @@ async function getAllEvents(fromBlock = genesisBlockNumber) {
     address: psAddress,
   };
 
-  // get all events
-  const gkEvents = await ethEvents.getEventsByFilter(gkFilter);
-  const tcEvents = await ethEvents.getEventsByFilter(tcFilter);
-  const psEvents = await ethEvents.getEventsByFilter(psFilter);
-  const events = gkEvents.concat(tcEvents).concat(psEvents);
+  try {
+    // get all events
+    const gkEvents = await ethEvents.getEventsByFilter(gkFilter);
+    const tcEvents = await ethEvents.getEventsByFilter(tcFilter);
+    const psEvents = await ethEvents.getEventsByFilter(psFilter);
+    const events = gkEvents.concat(tcEvents).concat(psEvents);
 
-  // set this to true if you want to map requests to proposals and write to db
-  let saveRequests = true;
-  if (saveRequests) {
-    await mapRequestsToProposals(events, gatekeeper);
+    // set this to true if you want to map requests to proposals and write to db
+    let saveRequests = true;
+    if (saveRequests) {
+      await mapRequestsToProposals(events, gatekeeper);
+    }
+
+    return events;
+  } catch (error) {
+    console.log('error:', error);
+    return [];
   }
-
-  return events;
 }
 
 async function getParametersSet(psAddress, fromBlock = genesisBlockNumber) {
@@ -86,15 +91,20 @@ async function getParametersSet(psAddress, fromBlock = genesisBlockNumber) {
     fromBlock,
     address: psAddress,
   };
-  const events = await ethEvents.getEventsByFilter(filter);
+  try {
+    const events = await ethEvents.getEventsByFilter(filter);
 
-  const parameterInitializedEvents = events.filter(e => e.name === 'ParameterSet');
-  return parameterInitializedEvents.reduce((acc, val) => {
-    return {
-      [val.values.name]: val.values.value,
-      ...acc,
-    };
-  }, {});
+    const parameterInitializedEvents = events.filter(e => e.name === 'ParameterSet');
+    return parameterInitializedEvents.reduce((acc, val) => {
+      return {
+        [val.values.name]: val.values.value,
+        ...acc,
+      };
+    }, {});
+  } catch (error) {
+    console.log('error:', error);
+    return {};
+  }
 }
 
 module.exports = {
