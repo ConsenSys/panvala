@@ -8,9 +8,10 @@ interface IProps {
   isOpen: boolean;
   numTxs?: number;
   setOpen: (boolean: boolean) => void;
+  pendingText?: string;
 }
 
-const Loader: React.SFC<IProps> = ({ classes, isOpen, setOpen, numTxs }) => {
+const Loader: React.SFC<IProps> = ({ classes, isOpen, setOpen, numTxs, pendingText }) => {
   const text = 'This action may take a few moments to process. ';
   const txText = `You will need to confirm ${numTxs} transactions with MetaMask.`;
   return (
@@ -23,6 +24,7 @@ const Loader: React.SFC<IProps> = ({ classes, isOpen, setOpen, numTxs }) => {
         <Copy fontSize={1} textAlign="left">
           {text}
           {numTxs ? txText : null}
+          {pendingText && `\nUnder the hood: ${pendingText}`}
         </Copy>
         <CircularProgress className={classes.progress} />
       </>

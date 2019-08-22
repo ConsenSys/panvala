@@ -110,6 +110,7 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
     slateStakeAmount,
     gkAllowance,
   }: IEthereumContext = React.useContext(EthereumContext);
+  const [pendingText, setPendingText] = React.useState('');
 
   React.useEffect(() => {
     if (!isSlateSubmittable(currentBallot, 'GRANT')) {
@@ -258,6 +259,7 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
     }
     const numTxs = await calculateNumTxs(values, selectedProposals);
     setTxsPending(numTxs);
+    setPendingText('Adding proposals to IPFS...');
 
     // save proposal metadata to IPFS to be included in the slate metadata
     console.log('preparing proposals...');
@@ -280,6 +282,7 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
     );
     // TODO: add proposal multihashes to db
 
+    setPendingText('Including proposals in slate (check MetaMask)...');
     // Only use the metadata from here forward - do not expose private information
     const proposalMetadatas: IGrantProposalMetadata[] = selectedProposals.map(proposal => {
       return {
@@ -315,8 +318,9 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
       : await getRequestIDs(proposalInfo, contracts.tokenCapacitor);
 
     try {
-      // console.log('creating proposals...');
       const requestIDs = await getRequests;
+
+      setPendingText('Adding slate to IPFS...');
 
       const slateMetadata: ISlateMetadata = {
         firstName: values.firstName,
@@ -334,6 +338,7 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
 
         // Submit the slate info to the contract
         try {
+          setPendingText('Creating grant slate (check MetaMask)...');
           const slate: any = await submitGrantSlate(requestIDs, slateMetadataHash);
           console.log('Submitted slate', slate);
 
@@ -345,6 +350,7 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
             proposalInfo,
           };
 
+          setPendingText('Saving slate...');
           // api should handle updating, not just adding
           const response = await postSlate(slateToSave);
           if (response.status === 200) {
@@ -354,8 +360,10 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
             // stake immediately after creating slate
             if (values.stake === 'yes') {
               if (gkAllowance.lt(slateStakeAmount)) {
+                setPendingText('Approving the Gatekeeper to stake on slate (check MetaMask)...');
                 await contracts.token.approve(contracts.gatekeeper.address, MaxUint256);
               }
+              setPendingText('Staking on slate (check MetaMask)...');
               const res = await sendStakeTokensTransaction(contracts.gatekeeper, slate.slateID);
 
               await res.wait();
@@ -617,6 +625,7 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
                 isOpen={txsPending > 0}
                 setOpen={() => setTxsPending(0)}
                 numTxs={txsPending}
+                pendingText={pendingText}
               />
             </Box>
           )}
