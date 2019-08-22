@@ -8,6 +8,7 @@ const ONE_WEEK: number = ONE_DAY * 7;
 
 export interface EpochDates {
   epochStart: number;
+  slateSubmissionStart: number;
   slateSubmissionDeadline: number;
   votingStart: number;
   votingEnd: number;
@@ -24,7 +25,7 @@ export const durations = {
 };
 
 export enum EpochStageDates {
-  SlateSubmission = 'epochStart',
+  SlateSubmission = 'slateSubmissionStart',
   Intermission = 'slateSubmissionDeadline',
   CommitVoting = 'votingStart',
   RevealVoting = 'votingEnd',
@@ -42,6 +43,7 @@ export function getTimingsForEpoch(epochStart: BigNumberish): EpochDates {
 
   return {
     epochStart,
+    slateSubmissionStart: epochStart + durations.ONE_WEEK,
     slateSubmissionDeadline: epochStart + durations.SLATE_SUBMISSION_DEADLINE,
     votingStart: epochStart + durations.VOTING_PERIOD_START,
     votingEnd: epochStart + durations.REVEAL_PERIOD_START,
