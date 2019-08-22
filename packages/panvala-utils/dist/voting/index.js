@@ -20,7 +20,7 @@ function sortedResources(choices) {
  *
  * keccak256(resource + firstChoice + secondChoice ... + salt)
  * @param {IChoices} votes { resource: { firstChoice, secondChoice }}
- * @param {ethers.BN} salt Random 256-bit number
+ * @param {utils.BigNumberish} salt Random 256-bit number
  */
 function generateCommitHash(votes, salt) {
     const types = [];

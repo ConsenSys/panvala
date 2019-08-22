@@ -29,9 +29,9 @@ function sortedResources(choices: IChoices): Array<string> {
  *
  * keccak256(resource + firstChoice + secondChoice ... + salt)
  * @param {IChoices} votes { resource: { firstChoice, secondChoice }}
- * @param {ethers.BN} salt Random 256-bit number
+ * @param {utils.BigNumberish} salt Random 256-bit number
  */
-export function generateCommitHash(votes: IChoices, salt: utils.BigNumber): string {
+export function generateCommitHash(votes: IChoices, salt: utils.BigNumberish): string {
   const types: string[] = [];
   const values: any[] = [];
 

@@ -19,9 +19,9 @@ export declare enum ContestStatus {
  *
  * keccak256(resource + firstChoice + secondChoice ... + salt)
  * @param {IChoices} votes { resource: { firstChoice, secondChoice }}
- * @param {ethers.BN} salt Random 256-bit number
+ * @param {utils.BigNumberish} salt Random 256-bit number
  */
-export declare function generateCommitHash(votes: IChoices, salt: utils.BigNumber): string;
+export declare function generateCommitHash(votes: IChoices, salt: utils.BigNumberish): string;
 /**
  * Calculate a random number w/ 32 bytes of entropy
  */
