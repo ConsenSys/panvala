@@ -17,21 +17,21 @@ async function run() {
   const signer = new ethers.Wallet(mnemonicWallet.privateKey, provider);
 
   // Settings
-  const psAddress = await gatekeeper.functions.parameters();
+  const psAddress = await gatekeeper.parameters();
   const parameters = new ethers.Contract(psAddress, ParameterStore.abi, signer);
-  const epochNumber = await gatekeeper.functions.currentEpochNumber();
+  const epochNumber = await gatekeeper.currentEpochNumber();
 
   // Winning slate of previous epoch
   let winningSlate;
   try {
-    winningSlate = await gatekeeper.functions.getWinningSlate(epochNumber.sub(1), psAddress);
+    winningSlate = await gatekeeper.getWinningSlate(epochNumber.sub(1), psAddress);
   } catch (error) {
     console.error('Contest not finalized yet. Exiting.');
     process.exit(0);
   }
 
   // Winning slate requests
-  const slateRequests = await gatekeeper.functions.slateRequests(winningSlate);
+  const slateRequests = await gatekeeper.slateRequests(winningSlate);
 
   // call setValue if slate request has not been executed
   await Promise.all(
@@ -46,7 +46,7 @@ async function run() {
         });
 
         // Find matching on-chain proposal
-        const proposal = await parameters.functions.proposals(request.proposalID);
+        const proposal = await parameters.proposals(request.proposalID);
 
         // Ignore if executed
         if (proposal.executed) {
