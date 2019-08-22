@@ -426,7 +426,7 @@ CreateGovernanceSlate.getInitialProps = async ({ query, classes }) => {
 };
 const styles = (theme: any) => ({
   progress: {
-    margin: theme.spacing.unit * 2,
+    margin: theme.spacing(2),
     color: COLORS.primary,
   },
 });

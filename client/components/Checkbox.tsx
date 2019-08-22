@@ -1,7 +1,7 @@
 import * as React from 'react';
 import styled from 'styled-components';
 import { Field } from './FieldText';
-import { COLORS } from '../styles';
+import { colors } from '../styles';
 import Label from './Label';
 import { Radio, withStyles } from '@material-ui/core';
 
@@ -23,7 +23,7 @@ const ToggleLabel: any = styled(Label)`
   margin: 0.75rem;
   margin-left: 0;
   font-size: 1em;
-  color: ${COLORS.grey2};
+  color: ${colors.greys.dark};
 `;
 
 const Checkbox = (props: any) => {
@@ -40,7 +40,7 @@ const Checkbox = (props: any) => {
                 name={props.name}
                 aria-label="D"
                 classes={{
-                  root: props.classes.radio,
+                  root: props.classes.root,
                   checked: props.classes.checked,
                 }}
               />
@@ -61,11 +61,11 @@ const Checkbox = (props: any) => {
 const styles = () => {
   return {
     checked: {},
-    radio: {
+    root: {
       padding: '0.5rem',
-      color: COLORS.greyBorder,
+      color: colors.grey.border,
       '&$checked': {
-        color: COLORS.primary,
+        color: colors.blue,
       },
     },
   };

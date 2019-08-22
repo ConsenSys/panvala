@@ -32,7 +32,7 @@ const Loader: React.SFC<IProps> = ({ classes, isOpen, setOpen, numTxs }) => {
 
 const styles = (theme: any) => ({
   progress: {
-    margin: theme.spacing.unit * 2,
+    margin: theme.spacing(2),
     color: colors.blue,
   },
 });
