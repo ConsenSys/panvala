@@ -19,6 +19,9 @@ export async function ipfsGetData(multihash: string) {
       ipfs.cat(multihash, (err: any, result: string) => {
         if (err) reject(new Error(err));
 
+        if (!result) {
+          reject(new Error('Ipfs.get returned undefined.'));
+        }
         const data = JSON.parse(result);
         resolve(data);
       });
@@ -35,6 +38,10 @@ export async function ipfsAddObject(obj: any): Promise<string> {
 
     ipfs.add(data, (err: any, result: any[]) => {
       if (err) reject(new Error(err));
+
+      if (!result) {
+        reject(new Error('Ipfs.get returned undefined.'));
+      }
       // Returns an array of objects (for each file added) with keys hash, path, size
       const { hash } = result[0];
       resolve(hash);
