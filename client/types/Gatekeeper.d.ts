@@ -12,14 +12,7 @@ export class Gatekeeper extends Contract {
 
     delegate(arg0: string): Promise<string>;
 
-    ballots(
-      arg0: number | string | BigNumber
-    ): Promise<{
-      contestCount: BigNumber;
-      created: boolean;
-      0: BigNumber;
-      1: boolean;
-    }>;
+    ballots(arg0: number | string | BigNumber): Promise<boolean>;
 
     requests(
       arg0: number | string | BigNumber
@@ -28,11 +21,15 @@ export class Gatekeeper extends Contract {
       resource: string;
       approved: boolean;
       expirationTime: BigNumber;
+      epochNumber: BigNumber;
       0: (string)[];
       1: string;
       2: boolean;
       3: BigNumber;
+      4: BigNumber;
     }>;
+
+    incumbent(arg0: string): Promise<string>;
 
     slates(
       arg0: number | string | BigNumber
@@ -57,29 +54,52 @@ export class Gatekeeper extends Contract {
 
     slateRequests(slateID: number | string | BigNumber): Promise<(BigNumber)[]>;
 
-    didCommit(ballotID: number | string | BigNumber, voter: string): Promise<boolean>;
+    didCommit(epochNumber: number | string | BigNumber, voter: string): Promise<boolean>;
 
-    getCommitHash(ballotID: number | string | BigNumber, voter: string): Promise<string>;
+    getCommitHash(epochNumber: number | string | BigNumber, voter: string): Promise<string>;
 
     getFirstChoiceVotes(
-      ballotID: number | string | BigNumber,
+      epochNumber: number | string | BigNumber,
       resource: string,
       slateID: number | string | BigNumber
     ): Promise<BigNumber>;
 
     getSecondChoiceVotes(
-      ballotID: number | string | BigNumber,
+      epochNumber: number | string | BigNumber,
       resource: string,
       slateID: number | string | BigNumber
     ): Promise<BigNumber>;
 
-    didReveal(ballotID: number | string | BigNumber, voter: string): Promise<boolean>;
+    didReveal(epochNumber: number | string | BigNumber, voter: string): Promise<boolean>;
 
-    contestStatus(ballotID: number | string | BigNumber, resource: string): Promise<number>;
+    contestStatus(epochNumber: number | string | BigNumber, resource: string): Promise<number>;
 
-    contestSlates(ballotID: number | string | BigNumber, resource: string): Promise<(BigNumber)[]>;
+    contestSlates(
+      epochNumber: number | string | BigNumber,
+      resource: string
+    ): Promise<(BigNumber)[]>;
 
-    getWinningSlate(ballotID: number | string | BigNumber, resource: string): Promise<BigNumber>;
+    contestDetails(
+      epochNumber: number | string | BigNumber,
+      resource: string
+    ): Promise<{
+      status: number;
+      allSlates: (BigNumber)[];
+      stakedSlates: (BigNumber)[];
+      lastStaked: BigNumber;
+      voteWinner: BigNumber;
+      voteRunnerUp: BigNumber;
+      winner: BigNumber;
+      0: number;
+      1: (BigNumber)[];
+      2: (BigNumber)[];
+      3: BigNumber;
+      4: BigNumber;
+      5: BigNumber;
+      6: BigNumber;
+    }>;
+
+    getWinningSlate(epochNumber: number | string | BigNumber, resource: string): Promise<BigNumber>;
 
     hasPermission(requestID: number | string | BigNumber): Promise<boolean>;
 
@@ -88,10 +108,7 @@ export class Gatekeeper extends Contract {
       resource: string
     ): Promise<BigNumber>;
 
-    timeTravel(
-      amount: number | string | BigNumber,
-      overrides?: TransactionOverrides
-    ): Promise<ContractTransaction>;
+    slateSubmissionPeriodActive(resource: string): Promise<boolean>;
 
     recommendSlate(
       resource: string,
@@ -150,21 +167,17 @@ export class Gatekeeper extends Contract {
       overrides?: TransactionOverrides
     ): Promise<ContractTransaction>;
 
-    countVotes(
-      ballotID: number | string | BigNumber,
-      resource: string,
-      overrides?: TransactionOverrides
-    ): Promise<ContractTransaction>;
-
-    countRunoffVotes(
-      ballotID: number | string | BigNumber,
+    finalizeContest(
+      epochNumber: number | string | BigNumber,
       resource: string,
       overrides?: TransactionOverrides
     ): Promise<ContractTransaction>;
 
     donateChallengerStakes(
-      ballotID: number | string | BigNumber,
+      epochNumber: number | string | BigNumber,
       resource: string,
+      startIndex: number | string | BigNumber,
+      count: number | string | BigNumber,
       overrides?: TransactionOverrides
     ): Promise<ContractTransaction>;
 
@@ -173,20 +186,32 @@ export class Gatekeeper extends Contract {
       overrides?: TransactionOverrides
     ): Promise<ContractTransaction>;
 
-    requestCount(): Promise<BigNumber>;
     startTime(): Promise<BigNumber>;
     COMMIT_PERIOD_START(): Promise<BigNumber>;
     parameters(): Promise<string>;
-    slateCount(): Promise<BigNumber>;
     REVEAL_PERIOD_START(): Promise<BigNumber>;
     EPOCH_LENGTH(): Promise<BigNumber>;
-    currentEpochNumber(): Promise<BigNumber>;
+    SLATE_SUBMISSION_PERIOD_START(): Promise<BigNumber>;
     token(): Promise<string>;
+    currentEpochNumber(): Promise<BigNumber>;
+    slateCount(): Promise<BigNumber>;
+    requestCount(): Promise<BigNumber>;
+    isCurrentGatekeeper(): Promise<boolean>;
   };
   filters: {
-    PermissionRequested(resource: null, requestID: null, metadataHash: null): EventFilter;
+    PermissionRequested(
+      epochNumber: number | string | BigNumber | null,
+      resource: string | null,
+      requestID: null,
+      metadataHash: null
+    ): EventFilter;
 
-    SlateCreated(slateID: null, recommender: string | null, metadataHash: null): EventFilter;
+    SlateCreated(
+      slateID: null,
+      recommender: string | null,
+      requestIDs: null,
+      metadataHash: null
+    ): EventFilter;
 
     SlateStaked(slateID: null, staker: string | null, numTokens: null): EventFilter;
 
@@ -194,52 +219,53 @@ export class Gatekeeper extends Contract {
 
     VotingTokensWithdrawn(voter: string | null, numTokens: null): EventFilter;
 
-    DelegateSet(voter: string | null, delegate: null): EventFilter;
+    VotingRightsDelegated(voter: string | null, delegate: null): EventFilter;
 
     BallotCommitted(
-      ballotID: number | string | BigNumber | null,
+      epochNumber: number | string | BigNumber | null,
+      committer: string | null,
       voter: string | null,
       numTokens: null,
       commitHash: null
     ): EventFilter;
 
     BallotRevealed(
-      ballotID: number | string | BigNumber | null,
+      epochNumber: number | string | BigNumber | null,
       voter: string | null,
       numTokens: null
     ): EventFilter;
 
     ContestAutomaticallyFinalized(
-      ballotID: number | string | BigNumber | null,
+      epochNumber: number | string | BigNumber | null,
       resource: string | null,
       winningSlate: null
     ): EventFilter;
 
-    ConfidenceVoteCounted(
-      ballotID: number | string | BigNumber | null,
+    ContestFinalizedWithoutWinner(
+      epochNumber: number | string | BigNumber | null,
+      resource: string | null
+    ): EventFilter;
+
+    VoteFinalized(
+      epochNumber: number | string | BigNumber | null,
       resource: string | null,
       winningSlate: null,
-      votes: null,
+      winnerVotes: null,
       totalVotes: null
     ): EventFilter;
 
-    ConfidenceVoteFinalized(
-      ballotID: number | string | BigNumber | null,
+    VoteFailed(
+      epochNumber: number | string | BigNumber | null,
       resource: string | null,
-      winningSlate: null
+      leadingSlate: null,
+      leaderVotes: null,
+      runnerUpSlate: null,
+      runnerUpVotes: null,
+      totalVotes: null
     ): EventFilter;
 
-    ConfidenceVoteFailed(ballotID: number | string | BigNumber | null, resource: null): EventFilter;
-
-    RunoffStarted(
-      ballotID: number | string | BigNumber | null,
-      resource: string | null,
-      winningSlate: null,
-      runnerUpSlate: null
-    ): EventFilter;
-
-    RunoffCounted(
-      ballotID: number | string | BigNumber | null,
+    RunoffFinalized(
+      epochNumber: number | string | BigNumber | null,
       resource: string | null,
       winningSlate: null,
       winnerVotes: null,
@@ -247,14 +273,6 @@ export class Gatekeeper extends Contract {
       loserVotes: null
     ): EventFilter;
 
-    RunoffFinalized(
-      ballotID: number | string | BigNumber | null,
-      resource: string | null,
-      winningSlate: null
-    ): EventFilter;
-
     StakeWithdrawn(slateID: null, staker: string | null, numTokens: null): EventFilter;
-
-    TimeTraveled(amount: null, startTime: null): EventFilter;
   };
 }

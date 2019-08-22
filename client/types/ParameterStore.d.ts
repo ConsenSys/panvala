@@ -11,14 +11,18 @@ export class ParameterStore extends Contract {
     proposals(
       arg0: number | string | BigNumber
     ): Promise<{
+      gatekeeper: string;
+      requestID: BigNumber;
       key: string;
       value: string;
       metadataHash: (string)[];
       executed: boolean;
       0: string;
-      1: string;
-      2: (string)[];
-      3: boolean;
+      1: BigNumber;
+      2: string;
+      3: string;
+      4: (string)[];
+      5: boolean;
     }>;
 
     params(arg0: string): Promise<string>;
@@ -56,12 +60,12 @@ export class ParameterStore extends Contract {
       overrides?: TransactionOverrides
     ): Promise<ContractTransaction>;
 
+    initialized(): Promise<boolean>;
     proposalCount(): Promise<BigNumber>;
   };
   filters: {
-    ParameterInitialized(key: null, value: null): EventFilter;
-
     ProposalCreated(
+      proposalID: null,
       proposer: string | null,
       requestID: null,
       key: null,
@@ -69,6 +73,10 @@ export class ParameterStore extends Contract {
       metadataHash: null
     ): EventFilter;
 
-    ParameterSet(proposalID: null, key: null, value: null): EventFilter;
+    Initialized(): EventFilter;
+
+    ParameterSet(name: null, key: null, value: null): EventFilter;
+
+    ProposalAccepted(proposalID: null, key: null, value: null): EventFilter;
   };
 }
