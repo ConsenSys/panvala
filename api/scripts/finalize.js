@@ -15,7 +15,7 @@ function printFunctionSupport(intended = 'finalizeContest', alternative = 'count
   );
 }
 
-async function firstRoundVote(gkFuncs) {
+async function firstRoundVote(epochNumber, resource, gkFuncs) {
   if (gkFuncs.hasOwnProperty('finalizeContest')) {
     await gkFuncs.finalizeContest(epochNumber, resource);
   } else {
@@ -34,13 +34,13 @@ async function finalize(gatekeeper, epochNumber, resource, index) {
   // single slate
   if (status === ContestStatus.NoContest) {
     console.log(`No challenger for resource ${resource} -- automatically finalizing`);
-    firstRoundVote(gkFuncs);
+    firstRoundVote(epochNumber, resource, gkFuncs);
   }
 
   // active contest
   if (status === ContestStatus.Active) {
     console.log('Counting votes for epochNumber, resource, status', epochNumber, resource, status);
-    firstRoundVote(gkFuncs);
+    firstRoundVote(epochNumber, resource, gkFuncs);
   }
 
   // contest already finalized

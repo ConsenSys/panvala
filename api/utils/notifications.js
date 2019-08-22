@@ -61,18 +61,25 @@ async function getNormalizedNotificationsByEvents(events, address) {
   const gatekeeper = new ethers.Contract(gatekeeperAddress, Gatekeeper.abi, provider);
   const tokenCapacitor = new ethers.Contract(tokenCapacitorAddress, TokenCapacitor.abi, provider);
 
-  // get all events for 'Slate Accepted'
-  const slateAcceptedEvents = events.filter(e => e.name.includes('Finalized'));
+  // get all events for contest finalization for grant slates
+  const contestFinalizedEvents = events.filter(
+    e => e.name.includes('Finalized') && e.values.resource === tokenCapacitorAddress
+  );
   const slateAcceptedNotifications = flatten(
     await Promise.all(
-      slateAcceptedEvents.map(async event => {
+      contestFinalizedEvents.map(async event => {
         const { winningSlate, ballotID, categoryID } = event.values;
+        if (!winningSlate) {
+          return [];
+        }
         const slateRequests = await gatekeeper.slateRequests(winningSlate);
         const withdrawGrantNotifications = flatten(
           await Promise.all(
             slateRequests.map(async requestID => {
               const proposal = await tokenCapacitor.proposals(requestID);
               if (
+                proposal.to &&
+                address &&
                 utils.getAddress(proposal.to) === utils.getAddress(address) &&
                 !proposal.withdrawn
               ) {
@@ -92,6 +99,9 @@ async function getNormalizedNotificationsByEvents(events, address) {
         let withdrawStakeNotification = [];
         const slate = await gatekeeper.slates(winningSlate);
         if (
+          slate.staker &&
+          address &&
+          slate.stake &&
           utils.getAddress(slate.staker) === utils.getAddress(address) &&
           utils.bigNumberify(slate.stake).gt(utils.bigNumberify('0'))
         ) {
@@ -138,7 +148,7 @@ async function getNormalizedNotificationsByEvents(events, address) {
   //   })
   // );
 
-  return slateAcceptedNotifications
+  return slateAcceptedNotifications;
   // return slateAcceptedNotifications.concat(proposalIncludedInSlateNotifications);
 }
 
