@@ -14,8 +14,7 @@ export enum ContestStatus {
   Empty = '0',
   NoContest = '1',
   Active = '2',
-  RunoffPending = '3',
-  Finalized = '4',
+  Finalized = '3',
 }
 
 function sortedResources(choices: IChoices): Array<string> {

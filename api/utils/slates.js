@@ -75,9 +75,13 @@ async function getAllSlates() {
         incumbent = true;
       }
 
-      // manually reject slates that are old and not accepted
-      if (BN(slate.epochNumber).lt(currentEpoch) && slate.status !== 3) {
-        slate.status = 2;
+      // manual slate rejection criteria:
+      // (1) from previous epoch, (2) slate not-accepted, and (3) contest finalized
+      if (BN(slate.epochNumber).lt(currentEpoch) && slate.status !== 2) {
+        const contest = await gatekeeper.contestStatus(slate.epochNumber, slate.resource);
+        if (contest.status === 2) {
+          slate.status = 3;
+        }
       }
 
       return getSlateWithMetadata(slateID, slate, decoded, incumbent, requiredStake);

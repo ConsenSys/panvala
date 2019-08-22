@@ -7,8 +7,7 @@ var ContestStatus;
     ContestStatus["Empty"] = "0";
     ContestStatus["NoContest"] = "1";
     ContestStatus["Active"] = "2";
-    ContestStatus["RunoffPending"] = "3";
-    ContestStatus["Finalized"] = "4";
+    ContestStatus["Finalized"] = "3";
 })(ContestStatus = exports.ContestStatus || (exports.ContestStatus = {}));
 function sortedResources(choices) {
     return Object.keys(choices).sort();

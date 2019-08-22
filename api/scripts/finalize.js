@@ -16,12 +16,12 @@ function printFunctionSupport(intended = 'finalizeContest', alternative = 'count
 }
 
 async function firstRoundVote(gkFuncs) {
-    if (gkFuncs.hasOwnProperty('finalizeContest')) {
-      await gkFuncs.finalizeContest(epochNumber, resource);
-    } else {
-      printFunctionSupport();
-      await gkFuncs.countVotes(epochNumber, resource);
-    }
+  if (gkFuncs.hasOwnProperty('finalizeContest')) {
+    await gkFuncs.finalizeContest(epochNumber, resource);
+  } else {
+    printFunctionSupport();
+    await gkFuncs.countVotes(epochNumber, resource);
+  }
 }
 
 async function finalize(gatekeeper, epochNumber, resource, index) {
@@ -34,28 +34,22 @@ async function finalize(gatekeeper, epochNumber, resource, index) {
   // single slate
   if (status === ContestStatus.NoContest) {
     console.log(`No challenger for resource ${resource} -- automatically finalizing`);
-    firstRoundVote(gkFuncs)
+    firstRoundVote(gkFuncs);
   }
 
   // active contest
   if (status === ContestStatus.Active) {
     console.log('Counting votes for epochNumber, resource, status', epochNumber, resource, status);
-    firstRoundVote(gkFuncs)
+    firstRoundVote(gkFuncs);
   }
 
-  // pending run-off
-  if (status === ContestStatus.RunoffPending) {
-    console.log(`Counting runoff votes for category ${categoryName[index]}`);
-    if (gkFuncs.hasOwnProperty('finalizeRunoff')) {
-      await gkFuncs.finalizeRunoff(epochNumber, resource);
-    } else {
-      printFunctionSupport('finalizeRunoff', 'countRunoffVotes');
-      await gkFuncs.countRunoffVotes(epochNumber, resource);
-    }
+  // contest already finalized
+  if (status === ContestStatus.Finalized) {
+    console.log('Contest was already finalized', epochNumber, resource);
+  } else {
+    const newStatus = await gkFuncs.contestStatus(epochNumber, resource);
+    console.log('new status', newStatus);
   }
-
-  const newStatus = await gkFuncs.contestStatus(epochNumber, resource);
-  console.log('new status', newStatus);
 }
 
 async function run() {

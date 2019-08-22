@@ -44,6 +44,7 @@ describe('getTimingsForEpoch', () => {
     const epochDates = timing.getTimingsForEpoch(epochStart);
     const expectedDates = {
       epochStart,
+      slateSubmissionStart: epochStart + durations.ONE_WEEK,
       slateSubmissionDeadline: epochStart + durations.SLATE_SUBMISSION_DEADLINE,
       votingStart: epochStart + durations.VOTING_PERIOD_START,
       votingEnd: epochStart + durations.REVEAL_PERIOD_START,

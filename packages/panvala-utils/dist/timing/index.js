@@ -13,7 +13,7 @@ exports.durations = {
 };
 var EpochStageDates;
 (function (EpochStageDates) {
-    EpochStageDates["SlateSubmission"] = "epochStart";
+    EpochStageDates["SlateSubmission"] = "slateSubmissionStart";
     EpochStageDates["Intermission"] = "slateSubmissionDeadline";
     EpochStageDates["CommitVoting"] = "votingStart";
     EpochStageDates["RevealVoting"] = "votingEnd";
@@ -29,6 +29,7 @@ function getTimingsForEpoch(epochStart) {
     epochStart = ethers_1.utils.bigNumberify(epochStart).toNumber();
     return {
         epochStart,
+        slateSubmissionStart: epochStart + exports.durations.ONE_WEEK,
         slateSubmissionDeadline: epochStart + exports.durations.SLATE_SUBMISSION_DEADLINE,
         votingStart: epochStart + exports.durations.VOTING_PERIOD_START,
         votingEnd: epochStart + exports.durations.REVEAL_PERIOD_START,

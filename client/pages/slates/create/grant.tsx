@@ -466,9 +466,9 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
                 ) {
                   setFieldError(
                     'proposals',
-                    `token amount exceeds the projected available tokens (${baseToConvertedUnits(
+                    `token amount exceeds the projected available tokens (${utils.commify(baseToConvertedUnits(
                       availableTokens
-                    )})`
+                    ))})`
                   );
                 } else {
                   // submit the associated proposals along with the slate form values
@@ -548,9 +548,9 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
                       ) && (
                         <Text fontSize="0.75rem" color="grey">
                           {`(There are currently `}
-                          <strong>{`${baseToConvertedUnits(
+                          <strong>{`${utils.commify(baseToConvertedUnits(
                             availableTokens
-                          )} PAN tokens available`}</strong>
+                          ))} PAN tokens available`}</strong>
                           {` for grant proposals at this time.)`}
                         </Text>
                       )}

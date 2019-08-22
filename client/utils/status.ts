@@ -16,8 +16,8 @@ export const statuses = {
 export enum SlateStatus {
   Unstaked = 0,
   Staked = 1,
-  Rejected = 2,
-  Accepted = 3,
+  Accepted = 2,
+  Rejected = 3,
 }
 
 export function convertEVMSlateStatus(status: number): string | undefined {
@@ -26,10 +26,10 @@ export function convertEVMSlateStatus(status: number): string | undefined {
       return statuses.PENDING_TOKENS;
     case SlateStatus.Staked:
       return statuses.PENDING_VOTE;
-    case SlateStatus.Rejected:
-      return statuses.SLATE_REJECTED;
     case SlateStatus.Accepted:
       return statuses.SLATE_ACCEPTED;
+    case SlateStatus.Rejected:
+      return statuses.SLATE_REJECTED;
   }
 
   return undefined;
@@ -44,10 +44,13 @@ export function isPendingVote(status: string) {
 export function isCurrentBallot(ballot: IBallotDates) {
   return dateHasPassed(ballot.startDate) && !dateHasPassed(ballot.finalityDate);
 }
-// weeks 1 - [5.5]
+// weeks 2 - [5.5]
 export function isSlateSubmittable(ballot: IBallotDates, category: string): boolean {
   if (ballot.slateSubmissionDeadline && category) {
-    return !dateHasPassed(ballot.slateSubmissionDeadline[category]);
+    return (
+      dateHasPassed(ballot.startDate + 604800) &&
+      !dateHasPassed(ballot.slateSubmissionDeadline[category])
+    );
   }
   return false;
 }
@@ -118,8 +121,8 @@ export function slateSubmissionDeadline(votingOpenDate: number, lastStaked: numb
 const statusStrings = {
   '0': 'Unstaked',
   '1': 'Staked',
-  '2': 'Rejected',
-  '3': 'Accepted',
+  '2': 'Accepted',
+  '3': 'Rejected',
 };
 
 export function slateStatusString(status: string): string {

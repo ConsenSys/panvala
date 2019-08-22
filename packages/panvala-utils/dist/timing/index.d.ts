@@ -1,6 +1,7 @@
 import { BigNumberish } from 'ethers/utils';
 export interface EpochDates {
     epochStart: number;
+    slateSubmissionStart: number;
     slateSubmissionDeadline: number;
     votingStart: number;
     votingEnd: number;
@@ -15,7 +16,7 @@ export declare const durations: {
     EPOCH_LENGTH: number;
 };
 export declare enum EpochStageDates {
-    SlateSubmission = "epochStart",
+    SlateSubmission = "slateSubmissionStart",
     Intermission = "slateSubmissionDeadline",
     CommitVoting = "votingStart",
     RevealVoting = "votingEnd"
