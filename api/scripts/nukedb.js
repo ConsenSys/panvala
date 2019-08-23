@@ -1,46 +1,43 @@
 const readline = require('readline');
-const { SubmittedBallot, Slate, IpfsMetadata } = require('../models');
+const { SubmittedBallot, Slate, IpfsMetadata, Request } = require('../models');
 
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
 });
 
-rl.question(`Do you want to truncate the Slates table? [y/N]`, async answer => {
-  if (answer === 'y') {
-    console.log('nuking slates');
-    await Slate.truncate({
-      cascade: true,
-      restartIdentity: true,
-    });
-  } else {
-    console.log('Skipping truncation of Slates table');
-  }
+const tables = {
+  Slate: Slate,
+  SubmittedBallot: SubmittedBallot,
+  IpfsMetadata: IpfsMetadata,
+  Request: Request,
+};
 
-  rl.question(`Do you want to truncate the SubmittedBallots table? [y/N]`, async answer => {
-    if (answer === 'y') {
-      console.log('nuking submittedBallots');
-      await SubmittedBallot.truncate({
-        cascade: true,
-        restartIdentity: true,
-      });
-    } else {
-      console.log('Skipping truncation of SubmittedBallots table');
-    }
+(async function nukedb() {
+  await nukeTable('Slate');
+  await nukeTable('SubmittedBallot');
+  await nukeTable('IpfsMetadata');
+  await nukeTable('Request');
 
-    rl.question(`Do you want to truncate the IpfsMetadata table? [y/N]`, async answer => {
+  rl.close();
+  process.exit(0);
+})();
+
+async function nukeTable(table) {
+  return new Promise(resolve => {
+    rl.question(`Do you want to truncate the ${table}s table? [y/N]`, async answer => {
       if (answer === 'y') {
-        console.log('nuking ipfsMetadatas');
-        await IpfsMetadata.truncate({
+        console.log(`nuking ${table}s...`);
+        await tables[table].truncate({
           cascade: true,
           restartIdentity: true,
         });
       } else {
-        console.log('Skipping truncation of IpfsMetadatas table');
+        console.log(`Skipping truncation of ${table}s table`);
       }
+      console.log();
 
-      rl.close();
-      process.exit(0);
+      resolve();
     });
   });
-});
+}
