@@ -83,12 +83,12 @@ async function getParametersSet(fromBlock) {
     return [];
   }
 
-  const parameterStore = {
+  const contract = {
     abi: ParameterStore.abi,
     address: parameterStore.address,
   };
 
-  const ethEvents = EthEvents([parameterStore], rpcEndpoint, genesisBlockNumber);
+  const ethEvents = EthEvents([contract], rpcEndpoint, genesisBlockNumber);
 
   const filter = {
     fromBlock: fromBlock || genesisBlockNumber,
