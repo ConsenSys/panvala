@@ -1115,7 +1115,7 @@ contract('integration', (accounts) => {
 
       // expected values
       const initialUnlockedBalance = new BN('496443351836365210000000');
-      const expectedProjectedUnlocked = new BN('2115863519962730001675795');
+      const expectedProjectedUnlocked = new BN('2024771848633802921370558');
       const lockedAtLaunch = new BN('49409859648163634790000000');
       const releasedAfterLaunch = expectedProjectedUnlocked.sub(initialUnlockedBalance);
 
