@@ -16,7 +16,7 @@ const Loader: React.SFC<IProps> = ({ classes, isOpen, setOpen, numTxs, pendingTe
   const txText = `You will need to confirm ${numTxs} transactions with MetaMask.`;
   return (
     <Modal
-      handleClick={() => (numTxs ? numTxs === 0 && setOpen(false) : setOpen(false))}
+      handleClick={() => (typeof numTxs !== 'undefined' && numTxs > 0 ? null : setOpen(false))}
       isOpen={isOpen}
     >
       <>
