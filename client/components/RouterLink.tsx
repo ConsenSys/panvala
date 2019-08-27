@@ -11,18 +11,16 @@ interface IProps {
 }
 
 const RouterLink: React.SFC<IProps> = ({ children, href, as, newTab, disabled }) => {
+  if (disabled) {
+    return children;
+  }
+
   return (
-    <>
-      {disabled ? (
-        children
-      ) : (
-        <Link passHref href={href} as={as ? as : href}>
-          <A className="link" target={newTab ? '_blank' : undefined}>
-            {children}
-          </A>
-        </Link>
-      )}
-    </>
+    <Link passHref href={href} as={as ? as : href}>
+      <A className="link" target={newTab ? '_blank' : undefined}>
+        {children}
+      </A>
+    </Link>
   );
 };
 

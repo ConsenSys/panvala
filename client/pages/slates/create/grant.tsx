@@ -109,6 +109,8 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
     onRefreshBalances,
     slateStakeAmount,
     gkAllowance,
+    votingRights,
+    panBalance,
   }: IEthereumContext = React.useContext(EthereumContext);
   const [pendingText, setPendingText] = React.useState('');
 
@@ -222,7 +224,7 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
     }
   }
 
-  async function calculateNumTxs(values, selectedProposals) {
+  function calculateNumTxs(values, selectedProposals) {
     let numTxs: number = 1; // gk.recommendSlate
 
     if (selectedProposals.length > 0) {
@@ -257,7 +259,7 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
       toast.error(msg);
       return;
     }
-    const numTxs = await calculateNumTxs(values, selectedProposals);
+    const numTxs = calculateNumTxs(values, selectedProposals);
     setTxsPending(numTxs);
     setPendingText('Adding proposals to IPFS...');
 
@@ -359,6 +361,11 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
 
             // stake immediately after creating slate
             if (values.stake === 'yes') {
+              if (panBalance.lt(votingRights)) {
+                setTxsPending(4);
+                setPendingText('Not enough balance. Withdrawing voting rights first (check MetaMask)...');
+                await contracts.gatekeeper.withdrawVoteTokens(votingRights);
+              }
               if (gkAllowance.lt(slateStakeAmount)) {
                 setPendingText('Approving the Gatekeeper to stake on slate (check MetaMask)...');
                 await contracts.token.approve(contracts.gatekeeper.address, MaxUint256);
