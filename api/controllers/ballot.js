@@ -77,7 +77,7 @@ module.exports = {
 
     let voterDelegate;
     if (process.env.NODE_ENV !== 'test') {
-      const { gatekeeper } = getContracts();
+      const { gatekeeper } = await getContracts();
       voterDelegate = await gatekeeper.functions.delegate(voterAddress);
     }
 

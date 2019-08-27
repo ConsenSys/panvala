@@ -1,11 +1,8 @@
 const { getContracts } = require('../utils/eth');
-const {
-  contracts: { genesisBlockNumber },
-} = require('../utils/config');
 
 module.exports = {
   async getAll(req, res) {
-    const { gatekeeper } = getContracts();
+    const { gatekeeper, genesisBlockNumber } = await getContracts();
 
     // get the parameter store associated with the gatekeeper
     const psAddress = await gatekeeper.functions.parameters();
