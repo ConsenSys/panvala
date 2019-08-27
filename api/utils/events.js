@@ -77,7 +77,7 @@ async function getAllEvents(fromBlock) {
 async function getParametersSet(fromBlock) {
   const { network, rpcEndpoint, genesisBlockNumber, parameterStore } = await getContracts();
   // disable notifications on mainnet and rinkeby
-  if (network.chainId === 420 || network.chainId === 1) {
+  if (network.chainId === 1 || network.chainId === 4) {
     // NOTE: will be an issue when rendering parameters other than
     // slateStakeAmount and gatekeeperAddress
     return [];
