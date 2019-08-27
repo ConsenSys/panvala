@@ -17,11 +17,19 @@ async function mapRequestsToProposals(events, gatekeeper) {
           );
 
           if (matchEvent) {
-            await Request.create({
-              requestID: requestID.toString(),
-              proposalID: matchEvent.values.proposalID.toString(),
-              resource: matchEvent.recipient, // this is tx.to, which will always be the event-emitting contract in our case
-              metadataHash: matchEvent.values.metadataHash,
+            await Request.findOrCreate({
+              where: {
+                requestID: requestID.toString(),
+                proposalID: matchEvent.values.proposalID.toString(),
+                resource: matchEvent.recipient,
+                metadataHash: matchEvent.values.metadataHash,
+              },
+              defaults: {
+                requestID: requestID.toString(),
+                proposalID: matchEvent.values.proposalID.toString(),
+                resource: matchEvent.recipient, // this is tx.to, which will always be the event-emitting contract in our case
+                metadataHash: matchEvent.values.metadataHash,
+              },
             });
           }
         })
