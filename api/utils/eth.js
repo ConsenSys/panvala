@@ -2,11 +2,11 @@ const ethers = require('ethers');
 const config = require('./config');
 const {
   rpcEndpoint,
-  contracts: { gatekeeperAddress, tokenCapacitorAddress },
+  contracts: { gatekeeperAddress, tokenCapacitorAddress, parameterStoreAddress },
 } = config;
 
 const {
-  contractABIs: { Gatekeeper, TokenCapacitor },
+  contractABIs: { Gatekeeper, TokenCapacitor, ParameterStore },
 } = require('../../packages/panvala-utils');
 
 /**
@@ -29,6 +29,7 @@ async function getContracts() {
   const provider = new ethers.providers.JsonRpcProvider(rpcEndpoint);
   const signer = provider.getSigner();
   const network = await provider.getNetwork();
+  const parameterStore = new ethers.Contract(parameterStoreAddress, ParameterStore.abi, signer);
   const gatekeeper = new ethers.Contract(gatekeeperAddress, Gatekeeper.abi, signer);
   const tokenCapacitor = new ethers.Contract(tokenCapacitorAddress, TokenCapacitor.abi, signer);
   const genesisBlockNumber = genBlocks[network.chainId] || genBlocks.unknown;
@@ -38,6 +39,7 @@ async function getContracts() {
     provider,
     network,
     rpcEndpoint,
+    parameterStore,
     gatekeeper,
     tokenCapacitor,
     genesisBlockNumber,

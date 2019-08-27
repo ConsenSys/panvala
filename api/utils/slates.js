@@ -3,9 +3,6 @@ const ipfs = require('./ipfs');
 const range = require('lodash/range');
 const { Promise } = require('bluebird');
 const { IpfsMetadata, Slate } = require('../models');
-const {
-  contractABIs: { ParameterStore },
-} = require('../../packages/panvala-utils');
 const { toUtf8String } = ethers.utils;
 const { getContracts } = require('./eth');
 const config = require('./config');
@@ -19,12 +16,9 @@ const getAddress = hexAddress => ethers.utils.getAddress(hexAddress);
  * Read slate info from the blockchain, IPFS, and the local DB
  */
 async function getAllSlates() {
-  // Get an interface to the Gatekeeper contract
-  const { provider, gatekeeper } = await getContracts();
+  // Get an interface to the Gatekeeper, ParameterStore contracts
+  const { provider, gatekeeper, parameterStore } = await getContracts();
 
-  // Get an interface to the ParameterStore contract
-  const parameterStoreAddress = await gatekeeper.functions.parameters();
-  const parameterStore = new ethers.Contract(parameterStoreAddress, ParameterStore.abi, provider);
   // Get the slate staking requirement
   const requiredStake = await parameterStore.functions.get('slateStakeAmount');
 
@@ -36,7 +30,7 @@ async function getAllSlates() {
   let grantsIncumbent, governanceIncumbent;
   if (gatekeeper.functions.hasOwnProperty('incumbent')) {
     grantsIncumbent = await gatekeeper.functions.incumbent(tokenCapacitorAddress);
-    governanceIncumbent = await gatekeeper.functions.incumbent(parameterStoreAddress);
+    governanceIncumbent = await gatekeeper.functions.incumbent(parameterStore.address);
   }
 
   // 0..slateCount
@@ -70,7 +64,7 @@ async function getAllSlates() {
         incumbent = true;
       } else if (
         slate.recommender === governanceIncumbent &&
-        slate.resource === parameterStoreAddress
+        slate.resource === parameterStore.address
       ) {
         incumbent = true;
       }

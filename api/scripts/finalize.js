@@ -53,7 +53,12 @@ async function finalize(gatekeeper, epochNumber, resource, index) {
 }
 
 async function run() {
-  const { provider, gatekeeper: ROGatekeeper, tokenCapacitor } = await getContracts();
+  const {
+    provider,
+    gatekeeper: ROGatekeeper,
+    tokenCapacitor,
+    parameterStore,
+  } = await getContracts();
   const mnemonicWallet = ethers.Wallet.fromMnemonic(mnemonic);
   const wallet = new ethers.Wallet(mnemonicWallet.privateKey, provider);
   const gatekeeper = ROGatekeeper.connect(wallet);
@@ -61,8 +66,7 @@ async function run() {
   // NOTE: make sure you are running this script during +1 epoch of the one you are finalizing
   const epochNumber = (await gatekeeper.functions.currentEpochNumber()).sub(1);
   console.log('epochNumber:', epochNumber);
-  const parameterStoreAddress = await gatekeeper.functions.parameters();
-  const resources = [tokenCapacitor.address, parameterStoreAddress];
+  const resources = [tokenCapacitor.address, parameterStore.address];
 
   try {
     console.log('Finalizing ballots for all categories...');
