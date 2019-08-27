@@ -64,7 +64,7 @@ function parseArgs() {
 async function run() {
   parseArgs();
 
-  const { provider, gatekeeper: ROGatekeeper } = getContracts();
+  const { provider, gatekeeper: ROGatekeeper } = await getContracts();
   const mnemonicWallet = ethers.Wallet.fromMnemonic(mnemonic);
   const wallet = new ethers.Wallet(mnemonicWallet.privateKey, provider);
   const gatekeeper = ROGatekeeper.connect(wallet);

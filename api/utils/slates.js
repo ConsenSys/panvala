@@ -20,7 +20,7 @@ const getAddress = hexAddress => ethers.utils.getAddress(hexAddress);
  */
 async function getAllSlates() {
   // Get an interface to the Gatekeeper contract
-  const { provider, gatekeeper } = getContracts();
+  const { provider, gatekeeper } = await getContracts();
 
   // Get an interface to the ParameterStore contract
   const parameterStoreAddress = await gatekeeper.functions.parameters();
@@ -85,8 +85,9 @@ async function getAllSlates() {
         // Staked
         if (slate.status === 1) {
           const contest = await gatekeeper.contestStatus(slate.epochNumber, slate.resource);
+          const contestSlates = await gatekeeper.contestSlates(slate.epochNumber, slate.resource);
           // No contest || contest finalized
-          if (contest.status !== 2) {
+          if (contest.status !== 2 && contestSlates.length > 1) {
             slate.status = 3;
           }
         }

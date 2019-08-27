@@ -53,7 +53,7 @@ async function finalize(gatekeeper, epochNumber, resource, index) {
 }
 
 async function run() {
-  const { provider, gatekeeper: ROGatekeeper, tokenCapacitor } = getContracts();
+  const { provider, gatekeeper: ROGatekeeper, tokenCapacitor } = await getContracts();
   const mnemonicWallet = ethers.Wallet.fromMnemonic(mnemonic);
   const wallet = new ethers.Wallet(mnemonicWallet.privateKey, provider);
   const gatekeeper = ROGatekeeper.connect(wallet);

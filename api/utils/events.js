@@ -3,15 +3,17 @@ const {
   contractABIs: { Gatekeeper, TokenCapacitor, ParameterStore },
 } = require('../../packages/panvala-utils');
 
-const {
-  contracts: { gatekeeperAddress, tokenCapacitorAddress, genesisBlockNumber },
-  rpcEndpoint,
-} = require('./config');
 const { getContracts } = require('./eth');
 const { mapRequestsToProposals } = require('./requests');
 
-async function getAllEvents(fromBlock = genesisBlockNumber) {
-  const { provider, gatekeeper } = getContracts();
+async function getAllEvents(fromBlock) {
+  const {
+    provider,
+    gatekeeper,
+    tokenCapacitor,
+    rpcEndpoint,
+    genesisBlockNumber,
+  } = await getContracts();
   const network = await provider.getNetwork();
   // disable notifications on mainnet and rinkeby
   if (network.chainId === 4 || network.chainId === 1) {
@@ -22,11 +24,11 @@ async function getAllEvents(fromBlock = genesisBlockNumber) {
   const contracts = [
     {
       abi: Gatekeeper.abi,
-      address: gatekeeperAddress,
+      address: gatekeeper.address,
     },
     {
       abi: TokenCapacitor.abi,
-      address: tokenCapacitorAddress,
+      address: tokenCapacitor.address,
     },
     {
       abi: ParameterStore.abi,
@@ -35,15 +37,18 @@ async function getAllEvents(fromBlock = genesisBlockNumber) {
   ];
   // init eth-events
   const ethEvents = EthEvents(contracts, rpcEndpoint, genesisBlockNumber);
+  if (!fromBlock) {
+    fromBlock = genesisBlockNumber;
+  }
 
   // gatekeeper and tokenCapacitor filters
   const gkFilter = {
     fromBlock,
-    address: gatekeeperAddress,
+    address: gatekeeper.address,
   };
   const tcFilter = {
     fromBlock,
-    address: tokenCapacitorAddress,
+    address: tokenCapacitor.address,
   };
   const psFilter = {
     fromBlock,
@@ -70,9 +75,8 @@ async function getAllEvents(fromBlock = genesisBlockNumber) {
   }
 }
 
-async function getParametersSet(psAddress, fromBlock = genesisBlockNumber) {
-  const { provider } = getContracts();
-  const network = await provider.getNetwork();
+async function getParametersSet(psAddress, fromBlock) {
+  const { network, rpcEndpoint, genesisBlockNumber } = await getContracts();
   // disable notifications on mainnet and rinkeby
   if (network.chainId === 420 || network.chainId === 1) {
     // NOTE: will be an issue when rendering parameters other than
@@ -88,7 +92,7 @@ async function getParametersSet(psAddress, fromBlock = genesisBlockNumber) {
   const ethEvents = EthEvents([parameterStore], rpcEndpoint, genesisBlockNumber);
 
   const filter = {
-    fromBlock,
+    fromBlock: fromBlock || genesisBlockNumber,
     address: psAddress,
   };
   try {
