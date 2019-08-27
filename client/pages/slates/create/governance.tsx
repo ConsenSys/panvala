@@ -71,7 +71,7 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes, router }) => {
   // pending tx loader
   const [txsPending, setTxsPending] = React.useState(0);
 
-  async function calculateNumTxs(values) {
+  function calculateNumTxs(values) {
     let numTxs: number = 1; // gk.recommendSlate
 
     if (values.recommendation === 'governance') {
@@ -96,7 +96,7 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes, router }) => {
       toast.error(msg);
       return;
     }
-    const numTxs = await calculateNumTxs(values);
+    const numTxs = calculateNumTxs(values);
     setTxsPending(numTxs);
     setPendingText('Adding proposals to IPFS...');
 

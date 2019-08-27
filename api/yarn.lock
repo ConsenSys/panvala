@@ -1717,10 +1717,10 @@ etag@~1.8.1:
   resolved "https://registry.yarnpkg.com/etag/-/etag-1.8.1.tgz#41ae2eeb65efa62268aebfea83ac7d79299b0887"
   integrity sha1-Qa4u62XvpiJorr/qg6x9eSmbCIc=
 
-eth-events@^0.9.1:
-  version "0.9.1"
-  resolved "https://registry.yarnpkg.com/eth-events/-/eth-events-0.9.1.tgz#1c9c4c386bc00c4191701967f836c4417d8d1461"
-  integrity sha512-oowphgqmv7q7fqSuOk3FP446ZEWw7Q1svdnC7ifr0LCuiOVC/gOPBo5l+NU82NFnTWUf0UEoiuCLPpdRa3/mAQ==
+eth-events@^0.9.2:
+  version "0.9.2"
+  resolved "https://registry.yarnpkg.com/eth-events/-/eth-events-0.9.2.tgz#e7787e32fcf6563230339b9ca5df3c299db0a0ee"
+  integrity sha512-Ypi9vzrgvOTBLwOivY5UXNtRG02uA3oep6OFRrtMI2Qlb8AWPPG0xaTZKkWTe5oC1eixI8FokJhLGiB0msVIUw==
   dependencies:
     bluebird "^3.5.5"
     ethers "^4.0.33"
