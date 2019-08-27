@@ -8,19 +8,18 @@ const { mapRequestsToProposals } = require('./requests');
 
 async function getAllEvents(fromBlock) {
   const {
-    provider,
+    network,
+    parameterStore,
     gatekeeper,
     tokenCapacitor,
     rpcEndpoint,
     genesisBlockNumber,
   } = await getContracts();
-  const network = await provider.getNetwork();
   // disable notifications on mainnet and rinkeby
   if (network.chainId === 4 || network.chainId === 1) {
     return [];
   }
 
-  const psAddress = await gatekeeper.parameters();
   const contracts = [
     {
       abi: Gatekeeper.abi,
@@ -32,7 +31,7 @@ async function getAllEvents(fromBlock) {
     },
     {
       abi: ParameterStore.abi,
-      address: psAddress,
+      address: parameterStore.address,
     },
   ];
   // init eth-events
@@ -52,7 +51,7 @@ async function getAllEvents(fromBlock) {
   };
   const psFilter = {
     fromBlock,
-    address: psAddress,
+    address: parameterStore.address,
   };
 
   try {
@@ -75,8 +74,8 @@ async function getAllEvents(fromBlock) {
   }
 }
 
-async function getParametersSet(psAddress, fromBlock) {
-  const { network, rpcEndpoint, genesisBlockNumber } = await getContracts();
+async function getParametersSet(fromBlock) {
+  const { network, rpcEndpoint, genesisBlockNumber, parameterStore } = await getContracts();
   // disable notifications on mainnet and rinkeby
   if (network.chainId === 420 || network.chainId === 1) {
     // NOTE: will be an issue when rendering parameters other than
@@ -86,14 +85,14 @@ async function getParametersSet(psAddress, fromBlock) {
 
   const parameterStore = {
     abi: ParameterStore.abi,
-    address: psAddress,
+    address: parameterStore.address,
   };
 
   const ethEvents = EthEvents([parameterStore], rpcEndpoint, genesisBlockNumber);
 
   const filter = {
     fromBlock: fromBlock || genesisBlockNumber,
-    address: psAddress,
+    address: parameterStore.address,
   };
   try {
     const events = await ethEvents.getEventsByFilter(filter);
