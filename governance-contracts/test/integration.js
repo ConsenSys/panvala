@@ -1076,8 +1076,10 @@ contract('integration', (accounts) => {
   describe('capacitor releases', () => {
     const [creator, recommender, partner] = accounts;
 
-    // Skipping this test because utils.evm.goTo(launchDay) does not succeed (because we've already launched & ganache-cli can only go forward in time),
-    // causing issues re: expected unlocked/locked balances, due to unexpected `now` during capacitor.updateBalances().
+    // Skipping this test because utils.evm.goTo(launchDay) does not succeed
+    // (because we've already launched & ganache-cli can only go forward in time),
+    // causing issues re: expected unlocked/locked balances,
+    // due to unexpected `now` during capacitor.updateBalances().
     it.skip('deployment - should allow withdrawal of the correct number of tokens on Nov 1', async () => {
       const initialTokens = 49906303;
       // const initialBalance = new BN(toPanBase(initialTokens));
