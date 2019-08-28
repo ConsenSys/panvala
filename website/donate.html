@@ -10,7 +10,10 @@
   <link rel="stylesheet" href="css/util.css" />
   <link rel="stylesheet" href="css/colors.css" />
   <link rel="stylesheet" href="css/clip-path.css" />
-  <script type="text/javascript" src="donate.js"></script>
+  <script charset="utf-8" src="https://cdn.ethers.io/scripts/ethers-v4.min.js" type="text/javascript"></script>
+  <script src="https://unpkg.com/ipfs-http-client/dist/index.min.js"></script>
+  <script charset="utf-8" src="abis.js" type="text/javascript"></script>
+  <script charset="utf-8" src="donate.js" type="text/javascript"></script>
   <script type="text/javascript">(function(o){var b="https://zippyfrog.co/anywhere/",t="039b072363604f71afb26a55f1899413c20b8d86bb9749878f06b280fe2c8fa4",a=window.AutopilotAnywhere={_runQueue:[],run:function(){this._runQueue.push(arguments);}},c=encodeURIComponent,s="SCRIPT",d=document,l=d.getElementsByTagName(s)[0],p="t="+c(d.title||"")+"&u="+c(d.location.href||"")+"&r="+c(d.referrer||""),j="text/javascript",z,y;if(!window.Autopilot) window.Autopilot=a;if(o.app) p="devmode=true&"+p;z=function(src,asy){var e=d.createElement(s);e.src=src;e.type=j;e.async=asy;l.parentNode.insertBefore(e,l);};y=function(){z(b+t+'?'+p,true);};if(window.attachEvent){window.attachEvent("onload",y);}else{window.addEventListener("load",y,false);}})({});</script>
 </head>
 
@@ -517,27 +520,29 @@
         <select
           name="pledge-tier-selection"
           required
-          class="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2 bg-white black-50">
+          class="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2 bg-white black-50"
+          id="pledge-tier-select">
           <option disabled=""
-            selected="selected">
+            selected="selected"
+            value="0">
             Select your pledge tier
           </option>
-          <option value="Student">
+          <option value="5">
             Student — $5/month
           </option>
-          <option value="Gold">
+          <option value="15">
             Gold — $15/month
           </option>
-          <option value="Platinum">
+          <option value="50">
             Platinum — $50/month
           </option>
-          <option value="Platinum">
+          <option value="150">
             Diamond — $150/month
           </option>
-          <option value="Ether Advisor">
+          <option value="500">
             Ether Advisor — $500/month
           </option>
-          <option value="Elite Advisor">
+          <option value="1500">
             Elite Advisor — $1500/month
           </option>
         </select>
@@ -552,21 +557,23 @@
         <select
           name="pledge-duration-selection"
           required
-          class="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2 bg-white black-50">
+          class="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2 bg-white black-50"
+          id="pledge-duration-select">
           <option disabled=""
-            selected="selected">
+            selected="selected"
+            value="0">
             Select the amount of months you would like to pledge for
           </option>
-          <option value="Student">
+          <option value="1">
             1 month
           </option>
-          <option value="Student">
+          <option value="3">
             3 months
           </option>
-          <option value="Gold">
+          <option value="6">
             6 months
           </option>
-          <option value="Platinum">
+          <option value="12">
             12 months
           </option>
         </select>
