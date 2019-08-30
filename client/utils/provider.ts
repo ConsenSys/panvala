@@ -10,8 +10,36 @@ const { publicRuntimeConfig = {} } = getConfig() || {};
 // get contract abis from panvala-utils
 const abis: any = panvala_utils.contractABIs;
 
+const networks = {
+  MAINNET: { chainId: 1, name: 'mainnet' },
+  RINKEBY: { chainId: 4, name: 'rinkeby' },
+};
+
+async function checkNetwork(provider: providers.Web3Provider): Promise<boolean> {
+  let targetNetwork;
+  if (publicRuntimeConfig.panvalaEnv === 'production') {
+    targetNetwork = networks.MAINNET;
+  } else if (publicRuntimeConfig.panvalaEnv === 'staging') {
+    targetNetwork = networks.RINKEBY;
+  }
+
+  let connectedNetwork = await provider.getNetwork();
+
+  if (targetNetwork && targetNetwork.chainId !== connectedNetwork.chainId) {
+    const msg = `Wrong network: connected to ${connectedNetwork.name}, should be ${
+      targetNetwork.name
+    }`;
+    throw new Error(msg);
+  }
+
+  return true;
+}
+
 // contract abstractions for gate_keeper and token_capacitor
 export async function connectContracts(provider: providers.Web3Provider): Promise<IContracts> {
+  // Check that we're connected to the expected network
+  await checkNetwork(provider);
+
   const [tcAbi, tokenAbi, paramsAbi]: [any[], any[], any[]] = [
     abis.TokenCapacitor.abi,
     abis.BasicToken.abi,
@@ -31,8 +59,15 @@ export async function connectContracts(provider: providers.Web3Provider): Promis
   try {
     await provider.getCode(tcAddress);
   } catch (error) {
-    throw new Error(`ERROR no code at: ${tcAddress}`);
+    throw new Error(`ERROR contract not deployed: TokenCapacitor at ${tcAddress}`);
   }
+
+  try {
+    await provider.getCode(gkAddress);
+  } catch (error) {
+    throw new Error(`ERROR contract not deployed: Gatekeeper at ${gkAddress}`);
+  }
+
   // init ethers contract abstractions
   const gk: ethers.Contract = new ethers.Contract(gkAddress, gkAbi, provider);
   const tc: ethers.Contract = new ethers.Contract(tcAddress, tcAbi, provider);

@@ -134,7 +134,7 @@ const EthereumProvider: React.FC<any> = (props: any) => {
             });
 
             if (!isEmpty(ethProvider)) {
-              setupContracts(ethProvider);
+              await setupContracts(ethProvider);
             }
           } catch (error) {
             console.error(`ERROR failed to connect eth provider: ${error.message}`);
@@ -159,6 +159,8 @@ const EthereumProvider: React.FC<any> = (props: any) => {
               console.error(`ERROR failed to connect contracts: ${error.message}`);
               if (error.message.includes('contract not deployed')) {
                 toast.error(`Contracts not deployed on current network`);
+              } else if (error.message.includes('Wrong network')) {
+                toast.error(error.message);
               }
               throw error;
             }
