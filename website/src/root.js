@@ -2,7 +2,8 @@
 
 let Buffer, ipfs;
 
-const { bigNumberify, parseUnits, formatEther, parseEther, formatUnits, hexlify } = ethers.utils;
+// prettier-ignore
+const { bigNumberify, parseUnits, formatEther, parseEther, formatUnits, hexlify, getAddress, } = ethers.utils;
 
 const utils = {
   BN(small) {
@@ -59,6 +60,7 @@ class Root extends React.Component {
     this.provider;
   }
 
+  // Setup ipfs, call other setup functions
   async componentDidMount() {
     // helpers
     if (typeof window.IpfsHttpClient !== 'undefined') {
@@ -74,6 +76,7 @@ class Root extends React.Component {
     await this.setContracts();
   }
 
+  // Setup provider & selected account
   async setSelectedAccount() {
     if (typeof window.ethereum !== 'undefined') {
       if (!this.provider) {
@@ -88,16 +91,17 @@ class Root extends React.Component {
             selectedAccount = enabled[0];
           })
           .catch(error => {
-            // TODO: handle errors
             throw error;
           });
       }
       this.setState({ selectedAccount });
       return selectedAccount;
+    } else {
+      alert('MetaMask not found. Please download MetaMask @ metamask.io');
     }
-    // TODO: handle errors
   }
 
+  // Setup contracts
   async setContracts() {
     if (typeof this.provider !== 'undefined') {
       const { chainId } = await this.provider.getNetwork();
@@ -124,7 +128,6 @@ class Root extends React.Component {
           : chainId === 1 && '0xF53bBFBff01c50F2D42D542b09637DcA97935fF7';
       this.exchange = new ethers.Contract(exchangeAddress, exchangeABI, signer);
     } else {
-      // TODO: handle errors
       const account = await this.setSelectedAccount();
       if (account) {
         await this.setContracts();
@@ -162,6 +165,36 @@ class Root extends React.Component {
     return panToReceive;
   }
 
+  // Check that provider & contracts are setup correctly
+  async checkEthereum() {
+    let account;
+    try {
+      account = getAddress(this.state.selectedAccount);
+    } catch {
+      account = await this.setSelectedAccount();
+      if (!account) {
+        const errMsg = 'You must be logged into MetaMask.';
+        this.setState({
+          error: errMsg,
+        });
+        alert(errMsg);
+        throw new Error(errMsg);
+      }
+    }
+
+    if (typeof this.token === 'undefined') {
+      await this.setContracts();
+      if (typeof this.token === 'undefined') {
+        const errMsg = 'Contracts not set correctly.';
+        this.setState({
+          error: errMsg,
+        });
+        alert(errMsg);
+        throw new Error(errMsg);
+      }
+    }
+  }
+
   // Steps:
   // Get element values
   // Calculate total donation
@@ -178,13 +211,11 @@ class Root extends React.Component {
     e.preventDefault();
 
     // make sure ethereum is hooked up properly
-    if (!this.state.selectedAccount) {
-      const account = await this.setSelectedAccount();
-      if (!account) {
-        // TODO: handle errors
-        alert('You must be logged into MetaMask.');
-        return;
-      }
+    try {
+      await this.checkEthereum();
+    } catch (error) {
+      console.error(error);
+      throw error;
     }
 
     const pledgeMonthlySelect = document.getElementById('pledge-tier-select');
@@ -245,6 +276,7 @@ class Root extends React.Component {
     await this.donatePan(donation, multihash, panValue);
   }
 
+  // Sell ETH, buy PAN
   async purchasePan(donation, panValue) {
     // TODO: subtract a percentage
     const minTokens = utils.BN(panValue).sub(5000);
@@ -272,6 +304,8 @@ class Root extends React.Component {
     await this.quoteEthToPan(parseEther('1'));
   }
 
+  // Donate PAN -> token capacitor
+  // Approve if necessary
   async donatePan(donation, multihash, panValue) {
     const allowed = await utils.checkAllowance(
       this.token,
