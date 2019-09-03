@@ -4,72 +4,57 @@ function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try
 
 function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
 
-var provider, ipfs, Buffer, token, tokenCapacitor, exchange;
+var provider, Buffer, ipfs;
 var {
-  utils: {
-    parseEther,
-    formatEther,
-    parseUnits,
-    formatUnits,
-    bigNumberify,
-    hexlify
-  }
-} = ethers;
+  bigNumberify,
+  parseUnits,
+  formatEther,
+  parseEther,
+  formatUnits,
+  hexlify
+} = ethers.utils;
+var utils = {
+  BN(small) {
+    return bigNumberify(small);
+  },
 
-function BN(small) {
-  return bigNumberify(small);
-}
+  checkAllowance(token, owner, spender, numTokens) {
+    return _asyncToGenerator(function* () {
+      var allowance = yield token.functions.allowance(owner, spender);
+      return allowance.gte(numTokens);
+    })();
+  },
 
-function checkAllowance(_x, _x2, _x3, _x4) {
-  return _checkAllowance.apply(this, arguments);
-}
+  fetchEthPrice() {
+    return _asyncToGenerator(function* () {
+      var result = yield fetch('https://api.coinbase.com/v2/prices/ETH-USD/spot?currency=USD');
+      var json = yield result.json();
+      var ethPrice = json.data.amount;
+      return ethPrice;
+    })();
+  },
 
-function _checkAllowance() {
-  _checkAllowance = _asyncToGenerator(function* (token, owner, spender, numTokens) {
-    var allowance = yield token.functions.allowance(owner, spender);
-    return allowance.gte(numTokens);
-  });
-  return _checkAllowance.apply(this, arguments);
-}
+  quoteUsdToEth(pledgeTotalUSD, ethPrice) {
+    console.log("1 ETH: ".concat(ethPrice, " USD"));
+    return parseInt(pledgeTotalUSD, 10) / parseInt(ethPrice, 10);
+  },
 
-function fetchEthPrice() {
-  return _fetchEthPrice.apply(this, arguments);
-}
-
-function _fetchEthPrice() {
-  _fetchEthPrice = _asyncToGenerator(function* () {
-    var result = yield fetch('https://api.coinbase.com/v2/prices/ETH-USD/spot?currency=USD');
-    var json = yield result.json();
-    var ethPrice = json.data.amount;
-    return ethPrice;
-  });
-  return _fetchEthPrice.apply(this, arguments);
-}
-
-function quotePanToEth(panAmount, ethPrice) {
-  console.log("1 ETH: ".concat(ethPrice, " PAN"));
-  return parseInt(panAmount, 10) / parseInt(ethPrice, 10);
-}
-
-function quoteUsdToEth(usdAmount, ethPrice) {
-  console.log("1 ETH: ".concat(ethPrice, " USD"));
-  return parseInt(usdAmount, 10) / parseInt(ethPrice, 10);
-}
-
-function ipfsAdd(obj) {
-  return new Promise((resolve, reject) => {
-    var data = Buffer.from(JSON.stringify(obj));
-    ipfs.add(data, (err, result) => {
-      if (err) reject(new Error(err));
-      var {
-        hash
-      } = result[0];
-      resolve(hash);
+  ipfsAdd(obj) {
+    return new Promise((resolve, reject) => {
+      var data = Buffer.from(JSON.stringify(obj));
+      ipfs.add(data, (err, result) => {
+        if (err) reject(new Error(err));
+        var {
+          hash
+        } = result[0];
+        resolve(hash);
+      });
     });
-  });
-}
+  }
 
-var Donate = (_ref) => {
+};
+
+function DonateButton(_ref) {
   var {
     handleClick
   } = _ref;
@@ -77,16 +62,20 @@ var Donate = (_ref) => {
     onClick: handleClick,
     className: "f6 link dim bn br-pill pv3 ph4 white bg-teal fw7 mt4"
   }, "Donate Now"));
-};
+}
 
-class LikeButton extends React.Component {
+class Root extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
       selectedAccount: '',
       error: false
     };
-    this.handleDonate = this.handleDonate.bind(this);
+    this.handleClickDonate = this.handleClickDonate.bind(this);
+    this.token;
+    this.tokenCapacitor;
+    this.exchange;
+    this.provider;
   }
 
   componentDidMount() {
@@ -156,8 +145,6 @@ class LikeButton extends React.Component {
         _this3.tokenCapacitor = new ethers.Contract('0xad6E0b491F48F5fACc492b9165c0A38121202756', tcAbi, signer);
         var exchangeAddress = chainId === 4 ? '0x103Bf69E174081321DE44cBA78F220F5d30931e8' : chainId === 1 && '0xF53bBFBff01c50F2D42D542b09637DcA97935fF7';
         _this3.exchange = new ethers.Contract(exchangeAddress, exchangeABI, signer);
-
-        _this3.queryExchange(_this3.exchange);
       } else {
         var account = yield _this3.setSelectedAccount();
 
@@ -172,17 +159,6 @@ class LikeButton extends React.Component {
         }
       }
     })();
-  }
-
-  queryExchange(exchange) {
-    console.log('exchange:', exchange); // exchange.once('TokenPurchase', (buyer, eth_sold, tokens_bought) => {
-    //   console.log('buyer:', buyer);
-    //   console.log(`eth_sold: ${eth_sold}`);
-    //   console.log(`tokens_bought: ${tokens_bought}`);
-    // });
-    // const ethSold = '1000000000000000000';
-    // const p = await this.exchange.functions.getEthToTokenInputPrice(ethSold);
-    // console.log('p.toString():', formatUnits(p.toString(), 18).toString());
   } // Sell order (exact input) -> calculates amount bought (output)
 
 
@@ -191,24 +167,34 @@ class LikeButton extends React.Component {
 
     return _asyncToGenerator(function* () {
       // Sell ETH for PAN
-      var inputAmount = etherToSpend; // ETH reserve
+      var inputAmount = utils.BN(etherToSpend); // ETH reserve
 
       var inputReserve = yield _this4.provider.getBalance(_this4.exchange.address);
-      console.log("ETH reserve: ".concat(inputReserve.toString())); // PAN reserve
+      console.log("ETH reserve: ".concat(formatEther(inputReserve))); // PAN reserve
 
       var outputReserve = yield _this4.token.balanceOf(_this4.exchange.address);
-      console.log("PAN reserve: ".concat(outputReserve.toString())); // Output amount bought
-
+      console.log("PAN reserve: ".concat(formatUnits(outputReserve, 18)));
       var numerator = inputAmount.mul(outputReserve).mul(997);
       var denominator = inputReserve.mul(1000).add(inputAmount.mul(997));
       var panToReceive = numerator.div(denominator);
-      var rate = panToReceive.div(inputAmount);
-      quotePanToEth(panToReceive, rate);
+      console.log("quote ".concat(formatEther(inputAmount), " ETH : ").concat(formatUnits(panToReceive.toString(), 18), " PAN"));
+      console.log('');
       return panToReceive;
     })();
-  }
+  } // Steps:
+  // Get element values
+  // Calculate total donation
+  // Fetch ETH price
+  // Calculate ETH value based on total donation
+  // Convert to Wei
+  // Calculate PAN value base on Wei
+  // Build donation object (should this go after purchasing pan?)
+  // Add to ipfs
+  // Purchase PAN
+  // Donate PAN
 
-  handleDonate(e) {
+
+  handleClickDonate(e) {
     var _this5 = this;
 
     return _asyncToGenerator(function* () {
@@ -223,100 +209,105 @@ class LikeButton extends React.Component {
         }
       }
 
-      var pledgeTierSelect = document.getElementById('pledge-tier-select');
-      var pledgeDurationSelect = document.getElementById('pledge-duration-select');
+      var pledgeMonthlySelect = document.getElementById('pledge-tier-select');
+      var pledgeTermSelect = document.getElementById('pledge-duration-select');
 
-      if (pledgeTierSelect.value === '0') {
+      if (pledgeMonthlySelect.value === '0') {
         alert('You must select a pledge tier.');
         return;
       }
 
-      if (pledgeDurationSelect.value === '0') {
+      if (pledgeTermSelect.value === '0') {
         alert('You must select a pledge duration.');
         return;
-      }
+      } // Calculate pledge total value (monthly * term)
 
-      var pledgeTier = parseInt(pledgeTierSelect.value, 10);
-      var pledgeDuration = parseInt(pledgeDurationSelect.value, 10);
-      var usdAmount = pledgeTier * pledgeDuration;
-      var ethPrice = yield fetchEthPrice();
-      var ethAmount = quoteUsdToEth(usdAmount, ethPrice).toString();
-      console.log("".concat(usdAmount, " USD -> ").concat(ethAmount, " ETH"));
+
+      var pledgeMonthlyUSD = parseInt(pledgeMonthlySelect.value, 10);
+      var pledgeTerm = parseInt(pledgeTermSelect.value, 10);
+      var pledgeTotal = utils.BN(pledgeMonthlyUSD).mul(pledgeTerm); // Get USD price of 1 ETH
+
+      var ethPrice = yield utils.fetchEthPrice(); // Convert USD to ETH, print
+
+      var ethAmount = utils.quoteUsdToEth(pledgeTotal, ethPrice).toString();
+      console.log("".concat(pledgeTotal, " USD -> ").concat(ethAmount, " ETH")); // Convert to wei, print
+
       var weiAmount = parseEther(ethAmount);
-      var panQuoteBase = yield _this5.quoteEthToPan(weiAmount);
-      var panQuote = formatUnits(panQuoteBase, 18);
-      console.log("".concat(ethAmount, " ETH -> ").concat(panQuote.toString(), " PAN"));
-      var panToEth = panQuoteBase.div(weiAmount);
-      var panToUsd = panToEth.div(usdAmount / ethAmount);
-      console.log(panQuoteBase, panToUsd.toString());
-      var data = {
-        donor: _this5.state.selectedAccount,
-        panValue: panQuote.toString(),
-        panAmountBase: panQuoteBase,
-        ethValue: ethAmount,
-        weiAmount,
-        ethPriceUSD: ethPrice,
-        pledgeTotalUSD: usdAmount,
-        pledgeTierUSD: pledgeTier,
-        pledgeDuration
-      };
-      console.log('data:', data); // const multihash = await ipfsAdd(data);
-      // console.log('multihash:', multihash);
-      // const receipt = await donatePan(data, multihash);
-      // console.log('receipt:', receipt);
+      var panValue = yield _this5.quoteEthToPan(weiAmount); // PAN bought w/ 1 ETH
 
-      _this5.donatePan(data);
+      yield _this5.quoteEthToPan(parseEther('1')); // // PAN bought w/ input ETH
+      // const panToReceive = await this.exchange.getEthToTokenInputPrice(inputAmount);
+      // console.log(`${formatEther(inputAmount)} ETH -> ${formatUnits(panToReceive, 18)} PAN`);
+      // Build donation object
+
+      var donation = {
+        version: '1',
+        memo: '',
+        usdValue: utils.BN(pledgeTotal).toString(),
+        ethValue: weiAmount,
+        pledgeMonthlyUSD,
+        pledgeTerm
+      };
+      console.log('donation:', donation); // Add to ipfs
+      // const multihash = await utils.ipfsAdd(donation);
+      // console.log('multihash:', multihash);
+      // Purchase Panvala pan
+
+      yield _this5.purchasePan(donation, panValue); // Donate Panvala pan
+      // await this.donatePan(donation);
     })();
   }
 
-  donatePan(data, multihash) {
+  purchasePan(donation, panValue) {
     var _this6 = this;
 
     return _asyncToGenerator(function* () {
-      return;
-      var minTokens = data.panAmountBase.sub(5000);
+      var minTokens = utils.BN(panValue).sub(5000);
       var block = yield _this6.provider.getBlock();
-      var deadline = BN(block.timestamp).add(5000);
+      var deadline = utils.BN(block.timestamp).add(5000);
       var tx = yield _this6.exchange.functions.ethToTokenSwapInput(minTokens, deadline, {
-        value: data.weiAmount,
-        gasLimit: hexlify(6e6),
-        gasPrice: hexlify(4e9)
+        value: hexlify(donation.ethValue),
+        gasLimit: hexlify(1e6),
+        gasPrice: hexlify(5e9)
       });
       console.log('tx:', tx);
-      yield tx.wait(1);
       var receipt = yield _this6.provider.getTransactionReceipt(tx.hash);
       console.log('receipt:', receipt);
-      console.log();
+      console.log(); // Get new quote
+
       console.log('NEW QUOTE');
-      var panQuoteBase = yield _this6.quoteEthToPan(data.weiAmount);
-      var panQuote = formatUnits(panQuoteBase, 18);
-      console.log("".concat(data.ethValue, " ETH -> ").concat(panQuote.toString(), " PAN"));
-      return;
-      var allowed = yield checkAllowance(_this6.token, _this6.state.selectedAccount, _this6.tokenCapacitor.address, data.panAmount);
+      yield _this6.quoteEthToPan(donation.ethValue);
+      yield _this6.quoteEthToPan(parseEther('1'));
+    })();
+  }
+
+  donatePan(donation, multihash) {
+    var _this7 = this;
+
+    return _asyncToGenerator(function* () {
+      var allowed = yield utils.checkAllowance(_this7.token, _this7.state.selectedAccount, _this7.tokenCapacitor.address, donation.panValue);
 
       if (allowed) {
-        console.log('tokenCapacitor:', _this6.tokenCapacitor);
-        return _this6.tokenCapacitor.functions.donate(data.donor, data.panAmount, Buffer.from(multihash), {
-          gasLimit: '0x6AD790' // gasPrice: '0x77359400',
+        console.log('tokenCapacitor:', _this7.tokenCapacitor);
+        return _this7.tokenCapacitor.functions.donate(donation.donor, donation.panValue, Buffer.from(multihash), {
+          gasLimit: hexlify(1e6),
+          // 1 MM
+          gasPrice: hexlify(5e9) // 5 GWei
 
         });
       } else {
-        yield _this6.token.functions.approve(_this6.tokenCapacitor.address, data.panAmount);
-        return _this6.donatePan(data);
+        yield _this7.token.functions.approve(_this7.tokenCapacitor.address, ethers.constants.MaxUint256);
+        return _this7.donatePan(donation);
       }
     })();
   }
 
   render() {
-    return React.createElement("div", null, React.createElement("button", {
-      onClick: () => this.setState({
-        liked: true
-      })
-    }, "FDSAFDSAFDSASD"), React.createElement(Donate, {
-      handleClick: this.handleDonate
+    return React.createElement("div", null, React.createElement(DonateButton, {
+      handleClick: this.handleClickDonate
     }));
   }
 
 }
 
-ReactDOM.render(React.createElement(LikeButton, null), document.querySelector('#root_container'));
+ReactDOM.render(React.createElement(Root, null), document.querySelector('#root_container'));

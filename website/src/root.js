@@ -1,50 +1,41 @@
 'use strict';
 
-let provider, ipfs, Buffer, token, tokenCapacitor, exchange;
+let provider, Buffer, ipfs;
 
-const {
-  utils: { parseEther, formatEther, parseUnits, formatUnits, bigNumberify, hexlify },
-} = ethers;
+const { bigNumberify, parseUnits, formatEther, parseEther, formatUnits, hexlify } = ethers.utils;
 
-function BN(small) {
-  return bigNumberify(small);
-}
+const utils = {
+  BN(small) {
+    return bigNumberify(small);
+  },
+  async checkAllowance(token, owner, spender, numTokens) {
+    const allowance = await token.functions.allowance(owner, spender);
+    return allowance.gte(numTokens);
+  },
+  async fetchEthPrice() {
+    const result = await fetch('https://api.coinbase.com/v2/prices/ETH-USD/spot?currency=USD');
+    const json = await result.json();
+    const ethPrice = json.data.amount;
+    return ethPrice;
+  },
+  quoteUsdToEth(pledgeTotalUSD, ethPrice) {
+    console.log(`1 ETH: ${ethPrice} USD`);
+    return parseInt(pledgeTotalUSD, 10) / parseInt(ethPrice, 10);
+  },
+  ipfsAdd(obj) {
+    return new Promise((resolve, reject) => {
+      const data = Buffer.from(JSON.stringify(obj));
 
-async function checkAllowance(token, owner, spender, numTokens) {
-  const allowance = await token.functions.allowance(owner, spender);
-  return allowance.gte(numTokens);
-}
-
-async function fetchEthPrice() {
-  const result = await fetch('https://api.coinbase.com/v2/prices/ETH-USD/spot?currency=USD');
-  const json = await result.json();
-  const ethPrice = json.data.amount;
-  return ethPrice;
-}
-
-function quotePanToEth(panAmount, ethPrice) {
-  console.log(`1 ETH: ${ethPrice} PAN`);
-  return parseInt(panAmount, 10) / parseInt(ethPrice, 10);
-}
-
-function quoteUsdToEth(usdAmount, ethPrice) {
-  console.log(`1 ETH: ${ethPrice} USD`);
-  return parseInt(usdAmount, 10) / parseInt(ethPrice, 10);
-}
-
-function ipfsAdd(obj) {
-  return new Promise((resolve, reject) => {
-    const data = Buffer.from(JSON.stringify(obj));
-
-    ipfs.add(data, (err, result) => {
-      if (err) reject(new Error(err));
-      const { hash } = result[0];
-      resolve(hash);
+      ipfs.add(data, (err, result) => {
+        if (err) reject(new Error(err));
+        const { hash } = result[0];
+        resolve(hash);
+      });
     });
-  });
-}
+  },
+};
 
-const Donate = ({ handleClick }) => {
+function DonateButton({ handleClick }) {
   return (
     <div>
       <button
@@ -55,13 +46,17 @@ const Donate = ({ handleClick }) => {
       </button>
     </div>
   );
-};
+}
 
-class LikeButton extends React.Component {
+class Root extends React.Component {
   constructor(props) {
     super(props);
     this.state = { selectedAccount: '', error: false };
-    this.handleDonate = this.handleDonate.bind(this);
+    this.handleClickDonate = this.handleClickDonate.bind(this);
+    this.token;
+    this.tokenCapacitor;
+    this.exchange;
+    this.provider;
   }
 
   async componentDidMount() {
@@ -115,7 +110,6 @@ class LikeButton extends React.Component {
           ? '0x103Bf69E174081321DE44cBA78F220F5d30931e8'
           : chainId === 1 && '0xF53bBFBff01c50F2D42D542b09637DcA97935fF7';
       this.exchange = new ethers.Contract(exchangeAddress, exchangeABI, signer);
-      this.queryExchange(this.exchange);
     } else {
       const account = await this.setSelectedAccount();
       if (account) {
@@ -129,41 +123,43 @@ class LikeButton extends React.Component {
     }
   }
 
-  queryExchange(exchange) {
-    console.log('exchange:', exchange);
-    // exchange.once('TokenPurchase', (buyer, eth_sold, tokens_bought) => {
-    //   console.log('buyer:', buyer);
-    //   console.log(`eth_sold: ${eth_sold}`);
-    //   console.log(`tokens_bought: ${tokens_bought}`);
-    // });
-    // const ethSold = '1000000000000000000';
-    // const p = await this.exchange.functions.getEthToTokenInputPrice(ethSold);
-    // console.log('p.toString():', formatUnits(p.toString(), 18).toString());
-  }
-
   // Sell order (exact input) -> calculates amount bought (output)
   async quoteEthToPan(etherToSpend) {
     // Sell ETH for PAN
-    const inputAmount = etherToSpend;
+    const inputAmount = utils.BN(etherToSpend);
+
     // ETH reserve
     const inputReserve = await this.provider.getBalance(this.exchange.address);
-    console.log(`ETH reserve: ${inputReserve.toString()}`);
+    console.log(`ETH reserve: ${formatEther(inputReserve)}`);
+
     // PAN reserve
     const outputReserve = await this.token.balanceOf(this.exchange.address);
-    console.log(`PAN reserve: ${outputReserve.toString()}`);
+    console.log(`PAN reserve: ${formatUnits(outputReserve, 18)}`);
 
-    // Output amount bought
     const numerator = inputAmount.mul(outputReserve).mul(997);
     const denominator = inputReserve.mul(1000).add(inputAmount.mul(997));
     const panToReceive = numerator.div(denominator);
 
-    const rate = panToReceive.div(inputAmount);
-    quotePanToEth(panToReceive, rate);
+    console.log(
+      `quote ${formatEther(inputAmount)} ETH : ${formatUnits(panToReceive.toString(), 18)} PAN`
+    );
+    console.log('');
 
     return panToReceive;
   }
 
-  async handleDonate(e) {
+  // Steps:
+  // Get element values
+  // Calculate total donation
+  // Fetch ETH price
+  // Calculate ETH value based on total donation
+  // Convert to Wei
+  // Calculate PAN value base on Wei
+  // Build donation object (should this go after purchasing pan?)
+  // Add to ipfs
+  // Purchase PAN
+  // Donate PAN
+  async handleClickDonate(e) {
     e.preventDefault();
 
     // make sure ethereum is hooked up properly
@@ -175,108 +171,116 @@ class LikeButton extends React.Component {
       }
     }
 
-    const pledgeTierSelect = document.getElementById('pledge-tier-select');
-    const pledgeDurationSelect = document.getElementById('pledge-duration-select');
+    const pledgeMonthlySelect = document.getElementById('pledge-tier-select');
+    const pledgeTermSelect = document.getElementById('pledge-duration-select');
 
-    if (pledgeTierSelect.value === '0') {
+    if (pledgeMonthlySelect.value === '0') {
       alert('You must select a pledge tier.');
       return;
     }
-    if (pledgeDurationSelect.value === '0') {
+    if (pledgeTermSelect.value === '0') {
       alert('You must select a pledge duration.');
       return;
     }
 
-    const pledgeTier = parseInt(pledgeTierSelect.value, 10);
-    const pledgeDuration = parseInt(pledgeDurationSelect.value, 10);
+    // Calculate pledge total value (monthly * term)
+    const pledgeMonthlyUSD = parseInt(pledgeMonthlySelect.value, 10);
+    const pledgeTerm = parseInt(pledgeTermSelect.value, 10);
+    const pledgeTotal = utils.BN(pledgeMonthlyUSD).mul(pledgeTerm);
 
-    const usdAmount = pledgeTier * pledgeDuration;
-    const ethPrice = await fetchEthPrice();
-    const ethAmount = quoteUsdToEth(usdAmount, ethPrice).toString();
-    console.log(`${usdAmount} USD -> ${ethAmount} ETH`);
+    // Get USD price of 1 ETH
+    const ethPrice = await utils.fetchEthPrice();
 
+    // Convert USD to ETH, print
+    const ethAmount = utils.quoteUsdToEth(pledgeTotal, ethPrice).toString();
+    console.log(`${pledgeTotal} USD -> ${ethAmount} ETH`);
+
+    // Convert to wei, print
     const weiAmount = parseEther(ethAmount);
-    const panQuoteBase = await this.quoteEthToPan(weiAmount);
-    const panQuote = formatUnits(panQuoteBase, 18);
-    console.log(`${ethAmount} ETH -> ${panQuote.toString()} PAN`);
+    const panValue = await this.quoteEthToPan(weiAmount);
 
-    const panToEth = panQuoteBase.div(weiAmount);
-    const panToUsd = panToEth.div(usdAmount / ethAmount);
-    console.log(panQuoteBase, panToUsd.toString());
+    // PAN bought w/ 1 ETH
+    await this.quoteEthToPan(parseEther('1'));
 
+    // // PAN bought w/ input ETH
+    // const panToReceive = await this.exchange.getEthToTokenInputPrice(inputAmount);
+    // console.log(`${formatEther(inputAmount)} ETH -> ${formatUnits(panToReceive, 18)} PAN`);
 
-    const data = {
-      donor: this.state.selectedAccount,
-      panValue: panQuote.toString(),
-      panAmountBase: panQuoteBase,
-      ethValue: ethAmount,
-      weiAmount,
-      ethPriceUSD: ethPrice,
-      pledgeTotalUSD: usdAmount,
-      pledgeTierUSD: pledgeTier,
-      pledgeDuration,
+    // Build donation object
+    const donation = {
+      version: '1',
+      memo: '',
+      usdValue: utils.BN(pledgeTotal).toString(),
+      ethValue: weiAmount,
+      pledgeMonthlyUSD,
+      pledgeTerm,
     };
-    console.log('data:', data);
+    console.log('donation:', donation);
 
-    // const multihash = await ipfsAdd(data);
+    // Add to ipfs
+    // const multihash = await utils.ipfsAdd(donation);
     // console.log('multihash:', multihash);
 
-    // const receipt = await donatePan(data, multihash);
-    // console.log('receipt:', receipt);
-    this.donatePan(data);
+    // Purchase Panvala pan
+    await this.purchasePan(donation, panValue);
+
+    // Donate Panvala pan
+    // await this.donatePan(donation);
   }
 
-  async donatePan(data, multihash) {
-    return;
-    const minTokens = data.panAmountBase.sub(5000);
+  async purchasePan(donation, panValue) {
+    const minTokens = utils.BN(panValue).sub(5000);
     const block = await this.provider.getBlock();
-    const deadline = BN(block.timestamp).add(5000);
+    const deadline = utils.BN(block.timestamp).add(5000);
+
     const tx = await this.exchange.functions.ethToTokenSwapInput(minTokens, deadline, {
-      value: data.weiAmount,
-      gasLimit: hexlify(6e6),
-      gasPrice: hexlify(4e9),
+      value: hexlify(donation.ethValue),
+      gasLimit: hexlify(1e6),
+      gasPrice: hexlify(5e9),
     });
     console.log('tx:', tx);
-    await tx.wait(1);
+
     const receipt = await this.provider.getTransactionReceipt(tx.hash);
     console.log('receipt:', receipt);
     console.log();
+
+    // Get new quote
     console.log('NEW QUOTE');
-    const panQuoteBase = await this.quoteEthToPan(data.weiAmount);
-    const panQuote = formatUnits(panQuoteBase, 18);
-    console.log(`${data.ethValue} ETH -> ${panQuote.toString()} PAN`);
-    return;
-    const allowed = await checkAllowance(
+    await this.quoteEthToPan(donation.ethValue);
+    await this.quoteEthToPan(parseEther('1'));
+  }
+
+  async donatePan(donation, multihash) {
+    const allowed = await utils.checkAllowance(
       this.token,
       this.state.selectedAccount,
       this.tokenCapacitor.address,
-      data.panAmount
+      donation.panValue
     );
     if (allowed) {
       console.log('tokenCapacitor:', this.tokenCapacitor);
       return this.tokenCapacitor.functions.donate(
-        data.donor,
-        data.panAmount,
+        donation.donor,
+        donation.panValue,
         Buffer.from(multihash),
         {
-          gasLimit: '0x6AD790',
-          // gasPrice: '0x77359400',
+          gasLimit: hexlify(1e6), // 1 MM
+          gasPrice: hexlify(5e9), // 5 GWei
         }
       );
     } else {
-      await this.token.functions.approve(this.tokenCapacitor.address, data.panAmount);
-      return this.donatePan(data);
+      await this.token.functions.approve(this.tokenCapacitor.address, ethers.constants.MaxUint256);
+      return this.donatePan(donation);
     }
   }
 
   render() {
     return (
       <div>
-        <button onClick={() => this.setState({ liked: true })}>FDSAFDSAFDSASD</button>
-        <Donate handleClick={this.handleDonate} />
+        <DonateButton handleClick={this.handleClickDonate} />
       </div>
     );
   }
 }
 
-ReactDOM.render(<LikeButton />, document.querySelector('#root_container'));
+ReactDOM.render(<Root />, document.querySelector('#root_container'));
