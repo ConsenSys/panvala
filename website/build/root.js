@@ -4,7 +4,7 @@ function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try
 
 function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
 
-var provider, Buffer, ipfs;
+var Buffer, ipfs;
 var {
   bigNumberify,
   parseUnits,
@@ -61,7 +61,7 @@ function DonateButton(_ref) {
   return React.createElement("div", null, React.createElement("button", {
     onClick: handleClick,
     className: "f6 link dim bn br-pill pv3 ph4 white bg-teal fw7 mt4"
-  }, "Donate Now"));
+  }, "Donate!"));
 }
 
 class Root extends React.Component {
@@ -108,7 +108,7 @@ class Root extends React.Component {
 
     return _asyncToGenerator(function* () {
       if (typeof window.ethereum !== 'undefined') {
-        if (!provider) {
+        if (!_this2.provider) {
           _this2.provider = new ethers.providers.Web3Provider(window.ethereum);
         }
 
@@ -117,6 +117,9 @@ class Root extends React.Component {
         if (!selectedAccount) {
           window.ethereum.enable().then(enabled => {
             selectedAccount = enabled[0];
+          }).catch(error => {
+            // TODO: handle errors
+            throw error;
           });
         }
 
@@ -125,7 +128,8 @@ class Root extends React.Component {
         });
 
         return selectedAccount;
-      }
+      } // TODO: handle errors
+
     })();
   }
 
@@ -138,14 +142,19 @@ class Root extends React.Component {
           chainId
         } = yield _this3.provider.getNetwork();
 
-        var signer = _this3.provider.getSigner();
+        var signer = _this3.provider.getSigner(); // Init token
 
-        var tokenAddress = chainId === 4 ? '0xa6208407aFA5B0995421fF608Dd84EAaA4c71AE4' : chainId === 1 && '0xD56daC73A4d6766464b38ec6D91eB45Ce7457c44';
-        _this3.token = new ethers.Contract(tokenAddress, tokenAbi, signer);
-        _this3.tokenCapacitor = new ethers.Contract('0xad6E0b491F48F5fACc492b9165c0A38121202756', tcAbi, signer);
-        var exchangeAddress = chainId === 4 ? '0x103Bf69E174081321DE44cBA78F220F5d30931e8' : chainId === 1 && '0xF53bBFBff01c50F2D42D542b09637DcA97935fF7';
+
+        var tokenAddress = chainId === 4 ? '0x4912d6aBc68e4F02d1FdD6B79ed045C0A0BAf772' : chainId === 1 && '0xD56daC73A4d6766464b38ec6D91eB45Ce7457c44';
+        _this3.token = new ethers.Contract(tokenAddress, tokenAbi, signer); // Init token capacitor
+
+        var tcAddress = chainId === 4 ? '0xA062C59F42a45f228BEBB6e7234Ed1ea14398dE7' : chainId === 1 && '0x9a7B675619d3633304134155c6c976E9b4c1cfB3';
+        _this3.tokenCapacitor = new ethers.Contract(tcAddress, tcAbi, signer); // Init uniswap exchange
+
+        var exchangeAddress = chainId === 4 ? '0x25EAd1E8e3a9C38321488BC5417c999E622e36ea' : chainId === 1 && '0xF53bBFBff01c50F2D42D542b09637DcA97935fF7';
         _this3.exchange = new ethers.Contract(exchangeAddress, exchangeABI, signer);
       } else {
+        // TODO: handle errors
         var account = yield _this3.setSelectedAccount();
 
         if (account) {
@@ -187,10 +196,11 @@ class Root extends React.Component {
   // Fetch ETH price
   // Calculate ETH value based on total donation
   // Convert to Wei
-  // Calculate PAN value base on Wei
+  // Calculate PAN value based on Wei
   // Build donation object (should this go after purchasing pan?)
   // Add to ipfs
   // Purchase PAN
+  // Check allowance, approve if necessary
   // Donate PAN
 
 
@@ -204,6 +214,7 @@ class Root extends React.Component {
         var account = yield _this5.setSelectedAccount();
 
         if (!account) {
+          // TODO: handle errors
           alert('You must be logged into MetaMask.');
           return;
         }
@@ -230,13 +241,14 @@ class Root extends React.Component {
       var ethPrice = yield utils.fetchEthPrice(); // Convert USD to ETH, print
 
       var ethAmount = utils.quoteUsdToEth(pledgeTotal, ethPrice).toString();
-      console.log("".concat(pledgeTotal, " USD -> ").concat(ethAmount, " ETH")); // Convert to wei, print
+      console.log("".concat(pledgeTotal, " USD -> ").concat(ethAmount, " ETH"));
+      console.log(''); // Convert to wei, print
 
       var weiAmount = parseEther(ethAmount);
       var panValue = yield _this5.quoteEthToPan(weiAmount); // PAN bought w/ 1 ETH
 
       yield _this5.quoteEthToPan(parseEther('1')); // // PAN bought w/ input ETH
-      // const panToReceive = await this.exchange.getEthToTokenInputPrice(inputAmount);
+      // const panToReceive = await this.exchange.getEthToTokenInputPrice(weiAmount);
       // console.log(`${formatEther(inputAmount)} ETH -> ${formatUnits(panToReceive, 18)} PAN`);
       // Build donation object
 
@@ -249,12 +261,13 @@ class Root extends React.Component {
         pledgeTerm
       };
       console.log('donation:', donation); // Add to ipfs
-      // const multihash = await utils.ipfsAdd(donation);
-      // console.log('multihash:', multihash);
-      // Purchase Panvala pan
+
+      var multihash = yield utils.ipfsAdd(donation);
+      console.log('multihash:', multihash); // Purchase Panvala pan
 
       yield _this5.purchasePan(donation, panValue); // Donate Panvala pan
-      // await this.donatePan(donation);
+
+      yield _this5.donatePan(donation, multihash, panValue);
     })();
   }
 
@@ -262,15 +275,20 @@ class Root extends React.Component {
     var _this6 = this;
 
     return _asyncToGenerator(function* () {
+      // TODO: subtract a percentage
       var minTokens = utils.BN(panValue).sub(5000);
       var block = yield _this6.provider.getBlock();
-      var deadline = utils.BN(block.timestamp).add(5000);
+      var deadline = utils.BN(block.timestamp).add(3600); // add one hour
+      // Buy Pan with Eth
+
       var tx = yield _this6.exchange.functions.ethToTokenSwapInput(minTokens, deadline, {
         value: hexlify(donation.ethValue),
         gasLimit: hexlify(1e6),
         gasPrice: hexlify(5e9)
       });
       console.log('tx:', tx);
+      yield _this6.provider.waitForTransaction(tx.hash); // TODO: maybe wait for blocks
+
       var receipt = yield _this6.provider.getTransactionReceipt(tx.hash);
       console.log('receipt:', receipt);
       console.log(); // Get new quote
@@ -281,15 +299,15 @@ class Root extends React.Component {
     })();
   }
 
-  donatePan(donation, multihash) {
+  donatePan(donation, multihash, panValue) {
     var _this7 = this;
 
     return _asyncToGenerator(function* () {
-      var allowed = yield utils.checkAllowance(_this7.token, _this7.state.selectedAccount, _this7.tokenCapacitor.address, donation.panValue);
+      var allowed = yield utils.checkAllowance(_this7.token, _this7.state.selectedAccount, _this7.tokenCapacitor.address, panValue);
 
       if (allowed) {
         console.log('tokenCapacitor:', _this7.tokenCapacitor);
-        return _this7.tokenCapacitor.functions.donate(donation.donor, donation.panValue, Buffer.from(multihash), {
+        return _this7.tokenCapacitor.functions.donate(_this7.state.selectedAccount, panValue, Buffer.from(multihash), {
           gasLimit: hexlify(1e6),
           // 1 MM
           gasPrice: hexlify(5e9) // 5 GWei
@@ -297,7 +315,7 @@ class Root extends React.Component {
         });
       } else {
         yield _this7.token.functions.approve(_this7.tokenCapacitor.address, ethers.constants.MaxUint256);
-        return _this7.donatePan(donation);
+        return _this7.donatePan(donation, multihash, panValue);
       }
     })();
   }
