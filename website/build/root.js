@@ -7,73 +7,25 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
 var Buffer, ipfs; // prettier-ignore
 
 var {
-  bigNumberify,
-  parseUnits,
   formatEther,
   parseEther,
   formatUnits,
   hexlify,
   getAddress
 } = ethers.utils;
-var utils = {
-  BN(small) {
-    return bigNumberify(small);
-  },
-
-  checkAllowance(token, owner, spender, numTokens) {
-    return _asyncToGenerator(function* () {
-      var allowance = yield token.functions.allowance(owner, spender);
-      return allowance.gte(numTokens);
-    })();
-  },
-
-  fetchEthPrice() {
-    return _asyncToGenerator(function* () {
-      var result = yield fetch('https://api.coinbase.com/v2/prices/ETH-USD/spot?currency=USD');
-      var json = yield result.json();
-      var ethPrice = json.data.amount;
-      return ethPrice;
-    })();
-  },
-
-  quoteUsdToEth(pledgeTotalUSD, ethPrice) {
-    console.log("1 ETH: ".concat(ethPrice, " USD"));
-    return parseInt(pledgeTotalUSD, 10) / parseInt(ethPrice, 10);
-  },
-
-  ipfsAdd(obj) {
-    return new Promise((resolve, reject) => {
-      var data = Buffer.from(JSON.stringify(obj));
-      ipfs.add(data, (err, result) => {
-        if (err) reject(new Error(err));
-        var {
-          hash
-        } = result[0];
-        resolve(hash);
-      });
-    });
-  }
-
-};
-
-function DonateButton(_ref) {
-  var {
-    handleClick
-  } = _ref;
-  return React.createElement("div", null, React.createElement("button", {
-    onClick: handleClick,
-    className: "f6 link dim bn br-pill pv3 ph4 white bg-teal fw7 mt4"
-  }, "Donate!"));
-}
 
 class Root extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
       selectedAccount: '',
-      error: false
+      step: null,
+      error: false,
+      message: '',
+      panPurchased: 0
     };
     this.handleClickDonate = this.handleClickDonate.bind(this);
+    this.handleCancel = this.handleCancel.bind(this);
     this.token;
     this.tokenCapacitor;
     this.exchange;
@@ -179,7 +131,8 @@ class Root extends React.Component {
     var _this4 = this;
 
     return _asyncToGenerator(function* () {
-      // Sell ETH for PAN
+      console.log(''); // Sell ETH for PAN
+
       var inputAmount = utils.BN(etherToSpend); // ETH reserve
 
       var inputReserve = yield _this4.provider.getBalance(_this4.exchange.address);
@@ -191,7 +144,6 @@ class Root extends React.Component {
       var denominator = inputReserve.mul(1000).add(inputAmount.mul(997));
       var panToReceive = numerator.div(denominator);
       console.log("quote ".concat(formatEther(inputAmount), " ETH : ").concat(formatUnits(panToReceive.toString(), 18), " PAN"));
-      console.log('');
       return panToReceive;
     })();
   } // Check that provider & contracts are setup correctly
@@ -262,6 +214,11 @@ class Root extends React.Component {
         throw error;
       }
 
+      _this6.setState({
+        step: 1,
+        message: 'Adding metadata to IPFS...'
+      });
+
       var pledgeMonthlySelect = document.getElementById('pledge-tier-select');
       var pledgeTermSelect = document.getElementById('pledge-duration-select');
 
@@ -283,8 +240,7 @@ class Root extends React.Component {
       var ethPrice = yield utils.fetchEthPrice(); // Convert USD to ETH, print
 
       var ethAmount = utils.quoteUsdToEth(pledgeTotal, ethPrice).toString();
-      console.log("".concat(pledgeTotal, " USD -> ").concat(ethAmount, " ETH"));
-      console.log(''); // Convert to wei, print
+      console.log("".concat(pledgeTotal, " USD -> ").concat(ethAmount, " ETH")); // Convert to wei, print
 
       var weiAmount = parseEther(ethAmount);
       var panValue = yield _this6.quoteEthToPan(weiAmount); // PAN bought w/ 1 ETH
@@ -298,18 +254,29 @@ class Root extends React.Component {
         version: '1',
         memo: '',
         usdValue: utils.BN(pledgeTotal).toString(),
-        ethValue: weiAmount,
+        ethValue: weiAmount.toString(),
         pledgeMonthlyUSD,
         pledgeTerm
       };
-      console.log('donation:', donation); // Add to ipfs
+      console.log('donation:', donation);
+      var multihash = 'Qm';
 
-      var multihash = yield utils.ipfsAdd(donation);
-      console.log('multihash:', multihash); // Purchase Panvala pan
+      try {// // Add to ipfs
+        // multihash = await utils.ipfsAdd(donation);
+        // console.log('multihash:', multihash);
+      } catch (error) {
+        console.error("ERROR: ".concat(error.message));
+        return _this6.setState({
+          step: null,
+          message: '',
+          error: error.message
+        });
+      } // Purchase Panvala pan
+
 
       yield _this6.purchasePan(donation, panValue); // Donate Panvala pan
 
-      yield _this6.donatePan(donation, multihash, panValue);
+      yield _this6.donatePan(multihash);
     })();
   } // Sell ETH, buy PAN
 
@@ -324,17 +291,33 @@ class Root extends React.Component {
       var deadline = utils.BN(block.timestamp).add(3600); // add one hour
       // Buy Pan with Eth
 
-      var tx = yield _this7.exchange.functions.ethToTokenSwapInput(minTokens, deadline, {
-        value: hexlify(donation.ethValue),
-        gasLimit: hexlify(1e6),
-        gasPrice: hexlify(5e9)
-      });
-      console.log('tx:', tx);
-      yield _this7.provider.waitForTransaction(tx.hash); // TODO: maybe wait for blocks
+      try {
+        yield _this7.setState({
+          message: 'Purchasing PAN from Uniswap...'
+        });
+        var tx = yield _this7.exchange.functions.ethToTokenSwapInput(minTokens, deadline, {
+          value: hexlify(utils.BN(donation.ethValue)),
+          gasLimit: hexlify(1e6),
+          gasPrice: hexlify(5e9)
+        });
+        console.log('tx:', tx);
+        yield _this7.setState({
+          message: 'Waiting for transaction confirmation...'
+        }); // Wait for tx to get mined
 
-      var receipt = yield _this7.provider.getTransactionReceipt(tx.hash);
-      console.log('receipt:', receipt);
-      console.log(); // Get new quote
+        yield _this7.provider.waitForTransaction(tx.hash); // TODO: maybe wait for blocks
+
+        var receipt = yield _this7.provider.getTransactionReceipt(tx.hash);
+        console.log('receipt:', receipt);
+        console.log(); // TODO: setState pan purchased
+
+        yield _this7.setState({
+          panPurchased: panValue
+        });
+      } catch (error) {
+        console.error("ERROR: ".concat(error.message));
+      } // Get new quote
+
 
       console.log('NEW QUOTE');
       yield _this7.quoteEthToPan(donation.ethValue);
@@ -344,15 +327,28 @@ class Root extends React.Component {
   // Approve if necessary
 
 
-  donatePan(donation, multihash, panValue) {
+  donatePan(multihash) {
     var _this8 = this;
 
     return _asyncToGenerator(function* () {
-      var allowed = yield utils.checkAllowance(_this8.token, _this8.state.selectedAccount, _this8.tokenCapacitor.address, panValue);
+      // Exit if user did not complete ETH -> PAN swap
+      if (!_this8.state.panPurchased) {
+        return _this8.setState({
+          step: null,
+          message: ''
+        });
+      } // Progress to step 2
+
+
+      yield _this8.setState({
+        step: 2,
+        message: 'Donating PAN...'
+      }); // Check allowance
+
+      var allowed = yield utils.checkAllowance(_this8.token, _this8.state.selectedAccount, _this8.tokenCapacitor.address, _this8.state.panPurchased);
 
       if (allowed) {
-        console.log('tokenCapacitor:', _this8.tokenCapacitor);
-        return _this8.tokenCapacitor.functions.donate(_this8.state.selectedAccount, panValue, Buffer.from(multihash), {
+        return _this8.tokenCapacitor.functions.donate(_this8.state.selectedAccount, _this8.state.panPurchased, Buffer.from(multihash), {
           gasLimit: hexlify(1e6),
           // 1 MM
           gasPrice: hexlify(5e9) // 5 GWei
@@ -360,14 +356,26 @@ class Root extends React.Component {
         });
       } else {
         yield _this8.token.functions.approve(_this8.tokenCapacitor.address, ethers.constants.MaxUint256);
-        return _this8.donatePan(donation, multihash, panValue);
+        return _this8.donatePan(multihash, _this8.state.panPurchased);
       }
     })();
+  }
+
+  handleCancel() {
+    this.setState({
+      step: null,
+      message: ''
+    });
   }
 
   render() {
     return React.createElement("div", null, React.createElement(DonateButton, {
       handleClick: this.handleClickDonate
+    }), React.createElement(WebsiteModal, {
+      isOpen: true,
+      step: this.state.step,
+      message: this.state.message,
+      handleCancel: this.handleCancel
     }));
   }
 

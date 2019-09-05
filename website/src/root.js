@@ -3,244 +3,12 @@
 let Buffer, ipfs;
 
 // prettier-ignore
-const { bigNumberify, parseUnits, formatEther, parseEther, formatUnits, hexlify, getAddress, } = ethers.utils;
-
-const utils = {
-  BN(small) {
-    return bigNumberify(small);
-  },
-  async checkAllowance(token, owner, spender, numTokens) {
-    const allowance = await token.functions.allowance(owner, spender);
-    return allowance.gte(numTokens);
-  },
-  async fetchEthPrice() {
-    const result = await fetch('https://api.coinbase.com/v2/prices/ETH-USD/spot?currency=USD');
-    const json = await result.json();
-    const ethPrice = json.data.amount;
-    return ethPrice;
-  },
-  quoteUsdToEth(pledgeTotalUSD, ethPrice) {
-    console.log(`1 ETH: ${ethPrice} USD`);
-    return parseInt(pledgeTotalUSD, 10) / parseInt(ethPrice, 10);
-  },
-  ipfsAdd(obj) {
-    return new Promise((resolve, reject) => {
-      const data = Buffer.from(JSON.stringify(obj));
-
-      ipfs.add(data, (err, result) => {
-        if (err) reject(new Error(err));
-        const { hash } = result[0];
-        resolve(hash);
-      });
-    });
-  },
-};
-
-function DonateButton({ handleClick }) {
-  return (
-    <div>
-      <button
-        onClick={handleClick}
-        className="f6 link dim bn br-pill pv3 ph4 white bg-teal fw7 mt4"
-      >
-        Donate!
-      </button>
-    </div>
-  );
-}
-
-const styles = {
-  container: {
-    display: 'flex',
-    justifyContent: 'center',
-  },
-  spinner: {
-    background: 'none',
-    width: '40px',
-    height: '40px',
-    marginTop: '1rem',
-  },
-  overlay: {
-    position: 'fixed',
-    top: '0',
-    left: '0',
-    right: '0',
-    bottom: '0',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    zIndex: '50',
-    display: 'block',
-  },
-  body: {
-    position: 'fixed',
-    top: '200px',
-    margin: '0 auto',
-    display: 'flex',
-    flexDirection: 'column',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    overflow: 'hidden',
-    width: '400px',
-    padding: '1.8rem',
-    background: 'white',
-    color: 'grey',
-    borderRadius: '10px',
-    boxShadow: '0px 5px 20px rgba(0, 0, 0, 0.1)',
-    zIndex: '100',
-  },
-  title: {
-    fontSize: '1.5rem',
-    fontWeight: 'bold',
-    color: '#333',
-    lineHeight: '1.75rem',
-    textAlign: 'center',
-  },
-  copy: {
-    marginTop: '1rem',
-    marginLeft: '.8rem',
-    marginRight: '.8rem',
-    fontSize: '.8rem',
-    fontWeight: '400',
-    color: '#555',
-    lineHeight: '1.75rem',
-    textAlign: 'left',
-  },
-  instructions: {
-    marginTop: '1rem',
-    marginLeft: '.8rem',
-    marginRight: '.8rem',
-    fontSize: '.65rem',
-    color: '#555',
-    lineHeight: '1.25rem',
-    textAlign: 'left',
-  },
-  cancel: {
-    marginTop: '1rem',
-    width: '120px',
-    height: '42px',
-    backgroundColor: '#F5F6F9',
-    borderRadius: '100px',
-    display: 'flex',
-    alignItems: 'center',
-    color: '#555',
-    fontWeight: 'bold',
-    fontSize: '.9rem',
-    justifyContent: 'center',
-  },
-};
-
-function Spinner() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 100 100"
-      preserveAspectRatio="xMidYMid"
-      className="lds-rolling"
-      style={styles.spinner}
-    >
-      <circle
-        cx="50"
-        cy="50"
-        fill="none"
-        ng-attr-stroke="{{config.color}}"
-        ng-attr-stroke-width="{{config.width}}"
-        ng-attr-r="{{config.radius}}"
-        ng-attr-stroke-dasharray="{{config.dasharray}}"
-        stroke="#67D0CA"
-        strokeWidth="10"
-        r="35"
-        strokeDasharray="164.93361431346415 56.97787143782138"
-        transform="rotate(17.3945 50 50)"
-      >
-        <animateTransform
-          attributeName="transform"
-          type="rotate"
-          calcMode="linear"
-          values="0 50 50;360 50 50"
-          keyTimes="0;1"
-          dur="1s"
-          begin="0s"
-          repeatCount="indefinite"
-        />
-      </circle>
-    </svg>
-  );
-}
-
-const ModalOverlay = ({ handleClick }) => <div style={styles.overlay} onClick={handleClick} />;
-
-const ModalBody = ({ handleClick, children }) => (
-  <div style={styles.body} onClick={handleClick}>
-    {children}
-  </div>
-);
-
-const StepOne = ({ handleCancel }) => (
-  <>
-    <div style={styles.title}>Step 1 of 2</div>
-    <div style={styles.title}>Swap ETH for PAN</div>
-    <div style={styles.copy}>
-      Since all donations are made in PAN tokens we will use Uniswap to purchase PAN tokens with
-      your ETH. Once purchased, you can then donate.
-    </div>
-    <div style={styles.instructions}>
-      MetaMask will open a new window to confirm. If you don’t see it, please click the extension
-      icon in your browser.
-    </div>
-    <div style={styles.cancel} onClick={handleCancel}>
-      Cancel
-    </div>
-  </>
-);
-
-const Loader = () => (
-  <>
-    <div style={styles.title}>Just a Moment</div>
-    <div style={styles.copy}>
-      This action may take a few moments to process. You will need to confirm “X” transactions with
-      MetaMask.
-    </div>
-    <Spinner />
-  </>
-);
-
-const StepTwo = () => (
-  <>
-    <div style={styles.title}>Step 2 of 2</div>
-    <div style={styles.title}>Donate PAN</div>
-    <div style={styles.copy}>
-      You now have PAN tokens! Confirm the MetaMask transaction to finalize your donation.
-    </div>
-    <div style={styles.instructions}>
-      MetaMask will open a new window to confirm. If you don’t see it, please click the extension
-      icon in your browser.
-    </div>
-  </>
-);
-
-const WebsiteModal = ({ isOpen, handleCancel, step }) => {
-  if (!isOpen || step == null) {
-    return null;
-  }
-
-  // prettier-ignore
-  const steps = [
-    <StepOne handleCancel={handleCancel} />,
-    <Loader handleCancel={handleCancel} />,
-    <StepTwo handleCancel={handleCancel} />,
-  ];
-
-  return (
-    <div style={styles.container}>
-      <ModalOverlay handleClick={handleCancel} />
-      <ModalBody handleClick={() => console.log('clicked overlay')}>{steps[step]}</ModalBody>
-    </div>
-  );
-};
+const { formatEther, parseEther, formatUnits, hexlify, getAddress, } = ethers.utils;
 
 class Root extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { selectedAccount: '', step: 0, error: false };
+    this.state = { selectedAccount: '', step: null, error: false, message: '', panPurchased: 0 };
     this.handleClickDonate = this.handleClickDonate.bind(this);
     this.handleCancel = this.handleCancel.bind(this);
     this.token;
@@ -331,6 +99,7 @@ class Root extends React.Component {
 
   // Sell order (exact input) -> calculates amount bought (output)
   async quoteEthToPan(etherToSpend) {
+    console.log('');
     // Sell ETH for PAN
     const inputAmount = utils.BN(etherToSpend);
 
@@ -349,7 +118,6 @@ class Root extends React.Component {
     console.log(
       `quote ${formatEther(inputAmount)} ETH : ${formatUnits(panToReceive.toString(), 18)} PAN`
     );
-    console.log('');
 
     return panToReceive;
   }
@@ -408,7 +176,8 @@ class Root extends React.Component {
     }
 
     this.setState({
-      step: 0,
+      step: 1,
+      message: 'Adding metadata to IPFS...',
     });
 
     const pledgeMonthlySelect = document.getElementById('pledge-tier-select');
@@ -434,7 +203,6 @@ class Root extends React.Component {
     // Convert USD to ETH, print
     const ethAmount = utils.quoteUsdToEth(pledgeTotal, ethPrice).toString();
     console.log(`${pledgeTotal} USD -> ${ethAmount} ETH`);
-    console.log('');
 
     // Convert to wei, print
     const weiAmount = parseEther(ethAmount);
@@ -452,26 +220,32 @@ class Root extends React.Component {
       version: '1',
       memo: '',
       usdValue: utils.BN(pledgeTotal).toString(),
-      ethValue: weiAmount,
+      ethValue: weiAmount.toString(),
       pledgeMonthlyUSD,
       pledgeTerm,
     };
     console.log('donation:', donation);
 
-    // Add to ipfs
-    // const multihash = await utils.ipfsAdd(donation);
-    // console.log('multihash:', multihash);
+    let multihash = 'Qm';
+
+    try {
+      // // Add to ipfs
+      // multihash = await utils.ipfsAdd(donation);
+      // console.log('multihash:', multihash);
+    } catch (error) {
+      console.error(`ERROR: ${error.message}`);
+      return this.setState({
+        step: null,
+        message: '',
+        error: error.message,
+      });
+    }
 
     // Purchase Panvala pan
     await this.purchasePan(donation, panValue);
 
-    // Progress to step 2
-    this.setState({
-      step: 2,
-    });
-
     // Donate Panvala pan
-    // await this.donatePan(donation, multihash, panValue);
+    await this.donatePan(multihash);
   }
 
   // Sell ETH, buy PAN
@@ -483,17 +257,19 @@ class Root extends React.Component {
 
     // Buy Pan with Eth
     try {
+      await this.setState({
+        message: 'Purchasing PAN from Uniswap...',
+      });
+
       const tx = await this.exchange.functions.ethToTokenSwapInput(minTokens, deadline, {
-        value: hexlify(donation.ethValue),
+        value: hexlify(utils.BN(donation.ethValue)),
         gasLimit: hexlify(1e6),
         gasPrice: hexlify(5e9),
       });
       console.log('tx:', tx);
-      await tx.wait();
 
-      // Progress to step 1
-      this.setState({
-        step: 1,
+      await this.setState({
+        message: 'Waiting for transaction confirmation...',
       });
 
       // Wait for tx to get mined
@@ -504,6 +280,11 @@ class Root extends React.Component {
       const receipt = await this.provider.getTransactionReceipt(tx.hash);
       console.log('receipt:', receipt);
       console.log();
+
+      // TODO: setState pan purchased
+      await this.setState({
+        panPurchased: panValue,
+      });
     } catch (error) {
       console.error(`ERROR: ${error.message}`);
     }
@@ -516,18 +297,33 @@ class Root extends React.Component {
 
   // Donate PAN -> token capacitor
   // Approve if necessary
-  async donatePan(donation, multihash, panValue) {
+  async donatePan(multihash) {
+    // Exit if user did not complete ETH -> PAN swap
+    if (!this.state.panPurchased) {
+      return this.setState({
+        step: null,
+        message: '',
+      });
+    }
+
+    // Progress to step 2
+    await this.setState({
+      step: 2,
+      message: 'Donating PAN...',
+    });
+
+    // Check allowance
     const allowed = await utils.checkAllowance(
       this.token,
       this.state.selectedAccount,
       this.tokenCapacitor.address,
-      panValue
+      this.state.panPurchased
     );
+
     if (allowed) {
-      console.log('tokenCapacitor:', this.tokenCapacitor);
       return this.tokenCapacitor.functions.donate(
         this.state.selectedAccount,
-        panValue,
+        this.state.panPurchased,
         Buffer.from(multihash),
         {
           gasLimit: hexlify(1e6), // 1 MM
@@ -536,13 +332,14 @@ class Root extends React.Component {
       );
     } else {
       await this.token.functions.approve(this.tokenCapacitor.address, ethers.constants.MaxUint256);
-      return this.donatePan(donation, multihash, panValue);
+      return this.donatePan(multihash, this.state.panPurchased);
     }
   }
 
   handleCancel() {
     this.setState({
       step: null,
+      message: '',
     });
   }
 
@@ -550,7 +347,12 @@ class Root extends React.Component {
     return (
       <div>
         <DonateButton handleClick={this.handleClickDonate} />
-        <WebsiteModal isOpen={true} step={this.state.step} handleCancel={this.handleCancel} />
+        <WebsiteModal
+          isOpen={true}
+          step={this.state.step}
+          message={this.state.message}
+          handleCancel={this.handleCancel}
+        />
       </div>
     );
   }
