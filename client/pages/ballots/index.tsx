@@ -6,22 +6,15 @@ import { MainContext, IMainContext } from '../../components/MainProvider';
 import CenteredTitle from '../../components/CenteredTitle';
 import CenteredWrapper from '../../components/CenteredWrapper';
 import Deadline from '../../components/Deadline';
-import RouteTitle from '../../components/RouteTitle';
 import SectionLabel from '../../components/SectionLabel';
-import { tsToDeadline } from '../../utils/datetime';
 import { isBallotOpen } from '../../utils/status';
 import Flex from '../../components/system/Flex';
 import Box from '../../components/system/Box';
 import RouteActions from '../../components/RouteActions';
+import ClosedBallot from '../../components/ClosedBallot';
 
 const Separator = styled.div`
   border: 1px solid ${COLORS.grey5};
-`;
-
-const BallotNotOpen = styled.div`
-  font-size: 1.5rem;
-  color: ${COLORS.grey2};
-  font-weight: 500;
 `;
 
 const Ballots: React.FunctionComponent<any> = () => {
@@ -60,20 +53,7 @@ const Ballots: React.FunctionComponent<any> = () => {
           </CenteredWrapper>
         </>
       ) : (
-        <>
-          <Flex justifyBetween>
-            <Flex>
-              <RouteTitle mr={3}>{'Ballots'}</RouteTitle>
-            </Flex>
-            <Deadline ballot={currentBallot} route="ballots" />
-          </Flex>
-          <BallotNotOpen>Oh no! The current ballot is not available just yet.</BallotNotOpen>
-          <Box mt={3}>
-            {`Come back at a later time to view the current ballot. Voting will open up at ${tsToDeadline(
-              currentBallot.votingOpenDate
-            )}`}
-          </Box>
-        </>
+        <ClosedBallot currentBallot={currentBallot} />
       )}
     </>
   );

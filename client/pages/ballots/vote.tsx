@@ -24,7 +24,7 @@ import {
   getMaxVotingRights,
 } from '../../utils/voting';
 import { postBallot } from '../../utils/api';
-import { convertEVMSlateStatus, SlateStatus } from '../../utils/status';
+import { isBallotOpen, convertEVMSlateStatus, SlateStatus } from '../../utils/status';
 import Actions from '../../components/Actions';
 import { loadState, LINKED_WALLETS } from '../../utils/localStorage';
 import { SLATE } from '../../utils/constants';
@@ -32,6 +32,7 @@ import RouterLink from '../../components/RouterLink';
 import PendingTransaction from '../../components/PendingTransaction';
 import Box from '../../components/system/Box';
 import Flex from '../../components/system/Flex';
+import ClosedBallot from '../../components/ClosedBallot';
 
 const Separator = styled.div`
   border: 1px solid ${COLORS.grey5};
@@ -286,6 +287,10 @@ const Vote: React.FC = () => {
         }
       }
     }
+  }
+
+  if (!isBallotOpen(currentBallot)) {
+    return <ClosedBallot currentBallot={currentBallot} />;
   }
 
   return (
