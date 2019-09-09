@@ -76,10 +76,8 @@ export async function sendAndWaitForTransaction(
         decodedLogs,
         receipt,
       };
-    })
-    .catch((error: any) => {
-      console.log('send tx error:', error);
     });
+  // propagate errors upward to caller
 }
 
 // Submit requestIDs and metadataHash to the Gatekeeper.

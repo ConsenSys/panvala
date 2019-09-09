@@ -25,6 +25,8 @@ import { formatPanvalaUnits } from '../../utils/format';
 import { sendApproveTransaction, sendStakeTokensTransaction } from '../../utils/transaction';
 import RouterLink from '../../components/RouterLink';
 
+import { handleGenericError } from '../../utils/errors';
+
 const Wrapper = styled.div`
   font-family: 'Roboto';
 `;
@@ -84,55 +86,79 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
       return false;
     }
 
-    if (contracts) {
-      // send tx (pending)
-      setTxPending(true);
-      const response: TransactionResponse = await sendApproveTransaction(
-        contracts.token,
-        contracts.gatekeeper.address,
-        ethers.constants.MaxUint256
-      );
+    try {
+      if (contracts) {
+        // send tx (pending)
+        setTxPending(true);
+        const response: TransactionResponse = await sendApproveTransaction(
+          contracts.token,
+          contracts.gatekeeper.address,
+          ethers.constants.MaxUint256
+        );
 
-      // wait for tx to get mined
-      await response.wait();
-      setTxPending(false);
+        // wait for tx to get mined
+        await response.wait();
+        setTxPending(false);
 
-      // set approved
-      toast.success('approve tx mined');
-      setApproved(true);
-      onRefreshBalances();
+        // set approved
+        toast.success('approve tx mined');
+        setApproved(true);
+        onRefreshBalances();
+      }
+    } catch (error) {
+      handleStakingError('Problem approving:', error);
     }
   }
 
   // step 2: stakeTokens
   async function handleStakeTokens() {
-    // check (again) if the user has approved the gatekeeper for the slate staking requirement
-    const isApproved: boolean = gkAllowance.gte(slate.requiredStake);
-    if (!account || !isApproved) {
-      console.log('no account or not approved');
-      return false;
+    try {
+      // check (again) if the user has approved the gatekeeper for the slate staking requirement
+      const isApproved: boolean = gkAllowance.gte(slate.requiredStake);
+      if (!account || !isApproved) {
+        console.log('no account or not approved');
+        return false;
+      }
+
+      if (contracts && contracts.hasOwnProperty('gatekeeper')) {
+        const slateID = parseInt(query.id);
+        // send tx (pending)
+        setTxPending(true);
+        const response = await sendStakeTokensTransaction(contracts.gatekeeper, slateID);
+
+        // wait for tx to get mined
+        await response.wait();
+        setTxPending(false);
+
+        // tx mined
+        toast.success(`stakeTokens tx mined.`);
+        // refresh balances, refresh slates
+        onRefreshBalances();
+        onRefreshSlates();
+        onRefreshCurrentBallot();
+        // TODO: refresh slate submission deadline on ballot
+        toggleOpenStepper(false);
+        setOpenModal(true);
+      }
+    } catch (error) {
+      handleStakingError('Problem staking:', error);
+    }
+  }
+
+  // Handle errors in the staking flow
+  function handleStakingError(prefix: string, error: Error) {
+    // Reset view
+    toggleOpenStepper(false);
+    setOpenModal(false);
+    setTxPending(false);
+
+    // Show a message
+    const errorType = handleGenericError(error, toast);
+    if (errorType) {
+      toast.error(`${prefix} ${error.message}`);
     }
 
-    if (contracts && contracts.hasOwnProperty('gatekeeper')) {
-      const slateID = parseInt(query.id);
-      // send tx (pending)
-      setTxPending(true);
-      const response = await sendStakeTokensTransaction(contracts.gatekeeper, slateID);
-
-      // wait for tx to get mined
-      await response.wait();
-      setTxPending(false);
-
-      // tx mined
-      toast.success(`stakeTokens tx mined.`);
-      // refresh balances, refresh slates
-      onRefreshBalances();
-      onRefreshSlates();
-      onRefreshCurrentBallot();
-      // TODO: refresh slate submission deadline on ballot
-      toggleOpenStepper(false);
-      setOpenModal(true);
-    }
+    console.error(error);
   }
 
   const requiredPAN = formatPanvalaUnits(utils.bigNumberify(slate.requiredStake));

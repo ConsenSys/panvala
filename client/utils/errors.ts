@@ -43,3 +43,51 @@ export function handleApiError(error: AxiosError) {
     toastMessage,
   };
 }
+
+export enum PanvalaError {
+  TransactionRejected,
+  TransactionFailed, // Revert
+  NotLoggedIn,
+  Unknown,
+}
+
+/**
+ * Try to handle the error generically. Return a PanvalaError if the error isn't handled.
+ */
+export function handleGenericError(error: Error, toast): PanvalaError | undefined {
+  const errorType = checkError(error);
+  if (errorType === PanvalaError.TransactionRejected) {
+    toast.info('You rejected the transaction');
+  } else if (errorType === PanvalaError.NotLoggedIn) {
+    toast.error('Please log into MetaMask');
+  } else {
+    toast.error(`Problem staking: ${error.message}`);
+    return errorType;
+  }
+}
+
+function checkError(error: Error): PanvalaError {
+  const { message: msg } = error;
+
+  // RPC errors
+  if (msg.includes('Internal JSON-RPC error')) {
+    if (typeof error.stack !== 'undefined') {
+      const { stack } = error;
+      if (stack.includes('User denied transaction signature')) {
+        return PanvalaError.TransactionRejected;
+      } else if (stack.includes('Invalid "from" address')) {
+        return PanvalaError.NotLoggedIn;
+      }
+
+      // revert
+    }
+  }
+
+  // TODO:
+  // IPFS errors
+  // API errors
+
+  console.log('Unknown error', error);
+
+  return PanvalaError.Unknown;
+}

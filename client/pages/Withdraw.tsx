@@ -1,6 +1,7 @@
 import * as React from 'react';
 import styled from 'styled-components';
 import isEmpty from 'lodash/isEmpty';
+import { toast } from 'react-toastify';
 
 import CenteredWrapper from '../components/CenteredWrapper';
 import CenteredTitle from '../components/CenteredTitle';
@@ -14,6 +15,7 @@ import { StatelessPage } from '../interfaces';
 import { sendAndWaitForTransaction } from '../utils/transaction';
 import { tsToDeadline } from '../utils/datetime';
 import PendingTransaction from '../components/PendingTransaction';
+import { handleGenericError } from '../utils/errors';
 
 const CenteredSection = styled.div`
   padding: 2rem;
@@ -49,10 +51,23 @@ const Withdraw: StatelessPage<IProps> = ({ query, asPath }) => {
     }
   }, [gatekeeper, query.id]);
 
+  function handleWithdrawError(error: Error) {
+    // Reset view
+    setTxPending(false);
+
+    // Show a message
+    const errorType = handleGenericError(error, toast);
+    if (errorType) {
+      toast.error(`Failed to withdraw tokens: ${error.message}`);
+    }
+
+    console.error(`Failed to withdraw tokens: ${error}`);
+  }
+
   async function handleWithdraw(method: string, args: string) {
     try {
       if (account && !isEmpty(gatekeeper)) {
-        const contract = method === 'withdrawTokens' ? tokenCapacitor : gatekeeper;
+        const contract = method === 'withdrawTkens' ? tokenCapacitor : gatekeeper;
         setTxPending(true);
         await sendAndWaitForTransaction(ethProvider, contract, method, [args]);
         setTxPending(false);
@@ -60,8 +75,7 @@ const Withdraw: StatelessPage<IProps> = ({ query, asPath }) => {
         onRefreshSlates();
       }
     } catch (error) {
-      console.error(`ERROR failed to withdraw tokens: ${error.message}`);
-      throw error;
+      handleWithdrawError(error);
     }
   }
 

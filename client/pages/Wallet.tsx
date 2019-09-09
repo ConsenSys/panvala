@@ -20,6 +20,7 @@ import { IEthereumContext, EthereumContext } from '../components/EthereumProvide
 import { saveState, loadState, LINKED_WALLETS } from '../utils/localStorage';
 import { splitAddressHumanReadable, isAddress } from '../utils/format';
 import { COLORS } from '../styles';
+import { handleGenericError } from '../utils/errors';
 
 const CancelButton = styled(Button)`
   color: ${COLORS.grey3};
@@ -150,11 +151,22 @@ const Wallet: React.SFC = () => {
 
         onRefreshBalances();
       } catch (error) {
-        if (!error.message.includes('User denied message signature.')) {
-          throw error;
-        }
+        handleLinkError(error);
       }
     }
+  }
+
+  function handleLinkError(error: Error) {
+    // Return the user to where they were
+    setTxPending(false);
+    setStep(0);
+
+    // Display message
+    const errorType = handleGenericError(error, toast);
+    if (errorType) {
+      toast.error(`Problem linking wallets: ${error.message}`);
+    }
+    console.error(error);
   }
 
   const steps = [

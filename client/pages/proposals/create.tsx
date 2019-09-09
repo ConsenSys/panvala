@@ -13,6 +13,7 @@ import { postProposal } from '../../utils/api';
 import { IProposal } from '../../interfaces';
 import RouterLink from '../../components/RouterLink';
 import Loader from '../../components/Loader';
+import { handleGenericError } from '../../utils/errors';
 
 const CreateProposal: React.FC = () => {
   const { onRefreshProposals }: IMainContext = React.useContext(MainContext);
@@ -30,10 +31,25 @@ const CreateProposal: React.FC = () => {
         setTxPending(false);
         setOpenModal(true);
         await onRefreshProposals();
+      } else {
+        handleSubmissionError(new Error(`Problem creating proposal: ${response.data}`));
       }
     } catch (error) {
-      toast.error(error.message);
+      handleSubmissionError(error);
     }
+  }
+
+  function handleSubmissionError(error: Error) {
+    // Reset view
+    setTxPending(false);
+    setOpenModal(false);
+
+    // Show message
+    const errorType = handleGenericError(error, toast);
+    if (errorType) {
+      toast.error(`Problem creating proposal: ${error.message}`);
+    }
+    console.error(error);
   }
 
   return (

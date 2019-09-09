@@ -25,6 +25,7 @@ import SectionLabel from '../../../components/SectionLabel';
 import { convertedToBaseUnits, formatPanvalaUnits } from '../../../utils/format';
 import { ipfsAddObject } from '../../../utils/ipfs';
 import { postSlate } from '../../../utils/api';
+import { handleGenericError } from '../../../utils/errors';
 import {
   ISaveSlate,
   StatelessPage,
@@ -227,12 +228,24 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes, router }) => {
       }
     } catch (error) {
       errorMessage = `ERROR: ${errorMessage}: ${error.message}`;
-      console.error(errorMessage);
-      toast.error(errorMessage);
-      throw error;
+      handleSubmissionError(errorMessage, error);
     }
 
     // TODO: Should take us to all slates view after successful submission
+  }
+
+  function handleSubmissionError(errorMessage, error) {
+    // Reset view
+    setOpenModal(false);
+    setTxsPending(0);
+
+    // Show a message
+    const errorType = handleGenericError(error, toast);
+    if (errorType) {
+      toast.error(`Problem submitting slate: ${errorMessage}`);
+    }
+
+    console.error(error);
   }
 
   return (
