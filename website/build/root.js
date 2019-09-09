@@ -99,23 +99,33 @@ class Root extends React.Component {
           chainId
         } = yield _this3.provider.getNetwork();
 
-        var signer = _this3.provider.getSigner(); // Init token
+        var signer = _this3.provider.getSigner(); // Addresses
 
 
         var tokenAddress = chainId === 4 ? '0x4912d6aBc68e4F02d1FdD6B79ed045C0A0BAf772' : chainId === 1 && '0xD56daC73A4d6766464b38ec6D91eB45Ce7457c44';
-        _this3.token = new ethers.Contract(tokenAddress, tokenAbi, signer); // Init token capacitor
-
         var tcAddress = chainId === 4 ? '0xA062C59F42a45f228BEBB6e7234Ed1ea14398dE7' : chainId === 1 && '0x9a7B675619d3633304134155c6c976E9b4c1cfB3';
-        _this3.tokenCapacitor = new ethers.Contract(tcAddress, tcAbi, signer); // Init uniswap exchange
+        var exchangeAddress = chainId === 4 ? '0x25EAd1E8e3a9C38321488BC5417c999E622e36ea' : chainId === 1 && '0xF53bBFBff01c50F2D42D542b09637DcA97935fF7'; // Get codes
 
-        var exchangeAddress = chainId === 4 ? '0x25EAd1E8e3a9C38321488BC5417c999E622e36ea' : chainId === 1 && '0xF53bBFBff01c50F2D42D542b09637DcA97935fF7';
+        var tokenCode = yield _this3.provider.getCode(tokenAddress);
+        var tcCode = yield _this3.provider.getCode(tcAddress);
+        var exchangeCode = yield _this3.provider.getCode(exchangeAddress); // prettier-ignore
+
+        if (!tokenAddress || !tcAddress || !exchangeAddress || !tokenCode || !tcCode || !exchangeCode) {
+          throw new Error('Invalid address or no code at address.');
+        } // Init token, token capacitor, uniswap exchange contracts
+
+
+        _this3.token = new ethers.Contract(tokenAddress, tokenAbi, signer);
+        _this3.tokenCapacitor = new ethers.Contract(tcAddress, tcAbi, signer);
         _this3.exchange = new ethers.Contract(exchangeAddress, exchangeABI, signer);
       } else {
+        // No provider yet
         var account = yield _this3.setSelectedAccount();
 
         if (account) {
           yield _this3.setContracts();
         } else {
+          // Invalid provider / provider not enabled for this site
           _this3.setState({
             error: 'You must login to MetaMask.'
           });
@@ -133,17 +143,21 @@ class Root extends React.Component {
     return _asyncToGenerator(function* () {
       console.log(''); // Sell ETH for PAN
 
-      var inputAmount = utils.BN(etherToSpend); // ETH reserve
+      var ethAmount = utils.BN(etherToSpend); // ETH reserve
 
       var inputReserve = yield _this4.provider.getBalance(_this4.exchange.address);
       console.log("ETH reserve: ".concat(formatEther(inputReserve))); // PAN reserve
 
       var outputReserve = yield _this4.token.balanceOf(_this4.exchange.address);
       console.log("PAN reserve: ".concat(formatUnits(outputReserve, 18)));
-      var numerator = inputAmount.mul(outputReserve).mul(997);
-      var denominator = inputReserve.mul(1000).add(inputAmount.mul(997));
+      var numerator = ethAmount.mul(outputReserve).mul(997);
+      var denominator = inputReserve.mul(1000).add(ethAmount.mul(997));
       var panToReceive = numerator.div(denominator);
-      console.log("quote ".concat(formatEther(inputAmount), " ETH : ").concat(formatUnits(panToReceive.toString(), 18), " PAN"));
+      console.log("quote ".concat(formatEther(ethAmount), " ETH : ").concat(formatUnits(panToReceive.toString(), 18), " PAN")); // EQUIVALENT, DIRECT CHAIN CALL
+      // PAN bought w/ input ETH
+      // const panToReceive = await this.exchange.getEthToTokenInputPrice(ethAmount);
+      // console.log(`${formatEther(ethAmount)} ETH -> ${formatUnits(panToReceive, 18)} PAN`);
+
       return panToReceive;
     })();
   } // Check that provider & contracts are setup correctly
@@ -187,18 +201,7 @@ class Root extends React.Component {
         }
       }
     })();
-  } // Steps:
-  // Get element values
-  // Calculate total donation
-  // Fetch ETH price
-  // Calculate ETH value based on total donation
-  // Convert to Wei
-  // Calculate PAN value based on Wei
-  // Build donation object (should this go after purchasing pan?)
-  // Add to ipfs
-  // Purchase PAN
-  // Check allowance, approve if necessary
-  // Donate PAN
+  } // Click handler for donations
 
 
   handleClickDonate(e) {
@@ -245,10 +248,7 @@ class Root extends React.Component {
       var weiAmount = parseEther(ethAmount);
       var panValue = yield _this6.quoteEthToPan(weiAmount); // PAN bought w/ 1 ETH
 
-      yield _this6.quoteEthToPan(parseEther('1')); // // PAN bought w/ input ETH
-      // const panToReceive = await this.exchange.getEthToTokenInputPrice(weiAmount);
-      // console.log(`${formatEther(inputAmount)} ETH -> ${formatUnits(panToReceive, 18)} PAN`);
-      // Build donation object
+      yield _this6.quoteEthToPan(parseEther('1')); // Build donation object
 
       var donation = {
         version: '1',
@@ -259,24 +259,48 @@ class Root extends React.Component {
         pledgeTerm
       };
       console.log('donation:', donation);
-      var multihash = 'Qm';
 
-      try {// // Add to ipfs
-        // multihash = await utils.ipfsAdd(donation);
-        // console.log('multihash:', multihash);
+      try {
+        // Add to ipfs
+        var multihash = yield utils.ipfsAdd(donation);
+        console.log('multihash:', multihash); // Purchase Panvala pan
+
+        yield _this6.purchasePan(donation, panValue); // Donate Panvala pan
+
+        yield _this6.donatePan(multihash);
       } catch (error) {
         console.error("ERROR: ".concat(error.message));
         return _this6.setState({
-          step: null,
-          message: '',
+          message: error.message,
           error: error.message
         });
-      } // Purchase Panvala pan
+      }
+    })();
+  }
 
+  fetchAutopilot() {
+    return _asyncToGenerator(function* () {
+      var list_id = '';
+      var email = 'email@email.com';
+      var endpoint = "https://api2.autopilothq.com/v1/list/".concat(list_id, "/contact/").concat(email); // const endpoint = `https://api2.autopilothq.com/v1/lists`;
 
-      yield _this6.purchasePan(donation, panValue); // Donate Panvala pan
-
-      yield _this6.donatePan(multihash);
+      var postData = {
+        memo: 'TEST POST',
+        usdValue: '1 MILLION DOLLARS',
+        ethValue: '1 TRILLION DOLLARS',
+        pledgeMonthlyUSD: 50,
+        pledgeTerm: 9000
+      };
+      var data = yield fetch(endpoint, {
+        method: 'POST',
+        body: JSON.stringify(postData),
+        headers: {
+          autopilotapikey: ''
+        }
+      });
+      var json = yield data.json();
+      console.log('json:', json); // const completedList = json.lists.find(l => l.title === 'completed-donation-flow');
+      // console.log("completedList:", completedList);
     })();
   } // Sell ETH, buy PAN
 
@@ -292,36 +316,40 @@ class Root extends React.Component {
       // Buy Pan with Eth
 
       try {
-        yield _this7.setState({
+        _this7.setState({
           message: 'Purchasing PAN from Uniswap...'
         });
+
         var tx = yield _this7.exchange.functions.ethToTokenSwapInput(minTokens, deadline, {
           value: hexlify(utils.BN(donation.ethValue)),
           gasLimit: hexlify(1e6),
           gasPrice: hexlify(5e9)
         });
         console.log('tx:', tx);
-        yield _this7.setState({
+
+        _this7.setState({
           message: 'Waiting for transaction confirmation...'
         }); // Wait for tx to get mined
+
 
         yield _this7.provider.waitForTransaction(tx.hash); // TODO: maybe wait for blocks
 
         var receipt = yield _this7.provider.getTransactionReceipt(tx.hash);
         console.log('receipt:', receipt);
-        console.log(); // TODO: setState pan purchased
+        console.log(); // Get new quote
 
-        yield _this7.setState({
-          panPurchased: panValue
+        console.log('NEW QUOTE');
+        yield _this7.quoteEthToPan(donation.ethValue);
+        yield _this7.quoteEthToPan(parseEther('1')); // Progress to step 2
+
+        return _this7.setState({
+          panPurchased: panValue,
+          step: 2,
+          message: 'Checking allowance...'
         });
       } catch (error) {
         console.error("ERROR: ".concat(error.message));
-      } // Get new quote
-
-
-      console.log('NEW QUOTE');
-      yield _this7.quoteEthToPan(donation.ethValue);
-      yield _this7.quoteEthToPan(parseEther('1'));
+      }
     })();
   } // Donate PAN -> token capacitor
   // Approve if necessary
@@ -337,25 +365,37 @@ class Root extends React.Component {
           step: null,
           message: ''
         });
-      } // Progress to step 2
+      } // Check allowance
 
-
-      yield _this8.setState({
-        step: 2,
-        message: 'Donating PAN...'
-      }); // Check allowance
 
       var allowed = yield utils.checkAllowance(_this8.token, _this8.state.selectedAccount, _this8.tokenCapacitor.address, _this8.state.panPurchased);
 
       if (allowed) {
-        return _this8.tokenCapacitor.functions.donate(_this8.state.selectedAccount, _this8.state.panPurchased, Buffer.from(multihash), {
+        _this8.setState({
+          message: 'Donating PAN...'
+        }); // Donate PAN to token capacitor
+
+
+        var donateTx = yield _this8.tokenCapacitor.functions.donate(_this8.state.selectedAccount, _this8.state.panPurchased, Buffer.from(multihash), {
           gasLimit: hexlify(1e6),
           // 1 MM
           gasPrice: hexlify(5e9) // 5 GWei
 
+        }); // Wait for tx to be mined
+
+        yield _this8.provider.waitForTransaction(donateTx.hash);
+        return _this8.setState({
+          step: null,
+          message: 'DONE'
         });
       } else {
-        yield _this8.token.functions.approve(_this8.tokenCapacitor.address, ethers.constants.MaxUint256);
+        _this8.setState({
+          message: 'Approving tokens...'
+        }); // Approve token capacitor
+
+
+        yield _this8.token.functions.approve(_this8.tokenCapacitor.address, ethers.constants.MaxUint256); // Call donate again
+
         return _this8.donatePan(multihash, _this8.state.panPurchased);
       }
     })();
@@ -369,7 +409,7 @@ class Root extends React.Component {
   }
 
   render() {
-    return React.createElement("div", null, React.createElement(DonateButton, {
+    return React.createElement(React.Fragment, null, React.createElement(DonateButton, {
       handleClick: this.handleClickDonate
     }), React.createElement(WebsiteModal, {
       isOpen: true,
