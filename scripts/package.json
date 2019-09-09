@@ -1,6 +1,9 @@
 {
   "dependencies": {
+    "csv": "^5.1.2",
     "ethers": "^4.0.30",
+    "form-data": "^2.5.1",
+    "ipfs-http-client": "^35.1.0",
     "moment": "^2.24.0",
     "prettier": "^1.17.0"
   }
