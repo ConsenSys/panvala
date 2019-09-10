@@ -67,7 +67,7 @@ const Withdraw: StatelessPage<IProps> = ({ query, asPath }) => {
   async function handleWithdraw(method: string, args: string) {
     try {
       if (account && !isEmpty(gatekeeper)) {
-        const contract = method === 'withdrawTkens' ? tokenCapacitor : gatekeeper;
+        const contract = method === 'withdrawTokens' ? tokenCapacitor : gatekeeper;
         setTxPending(true);
         await sendAndWaitForTransaction(ethProvider, contract, method, [args]);
         setTxPending(false);
