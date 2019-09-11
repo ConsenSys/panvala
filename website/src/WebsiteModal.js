@@ -55,6 +55,25 @@ const styles = {
     lineHeight: '1.75rem',
     textAlign: 'left',
   },
+  patron: {
+    margin: '1.5rem auto 1rem',
+    fontSize: '1rem',
+    fontWeight: '400',
+    color: '#222',
+    lineHeight: '1.75rem',
+    textAlign: 'center',
+  },
+  image: {
+    marginTop: '1.5rem',
+  },
+  thankYou: {
+    margin: '1rem .6rem',
+    fontSize: '.8rem',
+    fontWeight: '400',
+    color: '#333',
+    lineHeight: '1.75rem',
+    textAlign: 'center',
+  },
   instructions: {
     marginTop: '1rem',
     marginLeft: '.8rem',
@@ -164,6 +183,30 @@ const StepTwo = ({ message, handleCancel }) => (
     <MetaMaskDialog handleCancel={handleCancel} />
   </>
 );
+
+const StepThree = ({ message, handleCancel }) => {
+  const tier = message.toLowerCase();
+  return (
+    <>
+      <div style={styles.title}>Thank you for donating!</div>
+      <div style={styles.image}>
+        <img src={`./img/${tier}.png`} />
+      </div>
+      <div style={styles.patron}>
+        You are now a{tier[0] === 'e' && 'n'} <strong>{message} Patron</strong>
+      </div>
+      <div style={styles.thankYou}>
+        Thank you for donating to Panvala. Each and every Panvala patron plays a key role in moving
+        Ethereum forward.
+        {/* You can share your support on Twitter! */}
+      </div>
+      <div style={styles.cancel} onClick={handleCancel}>
+        Close
+      </div>
+    </>
+  );
+};
+
 const WebsiteModal = ({ isOpen, step, message, handleCancel }) => {
   if (!isOpen || step == null) {
     return null;
@@ -174,6 +217,7 @@ const WebsiteModal = ({ isOpen, step, message, handleCancel }) => {
     <div></div>,
     <StepOne handleCancel={handleCancel} message={message} />,
     <StepTwo handleCancel={handleCancel} message={message} />,
+    <StepThree handleCancel={handleCancel} message={message} />,
   ];
 
   return (

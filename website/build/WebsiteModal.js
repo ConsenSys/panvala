@@ -55,6 +55,25 @@ var styles = {
     lineHeight: '1.75rem',
     textAlign: 'left'
   },
+  patron: {
+    margin: '1.5rem auto 1rem',
+    fontSize: '1rem',
+    fontWeight: '400',
+    color: '#222',
+    lineHeight: '1.75rem',
+    textAlign: 'center'
+  },
+  image: {
+    marginTop: '1.5rem'
+  },
+  thankYou: {
+    margin: '1rem .6rem',
+    fontSize: '.8rem',
+    fontWeight: '400',
+    color: '#333',
+    lineHeight: '1.75rem',
+    textAlign: 'center'
+  },
   instructions: {
     marginTop: '1rem',
     marginLeft: '.8rem',
@@ -176,13 +195,35 @@ var StepTwo = (_ref5) => {
   }));
 };
 
-var WebsiteModal = (_ref6) => {
+var StepThree = (_ref6) => {
+  var {
+    message,
+    handleCancel
+  } = _ref6;
+  var tier = message.toLowerCase();
+  return React.createElement(React.Fragment, null, React.createElement("div", {
+    style: styles.title
+  }, "Thank you for donating!"), React.createElement("div", {
+    style: styles.image
+  }, React.createElement("img", {
+    src: "./img/".concat(tier, ".png")
+  })), React.createElement("div", {
+    style: styles.patron
+  }, "You are now a", tier[0] === 'e' && 'n', " ", React.createElement("strong", null, message, " Patron")), React.createElement("div", {
+    style: styles.thankYou
+  }, "Thank you for donating to Panvala. Each and every Panvala patron plays a key role in moving Ethereum forward."), React.createElement("div", {
+    style: styles.cancel,
+    onClick: handleCancel
+  }, "Close"));
+};
+
+var WebsiteModal = (_ref7) => {
   var {
     isOpen,
     step,
     message,
     handleCancel
-  } = _ref6;
+  } = _ref7;
 
   if (!isOpen || step == null) {
     return null;
@@ -193,6 +234,9 @@ var WebsiteModal = (_ref6) => {
     handleCancel: handleCancel,
     message: message
   }), React.createElement(StepTwo, {
+    handleCancel: handleCancel,
+    message: message
+  }), React.createElement(StepThree, {
     handleCancel: handleCancel,
     message: message
   })];

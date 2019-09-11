@@ -8,7 +8,14 @@ const { formatEther, parseEther, formatUnits, hexlify, getAddress, } = ethers.ut
 class Root extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { selectedAccount: '', step: null, error: false, message: '', panPurchased: 0 };
+    this.state = {
+      selectedAccount: '',
+      step: null,
+      error: false,
+      message: '',
+      tier: '',
+      panPurchased: 0,
+    };
     this.handleClickDonate = this.handleClickDonate.bind(this);
     this.handleCancel = this.handleCancel.bind(this);
     this.token;
@@ -165,6 +172,26 @@ class Root extends React.Component {
     }
   }
 
+  setTier(monthUSD) {
+    console.log('monthUSD:', monthUSD);
+    switch (monthUSD) {
+      case '5':
+        return 'Student';
+      case '15':
+        return 'Gold';
+      case '50':
+        return 'Platinum';
+      case '150':
+        return 'Diamond';
+      case '500':
+        return 'Ether';
+      case '1500':
+        return 'Elite';
+      default:
+        throw new Error('invalid tier');
+    }
+  }
+
   // Click handler for donations
   async handleClickDonate(e) {
     e.preventDefault();
@@ -193,6 +220,11 @@ class Root extends React.Component {
       alert('You must select a pledge duration.');
       return;
     }
+
+    const tier = this.setTier(pledgeMonthlySelect.value);
+    this.setState({
+      tier,
+    });
 
     // Calculate pledge total value (monthly * term)
     const pledgeMonthlyUSD = parseInt(pledgeMonthlySelect.value, 10);
@@ -353,8 +385,8 @@ class Root extends React.Component {
       await this.provider.waitForTransaction(donateTx.hash);
 
       return this.setState({
-        step: null,
-        message: 'DONE',
+        step: 3,
+        message: this.state.tier,
       });
     } else {
       this.setState({

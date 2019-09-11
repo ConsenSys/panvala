@@ -22,6 +22,7 @@ class Root extends React.Component {
       step: null,
       error: false,
       message: '',
+      tier: '',
       panPurchased: 0
     };
     this.handleClickDonate = this.handleClickDonate.bind(this);
@@ -201,6 +202,33 @@ class Root extends React.Component {
         }
       }
     })();
+  }
+
+  setTier(monthUSD) {
+    console.log('monthUSD:', monthUSD);
+
+    switch (monthUSD) {
+      case '5':
+        return 'Student';
+
+      case '15':
+        return 'Gold';
+
+      case '50':
+        return 'Platinum';
+
+      case '150':
+        return 'Diamond';
+
+      case '500':
+        return 'Ether';
+
+      case '1500':
+        return 'Elite';
+
+      default:
+        throw new Error('invalid tier');
+    }
   } // Click handler for donations
 
 
@@ -233,7 +261,13 @@ class Root extends React.Component {
       if (pledgeTermSelect.value === '0') {
         alert('You must select a pledge duration.');
         return;
-      } // Calculate pledge total value (monthly * term)
+      }
+
+      var tier = _this6.setTier(pledgeMonthlySelect.value);
+
+      _this6.setState({
+        tier
+      }); // Calculate pledge total value (monthly * term)
 
 
       var pledgeMonthlyUSD = parseInt(pledgeMonthlySelect.value, 10);
@@ -385,8 +419,8 @@ class Root extends React.Component {
 
         yield _this8.provider.waitForTransaction(donateTx.hash);
         return _this8.setState({
-          step: null,
-          message: 'DONE'
+          step: 3,
+          message: _this8.state.tier
         });
       } else {
         _this8.setState({
