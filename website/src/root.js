@@ -9,6 +9,8 @@ class Root extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      email: '',
+      fullName: '',
       selectedAccount: '',
       step: null,
       error: false,
@@ -204,14 +206,19 @@ class Root extends React.Component {
       throw error;
     }
 
-    this.setState({
-      step: 1,
-      message: 'Adding metadata to IPFS...',
-    });
-
+    const pledgeFullName = document.getElementById('pledge-full-name');
+    const pledgeEmail = document.getElementById('pledge-email');
     const pledgeMonthlySelect = document.getElementById('pledge-tier-select');
     const pledgeTermSelect = document.getElementById('pledge-duration-select');
 
+    if (pledgeFullName.value === '') {
+      alert('You must enter a full name.');
+      return;
+    }
+    if (pledgeEmail.value === '') {
+      alert('You must enter an email address.');
+      return;
+    }
     if (pledgeMonthlySelect.value === '0') {
       alert('You must select a pledge tier.');
       return;
@@ -224,6 +231,10 @@ class Root extends React.Component {
     const tier = this.setTier(pledgeMonthlySelect.value);
     this.setState({
       tier,
+      email: pledgeEmail.value,
+      fullName: pledgeFullName.value,
+      step: 1,
+      message: 'Adding metadata to IPFS...',
     });
 
     // Calculate pledge total value (monthly * term)
@@ -248,7 +259,7 @@ class Root extends React.Component {
     // Build donation object
     const donation = {
       version: '1',
-      memo: '',
+      memo: `Pledge donation via uniswap`,
       usdValue: utils.BN(pledgeTotal).toString(),
       ethValue: weiAmount.toString(),
       pledgeMonthlyUSD,
@@ -265,7 +276,15 @@ class Root extends React.Component {
       await this.purchasePan(donation, panValue);
 
       // Donate Panvala pan
-      await this.donatePan(multihash);
+      const txHash = await this.donatePan(multihash);
+      if (txHash) {
+        const txData = {
+          ...donation,
+          txHash,
+          multihash,
+        };
+        await this.postAutopilot(txData);
+      }
     } catch (error) {
       console.error(`ERROR: ${error.message}`);
       return this.setState({
@@ -275,27 +294,39 @@ class Root extends React.Component {
     }
   }
 
-  async fetchAutopilot() {
-    const list_id = '';
-    const email = 'email@email.com';
-    const endpoint = `https://api2.autopilothq.com/v1/list/${list_id}/contact/${email}`;
-    // const endpoint = `https://api2.autopilothq.com/v1/lists`;
+  async postAutopilot(txData) {
     const postData = {
-      memo: 'TEST POST',
-      usdValue: '1 MILLION DOLLARS',
-      ethValue: '1 TRILLION DOLLARS',
-      pledgeMonthlyUSD: 50,
-      pledgeTerm: 9000,
+      email: this.state.email,
+      fullName: this.state.fullName,
+      txHash: txData.txHash,
+      memo: txData.memo,
+      usdValue: txData.usdValue,
+      ethValue: txData.ethValue,
+      pledgeMonthlyUSD: txData.pledgeMonthlyUSD,
+      pledgeTerm: txData.pledgeTerm,
+      multihash: txData.multihash,
     };
-    const data = await fetch(endpoint, {
+    const endpoint = 'http://localhost:5001';
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PATCH, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Origin, Content-Type',
+    };
+    const headers = {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      ...corsHeaders,
+    };
+
+    const url = `${endpoint}/api/website`;
+    const data = await fetch(url, {
       method: 'POST',
       body: JSON.stringify(postData),
-      headers: { autopilotapikey: '' },
+      headers,
     });
+
     const json = await data.json();
     console.log('json:', json);
-    // const completedList = json.lists.find(l => l.title === 'completed-donation-flow');
-    // console.log("completedList:", completedList);
   }
 
   // Sell ETH, buy PAN
@@ -384,10 +415,12 @@ class Root extends React.Component {
       // Wait for tx to be mined
       await this.provider.waitForTransaction(donateTx.hash);
 
-      return this.setState({
+      this.setState({
         step: 3,
         message: this.state.tier,
       });
+
+      return donateTx.hash;
     } else {
       this.setState({
         message: 'Approving tokens...',

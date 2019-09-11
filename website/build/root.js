@@ -1,5 +1,11 @@
 'use strict';
 
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
 
 function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
@@ -18,6 +24,8 @@ class Root extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      email: '',
+      fullName: '',
       selectedAccount: '',
       step: null,
       error: false,
@@ -245,13 +253,20 @@ class Root extends React.Component {
         throw error;
       }
 
-      _this6.setState({
-        step: 1,
-        message: 'Adding metadata to IPFS...'
-      });
-
+      var pledgeFullName = document.getElementById('pledge-full-name');
+      var pledgeEmail = document.getElementById('pledge-email');
       var pledgeMonthlySelect = document.getElementById('pledge-tier-select');
       var pledgeTermSelect = document.getElementById('pledge-duration-select');
+
+      if (pledgeFullName.value === '') {
+        alert('You must enter a full name.');
+        return;
+      }
+
+      if (pledgeEmail.value === '') {
+        alert('You must enter an email address.');
+        return;
+      }
 
       if (pledgeMonthlySelect.value === '0') {
         alert('You must select a pledge tier.');
@@ -266,7 +281,11 @@ class Root extends React.Component {
       var tier = _this6.setTier(pledgeMonthlySelect.value);
 
       _this6.setState({
-        tier
+        tier,
+        email: pledgeEmail.value,
+        fullName: pledgeFullName.value,
+        step: 1,
+        message: 'Adding metadata to IPFS...'
       }); // Calculate pledge total value (monthly * term)
 
 
@@ -286,7 +305,7 @@ class Root extends React.Component {
 
       var donation = {
         version: '1',
-        memo: '',
+        memo: "Pledge donation via uniswap",
         usdValue: utils.BN(pledgeTotal).toString(),
         ethValue: weiAmount.toString(),
         pledgeMonthlyUSD,
@@ -301,7 +320,16 @@ class Root extends React.Component {
 
         yield _this6.purchasePan(donation, panValue); // Donate Panvala pan
 
-        yield _this6.donatePan(multihash);
+        var txHash = yield _this6.donatePan(multihash);
+
+        if (txHash) {
+          var txData = _objectSpread({}, donation, {
+            txHash,
+            multihash
+          });
+
+          yield _this6.postAutopilot(txData);
+        }
       } catch (error) {
         console.error("ERROR: ".concat(error.message));
         return _this6.setState({
@@ -312,71 +340,83 @@ class Root extends React.Component {
     })();
   }
 
-  fetchAutopilot() {
-    return _asyncToGenerator(function* () {
-      var list_id = '';
-      var email = 'email@email.com';
-      var endpoint = "https://api2.autopilothq.com/v1/list/".concat(list_id, "/contact/").concat(email); // const endpoint = `https://api2.autopilothq.com/v1/lists`;
+  postAutopilot(txData) {
+    var _this7 = this;
 
+    return _asyncToGenerator(function* () {
       var postData = {
-        memo: 'TEST POST',
-        usdValue: '1 MILLION DOLLARS',
-        ethValue: '1 TRILLION DOLLARS',
-        pledgeMonthlyUSD: 50,
-        pledgeTerm: 9000
+        email: _this7.state.email,
+        fullName: _this7.state.fullName,
+        txHash: txData.txHash,
+        memo: txData.memo,
+        usdValue: txData.usdValue,
+        ethValue: txData.ethValue,
+        pledgeMonthlyUSD: txData.pledgeMonthlyUSD,
+        pledgeTerm: txData.pledgeTerm,
+        multihash: txData.multihash
       };
-      var data = yield fetch(endpoint, {
+      var endpoint = 'http://localhost:5001';
+      var corsHeaders = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PATCH, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Origin, Content-Type'
+      };
+
+      var headers = _objectSpread({
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      }, corsHeaders);
+
+      var url = "".concat(endpoint, "/api/website");
+      var data = yield fetch(url, {
         method: 'POST',
         body: JSON.stringify(postData),
-        headers: {
-          autopilotapikey: ''
-        }
+        headers
       });
       var json = yield data.json();
-      console.log('json:', json); // const completedList = json.lists.find(l => l.title === 'completed-donation-flow');
-      // console.log("completedList:", completedList);
+      console.log('json:', json);
     })();
   } // Sell ETH, buy PAN
 
 
   purchasePan(donation, panValue) {
-    var _this7 = this;
+    var _this8 = this;
 
     return _asyncToGenerator(function* () {
       // TODO: subtract a percentage
       var minTokens = utils.BN(panValue).sub(5000);
-      var block = yield _this7.provider.getBlock();
+      var block = yield _this8.provider.getBlock();
       var deadline = utils.BN(block.timestamp).add(3600); // add one hour
       // Buy Pan with Eth
 
       try {
-        _this7.setState({
+        _this8.setState({
           message: 'Purchasing PAN from Uniswap...'
         });
 
-        var tx = yield _this7.exchange.functions.ethToTokenSwapInput(minTokens, deadline, {
+        var tx = yield _this8.exchange.functions.ethToTokenSwapInput(minTokens, deadline, {
           value: hexlify(utils.BN(donation.ethValue)),
           gasLimit: hexlify(1e6),
           gasPrice: hexlify(5e9)
         });
         console.log('tx:', tx);
 
-        _this7.setState({
+        _this8.setState({
           message: 'Waiting for transaction confirmation...'
         }); // Wait for tx to get mined
 
 
-        yield _this7.provider.waitForTransaction(tx.hash); // TODO: maybe wait for blocks
+        yield _this8.provider.waitForTransaction(tx.hash); // TODO: maybe wait for blocks
 
-        var receipt = yield _this7.provider.getTransactionReceipt(tx.hash);
+        var receipt = yield _this8.provider.getTransactionReceipt(tx.hash);
         console.log('receipt:', receipt);
         console.log(); // Get new quote
 
         console.log('NEW QUOTE');
-        yield _this7.quoteEthToPan(donation.ethValue);
-        yield _this7.quoteEthToPan(parseEther('1')); // Progress to step 2
+        yield _this8.quoteEthToPan(donation.ethValue);
+        yield _this8.quoteEthToPan(parseEther('1')); // Progress to step 2
 
-        return _this7.setState({
+        return _this8.setState({
           panPurchased: panValue,
           step: 2,
           message: 'Checking allowance...'
@@ -390,47 +430,50 @@ class Root extends React.Component {
 
 
   donatePan(multihash) {
-    var _this8 = this;
+    var _this9 = this;
 
     return _asyncToGenerator(function* () {
       // Exit if user did not complete ETH -> PAN swap
-      if (!_this8.state.panPurchased) {
-        return _this8.setState({
+      if (!_this9.state.panPurchased) {
+        return _this9.setState({
           step: null,
           message: ''
         });
       } // Check allowance
 
 
-      var allowed = yield utils.checkAllowance(_this8.token, _this8.state.selectedAccount, _this8.tokenCapacitor.address, _this8.state.panPurchased);
+      var allowed = yield utils.checkAllowance(_this9.token, _this9.state.selectedAccount, _this9.tokenCapacitor.address, _this9.state.panPurchased);
 
       if (allowed) {
-        _this8.setState({
+        _this9.setState({
           message: 'Donating PAN...'
         }); // Donate PAN to token capacitor
 
 
-        var donateTx = yield _this8.tokenCapacitor.functions.donate(_this8.state.selectedAccount, _this8.state.panPurchased, Buffer.from(multihash), {
+        var donateTx = yield _this9.tokenCapacitor.functions.donate(_this9.state.selectedAccount, _this9.state.panPurchased, Buffer.from(multihash), {
           gasLimit: hexlify(1e6),
           // 1 MM
           gasPrice: hexlify(5e9) // 5 GWei
 
         }); // Wait for tx to be mined
 
-        yield _this8.provider.waitForTransaction(donateTx.hash);
-        return _this8.setState({
+        yield _this9.provider.waitForTransaction(donateTx.hash);
+
+        _this9.setState({
           step: 3,
-          message: _this8.state.tier
+          message: _this9.state.tier
         });
+
+        return donateTx.hash;
       } else {
-        _this8.setState({
+        _this9.setState({
           message: 'Approving tokens...'
         }); // Approve token capacitor
 
 
-        yield _this8.token.functions.approve(_this8.tokenCapacitor.address, ethers.constants.MaxUint256); // Call donate again
+        yield _this9.token.functions.approve(_this9.tokenCapacitor.address, ethers.constants.MaxUint256); // Call donate again
 
-        return _this8.donatePan(multihash, _this8.state.panPurchased);
+        return _this9.donatePan(multihash, _this9.state.panPurchased);
       }
     })();
   }
