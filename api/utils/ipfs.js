@@ -7,6 +7,7 @@ const ipfsPort = process.env.IPFS_PORT || 5001;
 
 const ipfs = new IPFS({ host: ipfsHost, port: ipfsPort, protocol: 'https' });
 
+// TODO: move functions to panvala-utils
 /**
  * Get a file from IPFS
  * Options:
@@ -34,6 +35,29 @@ function get(multihash, options) {
       }
     });
   });
+}
+
+/**
+ * Add a file to IPFS and get the CID
+ * @param {Object} obj
+ */
+async function add(obj) {
+  const CID = await new Promise((resolve, reject) => {
+    const data = Buffer.from(JSON.stringify(obj));
+
+    ipfs.add(data, (err, result) => {
+      if (err) reject(new Error(err));
+
+      if (!result) {
+        reject(new Error('Ipfs.get returned undefined.'));
+      }
+      // Returns an array of objects (for each file added) with keys hash, path, size
+      const { hash } = result[0];
+      resolve(hash);
+    });
+  });
+  // console.log('CID:', CID);
+  return CID;
 }
 
 async function findOrSaveIpfsMetadata(metadataHash) {
@@ -64,7 +88,25 @@ async function findOrSaveIpfsMetadata(metadataHash) {
   return metadata;
 }
 
+async function getFromDatabase(multihash) {
+  return IpfsMetadata.findOne({
+    where: {
+      multihash,
+    },
+    raw: true,
+  });
+}
+
+async function saveToDatabase(multihash, data) {
+  return IpfsMetadata.create(
+    { multihash, data }
+  );
+}
+
 module.exports = {
   get,
+  add,
   findOrSaveIpfsMetadata,
+  getFromDatabase,
+  saveToDatabase,
 };
