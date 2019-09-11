@@ -281,55 +281,56 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
     // save proposal metadata to IPFS to be included in the slate metadata
     console.log('preparing proposals...');
 
-    const proposalMultihashes: Buffer[] = await Promise.all(
-      selectedProposals.map(async (metadata: IGrantProposalMetadata) => {
-        try {
-          const multihash: string = await ipfsAddObject(metadata);
-          // we need a buffer of the multihash for the transaction
-          return Buffer.from(multihash);
-        } catch (error) {
-          return error;
-        }
-      })
-    );
-    // TODO: add proposal multihashes to db
-
-    setPendingText('Including proposals in slate (check MetaMask)...');
-    // Only use the metadata from here forward - do not expose private information
-    const proposalMetadatas: IGrantProposalMetadata[] = selectedProposals.map(proposal => {
-      return {
-        firstName: proposal.firstName,
-        lastName: proposal.lastName,
-        title: proposal.title,
-        summary: proposal.summary,
-        tokensRequested: proposal.tokensRequested,
-        github: proposal.github,
-        id: proposal.id,
-        website: proposal.website,
-        organization: proposal.organization,
-        recommendation: proposal.recommendation,
-        projectPlan: proposal.projectPlan,
-        projectTimeline: proposal.projectTimeline,
-        teamBackgrounds: proposal.teamBackgrounds,
-        otherFunding: proposal.otherFunding,
-        awardAddress: proposal.awardAddress,
-      };
-    });
-
-    let errorMessage = '';
-    const emptySlate = proposalMetadatas.length === 0;
-
-    // 1. batch create proposals and get request IDs
-    const proposalInfo: IGrantProposalInfo = {
-      metadatas: proposalMetadatas,
-      multihashes: proposalMultihashes,
-    };
-
-    const getRequests = emptySlate
-      ? Promise.resolve([])
-      : await getRequestIDs(proposalInfo, contracts.tokenCapacitor);
-
+    let errorMessagePrefix = '';
     try {
+      const proposalMultihashes: Buffer[] = await Promise.all(
+        selectedProposals.map(async (metadata: IGrantProposalMetadata) => {
+          try {
+            const multihash: string = await ipfsAddObject(metadata);
+            // we need a buffer of the multihash for the transaction
+            return Buffer.from(multihash);
+          } catch (error) {
+            return error;
+          }
+        })
+      );
+      // TODO: add proposal multihashes to db
+
+      setPendingText('Including proposals in slate (check MetaMask)...');
+      // Only use the metadata from here forward - do not expose private information
+      const proposalMetadatas: IGrantProposalMetadata[] = selectedProposals.map(proposal => {
+        return {
+          firstName: proposal.firstName,
+          lastName: proposal.lastName,
+          title: proposal.title,
+          summary: proposal.summary,
+          tokensRequested: proposal.tokensRequested,
+          github: proposal.github,
+          id: proposal.id,
+          website: proposal.website,
+          organization: proposal.organization,
+          recommendation: proposal.recommendation,
+          projectPlan: proposal.projectPlan,
+          projectTimeline: proposal.projectTimeline,
+          teamBackgrounds: proposal.teamBackgrounds,
+          otherFunding: proposal.otherFunding,
+          awardAddress: proposal.awardAddress,
+        };
+      });
+
+      const emptySlate = proposalMetadatas.length === 0;
+
+      // 1. batch create proposals and get request IDs
+      const proposalInfo: IGrantProposalInfo = {
+        metadatas: proposalMetadatas,
+        multihashes: proposalMultihashes,
+      };
+
+      errorMessagePrefix = 'error preparing proposals';
+      const getRequests = emptySlate
+        ? Promise.resolve([])
+        : await getRequestIDs(proposalInfo, contracts.tokenCapacitor);
+
       const requestIDs = await getRequests;
 
       setPendingText('Adding slate to IPFS...');
@@ -344,71 +345,63 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
       };
       // console.log(slateMetadata);
 
-      try {
-        console.log('saving slate metadata...');
-        const slateMetadataHash: string = await ipfsAddObject(slateMetadata);
+      console.log('saving slate metadata...');
+      errorMessagePrefix = 'error saving slate metadata';
+      const slateMetadataHash: string = await ipfsAddObject(slateMetadata);
 
-        // Submit the slate info to the contract
-        try {
-          setPendingText('Creating grant slate (check MetaMask)...');
-          const slate: any = await submitGrantSlate(requestIDs, slateMetadataHash);
-          console.log('Submitted slate', slate);
+      // Submit the slate info to the contract
+      errorMessagePrefix = 'error submitting slate';
+      setPendingText('Creating grant slate (check MetaMask)...');
+      const slate: any = await submitGrantSlate(requestIDs, slateMetadataHash);
+      console.log('Submitted slate', slate);
 
-          // Add slate to db
-          const slateToSave: ISaveSlate = {
-            slateID: slate.slateID,
-            metadataHash: slateMetadataHash,
-            email: values.email,
-            proposalInfo,
-          };
+      // Add slate to db
+      const slateToSave: ISaveSlate = {
+        slateID: slate.slateID,
+        metadataHash: slateMetadataHash,
+        email: values.email,
+        proposalInfo,
+      };
 
-          setPendingText('Saving slate...');
-          // api should handle updating, not just adding
-          const response = await postSlate(slateToSave);
-          if (response.status === 200) {
-            console.log('Saved slate info');
-            toast.success('Saved slate');
+      setPendingText('Saving slate...');
+      // api should handle updating, not just adding
+      const response = await postSlate(slateToSave);
+      if (response.status === 200) {
+        console.log('Saved slate info');
+        toast.success('Saved slate');
 
-            // stake immediately after creating slate
-            if (values.stake === 'yes') {
-              if (panBalance.lt(votingRights)) {
-                setTxsPending(4);
-                setPendingText(
-                  'Not enough balance. Withdrawing voting rights first (check MetaMask)...'
-                );
-                await contracts.gatekeeper.withdrawVoteTokens(votingRights);
-              }
-              if (gkAllowance.lt(slateStakeAmount)) {
-                setPendingText('Approving the Gatekeeper to stake on slate (check MetaMask)...');
-                await contracts.token.approve(contracts.gatekeeper.address, MaxUint256);
-              }
-              setPendingText('Staking on slate (check MetaMask)...');
-              const res = await sendStakeTokensTransaction(contracts.gatekeeper, slate.slateID);
-
-              await res.wait();
-            }
-
-            setTxsPending(0);
-            setOpenModal(true);
-            onRefreshSlates();
-            onRefreshCurrentBallot();
-            onRefreshBalances();
-          } else {
-            errorMessage = `problem saving slate info ${response.data}`;
-            handleSubmissionError(errorMessage, new Error(`API error ${response.data}`));
+        // stake immediately after creating slate
+        if (values.stake === 'yes') {
+          errorMessagePrefix = 'error staking on slate';
+          if (panBalance.lt(votingRights)) {
+            setTxsPending(4);
+            setPendingText(
+              'Not enough balance. Withdrawing voting rights first (check MetaMask)...'
+            );
+            await contracts.gatekeeper.withdrawVoteTokens(votingRights);
           }
-          // end add slate
-        } catch (error) {
-          errorMessage = `error submitting slate ${error.message}`;
-          handleSubmissionError(errorMessage, error);
+          if (gkAllowance.lt(slateStakeAmount)) {
+            setPendingText('Approving the Gatekeeper to stake on slate (check MetaMask)...');
+            await contracts.token.approve(contracts.gatekeeper.address, MaxUint256);
+          }
+          setPendingText('Staking on slate (check MetaMask)...');
+          const res = await sendStakeTokensTransaction(contracts.gatekeeper, slate.slateID);
+
+          await res.wait();
         }
-      } catch (error) {
-        errorMessage = `error saving slate metadata: ${error.message}`;
-        handleSubmissionError(errorMessage, error);
+
+        setTxsPending(0);
+        setOpenModal(true);
+        onRefreshSlates();
+        onRefreshCurrentBallot();
+        onRefreshBalances();
+      } else {
+        errorMessagePrefix = `problem saving slate info ${response.data}`;
+        handleSubmissionError(errorMessagePrefix, new Error(`API error ${response.data}`));
       }
     } catch (error) {
-      errorMessage = `error preparing proposals : ${error.message}`;
-      handleSubmissionError(errorMessage, error);
+      const fullErrorMessage = `${errorMessagePrefix}: ${error.message}`;
+      handleSubmissionError(fullErrorMessage, error);
     }
   }
 
