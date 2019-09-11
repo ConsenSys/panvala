@@ -32,6 +32,8 @@ spec:
               value: {{ .Values.node_env }}
             - name: PANVALA_ENV
               value: {{ .Values.panvala_env }}
+            - name: AUTOPILOT_API_KEY
+              value: {{ .Values.autopilotApiKey }}
             # Database values (from config map)
             - name: PRODUCTION_HOST
               valueFrom:

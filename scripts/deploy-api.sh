@@ -37,6 +37,7 @@ deploy() {
         --set image.repository=${REPO} \
         --set service.type=LoadBalancer \
         --set web3Host="${ETH_HOST}" \
+        --set autopilotApiKey="${AUTOPILOT_API_KEY}" \
         --set nameOverride="${APP}" \
         --set fullnameOverride="${APP}" \
         "${APP}-${ENVIRONMENT}" \
