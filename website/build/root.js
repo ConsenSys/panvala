@@ -15,6 +15,7 @@ var Buffer, ipfs; // prettier-ignore
 var {
   formatEther,
   parseEther,
+  parseUnits,
   formatUnits,
   hexlify,
   getAddress
@@ -329,10 +330,20 @@ class Root extends React.Component {
           });
 
           yield _this6.postAutopilot(txData);
+          pledgeFullName.value = '';
+          pledgeEmail.value = '';
+          pledgeMonthlySelect.value = '0';
+          pledgeTermSelect.value = '0';
         }
       } catch (error) {
         console.error("ERROR: ".concat(error.message));
+
+        if (error.message.includes('Request timed out')) {
+          alert('Uh oh! Something went wrong. Please try again (IPFS timed out).');
+        }
+
         return _this6.setState({
+          step: null,
           message: error.message,
           error: error.message
         });
@@ -355,9 +366,10 @@ class Root extends React.Component {
         pledgeTerm: txData.pledgeTerm,
         multihash: txData.multihash
       };
-      var endpoint = 'http://localhost:5001';
+      var urlRoute = window.location.href;
+      var endpoint = urlRoute.includes('staging/donate') ? 'https://staging-api.panvala.com' : 'https://api.panvala.com';
       var corsHeaders = {
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': endpoint,
         'Access-Control-Allow-Methods': 'GET, POST, PATCH, PUT, DELETE, OPTIONS',
         'Access-Control-Allow-Headers': 'Origin, Content-Type'
       };
@@ -375,6 +387,21 @@ class Root extends React.Component {
       });
       var json = yield data.json();
       console.log('json:', json);
+    })();
+  }
+
+  getGasPrice() {
+    return _asyncToGenerator(function* () {
+      var egsData = yield fetch('https://ethgasstation.info/json/ethgasAPI.json');
+      var gasPrices = yield egsData.json();
+      console.log('gasPrices:', gasPrices);
+      var gasPrice;
+
+      if (gasPrices.fast) {
+        gasPrice = parseUnits((gasPrices.fast / 10).toString(), 'gwei');
+      }
+
+      return gasPrice.toHexString();
     })();
   } // Sell ETH, buy PAN
 
@@ -394,10 +421,11 @@ class Root extends React.Component {
           message: 'Purchasing PAN from Uniswap...'
         });
 
+        var gasPrice = yield _this8.getGasPrice();
         var tx = yield _this8.exchange.functions.ethToTokenSwapInput(minTokens, deadline, {
           value: hexlify(utils.BN(donation.ethValue)),
           gasLimit: hexlify(1e6),
-          gasPrice: hexlify(5e9)
+          gasPrice: gasPrice || hexlify(12e9)
         });
         console.log('tx:', tx);
 
@@ -447,13 +475,14 @@ class Root extends React.Component {
       if (allowed) {
         _this9.setState({
           message: 'Donating PAN...'
-        }); // Donate PAN to token capacitor
+        });
 
+        var gasPrice = yield _this9.getGasPrice(); // Donate PAN to token capacitor
 
         var donateTx = yield _this9.tokenCapacitor.functions.donate(_this9.state.selectedAccount, _this9.state.panPurchased, Buffer.from(multihash), {
           gasLimit: hexlify(1e6),
           // 1 MM
-          gasPrice: hexlify(5e9) // 5 GWei
+          gasPrice: gasPrice || hexlify(12e9) // 12 GWei
 
         }); // Wait for tx to be mined
 

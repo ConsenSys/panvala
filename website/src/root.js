@@ -3,7 +3,7 @@
 let Buffer, ipfs;
 
 // prettier-ignore
-const { formatEther, parseEther, formatUnits, hexlify, getAddress, } = ethers.utils;
+const { formatEther, parseEther, parseUnits, formatUnits, hexlify, getAddress, } = ethers.utils;
 
 class Root extends React.Component {
   constructor(props) {
@@ -284,10 +284,18 @@ class Root extends React.Component {
           multihash,
         };
         await this.postAutopilot(txData);
+        pledgeFullName.value = '';
+        pledgeEmail.value = '';
+        pledgeMonthlySelect.value = '0';
+        pledgeTermSelect.value = '0';
       }
     } catch (error) {
       console.error(`ERROR: ${error.message}`);
+      if (error.message.includes('Request timed out')) {
+        alert('Uh oh! Something went wrong. Please try again (IPFS timed out).');
+      }
       return this.setState({
+        step: null,
         message: error.message,
         error: error.message,
       });
@@ -306,9 +314,13 @@ class Root extends React.Component {
       pledgeTerm: txData.pledgeTerm,
       multihash: txData.multihash,
     };
-    const endpoint = 'http://localhost:5001';
+    const urlRoute = window.location.href;
+    const endpoint = urlRoute.includes('staging/donate')
+      ? 'https://staging-api.panvala.com'
+      : 'https://api.panvala.com';
+
     const corsHeaders = {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': endpoint,
       'Access-Control-Allow-Methods': 'GET, POST, PATCH, PUT, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Origin, Content-Type',
     };
@@ -329,6 +341,17 @@ class Root extends React.Component {
     console.log('json:', json);
   }
 
+  async getGasPrice() {
+    const egsData = await fetch('https://ethgasstation.info/json/ethgasAPI.json');
+    const gasPrices = await egsData.json();
+    console.log('gasPrices:', gasPrices);
+    let gasPrice;
+    if (gasPrices.fast) {
+      gasPrice = parseUnits((gasPrices.fast / 10).toString(), 'gwei');
+    }
+    return gasPrice.toHexString();
+  }
+
   // Sell ETH, buy PAN
   async purchasePan(donation, panValue) {
     // TODO: subtract a percentage
@@ -342,10 +365,12 @@ class Root extends React.Component {
         message: 'Purchasing PAN from Uniswap...',
       });
 
+      const gasPrice = await this.getGasPrice();
+
       const tx = await this.exchange.functions.ethToTokenSwapInput(minTokens, deadline, {
         value: hexlify(utils.BN(donation.ethValue)),
         gasLimit: hexlify(1e6),
-        gasPrice: hexlify(5e9),
+        gasPrice: gasPrice || hexlify(12e9),
       });
       console.log('tx:', tx);
 
@@ -401,6 +426,7 @@ class Root extends React.Component {
       this.setState({
         message: 'Donating PAN...',
       });
+      const gasPrice = await this.getGasPrice();
       // Donate PAN to token capacitor
       const donateTx = await this.tokenCapacitor.functions.donate(
         this.state.selectedAccount,
@@ -408,7 +434,7 @@ class Root extends React.Component {
         Buffer.from(multihash),
         {
           gasLimit: hexlify(1e6), // 1 MM
-          gasPrice: hexlify(5e9), // 5 GWei
+          gasPrice: gasPrice || hexlify(12e9), // 12 GWei
         }
       );
 
