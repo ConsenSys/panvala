@@ -14,6 +14,7 @@ const ballot = require('./controllers/ballot');
 const notification = require('./controllers/notification');
 const parameter = require('./controllers/parameter');
 const ipfs = require('./controllers/ipfs');
+const website = require('./controllers/website');
 
 // Routes
 module.exports = app => {
@@ -73,4 +74,7 @@ module.exports = app => {
 
   // PARAMETERS
   app.get('/api/parameters', parameter.getAll);
+
+  // Website
+  app.post('/api/website', website.addContact);
 };
