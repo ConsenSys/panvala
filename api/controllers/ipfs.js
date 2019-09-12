@@ -1,4 +1,4 @@
-const { getFromDatabase, saveToDatabase, add } = require('../utils/ipfs');
+const { calculateMultihash, getFromDatabase, saveToDatabase, add } = require('../utils/ipfs');
 
 
 module.exports = {
@@ -23,14 +23,21 @@ module.exports = {
     const data = req.body;
     // TODO: validate input
 
-    // save to IPFS
-    const multihash = await add(data);
+    const multihash = await calculateMultihash(data);
+    // console.log(multihash);
 
-    // TODO: calculate and return the multihash immediately
+    // Return if already saved
+    // TODO: use the right HTTP code
+    const saved = await getFromDatabase(multihash);
+    if (saved) {
+      return res.json(multihash);
+    }
 
     // save to database
     await saveToDatabase(multihash, data);
-    console.log(multihash);
+
+    // save to IPFS (asynchronously)
+    add(data);
 
     return res.json(multihash);
   }
