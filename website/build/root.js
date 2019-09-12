@@ -84,7 +84,9 @@ class Root extends React.Component {
           window.ethereum.enable().then(enabled => {
             selectedAccount = enabled[0];
           }).catch(error => {
-            throw error;
+            if (error.stack.includes('User denied account authorization')) {
+              alert('MetaMask not enabled. In order to donate pan, you must authorize this app.');
+            }
           });
         }
 
@@ -316,7 +318,18 @@ class Root extends React.Component {
 
       try {
         // Add to ipfs
-        var multihash = yield utils.ipfsAdd(donation);
+        var {
+          endpoint,
+          headers
+        } = _this6.getEndpointAndHeaders();
+
+        var url = "".concat(endpoint, "/api/ipfs");
+        var data = yield fetch(url, {
+          method: 'POST',
+          body: JSON.stringify(donation),
+          headers
+        });
+        var multihash = yield data.json();
         console.log('multihash:', multihash); // Purchase Panvala pan
 
         yield _this6.purchasePan(donation, panValue); // Donate Panvala pan
@@ -351,6 +364,27 @@ class Root extends React.Component {
     })();
   }
 
+  getEndpointAndHeaders() {
+    var urlRoute = window.location.href; // const endpoint = 'http://localhost:5001'
+
+    var endpoint = urlRoute.includes('staging/donate') ? 'https://staging-api.panvala.com' : 'https://api.panvala.com';
+    var corsHeaders = {
+      'Access-Control-Allow-Origin': endpoint,
+      'Access-Control-Allow-Methods': 'GET, POST, PATCH, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Origin, Content-Type'
+    };
+
+    var headers = _objectSpread({
+      Accept: 'application/json',
+      'Content-Type': 'application/json'
+    }, corsHeaders);
+
+    return {
+      endpoint,
+      headers
+    };
+  }
+
   postAutopilot(txData) {
     var _this7 = this;
 
@@ -366,18 +400,11 @@ class Root extends React.Component {
         pledgeTerm: txData.pledgeTerm,
         multihash: txData.multihash
       };
-      var urlRoute = window.location.href;
-      var endpoint = urlRoute.includes('staging/donate') ? 'https://staging-api.panvala.com' : 'https://api.panvala.com';
-      var corsHeaders = {
-        'Access-Control-Allow-Origin': endpoint,
-        'Access-Control-Allow-Methods': 'GET, POST, PATCH, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Origin, Content-Type'
-      };
 
-      var headers = _objectSpread({
-        Accept: 'application/json',
-        'Content-Type': 'application/json'
-      }, corsHeaders);
+      var {
+        endpoint,
+        headers
+      } = _this7.getEndpointAndHeaders();
 
       var url = "".concat(endpoint, "/api/website");
       var data = yield fetch(url, {

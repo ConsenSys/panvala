@@ -57,7 +57,9 @@ class Root extends React.Component {
             selectedAccount = enabled[0];
           })
           .catch(error => {
-            throw error;
+            if (error.stack.includes('User denied account authorization')) {
+              alert('MetaMask not enabled. In order to donate pan, you must authorize this app.');
+            }
           });
       }
       this.setState({ selectedAccount });
@@ -269,7 +271,15 @@ class Root extends React.Component {
 
     try {
       // Add to ipfs
-      const multihash = await utils.ipfsAdd(donation);
+      const { endpoint, headers } = this.getEndpointAndHeaders();
+      const url = `${endpoint}/api/ipfs`;
+      const data = await fetch(url, {
+        method: 'POST',
+        body: JSON.stringify(donation),
+        headers,
+      });
+
+      const multihash = await data.json();
       console.log('multihash:', multihash);
 
       // Purchase Panvala pan
@@ -302,19 +312,9 @@ class Root extends React.Component {
     }
   }
 
-  async postAutopilot(txData) {
-    const postData = {
-      email: this.state.email,
-      fullName: this.state.fullName,
-      txHash: txData.txHash,
-      memo: txData.memo,
-      usdValue: txData.usdValue,
-      ethValue: txData.ethValue,
-      pledgeMonthlyUSD: txData.pledgeMonthlyUSD,
-      pledgeTerm: txData.pledgeTerm,
-      multihash: txData.multihash,
-    };
+  getEndpointAndHeaders() {
     const urlRoute = window.location.href;
+    // const endpoint = 'http://localhost:5001'
     const endpoint = urlRoute.includes('staging/donate')
       ? 'https://staging-api.panvala.com'
       : 'https://api.panvala.com';
@@ -329,7 +329,22 @@ class Root extends React.Component {
       'Content-Type': 'application/json',
       ...corsHeaders,
     };
+    return { endpoint, headers };
+  }
 
+  async postAutopilot(txData) {
+    const postData = {
+      email: this.state.email,
+      fullName: this.state.fullName,
+      txHash: txData.txHash,
+      memo: txData.memo,
+      usdValue: txData.usdValue,
+      ethValue: txData.ethValue,
+      pledgeMonthlyUSD: txData.pledgeMonthlyUSD,
+      pledgeTerm: txData.pledgeTerm,
+      multihash: txData.multihash,
+    };
+    const { endpoint, headers } = this.getEndpointAndHeaders();
     const url = `${endpoint}/api/website`;
     const data = await fetch(url, {
       method: 'POST',
