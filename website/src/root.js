@@ -261,7 +261,7 @@ class Root extends React.Component {
     // Build donation object
     const donation = {
       version: '1',
-      memo: `Pledge donation via uniswap`,
+      memo: '',
       usdValue: utils.BN(pledgeTotal).toString(),
       ethValue: weiAmount.toString(),
       pledgeMonthlyUSD,
@@ -283,21 +283,23 @@ class Root extends React.Component {
       console.log('multihash:', multihash);
 
       // Purchase Panvala pan
-      await this.purchasePan(donation, panValue);
+      const purchasedPan = await this.purchasePan(donation, panValue);
 
-      // Donate Panvala pan
-      const txHash = await this.donatePan(multihash);
-      if (txHash) {
-        const txData = {
-          ...donation,
-          txHash,
-          multihash,
-        };
-        await this.postAutopilot(txData);
-        pledgeFullName.value = '';
-        pledgeEmail.value = '';
-        pledgeMonthlySelect.value = '0';
-        pledgeTermSelect.value = '0';
+      if (purchasedPan) {
+        // Donate Panvala pan
+        const txHash = await this.donatePan(multihash);
+        if (txHash) {
+          const txData = {
+            ...donation,
+            txHash,
+            multihash,
+          };
+          await this.postAutopilot(txData);
+          pledgeFullName.value = '';
+          pledgeEmail.value = '';
+          pledgeMonthlySelect.value = '0';
+          pledgeTermSelect.value = '0';
+        }
       }
     } catch (error) {
       console.error(`ERROR: ${error.message}`);
@@ -314,9 +316,10 @@ class Root extends React.Component {
 
   getEndpointAndHeaders() {
     const urlRoute = window.location.href;
-    // const endpoint = 'http://localhost:5001'
     const endpoint = urlRoute.includes('staging/donate')
       ? 'https://staging-api.panvala.com'
+      : urlRoute.includes('localhost')
+      ? 'http://localhost:5001'
       : 'https://api.panvala.com';
 
     const corsHeaders = {
@@ -408,13 +411,20 @@ class Root extends React.Component {
       await this.quoteEthToPan(parseEther('1'));
 
       // Progress to step 2
-      return this.setState({
+      await this.setState({
         panPurchased: panValue,
         step: 2,
         message: 'Checking allowance...',
       });
+      return true;
     } catch (error) {
       console.error(`ERROR: ${error.message}`);
+      alert(`Uniswap transaction failed: ${error.message}`);
+      await this.setState({
+        step: null,
+        message: '',
+      });
+      return false;
     }
   }
 
@@ -442,26 +452,36 @@ class Root extends React.Component {
         message: 'Donating PAN...',
       });
       const gasPrice = await this.getGasPrice();
-      // Donate PAN to token capacitor
-      const donateTx = await this.tokenCapacitor.functions.donate(
-        this.state.selectedAccount,
-        this.state.panPurchased,
-        Buffer.from(multihash),
-        {
-          gasLimit: hexlify(1e6), // 1 MM
-          gasPrice: gasPrice || hexlify(12e9), // 12 GWei
-        }
-      );
+      try {
+        // Donate PAN to token capacitor
+        const donateTx = await this.tokenCapacitor.functions.donate(
+          this.state.selectedAccount,
+          this.state.panPurchased,
+          Buffer.from(multihash),
+          {
+            gasLimit: hexlify(1e6), // 1 MM
+            gasPrice: gasPrice || hexlify(12e9), // 12 GWei
+          }
+        );
 
-      // Wait for tx to be mined
-      await this.provider.waitForTransaction(donateTx.hash);
+        // Wait for tx to be mined
+        await this.provider.waitForTransaction(donateTx.hash);
 
-      this.setState({
-        step: 3,
-        message: this.state.tier,
-      });
+        this.setState({
+          step: 3,
+          message: this.state.tier,
+        });
 
-      return donateTx.hash;
+        return donateTx.hash;
+      } catch (error) {
+        console.error(`ERROR: ${error.message}`);
+        alert(`Donate transaction failed: ${error.message}`);
+        await this.setState({
+          step: null,
+          message: '',
+        });
+        return false;
+      }
     } else {
       this.setState({
         message: 'Approving tokens...',

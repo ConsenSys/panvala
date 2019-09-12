@@ -308,7 +308,7 @@ class Root extends React.Component {
 
       var donation = {
         version: '1',
-        memo: "Pledge donation via uniswap",
+        memo: '',
         usdValue: utils.BN(pledgeTotal).toString(),
         ethValue: weiAmount.toString(),
         pledgeMonthlyUSD,
@@ -332,21 +332,24 @@ class Root extends React.Component {
         var multihash = yield data.json();
         console.log('multihash:', multihash); // Purchase Panvala pan
 
-        yield _this6.purchasePan(donation, panValue); // Donate Panvala pan
+        var purchasedPan = yield _this6.purchasePan(donation, panValue);
 
-        var txHash = yield _this6.donatePan(multihash);
+        if (purchasedPan) {
+          // Donate Panvala pan
+          var txHash = yield _this6.donatePan(multihash);
 
-        if (txHash) {
-          var txData = _objectSpread({}, donation, {
-            txHash,
-            multihash
-          });
+          if (txHash) {
+            var txData = _objectSpread({}, donation, {
+              txHash,
+              multihash
+            });
 
-          yield _this6.postAutopilot(txData);
-          pledgeFullName.value = '';
-          pledgeEmail.value = '';
-          pledgeMonthlySelect.value = '0';
-          pledgeTermSelect.value = '0';
+            yield _this6.postAutopilot(txData);
+            pledgeFullName.value = '';
+            pledgeEmail.value = '';
+            pledgeMonthlySelect.value = '0';
+            pledgeTermSelect.value = '0';
+          }
         }
       } catch (error) {
         console.error("ERROR: ".concat(error.message));
@@ -365,9 +368,8 @@ class Root extends React.Component {
   }
 
   getEndpointAndHeaders() {
-    var urlRoute = window.location.href; // const endpoint = 'http://localhost:5001'
-
-    var endpoint = urlRoute.includes('staging/donate') ? 'https://staging-api.panvala.com' : 'https://api.panvala.com';
+    var urlRoute = window.location.href;
+    var endpoint = urlRoute.includes('staging/donate') ? 'https://staging-api.panvala.com' : urlRoute.includes('localhost') ? 'http://localhost:5001' : 'https://api.panvala.com';
     var corsHeaders = {
       'Access-Control-Allow-Origin': endpoint,
       'Access-Control-Allow-Methods': 'GET, POST, PATCH, PUT, DELETE, OPTIONS',
@@ -471,13 +473,20 @@ class Root extends React.Component {
         yield _this8.quoteEthToPan(donation.ethValue);
         yield _this8.quoteEthToPan(parseEther('1')); // Progress to step 2
 
-        return _this8.setState({
+        yield _this8.setState({
           panPurchased: panValue,
           step: 2,
           message: 'Checking allowance...'
         });
+        return true;
       } catch (error) {
         console.error("ERROR: ".concat(error.message));
+        alert("Uniswap transaction failed: ".concat(error.message));
+        yield _this8.setState({
+          step: null,
+          message: ''
+        });
+        return false;
       }
     })();
   } // Donate PAN -> token capacitor
@@ -504,23 +513,34 @@ class Root extends React.Component {
           message: 'Donating PAN...'
         });
 
-        var gasPrice = yield _this9.getGasPrice(); // Donate PAN to token capacitor
+        var gasPrice = yield _this9.getGasPrice();
 
-        var donateTx = yield _this9.tokenCapacitor.functions.donate(_this9.state.selectedAccount, _this9.state.panPurchased, Buffer.from(multihash), {
-          gasLimit: hexlify(1e6),
-          // 1 MM
-          gasPrice: gasPrice || hexlify(12e9) // 12 GWei
+        try {
+          // Donate PAN to token capacitor
+          var donateTx = yield _this9.tokenCapacitor.functions.donate(_this9.state.selectedAccount, _this9.state.panPurchased, Buffer.from(multihash), {
+            gasLimit: hexlify(1e6),
+            // 1 MM
+            gasPrice: gasPrice || hexlify(12e9) // 12 GWei
 
-        }); // Wait for tx to be mined
+          }); // Wait for tx to be mined
 
-        yield _this9.provider.waitForTransaction(donateTx.hash);
+          yield _this9.provider.waitForTransaction(donateTx.hash);
 
-        _this9.setState({
-          step: 3,
-          message: _this9.state.tier
-        });
+          _this9.setState({
+            step: 3,
+            message: _this9.state.tier
+          });
 
-        return donateTx.hash;
+          return donateTx.hash;
+        } catch (error) {
+          console.error("ERROR: ".concat(error.message));
+          alert("Donate transaction failed: ".concat(error.message));
+          yield _this9.setState({
+            step: null,
+            message: ''
+          });
+          return false;
+        }
       } else {
         _this9.setState({
           message: 'Approving tokens...'
