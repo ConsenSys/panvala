@@ -4,6 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
+    "build": "npx babel src --out-dir build",
     "serve": "http-server build",
     "watch": "npx babel src --watch --out-dir build"
   },

@@ -13,17 +13,18 @@
 
     <!-- ethers, ipfs -->
     <script charset="utf-8" src="ethers-v4.min.js" type="text/javascript"></script>
-    <script charset="utf-8" src="https://unpkg.com/ipfs-http-client/dist/index.js" type="text/javascript"></script>
-    <!-- <script charset="utf-8" src="https://unpkg.com/ipfs-http-client/dist/index.min.js" type="text/javascript"></script> -->
+    <!-- <script charset="utf-8" src="https://unpkg.com/ipfs-http-client/dist/index.js" type="text/javascript"></script> -->
+    <script charset="utf-8" src="https://unpkg.com/ipfs-http-client/dist/index.min.js" type="text/javascript"></script>
 
     <!-- react, component container -->
-    <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
-    <!-- <script src="https://unpkg.com/react@16/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js" crossorigin></script> -->
+    <!-- <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script> -->
+    <script src="https://unpkg.com/react@16/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js" crossorigin></script>
 
     <!-- autopilot -->
-    <!-- <script type="text/javascript">(function(o){var b="https://zippyfrog.co/anywhere/",t="039b072363604f71afb26a55f1899413c20b8d86bb9749878f06b280fe2c8fa4",a=window.AutopilotAnywhere={_runQueue:[],run:function(){this._runQueue.push(arguments);}},c=encodeURIComponent,s="SCRIPT",d=document,l=d.getElementsByTagName(s)[0],p="t="+c(d.title||"")+"&u="+c(d.location.href||"")+"&r="+c(d.referrer||""),j="text/javascript",z,y;if(!window.Autopilot) window.Autopilot=a;if(o.app) p="devmode=true&"+p;z=function(src,asy){var e=d.createElement(s);e.src=src;e.type=j;e.async=asy;l.parentNode.insertBefore(e,l);};y=function(){z(b+t+'?'+p,true);};if(window.attachEvent){window.attachEvent("onload",y);}else{window.addEventListener("load",y,false);}})({});</script> -->
+    <script
+      type="text/javascript">(function (o) { var b = "https://zippyfrog.co/anywhere/", t = "039b072363604f71afb26a55f1899413c20b8d86bb9749878f06b280fe2c8fa4", a = window.AutopilotAnywhere = { _runQueue: [], run: function () { this._runQueue.push(arguments); } }, c = encodeURIComponent, s = "SCRIPT", d = document, l = d.getElementsByTagName(s)[0], p = "t=" + c(d.title || "") + "&u=" + c(d.location.href || "") + "&r=" + c(d.referrer || ""), j = "text/javascript", z, y; if (!window.Autopilot) window.Autopilot = a; if (o.app) p = "devmode=true&" + p; z = function (src, asy) { var e = d.createElement(s); e.src = src; e.type = j; e.async = asy; l.parentNode.insertBefore(e, l); }; y = function () { z(b + t + '?' + p, true); }; if (window.attachEvent) { window.attachEvent("onload", y); } else { window.addEventListener("load", y, false); } })({});</script>
   </head>
 
   <body class="overflow-x-hidden">
@@ -473,10 +474,10 @@
           <h2 class="f2-5 ma0 mv3 lh-copy">
             Become a Panvala Patron today
           </h2>
-          <p class="ma0 f6 lh-text mb3">
+          <!-- <p class="ma0 f6 lh-text mb3">
             We only need your contact information in order for you to make a pledge at this time. We'll reach out to you
             in the future to help you fulfill your pledge.
-          </p>
+          </p> -->
           <form class="w-70-l w-90-m w-100 center" name="donation-pledge">
             <div class="tl mt4">
               <label class="ma0 f6 mb3 black-40">
@@ -533,7 +534,7 @@
             </select>
             <div class="tl mt4">
               <label class="ma0 f6 mb3 black-40">
-                How many months would you like to pledge for?
+                How many months would you like to donate for?
                 <b class="red f7">
                   *
                 </b>
@@ -564,7 +565,7 @@
       </section>
 
       <!-- Modal -->
-      <article class="vh-100 dn w-100 bg-black-80 absolute--fill absolute z-999" id="donation-pledge-modal">
+      <!-- <article class="vh-100 dn w-100 bg-black-80 absolute--fill absolute z-999" id="donation-pledge-modal">
         <section class="w-30-l w-50-m w-90 pa5-l pa4 bg-white br3 center mt6-l mt5-m mt4 tc">
           <h2 class="f2-5 ma0 mb3 lh-copy">
             Form Submitted
@@ -578,7 +579,7 @@
             </button>
           </a>
         </section>
-      </article>
+      </article> -->
     </div>
 
     <!-- Footer -->
