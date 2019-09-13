@@ -10,6 +10,6 @@ function handleClickDonateNow(e) {
     {
       scrollTop: $('#donate-section').offset().top,
     },
-    1000
+    1250
   );
 }
