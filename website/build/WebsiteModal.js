@@ -94,7 +94,8 @@ var styles = {
     color: '#555',
     fontWeight: 'bold',
     fontSize: '.9rem',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    cursor: 'pointer'
   }
 };
 
@@ -151,55 +152,41 @@ var ModalBody = (_ref2) => {
   }, children);
 };
 
-var MetaMaskDialog = (_ref3) => {
-  var {
-    handleCancel
-  } = _ref3;
-  return React.createElement(React.Fragment, null, React.createElement("div", {
-    style: styles.instructions
-  }, "MetaMask will open a new window to confirm. If you don\u2019t see it, please click the extension icon in your browser."), React.createElement(Spinner, null), React.createElement("div", {
-    style: styles.cancel,
-    onClick: handleCancel
-  }, "Cancel"));
-};
+var MetaMaskDialog = () => React.createElement(React.Fragment, null, React.createElement("div", {
+  style: styles.instructions
+}, "MetaMask will open a new window to confirm. If you don\u2019t see it, please click the extension icon in your browser."), React.createElement(Spinner, null));
 
-var StepOne = (_ref4) => {
+var StepOne = (_ref3) => {
   var {
-    message,
-    handleCancel
-  } = _ref4;
+    message
+  } = _ref3;
   return React.createElement(React.Fragment, null, React.createElement("div", {
     style: styles.title
   }, "Step 1 of 2"), React.createElement("div", {
     style: styles.title
   }, "Swap ETH for PAN"), React.createElement("div", {
     style: styles.copy
-  }, "Since all donations are made in PAN tokens we will use Uniswap to purchase PAN tokens with your ETH. Once purchased, you can then donate.", React.createElement("br", null), "Under the hood: ".concat(message)), React.createElement(MetaMaskDialog, {
-    handleCancel: handleCancel
-  }));
+  }, "Since all donations are made in PAN tokens we will use Uniswap to purchase PAN tokens with your ETH. Once purchased, you can then donate.", React.createElement("br", null), "Under the hood: ".concat(message)), React.createElement(MetaMaskDialog, null));
 };
 
-var StepTwo = (_ref5) => {
+var StepTwo = (_ref4) => {
   var {
-    message,
-    handleCancel
-  } = _ref5;
+    message
+  } = _ref4;
   return React.createElement(React.Fragment, null, React.createElement("div", {
     style: styles.title
   }, "Step 2 of 2"), React.createElement("div", {
     style: styles.title
   }, "Donate PAN"), React.createElement("div", {
     style: styles.copy
-  }, "You now have PAN tokens! Confirm the MetaMask transaction to finalize your donation.", React.createElement("br", null), "Under the hood: ".concat(message)), React.createElement(MetaMaskDialog, {
-    handleCancel: handleCancel
-  }));
+  }, "You now have PAN tokens! Confirm the MetaMask transaction to finalize your donation.", React.createElement("br", null), "Under the hood: ".concat(message)), React.createElement(MetaMaskDialog, null));
 };
 
-var StepThree = (_ref6) => {
+var StepThree = (_ref5) => {
   var {
     message,
-    handleCancel
-  } = _ref6;
+    handleClose
+  } = _ref5;
   var tier = message.toLowerCase();
   return React.createElement(React.Fragment, null, React.createElement("div", {
     style: styles.title
@@ -213,17 +200,17 @@ var StepThree = (_ref6) => {
     style: styles.thankYou
   }, "Thank you for donating to Panvala. Each and every Panvala patron plays a key role in moving Ethereum forward."), React.createElement("div", {
     style: styles.cancel,
-    onClick: handleCancel
+    onClick: handleClose
   }, "Close"));
 };
 
-var WebsiteModal = (_ref7) => {
+var WebsiteModal = (_ref6) => {
   var {
     isOpen,
     step,
     message,
     handleCancel
-  } = _ref7;
+  } = _ref6;
 
   if (!isOpen || step == null) {
     return null;
@@ -231,13 +218,11 @@ var WebsiteModal = (_ref7) => {
 
 
   var steps = [React.createElement("div", null), React.createElement(StepOne, {
-    handleCancel: handleCancel,
     message: message
   }), React.createElement(StepTwo, {
-    handleCancel: handleCancel,
     message: message
   }), React.createElement(StepThree, {
-    handleCancel: handleCancel,
+    handleClose: handleCancel,
     message: message
   })];
   return React.createElement("div", {

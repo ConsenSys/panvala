@@ -95,6 +95,7 @@ const styles = {
     fontWeight: 'bold',
     fontSize: '.9rem',
     justifyContent: 'center',
+    cursor: 'pointer',
   },
 };
 
@@ -144,20 +145,17 @@ const ModalBody = ({ handleClick, children }) => (
   </div>
 );
 
-const MetaMaskDialog = ({ handleCancel }) => (
+const MetaMaskDialog = () => (
   <>
     <div style={styles.instructions}>
       MetaMask will open a new window to confirm. If you don’t see it, please click the extension
       icon in your browser.
     </div>
     <Spinner />
-    <div style={styles.cancel} onClick={handleCancel}>
-      Cancel
-    </div>
   </>
 );
 
-const StepOne = ({ message, handleCancel }) => (
+const StepOne = ({ message }) => (
   <>
     <div style={styles.title}>Step 1 of 2</div>
     <div style={styles.title}>Swap ETH for PAN</div>
@@ -167,11 +165,11 @@ const StepOne = ({ message, handleCancel }) => (
       <br />
       {`Under the hood: ${message}`}
     </div>
-    <MetaMaskDialog handleCancel={handleCancel} />
+    <MetaMaskDialog />
   </>
 );
 
-const StepTwo = ({ message, handleCancel }) => (
+const StepTwo = ({ message }) => (
   <>
     <div style={styles.title}>Step 2 of 2</div>
     <div style={styles.title}>Donate PAN</div>
@@ -180,11 +178,11 @@ const StepTwo = ({ message, handleCancel }) => (
       <br />
       {`Under the hood: ${message}`}
     </div>
-    <MetaMaskDialog handleCancel={handleCancel} />
+    <MetaMaskDialog />
   </>
 );
 
-const StepThree = ({ message, handleCancel }) => {
+const StepThree = ({ message, handleClose }) => {
   const tier = message.toLowerCase();
   return (
     <>
@@ -200,7 +198,7 @@ const StepThree = ({ message, handleCancel }) => {
         Ethereum forward.
         {/* You can share your support on Twitter! */}
       </div>
-      <div style={styles.cancel} onClick={handleCancel}>
+      <div style={styles.cancel} onClick={handleClose}>
         Close
       </div>
     </>
@@ -215,9 +213,9 @@ const WebsiteModal = ({ isOpen, step, message, handleCancel }) => {
   // prettier-ignore
   const steps = [
     <div></div>,
-    <StepOne handleCancel={handleCancel} message={message} />,
-    <StepTwo handleCancel={handleCancel} message={message} />,
-    <StepThree handleCancel={handleCancel} message={message} />,
+    <StepOne message={message} />,
+    <StepTwo message={message} />,
+    <StepThree handleClose={handleCancel} message={message} />,
   ];
 
   return (
