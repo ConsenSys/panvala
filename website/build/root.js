@@ -237,13 +237,14 @@ class Root extends React.Component {
         throw error;
       }
 
-      var pledgeFullName = document.getElementById('pledge-full-name');
+      var pledgeFirstName = document.getElementById('pledge-first-name');
+      var pledgeLastName = document.getElementById('pledge-last-name');
       var pledgeEmail = document.getElementById('pledge-email');
       var pledgeMonthlySelect = document.getElementById('pledge-tier-select');
       var pledgeTermSelect = document.getElementById('pledge-duration-select');
 
-      if (pledgeFullName.value === '') {
-        alert('You must enter a full name.');
+      if (pledgeFirstName.value === '') {
+        alert('You must enter a first name.');
         return;
       }
 
@@ -267,7 +268,8 @@ class Root extends React.Component {
       _this6.setState({
         tier,
         email: pledgeEmail.value,
-        fullName: pledgeFullName.value,
+        firstName: pledgeFirstName.value,
+        lastName: pledgeLastName.value,
         step: 1,
         message: 'Adding metadata to IPFS...'
       }); // Calculate pledge total value (monthly * term)
@@ -324,8 +326,9 @@ class Root extends React.Component {
               multihash
             });
 
-            yield utils.postAutopilot(_this6.state.email, _this6.state.fullName, txData);
-            pledgeFullName.value = '';
+            yield utils.postAutopilot(_this6.state.email, _this6.state.firstName, _this6.state.lastName, txData);
+            pledgeFirstName.value = '';
+            pledgeLastName.value = '';
             pledgeEmail.value = '';
             pledgeMonthlySelect.value = '0';
             pledgeTermSelect.value = '0';

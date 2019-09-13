@@ -203,13 +203,14 @@ class Root extends React.Component {
       throw error;
     }
 
-    const pledgeFullName = document.getElementById('pledge-full-name');
+    const pledgeFirstName = document.getElementById('pledge-first-name');
+    const pledgeLastName = document.getElementById('pledge-last-name');
     const pledgeEmail = document.getElementById('pledge-email');
     const pledgeMonthlySelect = document.getElementById('pledge-tier-select');
     const pledgeTermSelect = document.getElementById('pledge-duration-select');
 
-    if (pledgeFullName.value === '') {
-      alert('You must enter a full name.');
+    if (pledgeFirstName.value === '') {
+      alert('You must enter a first name.');
       return;
     }
     if (pledgeEmail.value === '') {
@@ -229,7 +230,8 @@ class Root extends React.Component {
     this.setState({
       tier,
       email: pledgeEmail.value,
-      fullName: pledgeFullName.value,
+      firstName: pledgeFirstName.value,
+      lastName: pledgeLastName.value,
       step: 1,
       message: 'Adding metadata to IPFS...',
     });
@@ -289,8 +291,9 @@ class Root extends React.Component {
             txHash,
             multihash,
           };
-          await utils.postAutopilot(this.state.email, this.state.fullName, txData);
-          pledgeFullName.value = '';
+          await utils.postAutopilot(this.state.email, this.state.firstName, this.state.lastName, txData);
+          pledgeFirstName.value = '';
+          pledgeLastName.value = '';
           pledgeEmail.value = '';
           pledgeMonthlySelect.value = '0';
           pledgeTermSelect.value = '0';

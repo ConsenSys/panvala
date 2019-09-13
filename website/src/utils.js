@@ -73,10 +73,11 @@ const utils = {
     }
     return gasPrice.toHexString();
   },
-  async postAutopilot(email, fullName, txData) {
+  async postAutopilot(email, firstName, lastName, txData) {
     const postData = {
       email: email,
-      fullName: fullName,
+      firstName: firstName,
+      lastName: lastName,
       txHash: txData.txHash,
       memo: txData.memo,
       usdValue: txData.usdValue,

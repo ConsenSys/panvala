@@ -108,11 +108,12 @@ var utils = {
     })();
   },
 
-  postAutopilot(email, fullName, txData) {
+  postAutopilot(email, firstName, lastName, txData) {
     return _asyncToGenerator(function* () {
       var postData = {
         email: email,
-        fullName: fullName,
+        firstName: firstName,
+        lastName: lastName,
         txHash: txData.txHash,
         memo: txData.memo,
         usdValue: txData.usdValue,

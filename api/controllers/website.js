@@ -18,7 +18,8 @@ module.exports = {
 
     const {
       email,
-      fullName,
+      firstName,
+      lastName,
       txHash,
       multihash,
       memo,
@@ -41,7 +42,8 @@ module.exports = {
           'string--ethValue': ethValue,
           'string--txHash': txHash,
           'string--multihash': multihash,
-          'string--fullName': fullName,
+          'string--firstName': firstName,
+          'string--lastName': lastName,
           'integer--pledgeMonthlyUSD': pledgeMonthlyUSD,
           'integer--pledgeTerm': pledgeTerm,
         },
@@ -50,7 +52,7 @@ module.exports = {
 
     try {
       const response = await axios({
-        method: 'post',
+        method: 'POST',
         url,
         data: JSON.stringify(postData),
         headers,
