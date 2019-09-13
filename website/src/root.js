@@ -438,6 +438,12 @@ class Root extends React.Component {
   }
 
   render() {
+    if (this.state.step != null) {
+      $('body').addClass('overflow-hidden');
+    } else {
+      $('body').removeClass('overflow-hidden');
+    }
+
     return (
       <>
         <DonateButton handleClick={this.handleClickDonate} />
