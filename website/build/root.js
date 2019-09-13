@@ -56,9 +56,6 @@ class Root extends React.Component {
           error: 'Buffer did not setup correctly.'
         });
       }
-
-      yield _this.setSelectedAccount();
-      yield _this.setContracts();
     })();
   } // Setup provider & selected account
 
@@ -228,7 +225,9 @@ class Root extends React.Component {
     var _this6 = this;
 
     return _asyncToGenerator(function* () {
-      e.preventDefault(); // Make sure ethereum is hooked up properly
+      e.preventDefault();
+      yield _this6.setSelectedAccount();
+      yield _this6.setContracts(); // Make sure ethereum is hooked up properly
 
       try {
         yield _this6.checkEthereum();
@@ -314,10 +313,16 @@ class Root extends React.Component {
         var multihash = yield data.json();
         console.log('multihash:', multihash); // Purchase Panvala pan
 
-        var purchasedPan = yield _this6.purchasePan(donation, panValue);
+        var panPurchased = yield _this6.purchasePan(donation, panValue);
 
-        if (purchasedPan) {
-          // Donate Panvala pan
+        if (panPurchased && _this6.state.step != null) {
+          // Progress to step 2
+          yield _this6.setState({
+            panPurchased,
+            step: 2,
+            message: 'Checking allowance...'
+          }); // Donate Panvala pan
+
           var txHash = yield _this6.donatePan(multihash);
 
           if (txHash) {
@@ -336,11 +341,6 @@ class Root extends React.Component {
         }
       } catch (error) {
         console.error("ERROR: ".concat(error.message));
-
-        if (error.message.includes('Request timed out')) {
-          alert('Uh oh! Something went wrong. Please try again (IPFS timed out).');
-        }
-
         return _this6.setState({
           step: null,
           message: error.message,
@@ -387,14 +387,8 @@ class Root extends React.Component {
 
         console.log('NEW QUOTE');
         yield _this7.quoteEthToPan(donation.ethValue);
-        yield _this7.quoteEthToPan(parseEther('1')); // Progress to step 2
-
-        yield _this7.setState({
-          panPurchased: panValue,
-          step: 2,
-          message: 'Checking allowance...'
-        });
-        return true;
+        yield _this7.quoteEthToPan(parseEther('1'));
+        return panValue;
       } catch (error) {
         console.error("ERROR: ".concat(error.message));
         alert("Uniswap transaction failed: ".concat(error.message));

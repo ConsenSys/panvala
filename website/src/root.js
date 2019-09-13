@@ -37,9 +37,6 @@ class Root extends React.Component {
     } else {
       this.setState({ error: 'Buffer did not setup correctly.' });
     }
-
-    await this.setSelectedAccount();
-    await this.setContracts();
   }
 
   // Setup provider & selected account
@@ -195,6 +192,10 @@ class Root extends React.Component {
   // Click handler for donations
   async handleClickDonate(e) {
     e.preventDefault();
+
+    await this.setSelectedAccount();
+    await this.setContracts();
+
     // Make sure ethereum is hooked up properly
     try {
       await this.checkEthereum();
@@ -280,9 +281,15 @@ class Root extends React.Component {
       console.log('multihash:', multihash);
 
       // Purchase Panvala pan
-      const purchasedPan = await this.purchasePan(donation, panValue);
+      const panPurchased = await this.purchasePan(donation, panValue);
 
-      if (purchasedPan) {
+      if (panPurchased && this.state.step != null) {
+        // Progress to step 2
+        await this.setState({
+          panPurchased,
+          step: 2,
+          message: 'Checking allowance...',
+        });
         // Donate Panvala pan
         const txHash = await this.donatePan(multihash);
         if (txHash) {
@@ -291,7 +298,12 @@ class Root extends React.Component {
             txHash,
             multihash,
           };
-          await utils.postAutopilot(this.state.email, this.state.firstName, this.state.lastName, txData);
+          await utils.postAutopilot(
+            this.state.email,
+            this.state.firstName,
+            this.state.lastName,
+            txData
+          );
           pledgeFirstName.value = '';
           pledgeLastName.value = '';
           pledgeEmail.value = '';
@@ -301,9 +313,6 @@ class Root extends React.Component {
       }
     } catch (error) {
       console.error(`ERROR: ${error.message}`);
-      if (error.message.includes('Request timed out')) {
-        alert('Uh oh! Something went wrong. Please try again (IPFS timed out).');
-      }
       return this.setState({
         step: null,
         message: error.message,
@@ -351,14 +360,7 @@ class Root extends React.Component {
       console.log('NEW QUOTE');
       await this.quoteEthToPan(donation.ethValue);
       await this.quoteEthToPan(parseEther('1'));
-
-      // Progress to step 2
-      await this.setState({
-        panPurchased: panValue,
-        step: 2,
-        message: 'Checking allowance...',
-      });
-      return true;
+      return panValue;
     } catch (error) {
       console.error(`ERROR: ${error.message}`);
       alert(`Uniswap transaction failed: ${error.message}`);
