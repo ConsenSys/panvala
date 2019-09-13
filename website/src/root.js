@@ -1,9 +1,9 @@
 'use strict';
 
-let Buffer, ipfs;
+let Buffer;
 
 // prettier-ignore
-const { formatEther, parseEther, parseUnits, formatUnits, hexlify, getAddress, } = ethers.utils;
+const { formatEther, parseEther, formatUnits, hexlify, getAddress, } = ethers.utils;
 
 class Root extends React.Component {
   constructor(props) {
@@ -26,18 +26,18 @@ class Root extends React.Component {
     this.provider;
   }
 
-  // Setup ipfs, call other setup functions
+  // ---------------------------------------------------------------------------
+  // Initialize
+  // ---------------------------------------------------------------------------
+
   async componentDidMount() {
-    // helpers
+    // TODO: use a different lib (maybe ethers)
     if (typeof window.IpfsHttpClient !== 'undefined') {
-      const Ipfs = window.IpfsHttpClient;
-      Buffer = Ipfs.Buffer;
-      ipfs = new Ipfs({ host: 'ipfs.infura.io', port: 5001, protocol: 'https' });
+      Buffer = window.IpfsHttpClient.Buffer;
     } else {
-      this.setState({ error: 'Ipfs client did not setup correctly.' });
+      this.setState({ error: 'Buffer did not setup correctly.' });
     }
 
-    // setup ethereum
     await this.setSelectedAccount();
     await this.setContracts();
   }
@@ -118,32 +118,16 @@ class Root extends React.Component {
     }
   }
 
-  // Sell order (exact input) -> calculates amount bought (output)
-  async quoteEthToPan(etherToSpend) {
-    console.log('');
-    // Sell ETH for PAN
-    const ethAmount = utils.BN(etherToSpend);
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
 
-    // ETH reserve
-    const inputReserve = await this.provider.getBalance(this.exchange.address);
-    console.log(`ETH reserve: ${formatEther(inputReserve)}`);
-
-    // PAN reserve
-    const outputReserve = await this.token.balanceOf(this.exchange.address);
-    console.log(`PAN reserve: ${formatUnits(outputReserve, 18)}`);
-
-    const numerator = ethAmount.mul(outputReserve).mul(997);
-    const denominator = inputReserve.mul(1000).add(ethAmount.mul(997));
-    const panToReceive = numerator.div(denominator);
-
-    console.log(
-      `quote ${formatEther(ethAmount)} ETH : ${formatUnits(panToReceive.toString(), 18)} PAN`
-    );
-    // EQUIVALENT, DIRECT CHAIN CALL
-    // PAN bought w/ input ETH
-    // const panToReceive = await this.exchange.getEthToTokenInputPrice(ethAmount);
-    // console.log(`${formatEther(ethAmount)} ETH -> ${formatUnits(panToReceive, 18)} PAN`);
-    return panToReceive;
+  // Reset step / close modal
+  handleCancel() {
+    this.setState({
+      step: null,
+      message: '',
+    });
   }
 
   // Check that provider & contracts are setup correctly
@@ -176,31 +160,42 @@ class Root extends React.Component {
     }
   }
 
-  setTier(monthUSD) {
-    console.log('monthUSD:', monthUSD);
-    switch (monthUSD) {
-      case '5':
-        return 'Student';
-      case '15':
-        return 'Gold';
-      case '50':
-        return 'Platinum';
-      case '150':
-        return 'Diamond';
-      case '500':
-        return 'Ether';
-      case '1500':
-        return 'Elite';
-      default:
-        throw new Error('invalid tier');
-    }
+  // Sell order (exact input) -> calculates amount bought (output)
+  async quoteEthToPan(etherToSpend) {
+    console.log('');
+    // Sell ETH for PAN
+    const ethAmount = utils.BN(etherToSpend);
+
+    // ETH reserve
+    const inputReserve = await this.provider.getBalance(this.exchange.address);
+    console.log(`ETH reserve: ${formatEther(inputReserve)}`);
+
+    // PAN reserve
+    const outputReserve = await this.token.balanceOf(this.exchange.address);
+    console.log(`PAN reserve: ${formatUnits(outputReserve, 18)}`);
+
+    const numerator = ethAmount.mul(outputReserve).mul(997);
+    const denominator = inputReserve.mul(1000).add(ethAmount.mul(997));
+    const panToReceive = numerator.div(denominator);
+
+    console.log(
+      `quote ${formatEther(ethAmount)} ETH : ${formatUnits(panToReceive.toString(), 18)} PAN`
+    );
+    // EQUIVALENT, DIRECT CHAIN CALL
+    // PAN bought w/ input ETH
+    // const panToReceive = await this.exchange.getEthToTokenInputPrice(ethAmount);
+    // console.log(`${formatEther(ethAmount)} ETH -> ${formatUnits(panToReceive, 18)} PAN`);
+    return panToReceive;
   }
+
+  // ---------------------------------------------------------------------------
+  // Transactions
+  // ---------------------------------------------------------------------------
 
   // Click handler for donations
   async handleClickDonate(e) {
     e.preventDefault();
-
-    // make sure ethereum is hooked up properly
+    // Make sure ethereum is hooked up properly
     try {
       await this.checkEthereum();
     } catch (error) {
@@ -230,7 +225,7 @@ class Root extends React.Component {
       return;
     }
 
-    const tier = this.setTier(pledgeMonthlySelect.value);
+    const tier = utils.getTier(pledgeMonthlySelect.value);
     this.setState({
       tier,
       email: pledgeEmail.value,
@@ -271,7 +266,7 @@ class Root extends React.Component {
 
     try {
       // Add to ipfs
-      const { endpoint, headers } = this.getEndpointAndHeaders();
+      const { endpoint, headers } = utils.getEndpointAndHeaders();
       const url = `${endpoint}/api/ipfs`;
       const data = await fetch(url, {
         method: 'POST',
@@ -294,7 +289,7 @@ class Root extends React.Component {
             txHash,
             multihash,
           };
-          await this.postAutopilot(txData);
+          await utils.postAutopilot(this.state.email, this.state.fullName, txData);
           pledgeFullName.value = '';
           pledgeEmail.value = '';
           pledgeMonthlySelect.value = '0';
@@ -314,63 +309,7 @@ class Root extends React.Component {
     }
   }
 
-  getEndpointAndHeaders() {
-    const urlRoute = window.location.href;
-    const endpoint = urlRoute.includes('staging/donate')
-      ? 'https://staging-api.panvala.com'
-      : urlRoute.includes('localhost')
-      ? 'http://localhost:5001'
-      : 'https://api.panvala.com';
-
-    const corsHeaders = {
-      'Access-Control-Allow-Origin': endpoint,
-      'Access-Control-Allow-Methods': 'GET, POST, PATCH, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Origin, Content-Type',
-    };
-    const headers = {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      ...corsHeaders,
-    };
-    return { endpoint, headers };
-  }
-
-  async postAutopilot(txData) {
-    const postData = {
-      email: this.state.email,
-      fullName: this.state.fullName,
-      txHash: txData.txHash,
-      memo: txData.memo,
-      usdValue: txData.usdValue,
-      ethValue: txData.ethValue,
-      pledgeMonthlyUSD: txData.pledgeMonthlyUSD,
-      pledgeTerm: txData.pledgeTerm,
-      multihash: txData.multihash,
-    };
-    const { endpoint, headers } = this.getEndpointAndHeaders();
-    const url = `${endpoint}/api/website`;
-    const data = await fetch(url, {
-      method: 'POST',
-      body: JSON.stringify(postData),
-      headers,
-    });
-
-    const json = await data.json();
-    console.log('json:', json);
-  }
-
-  async getGasPrice() {
-    const egsData = await fetch('https://ethgasstation.info/json/ethgasAPI.json');
-    const gasPrices = await egsData.json();
-    console.log('gasPrices:', gasPrices);
-    let gasPrice;
-    if (gasPrices.fast) {
-      gasPrice = parseUnits((gasPrices.fast / 10).toString(), 'gwei');
-    }
-    return gasPrice.toHexString();
-  }
-
-  // Sell ETH, buy PAN
+  // Sell ETH -> uniswap exchange (buy PAN)
   async purchasePan(donation, panValue) {
     // TODO: subtract a percentage
     const minTokens = utils.BN(panValue).sub(5000);
@@ -383,7 +322,7 @@ class Root extends React.Component {
         message: 'Purchasing PAN from Uniswap...',
       });
 
-      const gasPrice = await this.getGasPrice();
+      const gasPrice = await utils.getGasPrice();
 
       const tx = await this.exchange.functions.ethToTokenSwapInput(minTokens, deadline, {
         value: hexlify(utils.BN(donation.ethValue)),
@@ -428,7 +367,7 @@ class Root extends React.Component {
     }
   }
 
-  // Donate PAN -> token capacitor
+  // Donate PAN -> Token Capacitor
   // Approve if necessary
   async donatePan(multihash) {
     // Exit if user did not complete ETH -> PAN swap
@@ -451,7 +390,7 @@ class Root extends React.Component {
       this.setState({
         message: 'Donating PAN...',
       });
-      const gasPrice = await this.getGasPrice();
+      const gasPrice = await utils.getGasPrice();
       try {
         // Donate PAN to token capacitor
         const donateTx = await this.tokenCapacitor.functions.donate(
@@ -491,13 +430,6 @@ class Root extends React.Component {
       // Call donate again
       return this.donatePan(multihash, this.state.panPurchased);
     }
-  }
-
-  handleCancel() {
-    this.setState({
-      step: null,
-      message: '',
-    });
   }
 
   render() {
