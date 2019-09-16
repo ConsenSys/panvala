@@ -92,3 +92,9 @@
   clip-path: polygon(0 0, 100% 0, 100% 100%, 0 85%);
   -webkit-clip-path: polygon(0 0, 100% 0, 100% 100%, 0 85%);
 }
+
+.workaround-clip {
+  clip-path: none;
+  -webkit-clip-path: none;
+  z-index: 50;
+}
