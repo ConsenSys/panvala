@@ -37,6 +37,12 @@ class Root extends React.Component {
     } else {
       this.setState({ error: 'Buffer did not setup correctly.' });
     }
+
+    // Listen for network changes -> reload page
+    window.ethereum.once('networkChanged', network => {
+      console.log('MetaMask network changed:', network);
+      window.location.reload();
+    });
   }
 
   // Setup provider & selected account
@@ -157,6 +163,25 @@ class Root extends React.Component {
     }
   }
 
+  async checkNetwork() {
+    if (
+      !this.state.selectedAccount ||
+      !this.exchange ||
+      !this.provider ||
+      !this.token ||
+      !this.tokenCapacitor
+    ) {
+      throw new Error('Ethereum not setup properly.');
+    }
+    const correctChainId = window.location.href.includes('panvala.com/donate') ? 1 : 4;
+    const network = await this.provider.getNetwork();
+    if (network.chainId !== correctChainId) {
+      alert('Wrong network or route');
+      // prevent further action
+      throw new Error('Wrong network or route');
+    }
+  }
+
   // Sell order (exact input) -> calculates amount bought (output)
   async quoteEthToPan(etherToSpend) {
     console.log('');
@@ -193,17 +218,6 @@ class Root extends React.Component {
   async handleClickDonate(e) {
     e.preventDefault();
 
-    await this.setSelectedAccount();
-    await this.setContracts();
-
-    // Make sure ethereum is hooked up properly
-    try {
-      await this.checkEthereum();
-    } catch (error) {
-      console.error(error);
-      throw error;
-    }
-
     const pledgeFirstName = document.getElementById('pledge-first-name');
     const pledgeLastName = document.getElementById('pledge-last-name');
     const pledgeEmail = document.getElementById('pledge-email');
@@ -226,6 +240,20 @@ class Root extends React.Component {
       alert('You must select a pledge duration.');
       return;
     }
+
+    await this.setSelectedAccount();
+    await this.setContracts();
+
+    // Make sure ethereum is hooked up properly
+    try {
+      await this.checkEthereum();
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+
+    // Make sure the user is connected to the correct network (based on the URL)
+    await this.checkNetwork();
 
     const tier = utils.getTier(pledgeMonthlySelect.value);
     this.setState({
