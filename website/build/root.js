@@ -369,7 +369,7 @@ class Root extends React.Component {
         var gasPrice = yield utils.getGasPrice();
         var tx = yield _this7.exchange.functions.ethToTokenSwapInput(minTokens, deadline, {
           value: hexlify(utils.BN(donation.ethValue)),
-          gasLimit: hexlify(1e6),
+          gasLimit: hexlify(150000),
           gasPrice: gasPrice || hexlify(12e9)
         });
         console.log('tx:', tx);
@@ -428,8 +428,8 @@ class Root extends React.Component {
         try {
           // Donate PAN to token capacitor
           var donateTx = yield _this8.tokenCapacitor.functions.donate(_this8.state.selectedAccount, _this8.state.panPurchased, Buffer.from(multihash), {
-            gasLimit: hexlify(1e6),
-            // 1 MM
+            gasLimit: hexlify(150000),
+            // 150K
             gasPrice: gasPrice || hexlify(12e9) // 12 GWei
 
           }); // Wait for tx to be mined

@@ -338,7 +338,7 @@ class Root extends React.Component {
 
       const tx = await this.exchange.functions.ethToTokenSwapInput(minTokens, deadline, {
         value: hexlify(utils.BN(donation.ethValue)),
-        gasLimit: hexlify(1e6),
+        gasLimit: hexlify(150000),
         gasPrice: gasPrice || hexlify(12e9),
       });
       console.log('tx:', tx);
@@ -403,7 +403,7 @@ class Root extends React.Component {
           this.state.panPurchased,
           Buffer.from(multihash),
           {
-            gasLimit: hexlify(1e6), // 1 MM
+            gasLimit: hexlify(150000), // 150K
             gasPrice: gasPrice || hexlify(12e9), // 12 GWei
           }
         );
