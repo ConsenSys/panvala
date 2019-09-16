@@ -23,7 +23,7 @@ const styles = {
   },
   body: {
     position: 'fixed',
-    top: '200px',
+    top: '10vh',
     margin: '0 auto',
     display: 'flex',
     flexDirection: 'column',
