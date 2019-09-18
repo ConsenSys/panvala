@@ -1,5 +1,11 @@
 'use strict';
 
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 var styles = {
   container: {
     display: 'flex',
@@ -182,6 +188,14 @@ var StepTwo = (_ref4) => {
   }, "You now have PAN tokens! Confirm the MetaMask transaction to finalize your donation.", React.createElement("br", null), "Under the hood: ".concat(message)), React.createElement(MetaMaskDialog, null));
 };
 
+var Tweet = () => {
+  return React.createElement("a", {
+    class: "twitter-share-button",
+    href: "https://twitter.com/intent/tweet?text=I%20just%20made%20a%20donation%20to%20Panvala%20to%20support%20the%20Ethereum%20open%20source%20ecosystem.%20Please%20join%20me%20by%20contributing%20at%20panvala.com&hashtags=panvala,ethereum",
+    "data-size": "large"
+  });
+};
+
 var StepThree = (_ref5) => {
   var {
     message,
@@ -198,10 +212,21 @@ var StepThree = (_ref5) => {
     style: styles.patron
   }, "You are now a", tier[0] === 'e' && 'n', " ", React.createElement("strong", null, message, " Patron")), React.createElement("div", {
     style: styles.thankYou
-  }, "Thank you for donating to Panvala. Each and every Panvala patron plays a key role in moving Ethereum forward."), React.createElement("div", {
+  }, "Thank you for donating to Panvala. Each and every Panvala patron plays a key role in moving Ethereum forward. You can share your support on Twitter!"), React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-around',
+      width: '80%'
+    }
+  }, React.createElement("div", {
     style: styles.cancel,
     onClick: handleClose
-  }, "Close"));
+  }, "Close"), React.createElement("div", {
+    style: _objectSpread({}, styles.cancel, {
+      backgroundColor: '#1b95e0'
+    })
+  }, React.createElement(Tweet, null))));
 };
 
 var WebsiteModal = (_ref6) => {

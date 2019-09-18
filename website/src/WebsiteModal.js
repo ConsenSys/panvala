@@ -182,6 +182,16 @@ const StepTwo = ({ message }) => (
   </>
 );
 
+const Tweet = () => {
+  return (
+    <a
+      class="twitter-share-button"
+      href="https://twitter.com/intent/tweet?text=I%20just%20made%20a%20donation%20to%20Panvala%20to%20support%20the%20Ethereum%20open%20source%20ecosystem.%20Please%20join%20me%20by%20contributing%20at%20panvala.com&hashtags=panvala,ethereum"
+      data-size="large"
+    ></a>
+  );
+};
+
 const StepThree = ({ message, handleClose }) => {
   const tier = message.toLowerCase();
   return (
@@ -195,11 +205,15 @@ const StepThree = ({ message, handleClose }) => {
       </div>
       <div style={styles.thankYou}>
         Thank you for donating to Panvala. Each and every Panvala patron plays a key role in moving
-        Ethereum forward.
-        {/* You can share your support on Twitter! */}
+        Ethereum forward. You can share your support on Twitter!
       </div>
-      <div style={styles.cancel} onClick={handleClose}>
-        Close
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', width: '80%' }}>
+        <div style={styles.cancel} onClick={handleClose}>
+          Close
+        </div>
+        <div style={{ ...styles.cancel, backgroundColor: '#1b95e0' }}>
+          <Tweet />
+        </div>
       </div>
     </>
   );
