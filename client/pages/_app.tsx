@@ -82,7 +82,7 @@ export default class MyApp extends App<IProps, IState> {
         </EthereumProvider>
         <ToastContainer
           position="bottom-right"
-          autoClose={8000}
+          autoClose={false}
           hideProgressBar={true}
           newestOnTop={false}
           rtl={false}
