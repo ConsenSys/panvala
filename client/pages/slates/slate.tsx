@@ -1,5 +1,6 @@
 import * as React from 'react';
 import styled from 'styled-components';
+import { space } from 'styled-system';
 import { colors } from '../../styles';
 import Box from '../../components/system/Box';
 import Card from '../../components/Card';
@@ -37,7 +38,7 @@ export const MetaColumn = styled.div`
 `;
 export const MainColumn = styled.div`
   width: 70%;
-  padding: 1.75rem 3rem;
+  ${space};
 `;
 const SlateProposals = styled.div`
   display: flex;
@@ -58,20 +59,21 @@ const GrantSlateDetail = ({ slate }) => {
       {hasProposals ? (
         <SlateProposals>
           {slate.proposals.map((proposal: IProposal) => (
-            <RouterLink
-              href={`/proposals/proposal?id=${proposal.id}`}
-              as={`/proposals/${proposal.id}`}
-              key={proposal.id}
-            >
-              <Card
-                title={proposal.title}
-                subtitle={proposal.tokensRequested + ' Tokens Requested'}
-                description={proposal.summary}
-                category={'GRANT PROPOSAL'}
-                type={PROPOSAL}
-                width={['100%', '100%', '100%', '50%']}
-              />
-            </RouterLink>
+            <Box width={['100%', '100%', '100%', '50%']} m={['0']} key={proposal.id}>
+              <RouterLink
+                href={`/proposals/proposal?id=${proposal.id}`}
+                as={`/proposals/${proposal.id}`}
+              >
+                <Card
+                  title={proposal.title}
+                  subtitle={proposal.tokensRequested + ' Tokens Requested'}
+                  description={proposal.summary}
+                  category={'GRANT PROPOSAL'}
+                  type={PROPOSAL}
+                  width={['100%', '100%', '100%', '50%']}
+                />
+              </RouterLink>
+            </Box>
           ))}
         </SlateProposals>
       ) : (
@@ -184,7 +186,7 @@ const Slate: StatelessPage<IProps> = ({ query: { id } }) => {
           />
         </MetaColumn>
 
-        <MainColumn>
+        <MainColumn padding={['1rem', '1rem', '1.5rem', '1.5rem']}>
           <SectionLabel>DESCRIPTION</SectionLabel>
           <Box color="black" mb={5}>
             {slate.description}

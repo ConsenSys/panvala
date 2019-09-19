@@ -22,7 +22,7 @@ const FlexContainer = styled.div`
 
 export default ({ title, children }: any) => (
   <FlexContainer>
-    <LayoutWrapper mx={['1em', '1.5em', '4em', '10em']} my={['1em', '1.5em', '2em']}>
+    <LayoutWrapper mx={['1em', '1.5em', '4em', '7em']} my={['1em', '1.5em', '2em']}>
       <Head>
         <title>{title}</title>
       </Head>
