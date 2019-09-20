@@ -25,7 +25,7 @@ import { formatPanvalaUnits } from '../../utils/format';
 import { sendApproveTransaction, sendStakeTokensTransaction } from '../../utils/transaction';
 import RouterLink from '../../components/RouterLink';
 
-import { handleGenericError } from '../../utils/errors';
+import { handleGenericError, ETHEREUM_NOT_AVAILABLE } from '../../utils/errors';
 
 const Wrapper = styled.div`
   font-family: 'Roboto';
@@ -79,14 +79,22 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
     }
   }, [slatesByID, slate.requiredStake]);
 
+  function checkAccount() {
+    if (!account) {
+      throw new Error(ETHEREUM_NOT_AVAILABLE);
+    }
+  }
+
   // step 1: approve
   async function handleApproveTokens() {
-    if (!account || approved) {
-      console.log('no account or already approved');
-      return false;
-    }
-
     try {
+      checkAccount();
+
+      if (approved) {
+        console.log('already approved');
+        return false;
+      }
+
       if (contracts) {
         // send tx (pending)
         setTxPending(true);
@@ -113,10 +121,12 @@ const Stake: StatelessPage<any> = ({ query, classes }) => {
   // step 2: stakeTokens
   async function handleStakeTokens() {
     try {
+      checkAccount();
+
       // check (again) if the user has approved the gatekeeper for the slate staking requirement
       const isApproved: boolean = gkAllowance.gte(slate.requiredStake);
-      if (!account || !isApproved) {
-        console.log('no account or not approved');
+      if (!isApproved) {
+        console.log('not approved');
         return false;
       }
 

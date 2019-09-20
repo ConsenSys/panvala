@@ -15,7 +15,7 @@ import { StatelessPage } from '../interfaces';
 import { sendAndWaitForTransaction } from '../utils/transaction';
 import { tsToDeadline } from '../utils/datetime';
 import PendingTransaction from '../components/PendingTransaction';
-import { handleGenericError } from '../utils/errors';
+import { handleGenericError, ETHEREUM_NOT_AVAILABLE } from '../utils/errors';
 
 const CenteredSection = styled.div`
   padding: 2rem;
@@ -73,6 +73,8 @@ const Withdraw: StatelessPage<IProps> = ({ query, asPath }) => {
         setTxPending(false);
         onRefreshBalances();
         onRefreshSlates();
+      } else {
+        throw new Error(ETHEREUM_NOT_AVAILABLE);
       }
     } catch (error) {
       handleWithdrawError(error);

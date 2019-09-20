@@ -55,7 +55,7 @@ import Text from '../../../components/system/Text';
 import { isSlateSubmittable } from '../../../utils/status';
 import { projectedAvailableTokens } from '../../../utils/tokens';
 import Loader from '../../../components/Loader';
-import { handleGenericError } from '../../../utils/errors';
+import { handleGenericError, ETHEREUM_NOT_AVAILABLE } from '../../../utils/errors';
 
 const Separator = styled.div`
   border: 1px solid ${COLORS.grey5};
@@ -268,21 +268,18 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
    * add slate to db: slateID, multihash
    */
   async function handleSubmitSlate(values: IFormValues, selectedProposals: IProposal[]) {
-    if (!account || !onRefreshSlates || !contracts) {
-      const msg =
-        'To create a slate, you must first log into MetaMask and switch to the Rinkeby Test Network.';
-      toast.error(msg);
-      return;
-    }
-    const numTxs = calculateNumTxs(values, selectedProposals);
-    setTxsPending(numTxs);
-    setPendingText('Adding proposals to IPFS...');
-
-    // save proposal metadata to IPFS to be included in the slate metadata
-    console.log('preparing proposals...');
-
     let errorMessagePrefix = '';
     try {
+      if (!account || !onRefreshSlates || !contracts) {
+        throw new Error(ETHEREUM_NOT_AVAILABLE);
+      }
+
+      const numTxs = calculateNumTxs(values, selectedProposals);
+      setTxsPending(numTxs);
+      setPendingText('Adding proposals to IPFS...');
+
+      // save proposal metadata to IPFS to be included in the slate metadata
+      console.log('preparing proposals...');
       const proposalMultihashes: Buffer[] = await Promise.all(
         selectedProposals.map(async (metadata: IGrantProposalMetadata) => {
           try {
@@ -397,7 +394,7 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
         onRefreshBalances();
       } else {
         errorMessagePrefix = `problem saving slate info ${response.data}`;
-        handleSubmissionError(errorMessagePrefix, new Error(`API error ${response.data}`));
+        throw new Error(`API error ${response.data}`);
       }
     } catch (error) {
       const fullErrorMessage = `${errorMessagePrefix}: ${error.message}`;

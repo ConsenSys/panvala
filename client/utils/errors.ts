@@ -52,6 +52,8 @@ export enum PanvalaError {
   Unknown,
 }
 
+export const ETHEREUM_NOT_AVAILABLE = 'Ethereum not available';
+
 /**
  * Try to handle the error generically. Return a PanvalaError if the error isn't handled.
  */
@@ -87,6 +89,11 @@ function checkError(error: Error): PanvalaError {
 
       // revert
     }
+  } else if (msg.includes('Ethereum not available')) {
+    return PanvalaError.NotLoggedIn;
+  } else if (msg.includes('unknown account')) {
+    // from ethers
+    return PanvalaError.NotLoggedIn;
   }
 
   // TODO:

@@ -25,7 +25,7 @@ import SectionLabel from '../../../components/SectionLabel';
 import { convertedToBaseUnits, formatPanvalaUnits } from '../../../utils/format';
 import { ipfsAddObject } from '../../../utils/ipfs';
 import { postSlate } from '../../../utils/api';
-import { handleGenericError } from '../../../utils/errors';
+import { handleGenericError, ETHEREUM_NOT_AVAILABLE } from '../../../utils/errors';
 import {
   ISaveSlate,
   StatelessPage,
@@ -91,69 +91,68 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes, router }) => {
 
   // Submit slate information to the Gatekeeper, saving metadata in IPFS
   async function handleSubmitSlate(values: IGovernanceSlateFormValues) {
-    if (!account) {
-      const msg =
-        'To create a slate, you must first log into MetaMask and switch to the Rinkeby Test Network.';
-      toast.error(msg);
-      return;
-    }
-    const numTxs = calculateNumTxs(values);
-    setTxsPending(numTxs);
-    setPendingText('Adding proposals to IPFS...');
-
-    // filter for only changes in parameters
-    const parameterChanges: IParameterChangesObject = Object.keys(values.parameters).reduce(
-      (acc, paramKey) => {
-        let value = clone(values.parameters[paramKey]);
-        if (!!value.newValue && value.newValue !== value.oldValue) {
-          if (paramKey === 'slateStakeAmount') {
-            value.newValue = convertedToBaseUnits(value.newValue, 18);
-          }
-          return {
-            ...acc,
-            [paramKey]: value,
-          };
-        }
-        return acc;
-      },
-      {}
-    );
-    console.log('parameterChanges:', parameterChanges);
-    const paramKeys = Object.keys(parameterChanges);
-
-    const proposalMetadatas: IGovernanceProposalMetadata[] = paramKeys.map((param: string) => {
-      return {
-        id: Object.keys(parameterChanges).length,
-        firstName: values.firstName,
-        lastName: values.lastName,
-        summary: values.summary,
-        organization: values.organization,
-        parameterChanges: {
-          ...parameterChanges[param],
-        },
-      };
-    });
-    const proposalMultihashes: Buffer[] = await Promise.all(
-      proposalMetadatas.map(async (metadata: IGovernanceProposalMetadata) => {
-        try {
-          const multihash: string = await ipfsAddObject(metadata);
-          // we need a buffer of the multihash for the transaction
-          return Buffer.from(multihash);
-        } catch (error) {
-          return error;
-        }
-      })
-    );
-    const proposalInfo: IGovernanceProposalInfo = {
-      metadatas: proposalMetadatas,
-      multihashes: proposalMultihashes,
-    };
-
-    // save proposal metadata to IPFS to be included in the slate metadata
-    console.log('preparing proposals...');
     let errorMessage = '';
 
     try {
+      if (!account) {
+        throw new Error(ETHEREUM_NOT_AVAILABLE);
+      }
+
+      const numTxs = calculateNumTxs(values);
+      setTxsPending(numTxs);
+      setPendingText('Adding proposals to IPFS...');
+
+      // filter for only changes in parameters
+      const parameterChanges: IParameterChangesObject = Object.keys(values.parameters).reduce(
+        (acc, paramKey) => {
+          let value = clone(values.parameters[paramKey]);
+          if (!!value.newValue && value.newValue !== value.oldValue) {
+            if (paramKey === 'slateStakeAmount') {
+              value.newValue = convertedToBaseUnits(value.newValue, 18);
+            }
+            return {
+              ...acc,
+              [paramKey]: value,
+            };
+          }
+          return acc;
+        },
+        {}
+      );
+      console.log('parameterChanges:', parameterChanges);
+      const paramKeys = Object.keys(parameterChanges);
+
+      const proposalMetadatas: IGovernanceProposalMetadata[] = paramKeys.map((param: string) => {
+        return {
+          id: Object.keys(parameterChanges).length,
+          firstName: values.firstName,
+          lastName: values.lastName,
+          summary: values.summary,
+          organization: values.organization,
+          parameterChanges: {
+            ...parameterChanges[param],
+          },
+        };
+      });
+      const proposalMultihashes: Buffer[] = await Promise.all(
+        proposalMetadatas.map(async (metadata: IGovernanceProposalMetadata) => {
+          try {
+            const multihash: string = await ipfsAddObject(metadata);
+            // we need a buffer of the multihash for the transaction
+            return Buffer.from(multihash);
+          } catch (error) {
+            return error;
+          }
+        })
+      );
+      const proposalInfo: IGovernanceProposalInfo = {
+        metadatas: proposalMetadatas,
+        multihashes: proposalMultihashes,
+      };
+
+      // save proposal metadata to IPFS to be included in the slate metadata
+      console.log('preparing proposals...');
+
       setPendingText('Including proposals in slate (check MetaMask)...');
       // 1. create proposal and get request ID
       const emptySlate = values.recommendation === 'noAction';

@@ -20,7 +20,7 @@ import { IEthereumContext, EthereumContext } from '../components/EthereumProvide
 import { saveState, loadState, LINKED_WALLETS } from '../utils/localStorage';
 import { splitAddressHumanReadable, isAddress } from '../utils/format';
 import { COLORS } from '../styles';
-import { handleGenericError } from '../utils/errors';
+import { handleGenericError, ETHEREUM_NOT_AVAILABLE } from '../utils/errors';
 
 const CancelButton = styled(Button)`
   color: ${COLORS.grey3};
@@ -153,6 +153,8 @@ const Wallet: React.SFC = () => {
       } catch (error) {
         handleLinkError(error);
       }
+    } else {
+      throw new Error(ETHEREUM_NOT_AVAILABLE);
     }
   }
 

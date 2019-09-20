@@ -24,7 +24,7 @@ import {
   getMaxVotingRights,
 } from '../../utils/voting';
 import { postBallot } from '../../utils/api';
-import { handleGenericError } from '../../utils/errors';
+import { handleGenericError, ETHEREUM_NOT_AVAILABLE } from '../../utils/errors';
 import { isBallotOpen, convertEVMSlateStatus, SlateStatus } from '../../utils/status';
 import Actions from '../../components/Actions';
 import { loadState, LINKED_WALLETS } from '../../utils/localStorage';
@@ -201,50 +201,55 @@ const Vote: React.FC = () => {
 
     setTxPending(true);
 
-    // Put choices in the format to submit
-    const submitChoices = {};
-    Object.keys(choices).forEach(category => {
-      const choice = choices[category];
-      const resource = categoryToResource(category);
-      submitChoices[resource] = {
-        firstChoice: utils.bigNumberify(choice.firstChoice).toString(),
-        secondChoice: utils.bigNumberify(choice.secondChoice).toString(),
-      };
-    });
-    console.log('choices to submit', submitChoices);
+    // prepare and submit the ballot choices
+    try {
+      // Put choices in the format to submit
+      const submitChoices = {};
+      Object.keys(choices).forEach(category => {
+        const choice = choices[category];
+        const resource = categoryToResource(category);
+        submitChoices[resource] = {
+          firstChoice: utils.bigNumberify(choice.firstChoice).toString(),
+          secondChoice: utils.bigNumberify(choice.secondChoice).toString(),
+        };
+      });
+      console.log('choices to submit', submitChoices);
 
-    if (account && !isEmpty(token)) {
-      let numTokens = await getMaxVotingRights(
-        panBalance,
-        votingRights,
-        gkAllowance,
-        token,
-        gatekeeper
-      );
+      if (account && !isEmpty(token) && !isEmpty(ethProvider)) {
+        let numTokens = await getMaxVotingRights(
+          panBalance,
+          votingRights,
+          gkAllowance,
+          token,
+          gatekeeper
+        );
 
-      let tokenHolder = account;
-      const linkedWallets = loadState(LINKED_WALLETS);
-      if (!!linkedWallets && !!linkedWallets.coldWallet) {
-        const delegate = await gatekeeper.functions.delegate(linkedWallets.coldWallet);
-        if (delegate === account) {
-          tokenHolder = linkedWallets.coldWallet;
-          // prettier-ignore
-          numTokens = await gatekeeper.functions.voteTokenBalance(tokenHolder);
+        let tokenHolder = account;
+        const linkedWallets = loadState(LINKED_WALLETS);
+        if (!!linkedWallets && !!linkedWallets.coldWallet) {
+          const delegate = await gatekeeper.functions.delegate(linkedWallets.coldWallet);
+          if (delegate === account) {
+            tokenHolder = linkedWallets.coldWallet;
+            // prettier-ignore
+            numTokens = await gatekeeper.functions.voteTokenBalance(tokenHolder);
+          }
         }
-      }
-      console.log('numTokens:', numTokens);
+        console.log('numTokens:', numTokens);
 
-      const ballot: ISubmitBallot = {
-        epochNumber: currentBallot.epochNumber.toString(),
-        choices: submitChoices,
-        salt,
-        voterAddress: tokenHolder,
-        ...(tokenHolder !== account && { delegate: account }),
-      };
-      console.log('ballot:', ballot);
+        // TODO: check that the token holder has not already committed and throw if they have
+        // No need to go through all the rest if they have
 
-      if (!isEmpty(ethProvider) && numTokens.gt('0')) {
-        try {
+        const ballot: ISubmitBallot = {
+          epochNumber: currentBallot.epochNumber.toString(),
+          choices: submitChoices,
+          salt,
+          voterAddress: tokenHolder,
+          ...(tokenHolder !== account && { delegate: account }),
+        };
+        console.log('ballot:', ballot);
+
+        // Token holder has tokens, so submit the ballot
+        if (numTokens.gt('0')) {
           const commitHash: string = generateCommitHash(ballot.choices, salt);
 
           // 'Commit hash, first choice, second choice, salt'
@@ -276,11 +281,19 @@ const Vote: React.FC = () => {
             setTxPending(false);
             setOpenModal(true);
             toast.success('Successfully submitted a ballot');
+          } else {
+            console.error('Problem preparing ballot');
+            throw new Error('Problem preparing ballot');
           }
-        } catch (error) {
-          handleSubmissionError(error);
+        } else {
+          // no tokens to vote with
+          throw new Error(`Token holder ${tokenHolder} has no tokens available for voting`);
         }
+      } else {
+        throw new Error(ETHEREUM_NOT_AVAILABLE);
       }
+    } catch (error) {
+      handleSubmissionError(error);
     }
   }
 
@@ -292,7 +305,13 @@ const Vote: React.FC = () => {
     // interpret the error and display a toast if appropriate
     const errorType = handleGenericError(error, toast);
     if (errorType) {
-      toast.error(`Problem submitting vote ${error.message}`);
+      // Failed to approve
+      // Failed to delegate
+      // Token holder has no tokens
+      // Token holder has already committed fo this epoch
+      // Failed to save ballot
+      // Failed to commit ballot
+      toast.error(`Problem submitting ballot: ${error.message}`);
     }
 
     if (votingRights.gt('0') && panBalance.eq('0')) {
