@@ -16,14 +16,17 @@ export function ipfsCheckMultihash(multihash: string): boolean | Error {
 export async function ipfsGetData(multihash: string) {
   if (ipfsCheckMultihash(multihash)) {
     return new Promise((resolve, reject) => {
-      ipfs.cat(multihash, (err: any, result: string) => {
-        if (err) reject(new Error(err));
-
-        if (!result) {
-          reject(new Error('Ipfs.get returned undefined.'));
+      return ipfs.cat(multihash, (err: any, result: string) => {
+        if (err) {
+          reject(new Error(`IPFS get: ${err.message}`));
         }
-        const data = JSON.parse(result);
-        resolve(data);
+
+        try {
+          const data = JSON.parse(result);
+          resolve(data);
+        } catch (error) {
+          reject(new Error(`IPFS get: ${error.message}`));
+        }
       });
     });
   }
@@ -36,15 +39,19 @@ export async function ipfsAddObject(obj: any): Promise<string> {
   const CID: string = await new Promise((resolve, reject) => {
     const data = Buffer.from(JSON.stringify(obj));
 
-    ipfs.add(data, (err: any, result: any[]) => {
-      if (err) reject(new Error(err));
-
-      if (!result) {
-        reject(new Error('Ipfs.get returned undefined.'));
+    return ipfs.add(data, (err: any, result: any[]) => {
+      if (err) {
+        const msg = `IPFS add: ${err.message}`;
+        reject(new Error(msg));
       }
-      // Returns an array of objects (for each file added) with keys hash, path, size
-      const { hash } = result[0];
-      resolve(hash);
+
+      try {
+        // Returns an array of objects (for each file added) with keys hash, path, size
+        const { hash } = result[0];
+        resolve(hash);
+      } catch (error) {
+        reject(new Error(`IPFS add: ${error.message}`));
+      }
     });
   });
   console.log('CID:', CID);
