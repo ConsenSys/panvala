@@ -89,8 +89,35 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes, router }) => {
     return numTxs;
   }
 
+  // Condense to the bare parameter changes
+  function filterParameterChanges(
+    formParameters: IParameterChangesObject
+  ): IParameterChangesObject {
+    return Object.keys(formParameters).reduce((acc, paramKey) => {
+      let value = clone(formParameters[paramKey]);
+      if (!!value.newValue && value.newValue !== value.oldValue) {
+        if (paramKey === 'slateStakeAmount') {
+          value.newValue = convertedToBaseUnits(value.newValue, 18);
+        } else if (paramKey === 'gatekeeperAddress') {
+          // Lower-case so that `isAddress()` can handle it
+          value.newValue = value.newValue.toLowerCase();
+        }
+        return {
+          ...acc,
+          [paramKey]: value,
+        };
+      }
+      return acc;
+    }, {});
+  }
+
   // Submit slate information to the Gatekeeper, saving metadata in IPFS
-  async function handleSubmitSlate(values: IGovernanceSlateFormValues) {
+  async function handleSubmitSlate(
+    values: IGovernanceSlateFormValues,
+    parameterChanges: IParameterChangesObject
+  ) {
+    console.log('parameterChanges:', parameterChanges);
+
     let errorMessage = '';
 
     try {
@@ -102,24 +129,6 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes, router }) => {
       setTxsPending(numTxs);
       setPendingText('Adding proposals to IPFS...');
 
-      // filter for only changes in parameters
-      const parameterChanges: IParameterChangesObject = Object.keys(values.parameters).reduce(
-        (acc, paramKey) => {
-          let value = clone(values.parameters[paramKey]);
-          if (!!value.newValue && value.newValue !== value.oldValue) {
-            if (paramKey === 'slateStakeAmount') {
-              value.newValue = convertedToBaseUnits(value.newValue, 18);
-            }
-            return {
-              ...acc,
-              [paramKey]: value,
-            };
-          }
-          return acc;
-        },
-        {}
-      );
-      console.log('parameterChanges:', parameterChanges);
       const paramKeys = Object.keys(parameterChanges);
 
       const proposalMetadatas: IGovernanceProposalMetadata[] = paramKeys.map((param: string) => {
@@ -303,8 +312,25 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes, router }) => {
                 }
           }
           validationSchema={GovernanceSlateFormSchema}
-          onSubmit={async (values: IGovernanceSlateFormValues, { setSubmitting }: any) => {
-            await handleSubmitSlate(values);
+          onSubmit={async (
+            values: IGovernanceSlateFormValues,
+            { setSubmitting, setFieldError }: any
+          ) => {
+            const emptySlate = values.recommendation === 'noAction';
+
+            if (emptySlate) {
+              // Submit with no changes if the user selected noAction
+              const noChanges: IParameterChangesObject = {};
+              await handleSubmitSlate(values, noChanges);
+            } else {
+              const changes: IParameterChangesObject = filterParameterChanges(values.parameters);
+              if (Object.keys(changes).length === 0) {
+                setFieldError('parametersForm', 'You must enter some parameters to change');
+              } else {
+                await handleSubmitSlate(values, changes);
+              }
+            }
+
             // re-enable submit button
             setSubmitting(false);
           }}
@@ -314,6 +340,7 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes, router }) => {
             values,
             setFieldValue,
             handleSubmit,
+            errors,
           }: FormikContext<IGovernanceSlateFormValues>) => (
             <Box>
               <Form>
@@ -370,16 +397,17 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes, router }) => {
 
                 <Separator />
                 <Box p={4}>
-                  <SectionLabel>{'PARAMETERS'}</SectionLabel>
-                  <ParametersForm
-                    onChange={setFieldValue}
-                    slateStakeAmount={formatPanvalaUnits(slateStakeAmount)}
-                    newSlateStakeAmount={values.parameters.slateStakeAmount.newValue}
-                    newGatekeeperAddress={values.parameters.gatekeeperAddress.newValue}
-                    gatekeeperAddress={
-                      contracts && contracts.gatekeeper && contracts.gatekeeper.address
-                    }
-                  />
+                  {values.recommendation === 'governance' && (
+                    <>
+                      <SectionLabel>{'PARAMETERS'}</SectionLabel>
+                      <ParametersForm
+                        onChange={setFieldValue}
+                        newSlateStakeAmount={values.parameters.slateStakeAmount.newValue}
+                        newGatekeeperAddress={values.parameters.gatekeeperAddress.newValue}
+                        errors={errors}
+                      />
+                    </>
+                  )}
 
                   <Separator />
                   <Box p={4}>

@@ -1,10 +1,21 @@
 import * as React from 'react';
+import styled from 'styled-components';
+
 import Flex, { BreakableFlex } from './system/Flex';
-import Input from './Input';
 import { EthereumContext } from './EthereumProvider';
 import { formatPanvalaUnits } from '../utils/format';
+import FieldInput from '../components/FieldInput';
+
+const CustomErrorMessage = styled.span`
+  font-weight: 400;
+  font-size: 0.85rem;
+  margin-left: 0.5em;
+  color: red;
+`;
 
 const ParameterRow: React.SFC<any> = props => {
+  const { onChange, parameterName, name, oldValue, newValue, type: parameterType } = props;
+
   return (
     <Flex
       p={3}
@@ -16,20 +27,20 @@ const ParameterRow: React.SFC<any> = props => {
       borderColor="greys.light"
     >
       <Flex justifyStart width="25%" fontSize={1}>
-        {props.parameterName}
+        {parameterName}
       </Flex>
       <BreakableFlex justifyStart width="35%" fontSize={1}>
-        {props.oldValue}
+        {oldValue}
       </BreakableFlex>
       <BreakableFlex justifyStart width="35%" fontSize={1}>
-        <Input
+        <FieldInput
           m={0}
           fontFamily="Fira Code"
-          name="new-value"
-          onChange={(e: any) => props.onChange(props.name, e.target.value)}
-          value={props.newValue}
-          placeholder={props.type}
-          type={props.type === 'Number' ? 'number' : 'text'}
+          name={name}
+          onChange={onChange}
+          value={newValue}
+          placeholder={parameterType}
+          type={parameterType === 'Number' ? 'number' : 'text'}
         />
       </BreakableFlex>
     </Flex>
@@ -37,6 +48,8 @@ const ParameterRow: React.SFC<any> = props => {
 };
 
 const ParametersForm: React.SFC<any> = props => {
+  const { errors } = props;
+
   const {
     contracts: { gatekeeper },
     slateStakeAmount,
@@ -83,6 +96,10 @@ const ParametersForm: React.SFC<any> = props => {
             onChange={props.onChange}
           />
         ))}
+        {/* display errors global to the parameters form */}
+        {errors.parametersForm ? (
+          <CustomErrorMessage>{errors.parametersForm}</CustomErrorMessage>
+        ) : null}
       </Flex>
     </>
   );
