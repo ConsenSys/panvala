@@ -1,4 +1,4 @@
-import { GovernanceSlateFormSchema } from '../../utils/schemas';
+import { GovernanceSlateFormSchema, GrantProposalFormSchema } from '../../utils/schemas';
 
 const someAddress = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 
@@ -112,6 +112,68 @@ describe('Schemas', () => {
         const isValid = await GovernanceSlateFormSchema.isValid(values);
         expect(isValid).toBe(false);
       });
+    });
+  });
+
+  describe('Grant proposal form', () => {
+    const data = {
+      firstName: 'Jenny',
+      lastName: 'Crypto',
+      email: 'jcrypto@example.com',
+      title: 'Great project',
+      summary: 'Really good stuff',
+      tokensRequested: '1000',
+      awardAddress: someAddress,
+    };
+
+    const requiredFields = [
+      'firstName',
+      'email',
+      'title',
+      'summary',
+      'tokensRequested',
+      'awardAddress',
+    ];
+
+    test('should accept the form values', async () => {
+      const values = data;
+      const isValid = await GrantProposalFormSchema.isValid(values);
+      expect(isValid).toBe(true);
+    });
+
+    describe('required fields', () => {
+      test.each(requiredFields)('should reject if `%s` is empty', async field => {
+        const values = data;
+        values[field] = '';
+        const isValid = await GrantProposalFormSchema.isValid(values);
+        expect(isValid).toBe(false);
+      });
+
+      test.each(requiredFields)('should reject if `%s` is all whitespace', async field => {
+        const values = data;
+        values[field] = '   ';
+        const isValid = await GrantProposalFormSchema.isValid(values);
+        expect(isValid).toBe(false);
+      });
+    });
+
+    // Bad data
+    test('should reject if zero tokens are requested', async () => {
+      const values = {
+        ...data,
+        tokensRequested: '0',
+      };
+      const isValid = await GrantProposalFormSchema.isValid(values);
+      expect(isValid).toBe(false);
+    });
+
+    test('should reject an invalid awardAddress', async () => {
+      const values = {
+        ...data,
+        awardAddress: 'abc',
+      };
+      const isValid = await GrantProposalFormSchema.isValid(values);
+      expect(isValid).toBe(false);
     });
   });
 });

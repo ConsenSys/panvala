@@ -10,6 +10,19 @@ export const panValueRegex = /^[0-9]+\.?[0-9]{0,18}$/;
 export const PanValueSchema = yup.string().matches(panValueRegex);
 export const EthereumAddressSchema = yup.string().matches(ethereumAddressRegex);
 
+const ethereumAddressTest = {
+  name: 'valid-eth-address',
+  message: 'Invalid Ethereum address',
+  test: value => {
+    if (typeof value !== 'string') return false;
+
+    if (value.trim().length > 0) {
+      return isAddress(value.toLowerCase());
+    }
+    return true;
+  },
+};
+
 // Schemas
 export const ParametersObjectSchema = yup
   .object()
@@ -30,18 +43,7 @@ export const ParametersObjectSchema = yup
   .shape({
     // can be empty strings
     gatekeeperAddress: yup.object().shape({
-      newValue: yup.string().test({
-        name: 'valid-eth-address',
-        message: 'Invalid Ethereum address',
-        test: value => {
-          if (typeof value !== 'string') return false;
-
-          if (value.trim().length > 0) {
-            return isAddress(value.toLowerCase());
-          }
-          return true;
-        },
-      }),
+      newValue: yup.string().test(ethereumAddressTest),
     }),
     slateStakeAmount: yup.object().shape({
       newValue: yup.string().matches(panValueRegex, {
@@ -87,4 +89,47 @@ export const GovernanceSlateFormSchema = yup.object().shape({
     then: ParametersObjectSchema,
     otherwise: yup.object(),
   }),
+});
+
+export const GrantProposalFormSchema = yup.object().shape({
+  firstName: yup
+    .string()
+    .trim()
+    .min(2, 'Too Short!')
+    .max(70, 'Too Long!')
+    .required('Required'),
+  lastName: yup
+    .string()
+    .trim()
+    .min(2, 'Too Short!')
+    .max(70, 'Too Long!'),
+  email: yup
+    .string()
+    .email('Invalid email')
+    .required('Required'),
+  title: yup
+    .string()
+    .trim()
+    .max(70, 'Too Long!')
+    .required('Required'),
+  summary: yup
+    .string()
+    .trim()
+    .max(4000, 'Too Long!')
+    .required('Required'),
+  tokensRequested: yup
+    .string()
+    .matches(panValueRegex, 'Must be a number with no more than 18 decimals')
+    .test({
+      name: 'non-zero-tokens',
+      message: 'Cannot request zero tokens',
+      test: value => value !== '0',
+    })
+    .required('Required'),
+  totalBudget: yup.string(),
+  otherFunding: yup.string(),
+  awardAddress: yup
+    .string()
+    .required('Required')
+    .test(ethereumAddressTest),
 });

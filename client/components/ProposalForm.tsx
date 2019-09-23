@@ -1,5 +1,4 @@
 import * as React from 'react';
-import * as yup from 'yup';
 import styled from 'styled-components';
 import { Formik, Form } from 'formik';
 import { Separator } from '../components/Separator';
@@ -13,64 +12,56 @@ import { convertedToBaseUnits } from '../utils/format';
 import Flex from './system/Flex';
 import BackButton from './BackButton';
 import Box from './system/Box';
-
-const FormSchema = yup.object().shape({
-  firstName: yup
-    .string()
-    .min(2, 'Too Short!')
-    .max(70, 'Too Long!')
-    .required('Required'),
-  lastName: yup
-    .string()
-    .min(2, 'Too Short!')
-    .max(70, 'Too Long!'),
-  email: yup
-    .string()
-    .email('Invalid email')
-    .required('Required'),
-  title: yup
-    .string()
-    .max(70, 'Too Long!')
-    .required('Required'),
-  summary: yup
-    .string()
-    .max(4000, 'Too Long!')
-    .required('Required'),
-  tokensRequested: yup
-    .string()
-    .matches(/^[0-9]+\.?[0-9]{0,18}$/, 'Must be a number with no more than 18 decimals')
-    .required('Required'),
-  totalBudget: yup.string(),
-  otherFunding: yup.string(),
-  awardAddress: yup.string().required('Required'),
-});
+import { GrantProposalFormSchema } from '../utils/schemas';
 
 interface IProps {
   onHandleSubmit: any;
 }
 
+const dummyValues = {
+  firstName: 'Jane',
+  lastName: 'Crypto',
+  email: 'jcrypto@example.com',
+  github: '',
+  tokensRequested: '1000',
+  title: 'Cool Project',
+  summary: 'Really cool stuff',
+  website: '',
+  projectPlan: '',
+  projectTimeline: '',
+  teamBackgrounds: '',
+  file: {},
+  totalBudget: '',
+  otherFunding: '',
+  awardAddress: '',
+};
+
 const ProposalForm: React.SFC<IProps> = ({ onHandleSubmit }) => {
   return (
     <div>
       <Formik
-        initialValues={{
-          firstName: '',
-          lastName: '',
-          email: '',
-          github: '',
-          tokensRequested: '',
-          title: '',
-          summary: '',
-          website: '',
-          projectPlan: '',
-          projectTimeline: '',
-          teamBackgrounds: '',
-          file: {},
-          totalBudget: '',
-          otherFunding: '',
-          awardAddress: '',
-        }}
-        validationSchema={FormSchema}
+        initialValues={
+          process.env.NODE_ENV === 'development'
+            ? dummyValues
+            : {
+                firstName: '',
+                lastName: '',
+                email: '',
+                github: '',
+                tokensRequested: '',
+                title: '',
+                summary: '',
+                website: '',
+                projectPlan: '',
+                projectTimeline: '',
+                teamBackgrounds: '',
+                file: {},
+                totalBudget: '',
+                otherFunding: '',
+                awardAddress: '',
+              }
+        }
+        validationSchema={GrantProposalFormSchema}
         onSubmit={async (values, { setSubmitting, setFieldError }) => {
           try {
             // throws on underflow (x.1234567890123456789)
