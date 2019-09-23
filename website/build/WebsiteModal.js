@@ -90,7 +90,7 @@ var styles = {
     textAlign: 'left'
   },
   cancel: {
-    marginTop: '1rem',
+    // marginTop: '1rem',
     width: '120px',
     height: '42px',
     backgroundColor: '#F5F6F9',
@@ -217,7 +217,8 @@ var StepThree = (_ref5) => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-around',
-      width: '80%'
+      width: '80%',
+      marginTop: '1rem'
     }
   }, React.createElement("div", {
     style: styles.cancel,

@@ -84,7 +84,7 @@ const styles = {
     textAlign: 'left',
   },
   cancel: {
-    marginTop: '1rem',
+    // marginTop: '1rem',
     width: '120px',
     height: '42px',
     backgroundColor: '#F5F6F9',
@@ -213,6 +213,7 @@ const StepThree = ({ message, handleClose }) => {
           alignItems: 'center',
           justifyContent: 'space-around',
           width: '80%',
+          marginTop: '1rem',
         }}
       >
         <div style={styles.cancel} onClick={handleClose}>
