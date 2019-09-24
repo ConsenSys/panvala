@@ -1,8 +1,9 @@
 import * as React from 'react';
 import styled from 'styled-components';
-import { Field as FormikField, ErrorMessage as FormikError } from 'formik';
+import { Field as FormikField } from 'formik';
 import { COLORS } from '../styles';
 import Label from './Label';
+import { ErrorMessage } from './FormError';
 
 export const Field = styled(FormikField)`
   background-color: ${COLORS.grey6};
@@ -12,13 +13,6 @@ export const Field = styled(FormikField)`
   padding: 0.8em;
   font-size: 0.8em;
   margin: 1em 0;
-`;
-
-export const ErrorMessage: any = styled(FormikError)`
-  font-weight: 400;
-  font-size: 0.85rem;
-  margin-left: 0.5em;
-  color: red;
 `;
 
 const FieldText = ({ label, name, placeholder, required }: any) => {

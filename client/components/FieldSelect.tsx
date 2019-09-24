@@ -1,8 +1,8 @@
 import * as React from 'react';
 import styled from 'styled-components';
-import { ErrorMessage as FormikError } from 'formik';
 import { COLORS } from '../styles';
 import Label from './Label';
+import { ErrorMessage } from './FormError';
 
 export const Select = styled.select`
   display: block;
@@ -22,13 +22,6 @@ export const Select = styled.select`
   background-repeat: no-repeat, repeat;
   background-position: right 0.7em top 50%, 0 0;
   background-size: 0.65em auto, 100%;
-`;
-
-export const ErrorMessage: any = styled(FormikError)`
-  font-weight: 400;
-  font-size: 0.85rem;
-  margin-left: 0.5em;
-  color: red;
 `;
 
 const FieldSelect = ({ label, name, placeholder, required, handleChange, value }: any) => {

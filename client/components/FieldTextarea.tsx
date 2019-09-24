@@ -1,6 +1,7 @@
 import * as React from 'react';
 import Label from './Label';
-import { ErrorMessage, Field } from './FieldText';
+import { Field } from './FieldText';
+import { ErrorMessage } from './FormError';
 
 const FieldTextarea = ({ label, name, placeholder, required }: any) => {
   return (

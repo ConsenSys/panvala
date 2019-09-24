@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { Field as FormikField } from 'formik';
 import { COLORS } from '../styles';
 import { space, layout, fontFamily } from 'styled-system';
-import { ErrorMessage } from './FieldText';
+import { ErrorMessage } from './FormError';
 
 const InputField: any = styled(FormikField)`
   border: 1px solid ${COLORS.greyBorder};
