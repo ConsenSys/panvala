@@ -110,6 +110,7 @@ export interface IBallotDates {
   votingOpenDate: number;
   votingCloseDate: number;
   finalityDate: number;
+  slateSubmissionStartDate: number;
   initialSlateSubmissionDeadline: number;
   slateSubmissionDeadline: {
     [key: string]: number;
@@ -131,6 +132,7 @@ export function ballotDates(startDate: number = 1549040400): IBallotDates {
     votingOpenDate: week11EndDate,
     votingCloseDate: week12EndDate,
     finalityDate: week13EndDate,
+    slateSubmissionStartDate: epochStartDate + oneWeekSeconds,
     initialSlateSubmissionDeadline,
     slateSubmissionDeadline: {
       GRANT: 0,

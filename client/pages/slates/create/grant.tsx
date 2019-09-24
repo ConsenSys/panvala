@@ -27,6 +27,7 @@ import SectionLabel from '../../../components/SectionLabel';
 import Modal, { ModalTitle, ModalDescription } from '../../../components/Modal';
 import Image from '../../../components/Image';
 import RouterLink from '../../../components/RouterLink';
+import ClosedSlateSubmission from '../../../components/ClosedSlateSubmission';
 import {
   IProposal,
   IGrantProposalMetadata,
@@ -95,7 +96,14 @@ interface IProps {
   router?: SingletonRouter;
 }
 
-const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
+enum PageStatus {
+  Loading,
+  Initialized,
+  SubmissionOpen,
+  SubmissionClosed,
+}
+
+const CreateGrantSlate: StatelessPage<IProps> = ({ query }) => {
   // get proposals and eth context
   const {
     slates,
@@ -115,13 +123,29 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
     panBalance,
   }: IEthereumContext = React.useContext(EthereumContext);
   const [pendingText, setPendingText] = React.useState('');
+  const [pageStatus, setPageStatus] = React.useState(PageStatus.Loading);
+  const [deadline, setDeadline] = React.useState(0);
 
+  // Update page status when ballot info changes
   React.useEffect(() => {
-    if (!isSlateSubmittable(currentBallot, 'GRANT')) {
-      toast.error('Grant slate submission deadline has passed');
-      router.push('/slates');
+    const newDeadline = currentBallot.slateSubmissionDeadline.GRANT;
+    setDeadline(newDeadline);
+
+    if (pageStatus === PageStatus.Loading) {
+      if (newDeadline === 0) return;
+
+      setPageStatus(PageStatus.Initialized);
+    } else {
+      if (!isSlateSubmittable(currentBallot, 'GRANT')) {
+        setPageStatus(PageStatus.SubmissionClosed);
+        // if (typeof router !== 'undefined') {
+        //   router.push('/slates');
+        // }
+      } else {
+        setPageStatus(PageStatus.SubmissionOpen);
+      }
     }
-  }, [currentBallot.slateSubmissionDeadline]);
+  }, [currentBallot.slateSubmissionDeadline, pageStatus]);
 
   // modal opener
   const [isOpen, setOpenModal] = React.useState(false);
@@ -428,7 +452,11 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
           stake: 'no',
         };
 
-  return (
+  if (pageStatus === PageStatus.Loading) {
+    return <div>Loading...</div>;
+  }
+
+  return pageStatus === PageStatus.SubmissionOpen ? (
     <div>
       <Modal handleClick={() => setOpenModal(false)} isOpen={isOpen}>
         <>
@@ -640,6 +668,8 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query, router }) => {
         </Formik>
       </CenteredWrapper>
     </div>
+  ) : (
+    <ClosedSlateSubmission deadline={deadline} category={'grant'} />
   );
 };
 

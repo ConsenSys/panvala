@@ -46,8 +46,16 @@ import BackButton from '../../../components/BackButton';
 import { isSlateSubmittable } from '../../../utils/status';
 import Loader from '../../../components/Loader';
 import { MaxUint256 } from 'ethers/constants';
+import ClosedSlateSubmission from '../../../components/ClosedSlateSubmission';
 
-const CreateGovernanceSlate: StatelessPage<any> = ({ classes, router }) => {
+enum PageStatus {
+  Loading,
+  Initialized,
+  SubmissionOpen,
+  SubmissionClosed,
+}
+
+const CreateGovernanceSlate: StatelessPage<any> = () => {
   // modal opener
   const [isOpen, setOpenModal] = React.useState(false);
   const { onRefreshSlates, onRefreshCurrentBallot, currentBallot }: IMainContext = React.useContext(
@@ -62,13 +70,29 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes, router }) => {
     gkAllowance,
   }: IEthereumContext = React.useContext(EthereumContext);
   const [pendingText, setPendingText] = React.useState('');
+  const [pageStatus, setPageStatus] = React.useState(PageStatus.Loading);
+  const [deadline, setDeadline] = React.useState(0);
 
+  // Update page status when ballot info changes
   React.useEffect(() => {
-    if (!isSlateSubmittable(currentBallot, 'GOVERNANCE')) {
-      toast.error('Governance slate submission deadline has passed');
-      router.push('/slates');
+    const newDeadline = currentBallot.slateSubmissionDeadline.GOVERNANCE;
+    setDeadline(newDeadline);
+
+    if (pageStatus === PageStatus.Loading) {
+      if (newDeadline === 0) return;
+
+      setPageStatus(PageStatus.Initialized);
+    } else {
+      if (!isSlateSubmittable(currentBallot, 'GOVERNANCE')) {
+        setPageStatus(PageStatus.SubmissionClosed);
+        // if (typeof router !== 'undefined') {
+        //   router.push('/slates');
+        // }
+      } else {
+        setPageStatus(PageStatus.SubmissionOpen);
+      }
     }
-  }, [currentBallot.slateSubmissionDeadline]);
+  }, [currentBallot.slateSubmissionDeadline, pageStatus]);
 
   // pending tx loader
   const [txsPending, setTxsPending] = React.useState(0);
@@ -257,7 +281,11 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes, router }) => {
     console.error(error);
   }
 
-  return (
+  if (pageStatus === PageStatus.Loading) {
+    return <div>Loading...</div>;
+  }
+
+  return pageStatus === PageStatus.SubmissionOpen ? (
     <>
       <CenteredTitle title="Create a Governance Slate" />
 
@@ -470,6 +498,8 @@ const CreateGovernanceSlate: StatelessPage<any> = ({ classes, router }) => {
         </>
       </Modal>
     </>
+  ) : (
+    <ClosedSlateSubmission deadline={deadline} category={'governance'} />
   );
 };
 

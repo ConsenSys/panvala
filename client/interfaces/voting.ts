@@ -2,7 +2,7 @@ export interface IChoices {
   [resource: string]: {
     firstChoice: string;
     secondChoice: string;
-  }
+  };
 }
 
 export interface ISubmitBallot {
@@ -23,6 +23,7 @@ export interface IBallotDates {
   votingOpenDate: number;
   votingCloseDate: number;
   finalityDate: number;
+  slateSubmissionStartDate: number;
   initialSlateSubmissionDeadline: number;
   // category -> timestamp
   slateSubmissionDeadline: {

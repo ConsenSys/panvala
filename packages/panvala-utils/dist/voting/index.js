@@ -95,6 +95,7 @@ function ballotDates(startDate = 1549040400) {
         votingOpenDate: week11EndDate,
         votingCloseDate: week12EndDate,
         finalityDate: week13EndDate,
+        slateSubmissionStartDate: epochStartDate + oneWeekSeconds,
         initialSlateSubmissionDeadline,
         slateSubmissionDeadline: {
             GRANT: 0,

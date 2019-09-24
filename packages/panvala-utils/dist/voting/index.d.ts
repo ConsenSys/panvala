@@ -48,6 +48,7 @@ export interface IBallotDates {
     votingOpenDate: number;
     votingCloseDate: number;
     finalityDate: number;
+    slateSubmissionStartDate: number;
     initialSlateSubmissionDeadline: number;
     slateSubmissionDeadline: {
         [key: string]: number;

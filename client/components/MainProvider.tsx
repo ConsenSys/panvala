@@ -85,6 +85,7 @@ const MainProvider: React.FC<any> = (props: any) => {
       votingCloseDate: 0,
       finalityDate: 0,
       epochNumber: 0,
+      slateSubmissionStartDate: 0,
       initialSlateSubmissionDeadline: 0,
       slateSubmissionDeadline: {
         GRANT: 0,
@@ -112,7 +113,7 @@ const MainProvider: React.FC<any> = (props: any) => {
   async function refreshCurrentBallot() {
     const epochNumber = await gatekeeper.functions.currentEpochNumber();
     const currentEpochStart = (await gatekeeper.functions.epochStart(epochNumber)).toNumber();
-    let currentBallot = ballotDates(currentEpochStart);
+    let currentBallot: IBallotDates = ballotDates(currentEpochStart);
 
     // set slate submission deadlines for grants and governance
     currentBallot.slateSubmissionDeadline.GRANT = (await gatekeeper.functions.slateSubmissionDeadline(
