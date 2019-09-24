@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import isEmpty from 'lodash/isEmpty';
 import { toast } from 'react-toastify';
 import { utils } from 'ethers';
+import { Formik, FormikContext, Form } from 'formik';
 
 import A from '../components/A';
 import Tag from '../components/Tag';
@@ -16,7 +17,9 @@ import Identicon from '../components/Identicon';
 import RouterLink from '../components/RouterLink';
 import PendingTransaction from '../components/PendingTransaction';
 import StepperMetamaskDialog from '../components/StepperMetamaskDialog';
+import { ErrorMessage } from '../components/FormError';
 import { IEthereumContext, EthereumContext } from '../components/EthereumProvider';
+
 import { saveState, loadState, LINKED_WALLETS } from '../utils/localStorage';
 import { splitAddressHumanReadable, isAddress } from '../utils/format';
 import { COLORS } from '../styles';
@@ -29,6 +32,11 @@ const CancelButton = styled(Button)`
   top: 0;
   right: 1rem;
 `;
+
+interface IFormValues {
+  hotWallet: string;
+  coldWallet: string;
+}
 
 const Wallet: React.SFC = () => {
   const {
@@ -188,68 +196,142 @@ const Wallet: React.SFC = () => {
         you would like to link the hot wallet with.
       </Text>
 
-      <Label htmlFor="hot-wallet">{'Select hot wallet'}</Label>
-      <Flex justifyStart noWrap alignCenter>
-        <Identicon address={hotWallet} diameter={20} />
-        <Input
-          m={2}
-          fontFamily="Fira Code"
-          name="hot-wallet"
-          onChange={(e: any) => setLinkedWallet('hotWallet', e.target.value)}
-          value={hotWallet}
-        />
-        <Button
-          width="100px"
-          type="default"
-          onClick={confirmHotWallet}
-          bg={confirmed.hotWallet ? 'greens.light' : ''}
-          disabled={!isAddress(hotWallet)}
-        >
-          {confirmed.hotWallet ? 'Confirmed' : 'Confirm'}
-        </Button>
-      </Flex>
-      <Text mt={0} mb={4} fontSize={0} color="grey">
-        Reminder: This is the address that will be able to vote with your PAN.
-      </Text>
+      <Formik
+        enableReinitialize={true}
+        initialValues={{ hotWallet, coldWallet: confirmed.hotWallet ? coldWallet : '' }}
+        onSubmit={async (_: IFormValues, { setSubmitting, setFieldError }) => {
+          if (coldWallet.toLowerCase() !== account.toLowerCase()) {
+            setFieldError('coldWallet', 'Please connect your cold wallet');
+            return;
+          }
 
-      <Label htmlFor="cold-wallet">{'Select cold wallet'}</Label>
-      <Flex justifyStart noWrap alignCenter>
-        <Identicon address={coldWallet} diameter={20} />
-        <Input
-          m={2}
-          fontFamily="Fira Code"
-          name="cold-wallet"
-          onChange={(e: any) => setLinkedWallet('coldWallet', e.target.value)}
-          value={coldWallet}
-          disabled={!confirmed.hotWallet}
-        />
-        <Button
-          width="100px"
-          type="default"
-          onClick={confirmColdWallet}
-          bg={confirmed.coldWallet ? 'greens.light' : ''}
-          disabled={!isAddress(coldWallet) || !confirmed.hotWallet}
-        >
-          {confirmed.coldWallet ? 'Confirmed' : 'Confirm'}
-        </Button>
-      </Flex>
-      {/* prettier-ignore */}
-      <Text mt={0} mb={4} fontSize={0} color="grey">
-        This wallet must be connected.
-        How to connect <A bold color="blue">Trezor</A> and <A bold color="blue">Ledger</A>.
-      </Text>
+          await linkDelegateVoter();
 
-      <Flex justifyEnd>
-        <Button
-          width="200px"
-          large
-          type="default"
-          onClick={linkDelegateVoter}
-          disabled={!confirmed.coldWallet || !confirmed.hotWallet}
-        >
-          Continue
-        </Button>
-      </Flex>
+          // re-enable submit button
+          setSubmitting(false);
+        }}
+      >
+        {({
+          values,
+          isSubmitting,
+          handleChange,
+          handleSubmit,
+          setFieldError,
+          setFieldValue,
+          setFieldTouched,
+        }: FormikContext<IFormValues>) => {
+          return (
+            <Form>
+              <Label htmlFor="hotWallet">{'Select hot wallet'}</Label>
+              <Flex justifyStart noWrap alignCenter>
+                <Identicon address={hotWallet} diameter={20} />
+                <Input
+                  m={2}
+                  fontFamily="Fira Code"
+                  name="hotWallet"
+                  onChange={(e: any) => {
+                    handleChange(e);
+                    setFieldTouched('hotWallet');
+
+                    // clear confirmations
+                    setConfirmed({
+                      hotWallet: false,
+                      coldWallet: false,
+                    });
+
+                    // clear cold wallet
+                    setFieldValue('coldWallet', '');
+                  }}
+                  value={values.hotWallet}
+                />
+                <Button
+                  width="100px"
+                  type="default"
+                  onClick={(e: any) => {
+                    e.preventDefault(); // Do not submit form
+
+                    // validate
+                    if (!isAddress(values.hotWallet.toLowerCase())) {
+                      setFieldError('hotWallet', 'Invalid address');
+                      return;
+                    }
+
+                    confirmHotWallet();
+                  }}
+                  bg={confirmed.hotWallet ? 'greens.light' : ''}
+                  disabled={!values.hotWallet}
+                >
+                  {confirmed.hotWallet ? 'Confirmed' : 'Confirm'}
+                </Button>
+              </Flex>
+              <ErrorMessage name="hotWallet" component="span" />
+              <Text mt={0} mb={4} fontSize={0} color="grey">
+                Reminder: This is the address that will be able to vote with your PAN.
+              </Text>
+
+              <Label htmlFor="coldWallet">{'Select cold wallet'}</Label>
+              <Flex justifyStart noWrap alignCenter>
+                <Identicon address={coldWallet} diameter={20} />
+                <Input
+                  m={2}
+                  fontFamily="Fira Code"
+                  name="coldWallet"
+                  onChange={(e: any) => {
+                    handleChange(e);
+                    setFieldTouched('coldWallet');
+                    setConfirmed({ ...confirmed, coldWallet: false });
+                  }}
+                  value={values.coldWallet}
+                  disabled={!confirmed.hotWallet}
+                />
+                <Button
+                  width="100px"
+                  type="default"
+                  onClick={(e: any) => {
+                    e.preventDefault(); // Do not submit form
+
+                    // validate -- must be valid address different from hot wallet, and user must
+                    // be logged in with this account
+                    if (!isAddress(values.coldWallet.toLowerCase())) {
+                      setFieldError('coldWallet', 'Invalid address');
+                      return;
+                    }
+
+                    if (values.hotWallet.toLowerCase() === values.coldWallet.toLowerCase()) {
+                      setFieldError('coldWallet', 'Cold wallet must be different from hot wallet');
+                      return;
+                    }
+
+                    confirmColdWallet();
+                  }}
+                  bg={confirmed.coldWallet ? 'greens.light' : ''}
+                  disabled={!confirmed.hotWallet || !values.coldWallet}
+                >
+                  {confirmed.coldWallet ? 'Confirmed' : 'Confirm'}
+                </Button>
+              </Flex>
+              <ErrorMessage name="coldWallet" component="span" />
+              {/* prettier-ignore */}
+              <Text mt={0} mb={4} fontSize={0} color="grey">
+                This wallet must be connected.
+                How to connect <A bold color="blue">Trezor</A> and <A bold color="blue">Ledger</A>.
+              </Text>
+
+              <Flex justifyEnd>
+                <Button
+                  width="200px"
+                  large
+                  type="default"
+                  onClick={handleSubmit}
+                  disabled={!confirmed.coldWallet || !confirmed.hotWallet || isSubmitting}
+                >
+                  Continue
+                </Button>
+              </Flex>
+            </Form>
+          );
+        }}
+      </Formik>
     </>,
     <div>
       <Text textAlign="center" fontSize={'1.5rem'} m={0}>
