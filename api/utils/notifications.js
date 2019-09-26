@@ -10,6 +10,7 @@ const config = require('./config');
 const { rpcEndpoint } = config;
 const { gatekeeperAddress, tokenCapacitorAddress } = config.contracts;
 const { findOrSaveIpfsMetadata } = require('./ipfs');
+const { getEventsFromDatabase } = require('./events');
 
 const notifications = {
   PROPOSAL_INCLUDED_IN_SLATE: {
@@ -50,106 +51,164 @@ const notifications = {
   },
 };
 
-// NOTE: this function makes a lot of queries and will likely be changed
-// the next time the contracts are updated (w/ more event emission args)
-// & when we implement an events db
-async function getNormalizedNotificationsByEvents(events, address) {
-  // this would be useful for saving in the db
-  // const eventsByName = groupBy(events, 'name');
+// The events we care about for notifications
+const eventNames = [
+  'SlateCreated',
+  'ProposalCreated',
+  'ContestAutomaticallyFinalized',
+  'ContestFinalizedWithoutWinner',
+  'VoteFinalized',
+  'RunoffFinalized',
+];
+
+// Get events related to this address from the database and generate notifications
+// TODO: filter query further, only process recent events
+async function getNormalizedNotificationsByEvents(address) {
+  const events = await getEventsFromDatabase({ names: eventNames });
+
+  const print = false;
+  if (print) {
+    events.map(e => {
+      // print out event name and block.timestamp
+      console.log(e.name, e.timestamp);
+      // print out event values for debugging
+      Object.keys(e.values).map(arg => {
+        console.log(arg, e.values[arg]);
+      });
+      console.log('');
+    });
+  }
+  console.log('events:', events.length);
+  console.log('');
 
   const provider = new ethers.providers.JsonRpcProvider(rpcEndpoint);
   const gatekeeper = new ethers.Contract(gatekeeperAddress, Gatekeeper.abi, provider);
   const tokenCapacitor = new ethers.Contract(tokenCapacitorAddress, TokenCapacitor.abi, provider);
 
-  // get all events for contest finalization for grant slates
-  const contestFinalizedEvents = events.filter(
-    e => e.name.includes('Finalized') && e.values.resource === tokenCapacitorAddress
-  );
-  const slateAcceptedNotifications = flatten(
-    await Promise.all(
-      contestFinalizedEvents.map(async event => {
-        const { winningSlate, ballotID, categoryID } = event.values;
-        if (!winningSlate) {
-          return [];
-        }
-        const slateRequests = await gatekeeper.slateRequests(winningSlate);
-        const withdrawGrantNotifications = flatten(
-          await Promise.all(
-            slateRequests.map(async requestID => {
-              const proposal = await tokenCapacitor.proposals(requestID);
-              if (
-                proposal.to &&
-                address &&
-                utils.getAddress(proposal.to) === utils.getAddress(address) &&
-                !proposal.withdrawn
-              ) {
-                return [
-                  {
-                    ...notifications.WITHDRAW_GRANT,
-                    event,
-                    proposalID: utils.bigNumberify(requestID).toString(),
-                  },
-                ];
-              }
-              return [];
-            })
-          )
-        );
+  const userAddress = utils.getAddress(address);
 
-        let withdrawStakeNotification = [];
-        const slate = await gatekeeper.slates(winningSlate);
-        if (
-          slate.staker &&
-          address &&
-          slate.stake &&
-          utils.getAddress(slate.staker) === utils.getAddress(address) &&
-          utils.bigNumberify(slate.stake).gt(utils.bigNumberify('0'))
-        ) {
-          withdrawStakeNotification = [
-            {
-              ...notifications.WITHDRAW_STAKE,
-              event,
-              slateID: utils.bigNumberify(winningSlate).toString(),
-            },
-          ];
-        }
-
-        // TODO: filter against withdrawn stakes
-        return withdrawGrantNotifications.concat(withdrawStakeNotification).concat([
-          {
-            ...notifications.SLATE_ACCEPTED,
-            event,
-            slateID: utils.bigNumberify(winningSlate).toString(),
-            ballotID,
-            categoryID,
-            // recommender,
-          },
-        ]);
-      })
-    )
-  );
+  // get requestID -> proposalID for grants
+  const grantRequestMapping = {};
+  events
+    .filter(event => event.name === 'ProposalCreated' && event.recipient === tokenCapacitor.address)
+    .forEach(event => {
+      const { proposalID, requestID } = event.values;
+      grantRequestMapping[requestID] = proposalID;
+    });
 
   const slateCreatedEvents = events.filter(event => event.name === 'SlateCreated');
-  // const proposalIncludedInSlateNotifications = await Promise.all(
-  //   slateCreatedEvents.map(async event => {
-  //     const { slateID, recommender, requestIDs, metadataHash } = event.values;
-  //     let slateMetadata = await findOrSaveIpfsMetadata(metadataHash);
 
-  //     // find matching requestID:proposalID
+  // callback returns lists of notifications
+  const nestedNotifications = events.map(async event => {
+    // Finalized -> slate accepted, withdraw grant, withdraw stake, withdraw voting tokens
+    // console.log(event.name, event.values);
 
-  //     // return {
-  //     //   ...notifications.PROPOSAL_INCLUDED_IN_SLATE,
-  //     //   // proposalID,
-  //     //   event,
-  //     //   proposer,
-  //     //   recipient,
-  //     //   slateID: '0', // TEMPORARY HACK
-  //     // };
-  //   })
-  // );
+    if (event.name.includes('Finalized')) {
+      const { winningSlate, epochNumber, resource } = event.values;
+      if (!winningSlate) {
+        return null;
+      }
 
-  return slateAcceptedNotifications;
-  // return slateAcceptedNotifications.concat(proposalIncludedInSlateNotifications);
+      // Slate Accepted
+      const slate = await gatekeeper.slates(winningSlate);
+      const { recommender } = slate;
+
+      const slateAcceptedNotifications =
+        utils.getAddress(recommender) === userAddress
+          ? [
+              {
+                ...notifications.SLATE_ACCEPTED,
+                event,
+                slateID: utils.bigNumberify(winningSlate).toString(),
+                epochNumber,
+                resource,
+                recommender,
+              },
+            ]
+          : [];
+
+      // Withdraw Grant
+      const slateRequests = await gatekeeper.slateRequests(winningSlate);
+      const withdrawGrantNotifications = await Promise.all(
+        slateRequests.map(async requestID => {
+          // get proposals
+          const proposalID = grantRequestMapping[requestID];
+          const proposal = await tokenCapacitor.proposals(proposalID);
+          // TODO: do not include if expired
+
+          const { to, withdrawn } = proposal;
+          if (!withdrawn && address && to && utils.getAddress(to) === userAddress) {
+            return {
+              ...notifications.WITHDRAW_GRANT,
+              event,
+              proposalID,
+              requestID,
+            };
+          }
+        })
+      );
+
+      // Withdraw Stake
+      const withdrawStakeNotifications = [];
+      if (
+        slate.staker &&
+        address &&
+        slate.stake &&
+        utils.getAddress(slate.staker) === userAddress &&
+        utils.bigNumberify(slate.stake).gt(utils.bigNumberify('0'))
+      ) {
+        withdrawStakeNotifications.push({
+          ...notifications.WITHDRAW_STAKE,
+          event,
+          slateID: utils.bigNumberify(winningSlate).toString(),
+          stake: utils.bigNumberify(slate.stake).toString(),
+        });
+      }
+
+      return slateAcceptedNotifications
+        .concat(withdrawGrantNotifications)
+        .concat(withdrawStakeNotifications);
+    } // Finalized
+
+    // NOTE: do not include proposal included in slate for now -- it's not really meaningful
+    // ProposalCreated -> proposal included in slate
+    // if (event.name.includes('ProposalCreated')) {
+    //   if (event.recipient === tokenCapacitor.address) {
+    //     const { requestID, proposalID, proposer, recipient } = event.values;
+
+    //     if (utils.getAddress(proposer) === userAddress) return null;
+
+    //     // Check if there's a matching slate creation
+    //     for (let index = 0; index < slateCreatedEvents.length; index++) {
+    //       const slateCreation = slateCreatedEvents[index];
+    //       const { slateID, requestIDs } = slateCreation.values;
+    //       if (requestIDs.indexOf(requestID) !== -1) {
+    //         console.log(
+    //           `proposal ${proposalID} with request ${requestID} found in slate ${slateID}`
+    //         );
+
+    //         // match found
+    //         return {
+    //           ...notifications.PROPOSAL_INCLUDED_IN_SLATE,
+    //           event: slateCreation,
+    //           proposalID,
+    //           requestID,
+    //           proposer,
+    //           recipient,
+    //           slateID,
+    //         };
+    //       }
+    //     }
+    //   }
+    // }
+
+    return null;
+  });
+
+  const result = flatten(await Promise.all(nestedNotifications)).filter(event => !!event);
+  // console.log(result);
+
+  return result;
 }
 
 module.exports = {
