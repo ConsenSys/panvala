@@ -281,7 +281,7 @@ const CreateGovernanceSlate: StatelessPage<any> = () => {
     console.error(error);
   }
 
-  if (pageStatus === PageStatus.Loading) {
+  if (pageStatus === PageStatus.Loading || pageStatus === PageStatus.Initialized) {
     return <div>Loading...</div>;
   }
 

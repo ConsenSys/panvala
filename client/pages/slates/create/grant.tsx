@@ -452,7 +452,7 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query }) => {
           stake: 'no',
         };
 
-  if (pageStatus === PageStatus.Loading) {
+  if (pageStatus === PageStatus.Loading || pageStatus === PageStatus.Initialized) {
     return <div>Loading...</div>;
   }
 
