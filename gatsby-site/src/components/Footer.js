@@ -30,7 +30,7 @@ export default () => (
               </a>
             </div>
           </div>
-          <a href="http://app.panvala.com/slates" target="_blank" className="link dim white f6 fw7">
+          <a href="https://app.panvala.com/slates" target="_blank" className="link dim white f6 fw7">
             Try the Panvala App today
           </a>
         </div>
@@ -47,7 +47,7 @@ export default () => (
               Donate
             </a>
             <a
-              href="http://app.panvala.com/slates"
+              href="https://app.panvala.com/slates"
               target="_blank"
               className="link dim white-60 f5-l f6 db mb3-ns mb2"
             >

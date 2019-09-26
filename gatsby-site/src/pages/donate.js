@@ -242,7 +242,7 @@ const Donate = () => {
               <div className="tl mt4">
                 <label className="ma0 f6 mb3 black-40">
                   First Name
-                  <b className="red f7">*</b>
+                  <b className="red f7"> *</b>
                 </label>
               </div>
               <input
@@ -267,7 +267,7 @@ const Donate = () => {
               <div className="tl mt4">
                 <label className="ma0 f6 mb3 black-40">
                   Email
-                  <b className="red f7">*</b>
+                  <b className="red f7"> *</b>
                 </label>
               </div>
               <input
@@ -281,7 +281,7 @@ const Donate = () => {
               <div className="tl mt4">
                 <label className="ma0 f6 mb3 black-40">
                   Pledge Tier
-                  <b className="red f7">*</b>
+                  <b className="red f7"> *</b>
                 </label>
               </div>
               <select
@@ -304,7 +304,7 @@ const Donate = () => {
               <div className="tl mt4">
                 <label className="ma0 f6 mb3 black-40">
                   How many months of your pledge will you prepay today?
-                  <b className="red f7">*</b>
+                  <b className="red f7"> *</b>
                 </label>
               </div>
               <select
