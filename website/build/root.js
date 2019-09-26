@@ -104,6 +104,7 @@ class Root extends React.Component {
 
     return _asyncToGenerator(function* () {
       if (typeof _this3.provider !== 'undefined') {
+        yield _this3.checkNetwork();
         var {
           chainId
         } = yield _this3.provider.getNetwork();
@@ -201,17 +202,30 @@ class Root extends React.Component {
     var _this5 = this;
 
     return _asyncToGenerator(function* () {
-      if (!_this5.state.selectedAccount || !_this5.exchange || !_this5.provider || !_this5.token || !_this5.tokenCapacitor) {
+      var errMsg;
+
+      if (!_this5.state.selectedAccount || !_this5.provider) {
+        alert('Ethereum not setup properly.');
         throw new Error('Ethereum not setup properly.');
       }
 
       var correctChainId = window.location.href.includes('panvala.com/donate') ? 1 : 4;
       var network = yield _this5.provider.getNetwork();
+      var networkNames = {
+        1: 'Main',
+        4: 'Rinkeby'
+      };
 
       if (network.chainId !== correctChainId) {
-        alert('Wrong network or route'); // prevent further action
+        errMsg = "Wrong network or route. Please connect to the ".concat(networkNames[correctChainId], " network.");
+        alert(errMsg); // prevent further action
 
-        throw new Error('Wrong network or route');
+        throw new Error(errMsg);
+      }
+
+      if (!_this5.exchange || !_this5.token || !_this5.tokenCapacitor) {
+        alert('Contracts not setup properly.');
+        throw new Error('Contracts not setup properly.');
       }
     })();
   } // Sell order (exact input) -> calculates amount bought (output)

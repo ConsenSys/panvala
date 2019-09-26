@@ -75,6 +75,7 @@ class Root extends React.Component {
   // Setup contracts
   async setContracts() {
     if (typeof this.provider !== 'undefined') {
+      await this.checkNetwork();
       const { chainId } = await this.provider.getNetwork();
       const signer = this.provider.getSigner();
 
@@ -164,21 +165,28 @@ class Root extends React.Component {
   }
 
   async checkNetwork() {
-    if (
-      !this.state.selectedAccount ||
-      !this.exchange ||
-      !this.provider ||
-      !this.token ||
-      !this.tokenCapacitor
-    ) {
+    let errMsg;
+    if (!this.state.selectedAccount || !this.provider) {
+      alert('Ethereum not setup properly.');
       throw new Error('Ethereum not setup properly.');
     }
+
     const correctChainId = window.location.href.includes('panvala.com/donate') ? 1 : 4;
     const network = await this.provider.getNetwork();
+    const networkNames = {
+      1: 'Main',
+      4: 'Rinkeby'
+    }
     if (network.chainId !== correctChainId) {
-      alert('Wrong network or route');
+      errMsg = `Wrong network or route. Please connect to the ${networkNames[correctChainId]} network.`;
+      alert(errMsg);
       // prevent further action
-      throw new Error('Wrong network or route');
+      throw new Error(errMsg);
+    }
+
+    if (!this.exchange || !this.token || !this.tokenCapacitor) {
+      alert('Contracts not setup properly.');
+      throw new Error('Contracts not setup properly.');
     }
   }
 
