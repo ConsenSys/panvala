@@ -15,8 +15,13 @@ const CreateSlate: React.SFC = () => {
   const [category, setCategory] = React.useState('');
   const { currentBallot } = React.useContext(MainContext);
   const [createable, setCreateable] = React.useState(false);
+
+  function categoryOpen(cat: string) {
+    return isSlateSubmittable(currentBallot, cat.toUpperCase());
+  }
+
   React.useEffect(() => {
-    if (isSlateSubmittable(currentBallot, category.toUpperCase())) {
+    if (categoryOpen(category)) {
       setCreateable(true);
     } else {
       setCreateable(false);
@@ -36,10 +41,12 @@ const CreateSlate: React.SFC = () => {
             name="category"
             placeholder="Select slate category"
             handleChange={(e: any) => {
-              if (isSlateSubmittable(currentBallot, e.target.value.toUpperCase())) {
-                setCategory(e.target.value);
-              } else {
-                toast.error(`${e.target.value} submission deadline has passed`);
+              const category = e.target.value;
+              setCategory(category);
+
+              // If a category has been selected and submission is closed, show a message
+              if (category !== '' && !categoryOpen(category)) {
+                toast.error(`${category} submission deadline has passed`);
               }
             }}
             value={category}
