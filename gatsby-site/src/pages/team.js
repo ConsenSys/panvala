@@ -1,9 +1,5 @@
 import React from 'react';
-import '../css/open-sans.css';
-import '../css/tachyons.css';
-import '../css/util.css';
-import '../css/colors.css';
-import '../css/clip-path.css';
+
 import teamShapes from '../img/team-shapes.svg';
 import teamNiran from '../img/team/team-niran.png';
 import teamDaniel from '../img/team/team-daniel.png';
@@ -11,13 +7,14 @@ import teamRomana from '../img/team/team-romana.png';
 import teamJacob from '../img/team/team-jacob.png';
 import teamAkua from '../img/team/team-akua.png';
 import teamIsaac from '../img/team/team-isaac.png';
+
 import SEO from '../components/seo';
-import Footer from '../components/Footer';
 import Nav from '../components/Nav';
+import Layout from '../components/Layout';
 
 const Team = () => {
   return (
-    <div className="overflow-x-hidden">
+    <Layout>
       <SEO title="Team" />
 
       <section className="bg-gradient bottom-clip-hero pb5">
@@ -227,9 +224,7 @@ const Team = () => {
           </section>
         </article>
       </div>
-
-      <Footer />
-    </div>
+    </Layout>
   );
 };
 

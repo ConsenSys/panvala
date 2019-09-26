@@ -1,10 +1,5 @@
 import React from 'react';
 import { graphql } from 'gatsby';
-import '../css/open-sans.css';
-import '../css/tachyons.css';
-import '../css/util.css';
-import '../css/colors.css';
-import '../css/clip-path.css';
 
 import home1 from '../img/home-1.jpg';
 import home1p1 from '../img/home-1.1.png';
@@ -34,12 +29,13 @@ import teamLevelK from '../img/external/team-levelk.png';
 import teamSigma from '../img/external/team-sigma.png';
 import teamTenderly from '../img/external/team-tenderly.png';
 import simon from '../img/simon.png';
+
+import Layout from '../components/Layout';
 import SEO from '../components/seo';
-import Footer from '../components/Footer';
 import Nav from '../components/Nav';
 
 const IndexPage = ({ data }) => (
-  <div className="overflow-x-hidden">
+  <Layout>
     <SEO title="Home" />
 
     <section
@@ -341,9 +337,7 @@ const IndexPage = ({ data }) => (
         </section>
       </section>
     </div>
-
-    <Footer />
-  </div>
+  </Layout>
 );
 
 export default IndexPage;
