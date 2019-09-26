@@ -14,18 +14,12 @@ const numRegex = /^([0-9]*)$/;
 
 async function getAllEvents(fromBlock) {
   const {
-    network,
     parameterStore,
     gatekeeper,
     tokenCapacitor,
     rpcEndpoint,
     genesisBlockNumber,
   } = await getContracts();
-  // disable notifications on mainnet and rinkeby
-  if (network.chainId === 4 || network.chainId === 1) {
-    return [];
-  }
-
   const contracts = [
     {
       abi: Gatekeeper.abi,
@@ -40,6 +34,7 @@ async function getAllEvents(fromBlock) {
       address: parameterStore.address,
     },
   ];
+
   // init eth-events
   const ethEvents = EthEvents(contracts, rpcEndpoint, genesisBlockNumber);
   if (!fromBlock) {
@@ -81,14 +76,7 @@ async function getAllEvents(fromBlock) {
 }
 
 async function getParametersSet(fromBlock) {
-  const { network, rpcEndpoint, genesisBlockNumber, parameterStore } = await getContracts();
-  // disable notifications on mainnet and rinkeby
-  if (network.chainId === 1 || network.chainId === 4) {
-    // NOTE: will be an issue when rendering parameters other than
-    // slateStakeAmount and gatekeeperAddress
-    return [];
-  }
-
+  const { rpcEndpoint, genesisBlockNumber, parameterStore } = await getContracts();
   const contract = {
     abi: ParameterStore.abi,
     address: parameterStore.address,
@@ -222,9 +210,46 @@ async function getEventsFromDatabase(config) {
   });
 }
 
+async function doSync(blockNumber) {
+  return syncEvents(blockNumber).catch(error => console.error(`Problem syncing events: ${error}`));
+}
+
+// Continuously track blocks and save event data into the database
+async function listenAndSyncContractEvents() {
+  try {
+    const { genesisBlockNumber, provider } = await getContracts();
+
+    ContractEvent.max('blockNumber').then(async latestStoredBlock => {
+      // Start from the latest seen block number, or the beginning
+      const startBlock = latestStoredBlock || genesisBlockNumber;
+      console.log(`syncing blocks from block ${startBlock}`);
+
+      // Initial sync
+      await doSync(startBlock);
+
+      // on every new block, sync the events table in the db
+      if (provider.listenerCount('block') === 0) {
+        console.log('registering block listener');
+
+        provider.on('block', blockNumber => {
+          console.log('NEW BLOCK:', blockNumber);
+          doSync(blockNumber);
+        });
+      }
+    });
+  } catch (error) {
+    // If anything goes wrong, log the error and try again
+    console.error('Error while listening for contract events:', error);
+    console.log('Restarting tracker...');
+
+    listenAndSyncContractEvents();
+  }
+}
+
 module.exports = {
   getAllEvents,
   getParametersSet,
   syncEvents,
   getEventsFromDatabase,
+  listenAndSyncContractEvents,
 };
