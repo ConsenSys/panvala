@@ -7,6 +7,9 @@ export const ethereumAddressRegex = /^0x[a-fA-F0-9]{40}$/;
 // Number with no more than 18 decimal places
 export const panValueRegex = /^[0-9]+\.?[0-9]{0,18}$/;
 
+export const MAX_TEXT_FIELD_LENGTH = 2000; // text
+export const MAX_STRING_FIELD_LENGTH = 255; // varchar 255
+
 export const PanValueSchema = yup.string().matches(panValueRegex);
 export const EthereumAddressSchema = yup.string().matches(ethereumAddressRegex);
 
@@ -95,28 +98,34 @@ export const GrantProposalFormSchema = yup.object().shape({
   firstName: yup
     .string()
     .trim()
-    .min(2, 'Too Short!')
-    .max(70, 'Too Long!')
+    .min(2, 'Too short!')
+    .max(70, 'Too long!')
     .required('Required'),
   lastName: yup
     .string()
     .trim()
-    .min(2, 'Too Short!')
-    .max(70, 'Too Long!'),
+    .min(2, 'Too short!')
+    .max(70, 'Too long!'),
   email: yup
     .string()
+    .max(MAX_STRING_FIELD_LENGTH, 'Too long!')
     .email('Invalid email')
     .required('Required'),
+  github: yup.string().max(MAX_STRING_FIELD_LENGTH, 'Too long!'),
   title: yup
     .string()
     .trim()
-    .max(70, 'Too Long!')
+    .max(70, 'Too long!')
     .required('Required'),
+  website: yup.string().max(MAX_STRING_FIELD_LENGTH, 'Too long!'),
   summary: yup
     .string()
     .trim()
-    .max(4000, 'Too Long!')
+    .max(4000, 'Too long!')
     .required('Required'),
+  projectTimeline: yup.string().max(MAX_TEXT_FIELD_LENGTH, 'Too long!'),
+  teamBackgrounds: yup.string().max(MAX_TEXT_FIELD_LENGTH, 'Too long!'),
+  projectPlan: yup.string().max(MAX_TEXT_FIELD_LENGTH, 'Too long!'), // no longer in form
   tokensRequested: yup
     .string()
     .matches(panValueRegex, 'Must be a number with no more than 18 decimals')
@@ -126,10 +135,11 @@ export const GrantProposalFormSchema = yup.object().shape({
       test: value => value !== '0',
     })
     .required('Required'),
-  totalBudget: yup.string(),
-  otherFunding: yup.string(),
+  totalBudget: yup.string().max(MAX_STRING_FIELD_LENGTH, 'Too long!'),
+  otherFunding: yup.string().max(MAX_STRING_FIELD_LENGTH, 'Too long!'),
   awardAddress: yup
     .string()
+    .trim()
     .required('Required')
     .test(ethereumAddressTest),
 });

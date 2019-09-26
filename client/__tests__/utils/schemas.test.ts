@@ -1,6 +1,15 @@
-import { GovernanceSlateFormSchema, GrantProposalFormSchema } from '../../utils/schemas';
+import {
+  GovernanceSlateFormSchema,
+  GrantProposalFormSchema,
+  MAX_STRING_FIELD_LENGTH,
+  MAX_TEXT_FIELD_LENGTH,
+} from '../../utils/schemas';
 
 const someAddress = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+
+function clone(obj) {
+  return Object.assign({}, obj);
+}
 
 function param(newValue) {
   return { newValue };
@@ -136,22 +145,51 @@ describe('Schemas', () => {
     ];
 
     test('should accept the form values', async () => {
-      const values = data;
+      const values = clone(data);
       const isValid = await GrantProposalFormSchema.isValid(values);
       expect(isValid).toBe(true);
     });
 
     describe('required fields', () => {
       test.each(requiredFields)('should reject if `%s` is empty', async field => {
-        const values = data;
+        const values = clone(data);
         values[field] = '';
         const isValid = await GrantProposalFormSchema.isValid(values);
         expect(isValid).toBe(false);
       });
 
       test.each(requiredFields)('should reject if `%s` is all whitespace', async field => {
-        const values = data;
+        const values = clone(data);
         values[field] = '   ';
+        const isValid = await GrantProposalFormSchema.isValid(values);
+        expect(isValid).toBe(false);
+      });
+    });
+
+    describe('string field lengths', () => {
+      const fieldLengths = [
+        ['firstName', 70],
+        ['lastName', 70],
+        ['email', MAX_STRING_FIELD_LENGTH],
+        ['github', MAX_STRING_FIELD_LENGTH],
+        ['title', 70],
+        ['website', MAX_STRING_FIELD_LENGTH],
+        ['summary', 4000],
+        ['projectTimeline', MAX_TEXT_FIELD_LENGTH],
+        ['teamBackgrounds', MAX_TEXT_FIELD_LENGTH],
+        ['projectPlan', MAX_TEXT_FIELD_LENGTH],
+        ['totalBudget', MAX_STRING_FIELD_LENGTH],
+        ['otherFunding', MAX_STRING_FIELD_LENGTH],
+      ];
+
+      test.each(fieldLengths)('should reject `%s` greater than %s characters', async (field, length) => {
+        const values = clone(data);
+        values[field] = 'a'.repeat(length + 1);
+        // console.log(values);
+
+        await expect(GrantProposalFormSchema.validate(values)).rejects.toThrowError(
+          'Too long!'
+        );
         const isValid = await GrantProposalFormSchema.isValid(values);
         expect(isValid).toBe(false);
       });

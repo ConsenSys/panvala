@@ -21,7 +21,7 @@ const FieldText = ({ label, name, placeholder, required }: any) => {
       <Label htmlFor={name} required={required}>
         {label}
       </Label>
-      {required && <ErrorMessage name={name} component="span" />}
+      <ErrorMessage name={name} component="span" />
       <Field type="text" name={name} placeholder={placeholder} />
     </>
   );
