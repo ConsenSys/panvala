@@ -19,7 +19,7 @@ import {
 
 const { formatEther, parseEther, formatUnits, hexlify, getAddress } = utils;
 
-class Donate extends Component {
+class Donation extends Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -491,4 +491,4 @@ class Donate extends Component {
   }
 }
 
-export default Donate;
+export default Donation;

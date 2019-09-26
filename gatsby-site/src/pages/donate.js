@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 
-import logoTeal from '../img/logo-teal.png';
 import home1p1 from '../img/home-1.1.png';
 import home1p2 from '../img/home-1.2.png';
 import home3p1 from '../img/home-3.1.png';
@@ -12,7 +11,7 @@ import arrowSvg from '../img/arrow.svg';
 
 import Layout from '../components/Layout';
 import SEO from '../components/seo';
-import Donation from '../components/Donate';
+import Donation from '../components/Donation';
 import Nav from '../components/Nav';
 
 const Donate = () => {
