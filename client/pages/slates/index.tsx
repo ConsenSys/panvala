@@ -56,6 +56,9 @@ const Slates: React.SFC = () => {
     }
   }, [currentBallot.slateSubmissionDeadline]);
 
+  // TODO: fill this in dynamically
+  const incumbentAdvisoryGroup = 'the Astrotrope';
+
   return (
     <>
       <Flex justifyBetween alignCenter wrap="true" mb={2}>
@@ -63,7 +66,7 @@ const Slates: React.SFC = () => {
           <RouteTitle mr={3}>{'Slates'}</RouteTitle>
           <RouterLink href="/slates/create" as="/slates/create">
             <Button type="default" disabled={!createable}>
-              {'Add Slate'}
+              {`Abandon ${incumbentAdvisoryGroup}`}
             </Button>
           </RouterLink>
         </Flex>

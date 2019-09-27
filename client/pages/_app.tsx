@@ -73,7 +73,7 @@ export default class MyApp extends App<IProps, IState> {
           <MainProvider>
             <NotificationsProvider>
               <ThemeProvider theme={theme}>
-                <Layout title={pageProps.title || 'Panvala'}>
+                <Layout title={pageProps.title || 'Panvala Disputes'}>
                   <Component {...pageProps} />
                 </Layout>
               </ThemeProvider>
