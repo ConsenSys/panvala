@@ -162,6 +162,11 @@ class Root extends React.Component {
         throw new Error(errMsg);
       }
     }
+
+    if (!this.exchange || !this.token || !this.tokenCapacitor) {
+      alert('Contracts not setup properly.');
+      throw new Error('Contracts not setup properly.');
+    }
   }
 
   async checkNetwork() {
@@ -182,11 +187,6 @@ class Root extends React.Component {
       alert(errMsg);
       // prevent further action
       throw new Error(errMsg);
-    }
-
-    if (!this.exchange || !this.token || !this.tokenCapacitor) {
-      alert('Contracts not setup properly.');
-      throw new Error('Contracts not setup properly.');
     }
   }
 

@@ -195,6 +195,11 @@ class Root extends React.Component {
           throw new Error(_errMsg);
         }
       }
+
+      if (!_this4.exchange || !_this4.token || !_this4.tokenCapacitor) {
+        alert('Contracts not setup properly.');
+        throw new Error('Contracts not setup properly.');
+      }
     })();
   }
 
@@ -221,11 +226,6 @@ class Root extends React.Component {
         alert(errMsg); // prevent further action
 
         throw new Error(errMsg);
-      }
-
-      if (!_this5.exchange || !_this5.token || !_this5.tokenCapacitor) {
-        alert('Contracts not setup properly.');
-        throw new Error('Contracts not setup properly.');
       }
     })();
   } // Sell order (exact input) -> calculates amount bought (output)
