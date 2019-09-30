@@ -1,5 +1,12 @@
 import React from 'react';
 
+import student from '../img/student.png';
+import gold from '../img/gold.png';
+import diamond from '../img/diamond.png';
+import platinum from '../img/platinum.png';
+import ether from '../img/ether.png';
+import elite from '../img/elite.png';
+
 const styles = {
   container: {
     display: 'flex',
@@ -185,9 +192,10 @@ const StepTwo = ({ message }) => (
 const Tweet = () => {
   return (
     <a
-      class="link twitter-share-button white f7"
+      className="link twitter-share-button white f7"
       href="https://twitter.com/intent/tweet?text=I%20just%20made%20a%20donation%20to%20Panvala%20to%20support%20the%20Ethereum%20open%20source%20ecosystem.%20Please%20join%20me%20by%20contributing%20at%20panvala.com&hashtags=panvala,ethereum"
       data-size="large"
+      target="_blank"
     >
       Tweet
     </a>
@@ -196,11 +204,36 @@ const Tweet = () => {
 
 const StepThree = ({ message, handleClose }) => {
   const tier = message.toLowerCase();
+  let imgSrc = gold;
+  
+  switch(tier) {
+    case 'student':
+      imgSrc = student;
+      break;
+    case 'gold':
+      imgSrc = gold;
+      break;
+    case 'diamond':
+      imgSrc = diamond;
+      break;
+    case 'platinum':
+      imgSrc = platinum;
+      break;
+    case 'elite':
+      imgSrc = elite;
+      break;
+    case 'ether':
+      imgSrc = ether;
+      break;
+    default:
+      imgSrc = student;
+  }
+
   return (
     <>
       <div style={styles.title}>Thank you for donating!</div>
       <div style={styles.image}>
-        <img src={`./img/${tier}.png`} />
+        <img src={imgSrc} />
       </div>
       <div style={styles.patron}>
         You are now a{tier[0] === 'e' && 'n'} <strong>{message} Patron</strong>
