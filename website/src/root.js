@@ -178,12 +178,13 @@ class Root extends React.Component {
 
     const correctChainId = window.location.href.includes('panvala.com/donate') ? 1 : 4;
     const network = await this.provider.getNetwork();
-    const networkNames = {
+    const supportedNetworks = {
       1: 'Main',
-      4: 'Rinkeby'
-    }
+      4: 'Rinkeby',
+    };
+
     if (network.chainId !== correctChainId) {
-      errMsg = `Wrong network or route. Please connect to the ${networkNames[correctChainId]} network.`;
+      errMsg = `Metamask is connected to an unsupported network. Please connect to the ${supportedNetworks[correctChainId]} network.`;
       alert(errMsg);
       // prevent further action
       throw new Error(errMsg);
