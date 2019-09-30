@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 
 import home1p1 from '../img/home-1.1.png';
 import home1p2 from '../img/home-1.2.png';
@@ -15,6 +15,14 @@ import Donation from '../components/Donation';
 import Nav from '../components/Nav';
 
 const Donate = () => {
+  const donateNowRef = useRef(null);
+
+  function onDonateNowClick() {
+    donateNowRef.current.scrollIntoView({
+      behavior: 'smooth'
+    })
+  }
+
   return (
     <Layout>
       <SEO title="Donate" />
@@ -34,6 +42,7 @@ const Donate = () => {
           <button
             className="f6 link dim bn br-pill pv3 ph4 white bg-teal fw7 pointer"
             id="donate-now-route-button"
+            onClick={onDonateNowClick}
           >
             Donate Now
           </button>
@@ -230,7 +239,11 @@ const Donate = () => {
 
       {/* <!-- Donation Inputs --> */}
       <div className="relative">
-        <section id="donate-section" className="bg-gray top-clip-up pv6 mt6 workaround-clip">
+        <section
+          id="donate-section"
+          ref={donateNowRef}
+          className="bg-gray top-clip-up pv6 mt6 workaround-clip"
+        >
           <div className="w-50-l w-70-m w-90 center tc">
             <h2 className="f2-5 ma0 mv3 lh-copy">Become a Panvala Patron today</h2>
             <p className="ma0 f6 lh-text mb3">
@@ -327,23 +340,6 @@ const Donate = () => {
             </form>
           </div>
         </section>
-
-        {/* <!-- Modal --> */}
-        {/* <!-- <article className="vh-100 dn w-100 bg-black-80 absolute--fill absolute z-999" id="donation-pledge-modal">
-        <section className="w-30-l w-50-m w-90 pa5-l pa4 bg-white br3 center mt6-l mt5-m mt4 tc">
-          <h2 className="f2-5 ma0 mb3 lh-copy">
-            Form Submitted
-          </h2>
-          <p className="ma0 f6 lh-text mb4">
-            Thank you. We'll be in touch!
-          </p>
-          <a href="">
-            <button className="f6 link dim bn br-pill pv3 ph4 white bg-teal fw7 pointer" id="donation-pledge-modal-close">
-              Continue
-            </button>
-          </a>
-        </section>
-      </article> --> */}
       </div>
     </Layout>
   );
