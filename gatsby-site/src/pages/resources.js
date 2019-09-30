@@ -366,7 +366,7 @@ const Resources = () => {
                 <p className="ma0 f7 lh-text">
                   The
                   <a
-                    href="https://app.panvala.com/slates"
+                    href="https://disputes.panvala.com/slates"
                     target="_blank"
                     className="blue dim link"
                   >

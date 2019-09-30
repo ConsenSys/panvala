@@ -67,7 +67,7 @@ const Grants = () => {
             Grants. Using our beta, the entire Ethereum community can vote on which projects should
             receive a PAN token grant. The list of grant proposals is available to the public.
           </p>
-          <a href="https://app.panvala.com/slates" target="_blank">
+          <a href="https://disputes.panvala.com/slates" target="_blank">
             <button className="f6 link dim bn br-pill pv3 ph4 white bg-teal fw7 pointer">
               Explore the App
             </button>

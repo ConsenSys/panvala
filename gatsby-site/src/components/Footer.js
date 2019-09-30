@@ -30,8 +30,8 @@ export default () => (
               </a>
             </div>
           </div>
-          <a href="https://app.panvala.com/slates" target="_blank" className="link dim white f6 fw7">
-            Try the Panvala App today
+          <a href="https://forum.panvala.com" target="_blank" className="link dim white f6 fw7">
+            Join the Panvala community today
           </a>
         </div>
         <div className="dtc-ns db w-70-l w-70-m w-100 v-top tr-ns tl">
@@ -47,11 +47,11 @@ export default () => (
               Donate
             </a>
             <a
-              href="https://app.panvala.com/slates"
+              href="https://disputes.panvala.com/slates"
               target="_blank"
               className="link dim white-60 f5-l f6 db mb3-ns mb2"
             >
-              Live App
+              Disputes App
             </a>
           </div>
           <div className="dib v-top mr5-l mr3-m mr4 pr2 tl mt0-ns mt4">
