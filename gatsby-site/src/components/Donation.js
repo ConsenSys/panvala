@@ -45,14 +45,7 @@ class Donation extends Component {
   // ---------------------------------------------------------------------------
 
   async componentDidMount() {
-    if (typeof window !== 'undefined') {
-      // // TODO: use a different lib (maybe ethers)
-      // if (typeof window.IpfsHttpClient !== 'undefined') {
-      //   Buffer = window.IpfsHttpClient.Buffer;
-      // } else {
-      //   this.setState({ error: 'Buffer did not setup correctly.' });
-      // }
-
+    if (typeof window !== 'undefined' && typeof window.ethereum !== 'undefined') {
       // Listen for network changes -> reload page
       window.ethereum.once('networkChanged', network => {
         console.log('MetaMask network changed:', network);
@@ -91,7 +84,12 @@ class Donation extends Component {
   // Setup contracts
   async setContracts() {
     if (typeof this.provider !== 'undefined') {
-      await this.checkNetwork();
+      try {
+        await this.checkNetwork();
+      } catch (error) {
+        console.error(`ERROR: ${error.message}`);
+        throw error;
+      }
       const { chainId } = await this.provider.getNetwork();
       const signer = this.provider.getSigner();
 
@@ -168,7 +166,12 @@ class Donation extends Component {
     }
 
     if (typeof this.token === 'undefined') {
-      await this.setContracts();
+      try {
+        await this.setContracts();
+      } catch (error) {
+        console.error(`ERROR : ${error.message}`);
+        throw error;
+      }
       if (typeof this.token === 'undefined') {
         const errMsg = 'Contracts not set correctly.';
         this.setState({
@@ -261,15 +264,14 @@ class Donation extends Component {
       return;
     }
 
-    await this.setSelectedAccount();
-    await this.setContracts();
-
     // Make sure ethereum is hooked up properly
     try {
+      await this.setSelectedAccount();
+      await this.setContracts();
       await this.checkEthereum();
     } catch (error) {
       console.error(error);
-      throw error;
+      return error;
     }
 
     const tier = getTier(pledgeMonthlySelect.value);
