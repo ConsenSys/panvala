@@ -36,11 +36,13 @@ export default function Nav() {
           </a>
         </div>
         <div className="dtc-ns dn w-25 v-mid tr">
-          <a href="donate">
-            <button className="f6 link dim bn br-pill white bg-teal fw7 pointer pv3 ph4">
-              Donate
-            </button>
-          </a>
+          {!window.location.href.includes('donate') && (
+            <a href="donate">
+              <button className="f6 link dim bn br-pill white bg-teal fw7 pointer pv3 ph4">
+                Donate
+              </button>
+            </a>
+          )}
         </div>
       </nav>
     </>

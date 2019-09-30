@@ -19,8 +19,8 @@ const Donate = () => {
 
   function onDonateNowClick() {
     donateNowRef.current.scrollIntoView({
-      behavior: 'smooth'
-    })
+      behavior: 'smooth',
+    });
   }
 
   return (
@@ -239,12 +239,8 @@ const Donate = () => {
 
       {/* <!-- Donation Inputs --> */}
       <div className="relative">
-        <section
-          id="donate-section"
-          ref={donateNowRef}
-          className="bg-gray top-clip-up pv6 mt6 workaround-clip"
-        >
-          <div className="w-50-l w-70-m w-90 center tc">
+        <section id="donate-section" className="bg-gray top-clip-up pv6 mt6 workaround-clip">
+          <div ref={donateNowRef} className="w-50-l w-70-m w-90 center tc">
             <h2 className="f2-5 ma0 mv3 lh-copy">Become a Panvala Patron today</h2>
             <p className="ma0 f6 lh-text mb3">
               Choose your patron tier to prepay for this month using ETH. When it's time to renew
