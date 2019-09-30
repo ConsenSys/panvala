@@ -299,10 +299,8 @@ class Root extends React.Component {
       } catch (error) {
         console.error(error);
         throw error;
-      } // Make sure the user is connected to the correct network (based on the URL)
+      }
 
-
-      yield _this7.checkNetwork();
       var tier = utils.getTier(pledgeMonthlySelect.value);
 
       _this7.setState({

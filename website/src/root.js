@@ -260,9 +260,6 @@ class Root extends React.Component {
       throw error;
     }
 
-    // Make sure the user is connected to the correct network (based on the URL)
-    await this.checkNetwork();
-
     const tier = utils.getTier(pledgeMonthlySelect.value);
     this.setState({
       tier,
