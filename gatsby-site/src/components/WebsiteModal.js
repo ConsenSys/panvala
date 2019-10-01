@@ -197,7 +197,12 @@ const Tweet = () => {
       data-size="large"
       target="_blank"
     >
-      Tweet
+      <div
+        className="twitter-share-button"
+        style={{ ...styles.cancel, color: 'white', backgroundColor: '#1b95e0' }}
+      >
+        Tweet
+      </div>
     </a>
   );
 };
@@ -205,8 +210,8 @@ const Tweet = () => {
 const StepThree = ({ message, handleClose }) => {
   const tier = message.toLowerCase();
   let imgSrc = gold;
-  
-  switch(tier) {
+
+  switch (tier) {
     case 'student':
       imgSrc = student;
       break;
@@ -254,9 +259,7 @@ const StepThree = ({ message, handleClose }) => {
         <div style={styles.cancel} onClick={handleClose}>
           Close
         </div>
-        <div style={{ ...styles.cancel, backgroundColor: '#1b95e0' }}>
-          <Tweet />
-        </div>
+        <Tweet />
       </div>
     </>
   );
