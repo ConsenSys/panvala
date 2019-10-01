@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 // Global styles
 import '../css/open-sans.css';
@@ -10,6 +10,53 @@ import '../css/clip-path.css';
 import Footer from './Footer';
 
 const Layout = ({ children }) => {
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // Autopilot
+      (function(o) {
+        var b = 'https://zippyfrog.co/anywhere/',
+          t = '039b072363604f71afb26a55f1899413c20b8d86bb9749878f06b280fe2c8fa4',
+          a = (window.AutopilotAnywhere = {
+            _runQueue: [],
+            run: function() {
+              this._runQueue.push(arguments);
+            },
+          }),
+          c = encodeURIComponent,
+          s = 'SCRIPT',
+          d = document,
+          l = d.getElementsByTagName(s)[0],
+          p =
+            't=' +
+            c(d.title || '') +
+            '&u=' +
+            c(d.location.href || '') +
+            '&r=' +
+            c(d.referrer || ''),
+          j = 'text/javascript',
+          z,
+          y;
+        if (!window.Autopilot) window.Autopilot = a;
+        if (o.app) p = 'devmode=true&' + p;
+        z = function(src, asy) {
+          var e = d.createElement(s);
+          e.src = src;
+          e.type = j;
+          e.async = asy;
+          l.parentNode.insertBefore(e, l);
+        };
+        y = function() {
+          z(b + t + '?' + p, true);
+        };
+        if (window.attachEvent) {
+          window.attachEvent('onload', y);
+        } else {
+          window.addEventListener('load', y, false);
+        }
+      })({});
+    }
+  }, []);
+
   return (
     <>
       {/* <Header siteTitle={data.site.siteMetadata.title} /> */}

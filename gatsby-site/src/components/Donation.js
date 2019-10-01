@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import { providers, constants, Contract, utils } from 'ethers';
-import 'whatwg-fetch';
 
 import WebsiteModal from './WebsiteModal';
 import DonateButton from './DonateButton';

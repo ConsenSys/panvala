@@ -1,5 +1,4 @@
 import { utils } from 'ethers';
-import 'whatwg-fetch';
 const { bigNumberify, parseUnits } = utils;
 
 export function BN(small) {
