@@ -55,7 +55,7 @@ const Donate = () => {
           <div className="dn-ns">
             <img src={home1p2} className="absolute nt5" />
             <img src={home3p1} className="absolute" />
-            <img src="img/home-1.1.png" className="absolute nt5" />
+            <img src={home1p1} className="absolute nt5" />
             <img src={donate1} className="full-clip-up-sm relative z-1" />
           </div>
           <div className="dtc-ns w-50-ns v-mid tl-ns tc pr4-ns mt0-ns mt4">

@@ -33,6 +33,7 @@ module.exports = {
         bucketName: 'panvala-gatsby',
         protocol: "https",
         hostname: "panvala-gatsby.s3-website.us-east-2.amazonaws.com",
+        acl: null,
       },
     },
     // this (optional) plugin enables Progressive Web App + Offline functionality
