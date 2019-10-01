@@ -53,7 +53,6 @@ const Grants = () => {
             Every 3 months, Panvala Token Grants are awarded to teams doing the work the Ethereum
             ecosystem depends on.
           </p>
-          {/* <a href="grants#grants-apply"> */}
           <button
             className="f6 link dim bn br-pill pv3 ph4 white bg-teal fw7 pointer"
             onClick={onApplyClick}

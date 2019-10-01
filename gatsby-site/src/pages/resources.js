@@ -218,7 +218,7 @@ const Resources = () => {
                   <br />
                   <br />
                   If you are interested in contributing, please go to
-                  <a href="donate" className="blue dim link">
+                  <a href="/donate" className="blue dim link">
                     {' panvala.com/donate '}
                   </a>
                   or get in touch with us directly at

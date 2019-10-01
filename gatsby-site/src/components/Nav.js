@@ -15,13 +15,13 @@ export default function Nav() {
           <img src={logoTeal} className="dib w-60-l w-100-m w-60" />
         </a>
         <div className="dtc-ns db v-mid tc center w-50-ns w-100">
-          <a href="grants" className="link dim white-60 f6 fw6 dib mr3">
+          <a href="/grants" className="link dim white-60 f6 fw6 dib mr3">
             Grants
           </a>
-          <a href="team" className="link dim white-60 f6 fw6 dib mr3">
+          <a href="/team" className="link dim white-60 f6 fw6 dib mr3">
             Team
           </a>
-          <a href="resources" className="link dim white-60 f6 fw6 dib mr3">
+          <a href="/resources" className="link dim white-60 f6 fw6 dib mr3">
             Resources
           </a>
           <a
@@ -31,13 +31,13 @@ export default function Nav() {
           >
             Forum
           </a>
-          <a href="donate" className="link dim white-60 f6 dn-ns dib fw6">
+          <a href="/donate" className="link dim white-60 f6 dn-ns dib fw6">
             Donate
           </a>
         </div>
         <div className="dtc-ns dn w-25 v-mid tr">
           {typeof window !== 'undefined' && !window.location.href.includes('donate') && (
-            <a href="donate">
+            <a href="/donate">
               <button className="f6 link dim bn br-pill white bg-teal fw7 pointer pv3 ph4">
                 Donate
               </button>

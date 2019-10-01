@@ -67,7 +67,7 @@ const Donate = () => {
               implementing the Ethereum 2.0 specification. Their work is indispensable for making
               Ethereum scale to serve its role as the hub of the decentralized world.
             </p>
-            <a href="grants" className="link dim blue f6 fw7">
+            <a href="/grants" className="link dim blue f6 fw7">
               Learn more about past work Panvala has funded
             </a>
           </div>

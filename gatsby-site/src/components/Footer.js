@@ -40,10 +40,10 @@ export default () => (
             <a href="/" className="link dim white-60 f5-l f6 db mb3-ns mb2">
               Home
             </a>
-            <a href="grants" className="link dim white-60 f5-l f6 db mb3-ns mb2">
+            <a href="/grants" className="link dim white-60 f5-l f6 db mb3-ns mb2">
               Grants
             </a>
-            <a href="donate" className="link dim white-60 f5-l f6 db mb3-ns mb2">
+            <a href="/donate" className="link dim white-60 f5-l f6 db mb3-ns mb2">
               Donate
             </a>
             <a
@@ -56,25 +56,25 @@ export default () => (
           </div>
           <div className="dib v-top mr5-l mr3-m mr4 pr2 tl mt0-ns mt4">
             <h3 className="f3-l f5 ma0 white mb3">Team</h3>
-            <a href="team#team-about" className="link dim white-60 f5-l f6 db mb3-ns mb2">
+            <a href="/team#team-about" className="link dim white-60 f5-l f6 db mb3-ns mb2">
               About Us
             </a>
-            <a href="team#team-contribute" className="link dim white-60 f5-l f6 db mb3-ns mb2">
+            <a href="/team#team-contribute" className="link dim white-60 f5-l f6 db mb3-ns mb2">
               Contribute
             </a>
-            <a href="team#team-contact" className="link dim white-60 f5-l f6 db mb3-ns mb2">
+            <a href="/team#team-contact" className="link dim white-60 f5-l f6 db mb3-ns mb2">
               Contact
             </a>
           </div>
           <div className="dib v-top tl mr0-ns mr4 mt0-ns mt4">
             <h3 className="f3-l f5 ma0 white mb3">Resources</h3>
             <a
-              href="resources#resources-whitepaper"
+              href="/resources#resources-whitepaper"
               className="link dim white-60 f5-l f6 db mb3-ns mb2"
             >
               Whitepaper
             </a>
-            <a href="resources#resources-blog" className="link dim white-60 f5-l f6 db mb3-ns mb2">
+            <a href="/resources#resources-blog" className="link dim white-60 f5-l f6 db mb3-ns mb2">
               Blog
             </a>
             <a
@@ -84,7 +84,7 @@ export default () => (
             >
               Forum
             </a>
-            <a href="resources#resources-faq" className="link dim white-60 f5-l f6 db mb3-ns mb2">
+            <a href="/resources#resources-faq" className="link dim white-60 f5-l f6 db mb3-ns mb2">
               FAQ
             </a>
           </div>

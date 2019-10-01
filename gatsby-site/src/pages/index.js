@@ -111,7 +111,7 @@ const IndexPage = ({ data }) => (
           Join the network of individuals and businesses who do their part to support the Ethereum
           ecosystem.
         </p>
-        <a href="donate">
+        <a href="/donate">
           <button className="f6 link dim bn br-pill pv3 ph4 white bg-blue fw7 pointer">
             Donate
           </button>
@@ -147,7 +147,7 @@ const IndexPage = ({ data }) => (
             Contributing to Panvala rewards the teams who solve problems like security and
             scalability.
           </p>
-          <a href="grants" className="link dim blue f6 fw7">
+          <a href="/grants" className="link dim blue f6 fw7">
             Learn about past issued grants
           </a>
         </div>
@@ -197,7 +197,7 @@ const IndexPage = ({ data }) => (
             community, it’s not the loudest voices that are respected—it’s the people and companies
             that contribute to Panvala.
           </p>
-          <a href="donate" className="link dim blue f6 fw7">
+          <a href="/donate" className="link dim blue f6 fw7">
             Learn about how to donate
           </a>
         </div>
@@ -329,7 +329,7 @@ const IndexPage = ({ data }) => (
           <h2 className="f2-5 ma0 mb4 lh-copy">
             Become a donor today and support the projects that need the support
           </h2>
-          <a href="donate">
+          <a href="/donate">
             <button className="f6 link dim bn br-pill pv3 ph4 white bg-blue fw7 pointer">
               Donate
             </button>
