@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 
 import Layout from '../components/Layout';
 import SEO from '../components/seo';
@@ -10,8 +10,25 @@ import resourcesBlog3 from '../img/resources-blog-3.png';
 import resources1 from '../img/resources-1.jpg';
 import home1p1 from '../img/home-1.1.png';
 import home4p1 from '../img/home-4.1.png';
+import whitepaper from '../img/docs/Panvala Whitepaper (September 16).pdf';
 
 const Resources = () => {
+  const whitepaperRef = useRef(null)
+  const blogRef = useRef(null)
+  const faqRef = useRef(null)
+
+  useEffect(() => {
+    if (whitepaperRef.current != null && window.location.href.includes('#resources-whitepaper')) {
+      whitepaperRef.current.scrollIntoView();
+    }
+    if (blogRef.current != null && window.location.href.includes('#resources-blog')) {
+      blogRef.current.scrollIntoView();
+    }
+    if (faqRef.current != null && window.location.href.includes('#resources-faq')) {
+      faqRef.current.scrollIntoView();
+    }
+  }, [whitepaperRef.current, blogRef.current, faqRef.current]);
+
   return (
     <Layout>
       <SEO title="Resources" />
@@ -29,7 +46,11 @@ const Resources = () => {
       </section>
 
       {/* <!-- Whitepaper --> */}
-      <section id="resources-whitepaper" className="center tc mv6-ns mv4">
+      <section
+        id="resources-whitepaper"
+        ref={whitepaperRef}
+        className="center tc mv6-ns mv4"
+      >
         <div className="dt w-70-l w-80-m w-90 center">
           <div className="dtc-ns w-50-ns v-mid">
             <img src={home4p1} className="absolute w-30-ns w-75 nt5-ns nt3 nl4-ns nl5" />
@@ -48,7 +69,7 @@ const Resources = () => {
               patron, but we encourage you to read our whitepaper if you'd like to understand the
               system better.
             </p>
-            <a href="../img/docs/Panvala Whitepaper (September 16).pdf" target="_blank" download>
+            <a href={whitepaper} target="_blank" download>
               <button className="f6 link dim bn br-pill pv3 ph4 white bg-teal fw7 mt4 pointer">
                 Read the whitepaper
               </button>
@@ -59,7 +80,7 @@ const Resources = () => {
 
       {/* <!-- Blog --> */}
       <section id="resources-blog" className="center tc full-clip-down-gray pv6 mv6-ns mv4">
-        <div className="dt w-70-l w-80-m w-90 center relative pv6 pv">
+        <div className="dt w-70-l w-80-m w-90 center relative pv6 pv" ref={blogRef}>
           <div className="dtc-ns w-40-ns v-top tl pr4-ns">
             <h2 className="f2-5 ma0 mb3 nt5 lh-copy">Read about our progress and thoughts</h2>
             <p className="ma0 f6 lh-text mb3">
@@ -153,7 +174,7 @@ const Resources = () => {
 
       {/* <!-- FAQ's --> */}
       <section id="resources-faq" className="center tc">
-        <div className="mv5 w-70-l w-80-m w-90 center">
+        <div className="mv5 w-70-l w-80-m w-90 center" ref={faqRef}>
           <h2 className="f2-5 ma0 mv3 lh-copy">Frequently Asked Questions</h2>
           <div className="dt mt4 tl">
             <div className="dtc-ns w-50-ns v-top pr3-ns">

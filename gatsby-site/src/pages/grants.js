@@ -1,34 +1,42 @@
-import React from 'react';
+import React, { useRef } from 'react';
 
 import Layout from '../components/Layout';
 import SEO from '../components/seo';
 import Nav from '../components/Nav';
 
-import teamGitcoin from "../img/grant-teams/gitcoin.png";
-import teamPlasmaGroup from "../img/grant-teams/plasma-group.png";
-import teamNimbus from "../img/grant-teams/nimbus.png";
-import teamRuntime from "../img/grant-teams/runtime.png";
-import teamTenderly from "../img/grant-teams/tenderly.png";
-import teamBrightId from "../img/grant-teams/brightid.png";
-import teamUpala from "../img/grant-teams/upala.png";
-import teamPanvala from "../img/grant-teams/panvala.png";
-import teamSigma from "../img/grant-teams/sigma.png";
-import teamPrysmatic from "../img/grant-teams/prysmatic-labs.png";
-import teamPrototypal from "../img/grant-teams/prototypal.png";
-import teamConnext from "../img/grant-teams/connext.png";
-import teamEthers from "../img/grant-teams/ethersjs.png";
-import teamL4 from "../img/grant-teams/l4.png";
-import teamGnosis from "../img/grant-teams/gnosis.png";
-import teamAragon from "../img/grant-teams/aragon.png";
-import teamBounties from "../img/grant-teams/bounties.png";
-import teamStatus from "../img/grant-teams/status.png";
-import teamLevelK from "../img/grant-teams/levelk.png";
-import teamMaker from "../img/grant-teams/maker.png";
-import teamHash from "../img/grant-teams/hash.png";
-import teamAsseth from "../img/grant-teams/asseth.png";
-import grantsShapes from "../img/grants-shapes.svg";
+import teamGitcoin from '../img/grant-teams/gitcoin.png';
+import teamPlasmaGroup from '../img/grant-teams/plasma-group.png';
+import teamNimbus from '../img/grant-teams/nimbus.png';
+import teamRuntime from '../img/grant-teams/runtime.png';
+import teamTenderly from '../img/grant-teams/tenderly.png';
+import teamBrightId from '../img/grant-teams/brightid.png';
+import teamUpala from '../img/grant-teams/upala.png';
+import teamPanvala from '../img/grant-teams/panvala.png';
+import teamSigma from '../img/grant-teams/sigma.png';
+import teamPrysmatic from '../img/grant-teams/prysmatic-labs.png';
+import teamPrototypal from '../img/grant-teams/prototypal.png';
+import teamConnext from '../img/grant-teams/connext.png';
+import teamEthers from '../img/grant-teams/ethersjs.png';
+import teamL4 from '../img/grant-teams/l4.png';
+import teamGnosis from '../img/grant-teams/gnosis.png';
+import teamAragon from '../img/grant-teams/aragon.png';
+import teamBounties from '../img/grant-teams/bounties.png';
+import teamStatus from '../img/grant-teams/status.png';
+import teamLevelK from '../img/grant-teams/levelk.png';
+import teamMaker from '../img/grant-teams/maker.png';
+import teamHash from '../img/grant-teams/hash.png';
+import teamAsseth from '../img/grant-teams/asseth.png';
+import grantsShapes from '../img/grants-shapes.svg';
 
 const Grants = () => {
+  const applyRef = useRef(null);
+
+  function onApplyClick() {
+    applyRef.current.scrollIntoView({
+      behavior: 'smooth',
+    });
+  }
+
   return (
     <Layout>
       <SEO title="Grants" />
@@ -45,11 +53,14 @@ const Grants = () => {
             Every 3 months, Panvala Token Grants are awarded to teams doing the work the Ethereum
             ecosystem depends on.
           </p>
-          <a href="grants#grants-apply">
-            <button className="f6 link dim bn br-pill pv3 ph4 white bg-teal fw7 pointer">
-              Apply for a grant
-            </button>
-          </a>
+          {/* <a href="grants#grants-apply"> */}
+          <button
+            className="f6 link dim bn br-pill pv3 ph4 white bg-teal fw7 pointer"
+            onClick={onApplyClick}
+          >
+            Apply for a grant
+          </button>
+          {/* </a> */}
         </div>
       </section>
 
@@ -754,7 +765,7 @@ const Grants = () => {
 
       <div className="relative">
         {/* <!-- Apply for a grant --> */}
-        <section id="grants-apply" className="bg-gray top-clip-up pv6 nt6">
+        <section id="grants-apply" className="bg-gray top-clip-up pv6 nt6" ref={applyRef}>
           <div className="w-50-l w-70-m w-90 center tc">
             <h2 className="f2-5 ma0 mb3 mt5 lh-copy">Panvala Token Grants</h2>
             <p className="ma0 f6 lh-text mb3">

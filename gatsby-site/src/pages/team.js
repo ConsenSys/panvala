@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 
 import teamShapes from '../img/team-shapes.svg';
 import teamNiran from '../img/team/team-niran.png';
@@ -13,6 +13,22 @@ import Nav from '../components/Nav';
 import Layout from '../components/Layout';
 
 const Team = () => {
+  const aboutRef = useRef(null);
+  const contributeRef = useRef(null);
+  const contactRef = useRef(null);
+
+  useEffect(() => {
+    if (aboutRef.current != null && window.location.href.includes('#team-about')) {
+      aboutRef.current.scrollIntoView();
+    }
+    if (contributeRef.current != null && window.location.href.includes('#team-contribute')) {
+      contributeRef.current.scrollIntoView();
+    }
+    if (contactRef.current != null && window.location.href.includes('#team-contact')) {
+      contactRef.current.scrollIntoView();
+    }
+  }, [aboutRef.current, contributeRef.current, contactRef.current]);
+
   return (
     <Layout>
       <SEO title="Team" />
@@ -30,7 +46,7 @@ const Team = () => {
       </section>
 
       {/* <!-- Our Story --> */}
-      <section id="team-about" className="center tc">
+      <section id="team-about" ref={aboutRef} className="center tc">
         <div className="dt mt6 w-70-l w-80-m w-90 center">
           <div className="dtc-l db w-50-l w-100 v-mid tl pr4-l">
             <h2 className="f2-5 ma0 mv3 lh-copy">It all started with a simple token game</h2>
@@ -129,7 +145,11 @@ const Team = () => {
       </section>
 
       {/* <!-- Contribute CTA --> */}
-      <section id="team-contribute" className="w-70-l w-80-m w-90 center tc mv6-ns mv3">
+      <section
+        id="team-contribute"
+        ref={contributeRef}
+        className="w-70-l w-80-m w-90 center tc mv6-ns mv3"
+      >
         <h2 className="f2-5 ma0 mb3">
           Looking to contribute?
           <br />
@@ -149,7 +169,7 @@ const Team = () => {
       <div className="relative">
         {/* <!-- Contact --> */}
         <section id="team-contact" className="bg-gray pv6 top-clip-up">
-          <div className="w-50-l w-70-m w-90 center tc">
+          <div className="w-50-l w-70-m w-90 center tc" ref={contactRef}>
             <h2 className="f2-5 ma0 mb3 mt5 lh-copy">Got a question?</h2>
             <p className="ma0 f6 lh-text mb3">
               We'd love to hear from you. Send us a message and we'll respond as soon as possible.

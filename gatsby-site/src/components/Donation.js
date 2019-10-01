@@ -34,10 +34,6 @@ class Donation extends Component {
     };
     this.handleClickDonate = this.handleClickDonate.bind(this);
     this.handleCancel = this.handleCancel.bind(this);
-    // this.token;
-    // this.tokenCapacitor;
-    // this.exchange;
-    // this.provider;
   }
 
   // ---------------------------------------------------------------------------
