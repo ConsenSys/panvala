@@ -24,11 +24,12 @@ export function quoteUsdToEth(pledgeTotalUSD, ethPrice) {
 
 export function getEndpointAndHeaders() {
   const urlRoute = window.location.href;
-  const endpoint = urlRoute.includes('staging/donate')
-    ? 'https://staging-api.panvala.com'
-    : urlRoute.includes('localhost')
-    ? 'http://localhost:5001'
-    : 'https://api.panvala.com';
+  const endpoint =
+    urlRoute.includes('staging/donate') || urlRoute.includes('gatsby.panvala')
+      ? 'https://staging-api.panvala.com'
+      : urlRoute.includes('localhost')
+      ? 'http://localhost:5001'
+      : 'https://api.panvala.com';
 
   const corsHeaders = {
     'Access-Control-Allow-Origin': endpoint,
