@@ -383,7 +383,7 @@ const Resources = () => {
                   A full list of governance parameters will be available soon.
                 </p>
 
-                <li className="mb2 f5 mt3">Where can I see the Panvala app itself?</li>
+                <li className="mb2 f5 mt3">Where can I see the Disputes app itself?</li>
                 <p className="ma0 f7 lh-text">
                   The
                   <a
@@ -391,7 +391,7 @@ const Resources = () => {
                     target="_blank"
                     className="blue dim link"
                   >
-                    {' Panvala App '}
+                    {' Disputes App '}
                   </a>
                   is currently available. Additionally, the app itself is
                   <a
