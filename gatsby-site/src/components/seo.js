@@ -63,7 +63,7 @@ function SEO({ description, lang, meta, title }) {
       ].concat(meta)}
     >
       <script type="text/javascript">
-        {`(function(o) {
+        {process.env.NODE_ENV !== 'development' && `(function(o) {
           var b = 'https://zippyfrog.co/anywhere/',
             t = '039b072363604f71afb26a55f1899413c20b8d86bb9749878f06b280fe2c8fa4',
             a = (window.AutopilotAnywhere = {

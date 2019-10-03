@@ -1,8 +1,9 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 
 import Layout from '../components/Layout';
 import SEO from '../components/seo';
 import Nav from '../components/Nav';
+import Modal from '../components/Modal';
 
 import teamGitcoin from '../img/grant-teams/gitcoin.png';
 import teamPlasmaGroup from '../img/grant-teams/plasma-group.png';
@@ -30,11 +31,26 @@ import grantsShapes from '../img/grants-shapes.svg';
 
 const Grants = () => {
   const applyRef = useRef(null);
+  const [isOpen, setModalOpen] = useState(false);
 
   function onApplyClick() {
     applyRef.current.scrollIntoView({
       behavior: 'smooth',
     });
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    setModalOpen(true);
+  }
+
+  function handleClose(e) {
+    e.preventDefault();
+    setModalOpen(false);
+    const fn = document.getElementById('grants-full-name');
+    const em = document.getElementById('grants-email');
+    fn.value = '';
+    em.value = '';
   }
 
   return (
@@ -771,7 +787,11 @@ const Grants = () => {
               We'd love to help you prepare a proposal for a Panvala token grant. Send us your email
               and we'll be in contact soon.
             </p>
-            <form className="w-70-l w-90-m w-100 center" name="grant-application">
+            <form
+              className="w-70-l w-90-m w-100 center"
+              name="grant-application"
+              onSubmit={handleSubmit}
+            >
               <div className="tl mt4">
                 <label className="ma0 f6 mb3 black-40">
                   Full Name
@@ -780,6 +800,7 @@ const Grants = () => {
               </div>
               <input
                 type="text"
+                id="grants-full-name"
                 name="full-name"
                 required
                 placeholder="Enter your full name"
@@ -793,6 +814,7 @@ const Grants = () => {
               </div>
               <input
                 type="email"
+                id="grants-email"
                 name="email"
                 required
                 placeholder="Enter your email address"
@@ -809,24 +831,12 @@ const Grants = () => {
           </div>
         </section>
 
-        {/* <!-- Modal --> */}
-        <article
-          className="vh-100 dn w-100 bg-black-80 absolute--fill absolute z-999"
-          id="grants-application-modal"
-        >
-          <section className="w-30-l w-50-m w-90 pa5-l pa4 bg-white br3 center mt6-l mt5-m mt4 tc">
-            <h2 className="f2-5 ma0 mb3 lh-copy">Form Submitted</h2>
-            <p className="ma0 f6 lh-text mb4">Thank you. We'll be in touch!</p>
-            <a href="">
-              <button
-                className="f6 link dim bn br-pill pv3 ph4 white bg-teal fw7 pointer"
-                id="grants-application-modal-close"
-              >
-                Continue
-              </button>
-            </a>
-          </section>
-        </article>
+        <Modal
+          isOpen={isOpen}
+          handleClose={handleClose}
+          title="Form Submitted"
+          copy="Thank you. We'll be in touch!"
+        />
       </div>
     </Layout>
   );

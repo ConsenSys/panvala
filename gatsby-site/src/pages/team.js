@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 
 import teamShapes from '../img/team-shapes.svg';
 import teamNiran from '../img/team/team-niran.png';
@@ -11,11 +11,13 @@ import teamIsaac from '../img/team/team-isaac.png';
 import SEO from '../components/seo';
 import Nav from '../components/Nav';
 import Layout from '../components/Layout';
+import Modal from '../components/Modal';
 
 const Team = () => {
   const aboutRef = useRef(null);
   const contributeRef = useRef(null);
   const contactRef = useRef(null);
+  const [isOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     if (aboutRef.current != null && window.location.href.includes('#team-about')) {
@@ -28,6 +30,22 @@ const Team = () => {
       contactRef.current.scrollIntoView();
     }
   }, [aboutRef.current, contributeRef.current, contactRef.current]);
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    setModalOpen(true);
+  }
+
+  function handleClose(e) {
+    e.preventDefault();
+    setModalOpen(false);
+    const fn = document.getElementById('contact-full-name');
+    const em = document.getElementById('contact-email');
+    const msg = document.getElementById('contact-message');
+    fn.value = '';
+    em.value = '';
+    msg.value = '';
+  }
 
   return (
     <Layout>
@@ -174,7 +192,11 @@ const Team = () => {
             <p className="ma0 f6 lh-text mb3">
               We'd love to hear from you. Send us a message and we'll respond as soon as possible.
             </p>
-            <form className="w-70-l w-90-m w-100 center" name="team-contact">
+            <form
+              className="w-70-l w-90-m w-100 center"
+              name="team-contact"
+              onSubmit={handleSubmit}
+            >
               <div className="tl mt4">
                 <label className="ma0 f6 mb3 black-40">
                   Full Name
@@ -183,6 +205,7 @@ const Team = () => {
               </div>
               <input
                 type="text"
+                id="contact-full-name"
                 name="full-name"
                 required
                 placeholder="Enter your full name"
@@ -196,6 +219,7 @@ const Team = () => {
               </div>
               <input
                 type="email"
+                id="contact-email"
                 name="email"
                 required
                 placeholder="Enter your email address"
@@ -209,6 +233,7 @@ const Team = () => {
               </div>
               <textarea
                 name="message"
+                id="contact-message"
                 rows="5"
                 required
                 placeholder="Let us know what you would like to chat about"
@@ -226,23 +251,12 @@ const Team = () => {
         </section>
 
         {/* <!-- Modal --> */}
-        <article
-          className="vh-100 dn w-100 bg-black-80 absolute--fill absolute z-999"
-          id="team-contact-modal"
-        >
-          <section className="w-30-l w-50-m w-90 pa5-l pa4 bg-white br3 center mt6-l mt5-m mt4 tc">
-            <h2 className="f2-5 ma0 mb3 lh-copy">Form Submitted</h2>
-            <p className="ma0 f6 lh-text mb4">Thank you. We'll be in touch!</p>
-            <a href="">
-              <button
-                className="f6 link dim bn br-pill pv3 ph4 white bg-teal fw7 pointer"
-                id="team-contact-modal-close"
-              >
-                Continue
-              </button>
-            </a>
-          </section>
-        </article>
+        <Modal
+          isOpen={isOpen}
+          handleClose={handleClose}
+          title="Form Submitted"
+          copy="Thank you. We'll be in touch!"
+        />
       </div>
     </Layout>
   );
