@@ -11,6 +11,7 @@ const { rpcEndpoint } = config;
 const { gatekeeperAddress, tokenCapacitorAddress } = config.contracts;
 const { findOrSaveIpfsMetadata } = require('./ipfs');
 const { getEventsFromDatabase } = require('./events');
+const { Request } = require('../models');
 
 const notifications = {
   PROPOSAL_INCLUDED_IN_SLATE: {
@@ -90,16 +91,9 @@ async function getNormalizedNotificationsByEvents(address) {
   const gatekeeper = new ethers.Contract(gatekeeperAddress, Gatekeeper.abi, provider);
   const tokenCapacitor = new ethers.Contract(tokenCapacitorAddress, TokenCapacitor.abi, provider);
 
-  const userAddress = utils.getAddress(address);
+  const grantResource = tokenCapacitor.address;
 
-  // get requestID -> proposalID for grants
-  const grantRequestMapping = {};
-  events
-    .filter(event => event.name === 'ProposalCreated' && event.recipient === tokenCapacitor.address)
-    .forEach(event => {
-      const { proposalID, requestID } = event.values;
-      grantRequestMapping[requestID] = proposalID;
-    });
+  const userAddress = utils.getAddress(address);
 
   const slateCreatedEvents = events.filter(event => event.name === 'SlateCreated');
 
@@ -136,20 +130,32 @@ async function getNormalizedNotificationsByEvents(address) {
       const slateRequests = await gatekeeper.slateRequests(winningSlate);
       const withdrawGrantNotifications = await Promise.all(
         slateRequests.map(async requestID => {
-          // get proposals
-          const proposalID = grantRequestMapping[requestID];
-          const proposal = await tokenCapacitor.proposals(proposalID);
-          // TODO: do not include if expired
+          // get grant proposal matching this request
+          const request = await Request.findOne({
+            where: {
+              requestID: requestID.toString(),
+              resource: grantResource,
+            },
+          });
 
-          const { to, withdrawn } = proposal;
-          if (!withdrawn && address && to && utils.getAddress(to) === userAddress) {
-            return {
-              ...notifications.WITHDRAW_GRANT,
-              event,
-              proposalID,
-              requestID,
-            };
+          if (request !== null) {
+            const proposalID = request.proposalID;
+            const proposal = await tokenCapacitor.proposals(proposalID);
+            // TODO: do not include if expired
+
+            const { to, withdrawn } = proposal;
+
+            if (!withdrawn && address && to && utils.getAddress(to) === userAddress) {
+              return {
+                ...notifications.WITHDRAW_GRANT,
+                event,
+                proposalID,
+                requestID,
+              };
+            }
           }
+
+          return null;
         })
       );
 
