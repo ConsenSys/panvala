@@ -23,7 +23,8 @@ setupRoutes(app);
 // Start server:
 if (process.env.NODE_ENV !== 'test') {
   // Continuously listen for contract events
-  listenAndSyncContractEvents();
+  // TODO: enable this when ready
+  // listenAndSyncContractEvents();
 
   app.listen(port, () => console.log(`Starting server on port ${port}...`));
 }

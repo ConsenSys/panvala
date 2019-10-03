@@ -16,6 +16,7 @@
     "migrate": "sequelize db:migrate",
     "migrate:undo": "sequelize db:migrate:undo",
     "create-migration": "sequelize migration:generate --name",
+    "sync-events": "node scripts/sync-contract-events.js",
     "test": "jest --passWithNoTests"
   },
   "author": "",
