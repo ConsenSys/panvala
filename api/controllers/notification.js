@@ -1,5 +1,5 @@
 const { utils } = require('ethers');
-const { getNormalizedNotificationsByEvents } = require('../utils/notifications');
+const { getNotificationsByAddress } = require('../utils/notifications');
 
 module.exports = {
   /**
@@ -11,7 +11,7 @@ module.exports = {
     try {
       const validatedAddress = utils.getAddress(address.toLowerCase());
 
-      return getNormalizedNotificationsByEvents(validatedAddress)
+      return getNotificationsByAddress(validatedAddress)
         .then(notifications => {
           return res.json(notifications);
         })

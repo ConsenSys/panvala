@@ -64,7 +64,7 @@ const eventNames = [
 
 // Get events related to this address from the database and generate notifications
 // TODO: filter query further, only process recent events
-async function getNormalizedNotificationsByEvents(address) {
+async function getNotificationsByAddress(address) {
   // Don't process events if we're not connected to the contracts
   if (!gatekeeperAddress || !tokenCapacitorAddress) {
     return [];
@@ -223,5 +223,5 @@ async function getNormalizedNotificationsByEvents(address) {
 }
 
 module.exports = {
-  getNormalizedNotificationsByEvents,
+  getNotificationsByAddress,
 };
