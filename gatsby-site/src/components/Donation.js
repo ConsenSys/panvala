@@ -185,7 +185,10 @@ class Donation extends Component {
       throw new Error('Ethereum not setup properly.');
     }
 
-    const correctChainId = window.location.href.includes('panvala.com/donate') ? 1 : 4;
+    let correctChainId = window.location.href.includes('panvala.com/donate') ? 1 : 4;
+    if (window.location.href.includes('gatsby.panvala.com/donate')) {
+      correctChainId = 4;
+    }
     const network = await this.provider.getNetwork();
     const supportedNetworks = {
       1: 'Main',

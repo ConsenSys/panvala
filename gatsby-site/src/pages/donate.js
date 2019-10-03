@@ -14,6 +14,104 @@ import SEO from '../components/seo';
 import Donation from '../components/Donation';
 import Nav from '../components/Nav';
 
+const names = [
+  'Simon de la Rouviere',
+  'Joseph Chow',
+  'Liraz Siri',
+  'Darius Przydzial',
+  'Jesse Grushack',
+  'Ryan Gittleson',
+  'Andy Morales',
+  'John Packel',
+  'Andrew Keys',
+  'Momo Araki',
+  'Christian Lundkvist',
+  'William Warren',
+  'Nathan Chen',
+  'Charles Crain',
+  'Petr Ko',
+  'Justin Maier',
+  'Christopher Brown',
+  'Oscar Presidente',
+  'Cristian Espinoza',
+  'Chris Smith',
+  'Rakhee Singh',
+  'Thomas Spofford',
+  'Marcus Hearne',
+  'Bach Adylbekov',
+  'Daniel Bar',
+  'Sean Coughlin',
+  'Artem Payvin',
+  'Carolyn Reckhow',
+  'Hal Feewet',
+  'David Hoffman',
+  'Scott Trowbridge',
+  'Guillermo Salazar',
+  'Suyi Kim',
+  'Christian Lewis',
+  'Christopher Igbojekwe',
+  'Roman Pavlovskyi',
+  'Yutaro Mori',
+  'Robert Lee Mudgett',
+  'Everton Fraga',
+  'Alex Napheys',
+  'Yele Bademosi',
+  'Teck Chia',
+  'Chris Storaker',
+  'Camila Russo',
+  'Christopher Eley',
+  'Sky Minert',
+  'Justin Leroux',
+  'Daniela Osorio',
+  'Vinay Gupta',
+  'Barry Gitarts',
+  'Batuhan Dasgin',
+  'Derrick Duncan',
+  'Kristoffer Josefsson',
+  'Vivek Singh',
+  'Alice Henshaw',
+  'Masanori Uno',
+  'Megan Cress',
+  'Daniel Kochis',
+  'Sergej Kunz',
+  'Mahmoud Salem',
+  'Sneb Koul',
+  'Madhur Kumar Sharma',
+  'Will Price',
+  'Nemil Dalal',
+  'Andrew Gold',
+  'Daniel Que',
+  'Veronica Zheng',
+  'Abraham Sanchez',
+  'Harold Hyatt',
+  'Elisha Koh',
+  'Matt Lockyer',
+  'Mahmoud Salem',
+  'Siddharth Verma',
+  'Libby Kent',
+  'Gonçalo Sá',
+  'Jacob Cantele',
+  'Keith Tom',
+  'Alexander Fischer',
+  'Abel Tedros',
+  'Juan Blanco',
+  'Olumide Akinwande',
+  'Virag Mody',
+  'Thessy Mehrain',
+  'William Gleim',
+  'Shawn Harmsen',
+  'Sander Lacerda',
+  'Dhruvang Patel',
+  'Jonathan Pitchfork',
+  'Rachid Moulakhnif',
+  'Tas Dienes',
+  'Kevin Spiers',
+  'Bass Bauman',
+  'Mason Fischer',
+  'Russell Verbeeten',
+  'Muhammad Zaheer',
+];
+
 const Donate = () => {
   const donateNowRef = useRef(null);
 
@@ -85,101 +183,11 @@ const Donate = () => {
       <section className="bg-white w-70-l w-80-m w-90 center tc br4 pa5 shadow mt6 db-ns dn relative z-1">
         <h2 className="f2-5 ma0 tc w-50-l center">Our Founding Patrons support Ethereum</h2>
         <div className="flex flex-wrap center mt4">
-          <p className="ma0 f7 lh-text w-25-l w-50">Simon de la Rouviere</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Joseph Chow</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Liraz Siri</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Darius Przydzial</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Jesse Grushack</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Ryan Gittleson</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Andy Morales</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">John Packel</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Andrew Keys</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Momo Araki</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Christian Lundkvist</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">William Warren</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Nathan Chen</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Charles Crain</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Petr Ko</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Justin Maier</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Christopher Brown</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Oscar Presidente</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Cristian Espinoza</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Chris Smith</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Rakhee Singh</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Thomas Spofford</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Marcus Hearne</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Bach Adylbekov</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Daniel Bar</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Sean Coughlin</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Artem Payvin</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Carolyn Reckhow</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Hal Feewet</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">David Hoffman</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Scott Trowbridge</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Guillermo Salazar</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Suyi Kim</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Christian Lewis</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Christopher Igbojekwe</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Roman Pavlovskyi</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Yutaro Mori</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Robert Lee Mudgett</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Everton Fraga</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Alex Napheys</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Yele Bademosi</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Teck Chia</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Chris Storaker</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Camila Russo</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Christopher Eley</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Sky Minert</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Justin Leroux</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Daniela Osorio</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Vinay Gupta</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Barry Gitarts</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Batuhan Dasgin</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Derrick Duncan</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Kristoffer Josefsson</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Vivek Singh</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Alice Henshaw</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Masanori Uno</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Megan Cress</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Daniel Kochis</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Sergej Kunz</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Mahmoud Salem</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Sneb Koul</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Madhur Kumar Sharma</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Will Price</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Nemil Dalal</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Andrew Gold</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Daniel Que</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Veronica Zheng</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Abraham Sanchez</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Harold Hyatt</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Elisha Koh</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Matt Lockyer</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Mahmoud Salem</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Siddharth Verma</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Libby Kent</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Gonçalo Sá</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Jacob Cantele</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Keith Tom</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Alexander Fischer</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Abel Tedros</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Juan Blanco</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Olumide Akinwande</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Virag Mody</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Thessy Mehrain</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">William Gleim</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Shawn Harmsen</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Sander Lacerda</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Dhruvang Patel</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Jonathan Pitchfork</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Rachid Moulakhnif</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Tas Dienes</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Kevin Spiers</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Bass Bauman</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Mason Fischer</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Russell Verbeeten</p>
-          <p className="ma0 f7 lh-text w-25-l w-50">Muhammad Zaheer</p>
+          {names.map(name => (
+            <p className="ma0 f7 lh-text w-25-l w-50" key={name}>
+              {name}
+            </p>
+          ))}
         </div>
       </section>
 
@@ -299,7 +307,7 @@ const Donate = () => {
                 className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2 bg-white black-50"
                 id="pledge-tier-select"
               >
-                <option disabled="" defaultValue="0">
+                <option disabled="" defaultValue="0" value="0">
                   Select your pledge tier
                 </option>
                 <option value="5">Student — $5/month</option>
@@ -322,7 +330,7 @@ const Donate = () => {
                 className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2 bg-white black-50"
                 id="pledge-duration-select"
               >
-                <option disabled="" defaultValue="0">
+                <option disabled="" defaultValue="0" value="0">
                   Select the amount of months you would like to prepay for
                 </option>
                 <option value="1">1 month</option>
