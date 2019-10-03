@@ -55,13 +55,15 @@ class Root extends React.Component {
         _this.setState({
           error: 'Buffer did not setup correctly.'
         });
-      } // Listen for network changes -> reload page
+      }
 
-
-      window.ethereum.once('networkChanged', network => {
-        console.log('MetaMask network changed:', network);
-        window.location.reload();
-      });
+      if (typeof window !== 'undefined' && window.hasOwnProperty('ethereum')) {
+        // Listen for network changes -> reload page
+        window.ethereum.on('networkChanged', network => {
+          console.log('MetaMask network changed:', network);
+          window.location.reload();
+        });
+      }
     })();
   } // Setup provider & selected account
 

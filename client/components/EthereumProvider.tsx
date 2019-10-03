@@ -86,98 +86,98 @@ const EthereumProvider: React.FC<any> = (props: any) => {
   // 1. get metamask / set account / set provider
   // 2. set contracts
   React.useEffect(() => {
-    async function handleConnectEthereum() {
+    if (typeof window !== 'undefined' && window.hasOwnProperty('ethereum')) {
+      const { ethereum }: Window = window;
+
+      handleConnectEthereum(ethereum);
+
+      // // clear old listeners
+      // console.log('listeners:', ethereum.listenerCount());
+      // ethereum.removeListener('networkChanged', () => {});
+      // ethereum.removeListener('accountsChanged', () => {});
+
+      // register an event listener to handle account-switching in metamask
+      ethereum.on('accountsChanged', (accounts: string[]) => {
+        console.info('MetaMask account changed:', accounts[0]);
+        handleConnectEthereum(ethereum);
+      });
+
+      // register an event listener to handle network-switching in metamask
+      ethereum.on('networkChanged', (network: any) => {
+        console.info('MetaMask network changed:', network);
+        window.location.reload();
+      });
+    }
+  }, []);
+
+  async function handleConnectEthereum(ethereum) {
+    try {
+      // pop-up metamask to authorize panvala-app (account signature validation)
+      let addresses: string[] = [];
       try {
-        if (typeof window !== 'undefined' && window.hasOwnProperty('ethereum')) {
-          // this means metamask is installed. get the ethereum provider
-          const { ethereum }: Window = window;
-          // pop-up metamask to authorize panvala-app (account signature validation)
-          let addresses: string[] = [];
-          try {
-            addresses = await ethereum.enable();
-            let enabledAccounts = loadState(ENABLED_ACCOUNTS);
-            if (enabledAccounts && !enabledAccounts.includes(addresses[0])) {
-              enabledAccounts = enabledAccounts.concat(addresses[0]);
-            } else if (!enabledAccounts) {
-              enabledAccounts = addresses;
-            }
-            saveState(ENABLED_ACCOUNTS, enabledAccounts);
-          } catch (error) {
-            console.error(`ERROR failed to enable metamask: ${error.message}`);
-            throw error;
-          }
+        addresses = await ethereum.enable();
+        let enabledAccounts = loadState(ENABLED_ACCOUNTS);
+        if (enabledAccounts && !enabledAccounts.includes(addresses[0])) {
+          enabledAccounts = enabledAccounts.concat(addresses[0]);
+        } else if (!enabledAccounts) {
+          enabledAccounts = addresses;
+        }
+        saveState(ENABLED_ACCOUNTS, enabledAccounts);
+      } catch (error) {
+        console.error(`ERROR failed to enable metamask: ${error.message}`);
+        throw error;
+      }
 
-          // selected account
-          const account = utils.getAddress(addresses[0]);
+      // selected account
+      const account = utils.getAddress(addresses[0]);
 
-          // register an event listener to handle account-switching in metamask
-          ethereum.once('accountsChanged', (accounts: string[]) => {
-            console.info('MetaMask account changed:', accounts[0]);
-            handleConnectEthereum();
-          });
+      try {
+        // wrap MetaMask with ethers
+        const ethProvider = await connectProvider(ethereum);
+        console.log('account:', account);
 
-          // register an event listener to handle network-switching in metamask
-          ethereum.once('networkChanged', (network: any) => {
-            console.info('MetaMask network changed:', network);
-            window.location.reload();
-          });
+        dispatch({
+          type: 'chain',
+          ethProvider,
+          account,
+        });
 
-          try {
-            // wrap MetaMask with ethers
-            const ethProvider = await connectProvider(ethereum);
-            console.log('account:', account);
-
-            dispatch({
-              type: 'chain',
-              ethProvider,
-              account,
-            });
-
-            if (!isEmpty(ethProvider)) {
-              await setupContracts(ethProvider);
-            }
-          } catch (error) {
-            console.error(`ERROR failed to connect eth provider: ${error.message}`);
-            throw error;
-          }
-
-          async function setupContracts(ethProvider) {
-            // contract abstractions (w/ metamask signer)
-            try {
-              const contracts = await connectContracts(ethProvider);
-              const slateStakeAmount = await contracts.parameterStore.functions.getAsUint(
-                'slateStakeAmount'
-              );
-              console.log('contracts:', contracts);
-
-              dispatch({
-                type: 'contracts',
-                contracts,
-                slateStakeAmount,
-              });
-            } catch (error) {
-              console.error(`ERROR failed to connect contracts: ${error.message}`);
-              if (error.message.includes('contract not deployed')) {
-                toast.error(`Contracts not deployed on current network`);
-              } else if (error.message.includes('Wrong network')) {
-                toast.error(error.message);
-              }
-              throw error;
-            }
-          }
+        if (!isEmpty(ethProvider)) {
+          await setupContracts(ethProvider);
         }
       } catch (error) {
-        console.error(error);
+        console.error(`ERROR failed to connect eth provider: ${error.message}`);
+        throw error;
       }
+    } catch (error) {
+      console.error(error);
     }
-    handleConnectEthereum();
+  }
 
-    // clean up
-    return () =>
-      typeof window !== 'undefined' &&
-      typeof window.ethereum !== 'undefined' &&
-      window.ethereum.removeAllListeners();
-  }, []);
+  async function setupContracts(ethProvider) {
+    // contract abstractions (w/ metamask signer)
+    try {
+      const contracts = await connectContracts(ethProvider);
+      const slateStakeAmount = await contracts.parameterStore.functions.getAsUint(
+        'slateStakeAmount'
+      );
+      console.log('contracts:', contracts);
+
+      dispatch({
+        type: 'contracts',
+        contracts,
+        slateStakeAmount,
+      });
+    } catch (error) {
+      console.error(`ERROR failed to connect contracts: ${error.message}`);
+      if (error.message.includes('contract not deployed')) {
+        toast.error(`Contracts not deployed on current network`);
+      } else if (error.message.includes('Wrong network')) {
+        toast.error(error.message);
+      }
+      throw error;
+    }
+  }
 
   async function handleRefreshBalances() {
     const {
