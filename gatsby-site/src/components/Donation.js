@@ -33,6 +33,10 @@ class Donation extends Component {
     };
     this.handleClickDonate = this.handleClickDonate.bind(this);
     this.handleCancel = this.handleCancel.bind(this);
+    this.provider = undefined;
+    this.exchange = undefined;
+    this.token = undefined;
+    this.tokenCapacitor = undefined;
   }
 
   // ---------------------------------------------------------------------------
@@ -69,7 +73,7 @@ class Donation extends Component {
             }
           });
       }
-      this.setState({ selectedAccount });
+      await this.setState({ selectedAccount });
       return selectedAccount;
     } else {
       alert('MetaMask not found. Please download MetaMask @ metamask.io');
