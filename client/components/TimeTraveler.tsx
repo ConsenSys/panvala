@@ -11,18 +11,13 @@ import Flex from './system/Flex';
 import { toast } from 'react-toastify';
 
 const {
-  timing: {
-    getTimingsForEpoch,
-    calculateEpochStage,
-    EpochStages,
-    EpochStageDates,
-    nextEpochStage,
-  },
+  timing: { getTimingsForEpoch, calculateEpochStage, EpochStages, EpochStageDates, nextEpochStage },
 } = panvala_utils;
 
 const TimeTraveler: React.SFC = () => {
   const {
     contracts: { gatekeeper },
+    account,
   } = React.useContext(EthereumContext);
   const { currentBallot } = React.useContext(MainContext);
 
@@ -61,8 +56,13 @@ const TimeTraveler: React.SFC = () => {
 
     if (gatekeeper.functions.hasOwnProperty('timeTravel')) {
       try {
-        await gatekeeper.functions.timeTravel(timeDiff);
-        window.location.reload();
+        const isWhitelisted = await gatekeeper.isWhitelisted(account);
+        if (isWhitelisted) {
+          await gatekeeper.functions.timeTravel(timeDiff);
+          window.location.reload();
+        } else {
+          toast.error('Account not whitelisted.');
+        }
       } catch (error) {
         if (error.message.includes('invalid number value')) {
           toast.error('Invalid stage number value. Valid numbers include 0-3');

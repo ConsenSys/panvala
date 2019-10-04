@@ -1,3 +1,10 @@
+let activeEnv = process.env.GATSBY_ACTIVE_ENV || process.env.NODE_ENV || 'development';
+console.log(`Using environment config: '${activeEnv}'`);
+
+require('dotenv').config({
+  path: `.env.${activeEnv}`,
+});
+
 module.exports = {
   siteMetadata: {
     title: `Panvala`,
@@ -30,9 +37,9 @@ module.exports = {
     {
       resolve: `gatsby-plugin-s3`,
       options: {
-        bucketName: 'panvala-gatsby',
-        protocol: "https",
-        hostname: "panvala-gatsby.s3-website.us-east-2.amazonaws.com",
+        bucketName: process.env.AWS_BUCKET_NAME,
+        protocol: 'https',
+        hostname: process.env.AWS_HOST_NAME,
         acl: null,
       },
     },

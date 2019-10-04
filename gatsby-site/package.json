@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "dependencies": {
+    "dotenv": "^8.1.0",
     "ethers": "^4.0.37",
     "gatsby": "^2.15.20",
     "gatsby-image": "^2.2.20",
@@ -19,15 +20,26 @@
     "react-helmet": "^5.2.1"
   },
   "devDependencies": {
-    "prettier": "^1.18.2"
+    "babel-jest": "^24.9.0",
+    "babel-preset-gatsby": "^0.2.17",
+    "identity-obj-proxy": "^3.0.0",
+    "jest": "^24.9.0",
+    "prettier": "^1.18.2",
+    "react-test-renderer": "^16.10.2"
   },
   "scripts": {
-    "build": "gatsby build",
+    "build:staging": "GATSBY_ACTIVE_ENV=staging gatsby build",
+    "build:production": "GATSBY_ACTIVE_ENV=production gatsby build",
     "deploy": "gatsby-plugin-s3 deploy",
+    "deploy:staging": "GATSBY_ACTIVE_ENV=staging npx -n \"-r dotenv/config\" gatsby-plugin-s3 deploy",
+    "deploy:production": "GATSBY_ACTIVE_ENV=production npx -n \"-r dotenv/config\" gatsby-plugin-s3 deploy",
+    "invalidate:staging": "aws cloudfront create-invalidation --distribution-id $GATSBY_STAGING_DIST_ID --paths '/*'",
+    "invalidate:production": "aws cloudfront create-invalidation --distribution-id $GATSBY_PRODUCTION_DIST_ID --paths '/*'",
     "dev": "gatsby develop",
     "format": "prettier --write \"**/*.{js,jsx,json,md}\"",
     "start": "yarn run dev",
     "serve": "gatsby serve",
-    "test": "echo \"Write tests! -> https://gatsby.dev/unit-testing \""
+    "test": "jest",
+    "test:verbose": "jest --verbose"
   }
 }

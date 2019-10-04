@@ -1,0 +1,25 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Donation should render component and initialize with correct state 1`] = `
+<div>
+  <input
+    className="f6 link dim bn br-pill pv3 ph4 white bg-teal fw7 mt4"
+    name="submit"
+    onClick={[Function]}
+    type="submit"
+    value="Donate"
+  />
+</div>
+`;
+
+exports[`Donation should render component and initialize with correct state 2`] = `
+<div>
+  <input
+    className="f6 link dim bn br-pill pv3 ph4 white bg-teal fw7 mt4"
+    name="submit"
+    onClick={[Function]}
+    type="submit"
+    value="Donate"
+  />
+</div>
+`;
