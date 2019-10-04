@@ -42,7 +42,7 @@ class Donation extends Component {
   async componentDidMount() {
     if (typeof window !== 'undefined' && typeof window.ethereum !== 'undefined') {
       // Listen for network changes -> reload page
-      window.ethereum.once('networkChanged', network => {
+      window.ethereum.on('networkChanged', network => {
         console.log('MetaMask network changed:', network);
         window.location.reload();
       });
