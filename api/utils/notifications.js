@@ -181,38 +181,6 @@ async function getNotificationsByAddress(address) {
         .concat(withdrawStakeNotifications);
     } // Finalized
 
-    // NOTE: do not include proposal included in slate for now -- it's not really meaningful
-    // ProposalCreated -> proposal included in slate
-    // if (event.name.includes('ProposalCreated')) {
-    //   if (event.recipient === tokenCapacitor.address) {
-    //     const { requestID, proposalID, proposer, recipient } = event.values;
-
-    //     if (utils.getAddress(proposer) === userAddress) return null;
-
-    //     // Check if there's a matching slate creation
-    //     for (let index = 0; index < slateCreatedEvents.length; index++) {
-    //       const slateCreation = slateCreatedEvents[index];
-    //       const { slateID, requestIDs } = slateCreation.values;
-    //       if (requestIDs.indexOf(requestID) !== -1) {
-    //         console.log(
-    //           `proposal ${proposalID} with request ${requestID} found in slate ${slateID}`
-    //         );
-
-    //         // match found
-    //         return {
-    //           ...notifications.PROPOSAL_INCLUDED_IN_SLATE,
-    //           event: slateCreation,
-    //           proposalID,
-    //           requestID,
-    //           proposer,
-    //           recipient,
-    //           slateID,
-    //         };
-    //       }
-    //     }
-    //   }
-    // }
-
     return null;
   });
 
