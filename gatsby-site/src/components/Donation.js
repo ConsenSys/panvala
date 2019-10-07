@@ -358,6 +358,7 @@ class Donation extends Component {
           pledgeEmail.value = '';
           pledgeMonthlySelect.value = '0';
           pledgeTermSelect.value = '0';
+          pledgeTeamSelect.value = '0';
         }
       }
     } catch (error) {
