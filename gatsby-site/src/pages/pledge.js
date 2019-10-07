@@ -135,10 +135,12 @@ const Donate = () => {
     const ln = document.getElementById('pledge-last-name');
     const em = document.getElementById('pledge-email');
     const ti = document.getElementById('pledge-tier-select');
+    const te = document.getElementById('pledge-team-select');
     fn.value = '';
     ln.value = '';
     em.value = '';
     ti.value = '0';
+    te.value = '0';
   }
 
   return (
@@ -271,9 +273,8 @@ const Donate = () => {
           <div ref={donateNowRef} className="w-50-l w-70-m w-90 center tc">
             <h2 className="f2-5 ma0 mv3 lh-copy">Become a Panvala Patron today</h2>
             <p className="ma0 f6 lh-text mb3">
-              Choose your patron tier to prepay for this month using ETH. When it's time to renew
-              your pledge, we'll send you a reminder email so you can come back and prepay your next
-              donation.
+              We only need your contact information in order for you to make a pledge at this time.
+              We'll reach out to you in the future to help you fulfill your pledge.
             </p>
             <form
               className="w-80-l w-90-m w-100 center"
@@ -343,7 +344,30 @@ const Donate = () => {
               </select>
               <img src={arrowSvg} className="fr mr2 o-50" style={{ marginTop: '-35px' }} />
 
-              <DonateButton handleClick={handleSubmit} />
+              <div className="tl mt4">
+                <label className="ma0 f6 mb3 black-40">
+                Are you pledging on behalf of a team?
+                  <b className="red f7"> *</b>
+                </label>
+              </div>
+              <select
+                name="pledge-team-selection"
+                required
+                className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2 bg-white black-50"
+                id="pledge-team-select"
+              >
+                <option disabled="" defaultValue="0" value="0">
+                  Select the team you would like to pledge on behalf of
+                </option>
+                <option value="no-team">No</option>
+                <option value="meta-cartel">Team MetaCartel: Increase Dapp Usage</option>
+                <option value="libre-fund">Team Libre-Fund: Put Users in Control</option>
+                <option value="donor-dao">Team Donor DAO: Earn Votes in a Nested DAO</option>
+              </select>
+              <img src={arrowSvg} className="fr mr2 o-50" style={{ marginTop: '-35px' }} />
+
+
+              <DonateButton handleClick={handleSubmit} text="Pledge" />
 
               <Modal
                 isOpen={isOpen}
