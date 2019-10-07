@@ -34,6 +34,7 @@ import {
   IGovernanceProposalMetadata,
   IGovernanceProposalInfo,
   IParameterChangesObject,
+  ISlateMetadata,
 } from '../../../interfaces';
 import ParametersForm from '../../../components/ParametersForm';
 import {
@@ -53,6 +54,15 @@ enum PageStatus {
   Initialized,
   SubmissionOpen,
   SubmissionClosed,
+}
+
+interface IGovernanceSlateMetadataV1 {
+  firstName: string;
+  lastName?: string;
+  organization?: string;
+  summary: string;
+  requestIDs: string[];
+  resource: string;
 }
 
 const CreateGovernanceSlate: StatelessPage<any> = () => {
@@ -199,8 +209,10 @@ const CreateGovernanceSlate: StatelessPage<any> = () => {
       const requestIDs = await getRequests;
 
       setPendingText('Adding slate to IPFS...');
+      const resource = contracts.parameterStore.address;
+
       // TODO: change the metadata format to include resource (but maybe include a human-readable resourceType)
-      const slateMetadata: any = {
+      const slateMetadata: IGovernanceSlateMetadataV1 = {
         firstName: values.firstName,
         lastName: values.lastName,
         summary: values.summary,
@@ -220,7 +232,7 @@ const CreateGovernanceSlate: StatelessPage<any> = () => {
       errorMessage = 'error submitting slate.';
       const slate: any = await sendRecommendGovernanceSlateTx(
         contracts.gatekeeper,
-        slateMetadata.resource,
+        resource,
         requestIDs,
         slateMetadataHash
       );

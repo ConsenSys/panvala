@@ -8,6 +8,7 @@ const { getContracts } = require('./eth');
 const config = require('./config');
 const { tokenCapacitorAddress } = config.contracts;
 const { nonEmptyString } = require('./validation');
+const { getProposalsForRequests } = require('./requests');
 
 const BN = small => ethers.utils.bigNumberify(small);
 const getAddress = hexAddress => ethers.utils.getAddress(hexAddress);
@@ -143,22 +144,17 @@ async function getSlateWithMetadata(slateID, slate, metadataHash, incumbent, req
     }
 
     const {
+      category,
       firstName,
       lastName,
       proposals,
       description,
       organization,
       proposalMultihashes,
-    } = slateMetadata;
+    } = await normalizeMetadata(slateMetadata, slate.resource);
+
     // console.log('proposalMultihashes:', proposalMultihashes);
     // console.log('');
-
-    // TODO: rehydrate proposals
-
-    let category = 'GOVERNANCE';
-    if (getAddress(slate.resource) === getAddress(tokenCapacitorAddress)) {
-      category = 'GRANT';
-    }
 
     // --------------------------
     // COMBINE/RETURN SLATE DATA
@@ -168,12 +164,13 @@ async function getSlateWithMetadata(slateID, slate, metadataHash, incumbent, req
       category,
       epochNumber: slate.epochNumber.toNumber(),
       incumbent,
-      description,
+      description: description || slateMetadata.summary,
       metadataHash,
       organization,
       // either first + last name or just first name
       owner: lastName ? `${firstName} ${lastName}` : firstName,
       proposals,
+      proposalMultihashes,
       recommender: slate.recommender,
       requiredStake,
       stake: slate.stake,
@@ -186,6 +183,68 @@ async function getSlateWithMetadata(slateID, slate, metadataHash, incumbent, req
     console.log('ERROR: while combining slate with metadata:', error.message);
     throw error;
   }
+}
+
+async function normalizeMetadata(slateMetadata, resource) {
+  const {
+    firstName,
+    lastName,
+    proposals,
+    description,
+    organization,
+    proposalMultihashes,
+  } = slateMetadata;
+
+  const { requestIDs } = slateMetadata;
+
+  let category = 'GOVERNANCE';
+  if (getAddress(resource) === getAddress(tokenCapacitorAddress)) {
+    category = 'GRANT';
+  }
+
+  // is governance v1 - has `resource` and `requestIDs` keys (and summary instead of description)
+  if (slateMetadata.resource != null && requestIDs != null) {
+    // console.log('REQUESTS', requestIDs);
+
+    // get the associated proposals from the database
+    const rawProposals = await getProposalsForRequests(resource, requestIDs);
+    const multihashes = rawProposals.map(p => toUtf8String(p.metadataHash));
+
+    // get parameter changes - key, type, oldValue, newValue
+    const proposals = await Promise.all(
+      rawProposals.map(p => {
+        const { metadataHash } = p;
+        return ipfs.findOrSaveIpfsMetadata(metadataHash).then(metadata => {
+          const { parameterChanges } = metadata.data;
+          return {
+            ...parameterChanges,
+            metadataHash: toUtf8String(metadataHash),
+          };
+        });
+      })
+    );
+
+    return {
+      category,
+      firstName,
+      lastName,
+      description: slateMetadata.summary,
+      organization,
+      proposals,
+      proposalMultihashes: multihashes,
+    };
+  }
+
+  // is a regular grant or updated governance
+  return {
+    category,
+    firstName,
+    lastName,
+    description,
+    organization,
+    proposals,
+    proposalMultihashes,
+  };
 }
 
 /**

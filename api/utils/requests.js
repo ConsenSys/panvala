@@ -1,5 +1,7 @@
-const { Request } = require('../models');
+const { Request, Sequelize } = require('../models');
 const { getAllSlates } = require('./slates');
+
+const { in: opIn } = Sequelize.Op;
 
 // workaround for now. we should really be caching events and getting them from the db
 async function mapRequestsToProposals(events, gatekeeper) {
@@ -38,6 +40,21 @@ async function mapRequestsToProposals(events, gatekeeper) {
   );
 }
 
+// Find proposals matching the given resource and request IDs
+async function getProposalsForRequests(resource, requestIDs) {
+  if (requestIDs.length === 0) return Promise.resolve([]);
+
+  const where = { resource };
+  where['requestID'] = {
+    [opIn]: requestIDs,
+  };
+
+  return Request.findAll({
+    where,
+  });
+}
+
 module.exports = {
   mapRequestsToProposals,
+  getProposalsForRequests,
 };
