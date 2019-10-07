@@ -447,9 +447,23 @@ class Donation extends Component {
       });
       const gasPrice = await getGasPrice();
       try {
+        let donor = this.state.selectedAccount;
+        switch (this.props.team) {
+          case 'meta-cartel':
+            donor = '0x235A3296C6F3F5497DB4a45d5f14cC46ee91DF1a';
+            break;
+          case 'libre-fund':
+            donor = '0x80844909e7c57219eCB989F7Bb41a632A2D79b86';
+            break;
+          case 'donor-dao':
+            donor = '0x92745743ba7D71256902CC94C066e8E1e33BC8Ae';
+            break;
+          default:
+            break;
+        }
         // Donate PAN to token capacitor
         const donateTx = await this.tokenCapacitor.functions.donate(
-          this.state.selectedAccount,
+          donor,
           this.state.panPurchased,
           Buffer.from(multihash),
           {

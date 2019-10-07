@@ -113,11 +113,17 @@ const names = [
 
 const Donate = () => {
   const donateNowRef = useRef(null);
+  const [pledgeTeam, setPledgeTeam] = useState('');
 
   function onDonateNowClick() {
     donateNowRef.current.scrollIntoView({
       behavior: 'smooth',
     });
+  }
+
+  function handleChangeTeam(e) {
+    console.log('e.target.value:', e.target.value);
+    setPledgeTeam(e.target.value);
   }
 
   return (
@@ -341,7 +347,7 @@ const Donate = () => {
 
               <div className="tl mt4">
                 <label className="ma0 f6 mb3 black-40">
-                Are you donating on behalf of a team?
+                  Are you donating on behalf of a team?
                   <b className="red f7"> *</b>
                 </label>
               </div>
@@ -350,6 +356,7 @@ const Donate = () => {
                 required
                 className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2 bg-white black-50"
                 id="pledge-team-select"
+                onChange={handleChangeTeam}
               >
                 <option disabled="" defaultValue="0" value="0">
                   Select the team you would like to donate on behalf of
@@ -361,7 +368,7 @@ const Donate = () => {
               </select>
               <img src={arrowSvg} className="fr mr2 o-50" style={{ marginTop: '-35px' }} />
 
-              <Donation />
+              <Donation team={pledgeTeam} />
             </form>
           </div>
         </section>
