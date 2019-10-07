@@ -125,6 +125,27 @@ const Donate = () => {
 
   function handleSubmit(e) {
     e.preventDefault();
+    const fn = document.getElementById('pledge-first-name');
+    const em = document.getElementById('pledge-email');
+    const ti = document.getElementById('pledge-tier-select');
+    const te = document.getElementById('pledge-team-select');
+    if (fn.value === '') {
+      alert('You must enter a first name.');
+      return;
+    }
+    if (em.value === '') {
+      alert('You must enter an email address.');
+      return;
+    }
+    if (ti.value === '0') {
+      alert('You must select a pledge tier.');
+      return;
+    }
+    if (te.value === '0') {
+      alert('You must select a team or select "No".');
+      return;
+    }
+
     setModalOpen(true);
   }
 
