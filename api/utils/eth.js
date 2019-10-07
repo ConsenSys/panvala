@@ -5,9 +5,8 @@ const {
   contracts: { gatekeeperAddress, tokenCapacitorAddress },
 } = config;
 
-const {
-  contractABIs: { Gatekeeper, TokenCapacitor, ParameterStore },
-} = require('../../packages/panvala-utils');
+const { contractABIs } = require('.');
+const { Gatekeeper, TokenCapacitor, ParameterStore } = contractABIs;
 
 /**
  * Check connection
@@ -48,4 +47,5 @@ async function getContracts() {
 module.exports = {
   checkConnection,
   getContracts,
+  contractABIs,
 };

@@ -15,6 +15,7 @@ const notification = require('./controllers/notification');
 const parameter = require('./controllers/parameter');
 const ipfs = require('./controllers/ipfs');
 const website = require('./controllers/website');
+const token = require('./controllers/token');
 
 // Routes
 module.exports = app => {
@@ -77,4 +78,7 @@ module.exports = app => {
 
   // Website
   app.post('/api/website', website.addContact);
+
+  // Token
+  app.get('/api/token/circulating-supply', token.circulatingSupply);
 };
