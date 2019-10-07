@@ -248,6 +248,7 @@ class Donation extends Component {
     const pledgeEmail = document.getElementById('pledge-email');
     const pledgeMonthlySelect = document.getElementById('pledge-tier-select');
     const pledgeTermSelect = document.getElementById('pledge-duration-select');
+    const pledgeTeamSelect = document.getElementById('pledge-team-select');
 
     if (pledgeFirstName.value === '') {
       alert('You must enter a first name.');
@@ -263,6 +264,10 @@ class Donation extends Component {
     }
     if (pledgeTermSelect.value === '0') {
       alert('You must select a pledge duration.');
+      return;
+    }
+    if (pledgeTeamSelect.value === '0') {
+      alert('You must select a team or select "No".');
       return;
     }
 

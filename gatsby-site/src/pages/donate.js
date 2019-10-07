@@ -340,6 +340,28 @@ const Donate = () => {
               </select>
               <img src={arrowSvg} className="fr mr2 o-50" style={{ marginTop: '-35px' }} />
 
+              <div className="tl mt4">
+                <label className="ma0 f6 mb3 black-40">
+                Are you donating on behalf of a team?
+                  <b className="red f7"> *</b>
+                </label>
+              </div>
+              <select
+                name="pledge-team-selection"
+                required
+                className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2 bg-white black-50"
+                id="pledge-team-select"
+              >
+                <option disabled="" defaultValue="0" value="0">
+                  Select the team you would like to donate on behalf of
+                </option>
+                <option value="No">No</option>
+                <option value="0x235A3296C6F3F5497DB4a45d5f14cC46ee91DF1a">Team MetaCartel: Increase Dapp Usage" (donor = 0x235A3296C6F3F5497DB4a45d5f14cC46ee91DF1a)</option>
+                <option value="0x80844909e7c57219eCB989F7Bb41a632A2D79b86">Team Libre-Fund: Put Users in Control" (donor = 0x80844909e7c57219eCB989F7Bb41a632A2D79b86)</option>
+                <option value="0x92745743ba7D71256902CC94C066e8E1e33BC8Ae">Team Donor DAO: Earn Votes in a Nested DAO" (donor = 0x92745743ba7D71256902CC94C066e8E1e33BC8Ae)</option>
+              </select>
+              <img src={arrowSvg} className="fr mr2 o-50" style={{ marginTop: '-35px' }} />
+
               <Donation />
             </form>
           </div>
