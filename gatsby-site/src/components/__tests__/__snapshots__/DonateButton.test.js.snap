@@ -1,0 +1,25 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`DonateButton should render component 1`] = `
+<div>
+  <input
+    className="f6 link dim bn br-pill pv3 ph4 white bg-teal fw7 mt4"
+    name="submit"
+    onClick={
+      [MockFunction] {
+        "calls": Array [
+          Array [],
+        ],
+        "results": Array [
+          Object {
+            "isThrow": false,
+            "value": undefined,
+          },
+        ],
+      }
+    }
+    type="submit"
+    value="Donate"
+  />
+</div>
+`;
