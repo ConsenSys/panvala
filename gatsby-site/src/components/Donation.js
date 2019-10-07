@@ -62,16 +62,13 @@ class Donation extends Component {
       let selectedAccount = (await this.provider.listAccounts())[0];
       // user not enabled for this app
       if (!selectedAccount) {
-        window.ethereum
-          .enable()
-          .then(enabled => {
-            selectedAccount = enabled[0];
-          })
-          .catch(error => {
-            if (error.stack.includes('User denied account authorization')) {
-              alert('MetaMask not enabled. In order to donate pan, you must authorize this app.');
-            }
-          });
+        try {
+          selectedAccount = (await window.ethereum.enable())[0];
+        } catch (error) {
+          if (error.stack.includes('User denied account authorization')) {
+            alert('MetaMask not enabled. In order to donate pan, you must authorize this app.');
+          }
+        }
       }
       await this.setState({ selectedAccount });
       return selectedAccount;
@@ -185,8 +182,11 @@ class Donation extends Component {
   async checkNetwork() {
     let errMsg;
     if (!this.state.selectedAccount || !this.provider) {
-      alert('Ethereum not setup properly.');
-      throw new Error('Ethereum not setup properly.');
+      const account = await this.setSelectedAccount();
+      if (!account) {
+        alert('Ethereum not setup properly.');
+        throw new Error('Ethereum not setup properly.');
+      }
     }
 
     let correctChainId = window.location.href.includes('panvala.com/donate') ? 1 : 4;
