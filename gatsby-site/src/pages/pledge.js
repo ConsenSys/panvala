@@ -87,7 +87,6 @@ const names = [
   'Harold Hyatt',
   'Elisha Koh',
   'Matt Lockyer',
-  'Mahmoud Salem',
   'Siddharth Verma',
   'Libby Kent',
   'Gonçalo Sá',
