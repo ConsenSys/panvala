@@ -19,7 +19,7 @@ const animatedCss = css`
 
 const CardBody = styled.div<{ isActive?: boolean; asPath?: string; animated: boolean }>`
   display: inline-block;
-  min-width: 260px;
+  min-width: 320px;
   padding: 1rem;
   overflow: hidden;
   border: ${({ isActive }) => (isActive ? '3px solid #59B6E6' : '2px solid ' + COLORS.grey5)};
