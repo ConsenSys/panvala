@@ -143,7 +143,7 @@ const Donate = () => {
 
   return (
     <Layout>
-      <SEO title="Donate" />
+      <SEO title="Pledge" />
 
       <section className="bg-gradient bottom-clip-hero pb6">
         <Nav />
