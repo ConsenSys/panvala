@@ -2,20 +2,27 @@ import React from 'react';
 
 import SEO from '../components/seo';
 
+const browser = typeof window !== 'undefined' && window;
+
 const NotFoundPage = props => {
-  const urlRoute = props.path;
-  if (urlRoute.includes('.html')) {
-    const ind = urlRoute.indexOf('.html');
-    const shortened = urlRoute.slice(0, ind);
-    window.location = shortened;
-    return null;
-  }
+  console.log('props:', props);
+
+  // const urlRoute = props.path;
+  // if (urlRoute.includes('.html')) {
+  //   const ind = urlRoute.indexOf('.html');
+  //   const shortened = urlRoute.slice(0, ind);
+  //   window.location = shortened;
+  //   return null;
+  // }
+
   return (
-    <>
-      <SEO title="404: Not found" />
-      <h1>NOT FOUND</h1>
-      <p>You just hit a route that doesn&#39;t exist... the sadness.</p>
-    </>
+    browser && (
+      <>
+        <SEO title="404: Not found" />
+        <h1>NOT FOUND</h1>
+        <p>You just hit a route that doesn&#39;t exist... the sadness.</p>
+      </>
+    )
   );
 };
 
