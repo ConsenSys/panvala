@@ -22,17 +22,17 @@ function calculateCirculatingSupply(params) {
     now,
     vestingStart,
     vestingEnd,
-    initialVestedTokens,
+    initialUnvestedTokens,
     launchPartnerFundBalance,
     tokenCapacitorLockedBalance,
   } = params;
 
   const unvestedTokens =
     now < vestingStart
-      ? initialVestedTokens
+      ? initialUnvestedTokens
       : now > vestingEnd
       ? zero
-      : linearDecay(initialVestedTokens, vestingStart, vestingEnd, now);
+      : linearDecay(initialUnvestedTokens, vestingStart, vestingEnd, now);
 
   const totalLocked = launchPartnerFundBalance.add(tokenCapacitorLockedBalance).add(unvestedTokens);
   return totalSupply.sub(totalLocked);
@@ -51,7 +51,7 @@ async function circulatingSupply() {
   const vestingStart = 1572627600; // 2019-11-01T17:00:00.000Z
   const vestingDurationDays = 730;
   const vestingEnd = vestingStart + vestingDurationDays * timing.durations.ONE_DAY;
-  const initialVestedTokens = asTokens('27406303');
+  const initialUnvestedTokens = asTokens('27406303');
 
   // balances
   const totalSupply = await token.totalSupply();
@@ -64,7 +64,7 @@ async function circulatingSupply() {
     now,
     vestingStart,
     vestingEnd,
-    initialVestedTokens,
+    initialUnvestedTokens,
     launchPartnerFundBalance,
     tokenCapacitorLockedBalance,
     totalSupply,

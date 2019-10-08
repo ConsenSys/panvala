@@ -30,19 +30,19 @@ describe('calculateCirculatingSupply', () => {
   const vestingStart = 1572627600; // 2019-11-01T17:00:00.000Z
   const vestingDurationDays = 730;
   const vestingEnd = vestingStart + vestingDurationDays * timing.durations.ONE_DAY;
-  const initialVestedTokens = asTokens('27406303');
+  const initialUnvestedTokens = asTokens('27406303');
   const launchPartnerFundBalance = asTokens('10000000');
   const tokenCapacitorLockedBalance = asTokens('20000000');
   const totalSupply = asTokens('100000000');
 
-  const initialLocked = initialVestedTokens
+  const initialLocked = initialUnvestedTokens
     .add(launchPartnerFundBalance)
     .add(tokenCapacitorLockedBalance);
 
   const params = {
     vestingStart,
     vestingEnd,
-    initialVestedTokens,
+    initialUnvestedTokens,
     launchPartnerFundBalance,
     tokenCapacitorLockedBalance,
     totalSupply,
