@@ -53,6 +53,15 @@ export interface IParameterChangesObject {
   };
 }
 
+// Rendered in the frontend
+export interface IGovernanceProposal {
+  oldValue: any;
+  newValue: any;
+  type: any;
+  key: any;
+  metadataHash: string;
+}
+
 export interface IGovernanceProposalMetadata {
   id: number;
   firstName: string;

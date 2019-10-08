@@ -12,6 +12,7 @@ import {
 import { ISlate, ISlateMetadata, ISaveSlate, IGovernanceSlateFormValues } from './slates';
 import { IChoices, ISubmitBallot, IBallotDates } from './voting';
 
+export { IGovernanceProposal } from './proposals';
 export {
   ISlate,
   IProposal,

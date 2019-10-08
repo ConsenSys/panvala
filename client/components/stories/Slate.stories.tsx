@@ -17,6 +17,8 @@ import {
   rejectedGovSlate,
   acceptedGovSlate,
   proposals,
+  governanceProposals,
+  governanceSlate,
 } from './data';
 import { SlateStatus } from '../../utils/status';
 import { convertedToBaseUnits } from '../../utils/format';
@@ -122,7 +124,12 @@ storiesOf('Slate', module)
         <Slate query={{ id: '0' }} />
       </StoryWrapper>
     );
-  });
+  })
+  .add('governance', () => (
+    <StoryWrapper slates={[governanceSlate]} proposals={governanceProposals}>
+      <Slate query={{id: governanceSlate.id }} />
+    </StoryWrapper>
+  ));
 
 const ballot = makeBallot();
 

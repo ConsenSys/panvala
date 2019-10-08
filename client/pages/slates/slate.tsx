@@ -7,11 +7,12 @@ import { MainContext, IMainContext } from '../../components/MainProvider';
 import RouterLink from '../../components/RouterLink';
 import RouteTitle from '../../components/RouteTitle';
 import SectionLabel from '../../components/SectionLabel';
-import { StatelessPage, ISlate, IProposal } from '../../interfaces';
+import { StatelessPage, ISlate, IProposal, IGovernanceProposal } from '../../interfaces';
 import { PROPOSAL } from '../../utils/constants';
 import SlateHeader from '../../components/SlateHeader';
 import SlateSidebar from '../../components/SlateSidebar';
-import { splitAddressHumanReadable } from '../../utils/format';
+import Flex, { BreakableFlex } from '../../components/system/Flex';
+import { splitAddressHumanReadable, formatParameter } from '../../utils/format';
 
 const Incumbent = styled.div`
   color: ${colors.blue};
@@ -44,6 +45,86 @@ interface IProps {
     id: string;
   };
 }
+
+const GrantSlateDetail = ({ slate }) => {
+  const hasProposals = slate.proposals && slate.proposals.length > 0;
+  return (
+    <>
+      <SectionLabel>{'GRANTS'}</SectionLabel>
+      {hasProposals ? (
+        <SlateProposals>
+          {slate.proposals.map((proposal: IProposal) => (
+            <RouterLink
+              href={`/proposals/proposal?id=${proposal.id}`}
+              as={`/proposals/${proposal.id}`}
+              key={proposal.id}
+            >
+              <Card
+                title={proposal.title}
+                subtitle={proposal.tokensRequested + ' Tokens Requested'}
+                description={proposal.summary}
+                category={'GRANT PROPOSAL'}
+                type={PROPOSAL}
+                width={['100%', '100%', '100%', '50%']}
+              />
+            </RouterLink>
+          ))}
+        </SlateProposals>
+      ) : (
+        <div>No proposals included.</div>
+      )}
+    </>
+  );
+};
+
+const GovernanceSlateDetail = ({ slate }) => {
+  const hasProposals = slate.proposals && slate.proposals.length > 0;
+  return (
+    <>
+      <SectionLabel>{'PARAMETER CHANGES'}</SectionLabel>
+      {hasProposals ? (
+        <Flex column mt={4}>
+          <Flex p={3} justifyBetween alignCenter width="100%" fontWeight="bold" bg="greys.light">
+            <Flex justifyStart width="50%">
+              Parameter Name
+            </Flex>
+            <Flex justifyStart width="50%">
+              Current Value
+            </Flex>
+            <Flex justifyStart width="50%">
+              New Value
+            </Flex>
+          </Flex>
+
+          {slate.proposals.map((proposal: IGovernanceProposal) => (
+            <Flex
+              p={3}
+              justifyBetween
+              alignCenter
+              width="100%"
+              bg="white"
+              border={1}
+              borderColor="greys.light"
+              key={proposal.key}
+            >
+              <Flex width="50%" fontSize={1}>
+                {proposal.key}
+              </Flex>
+              <BreakableFlex width="50%" fontSize={1}>
+                {formatParameter(proposal.oldValue, proposal.type)}
+              </BreakableFlex>
+              <BreakableFlex width="50%" fontSize={1}>
+                {formatParameter(proposal.newValue, proposal.type)}
+              </BreakableFlex>
+            </Flex>
+          ))}
+        </Flex>
+      ) : (
+        <div>No proposals included.</div>
+      )}
+    </>
+  );
+};
 
 const Slate: StatelessPage<IProps> = ({ query: { id } }) => {
   const { slates, currentBallot }: IMainContext = React.useContext(MainContext);
@@ -85,29 +166,11 @@ const Slate: StatelessPage<IProps> = ({ query: { id } }) => {
             {slate.description}
           </Box>
 
-          {slate.proposals && slate.proposals.length > 0 ? (
-            <>
-              <SectionLabel>{'GRANTS'}</SectionLabel>
-              <SlateProposals>
-                {slate.proposals.map((proposal: IProposal) => (
-                  <RouterLink
-                    href={`/proposals/proposal?id=${proposal.id}`}
-                    as={`/proposals/${proposal.id}`}
-                    key={proposal.id}
-                  >
-                    <Card
-                      title={proposal.title}
-                      subtitle={proposal.tokensRequested + ' Tokens Requested'}
-                      description={proposal.summary}
-                      category={`${slate.category} PROPOSAL`}
-                      type={PROPOSAL}
-                      width={['100%', '100%', '100%', '50%']}
-                    />
-                  </RouterLink>
-                ))}
-              </SlateProposals>
-            </>
-          ) : null}
+          {slate.category === 'GRANT' ? (
+            <GrantSlateDetail slate={slate} />
+          ) : (
+            <GovernanceSlateDetail slate={slate} />
+          )}
         </MainColumn>
       </DetailContainer>
     </SlateWrapper>

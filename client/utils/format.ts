@@ -49,3 +49,15 @@ export function formatPanvalaUnits(base: BigNumberish): string {
 }
 
 export const BN = (small: BigNumberish) => utils.bigNumberify(small);
+
+export type ParameterFormat = 'uint256' | 'address';
+
+export const formatParameter = (value: any, type: ParameterFormat): string => {
+  if (type === 'uint256') {
+    return formatPanvalaUnits(value);
+  } else if (type === 'address') {
+    return utils.getAddress(value);
+  } else {
+    return value;
+  }
+}
