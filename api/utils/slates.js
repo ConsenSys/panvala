@@ -164,7 +164,7 @@ async function getSlateWithMetadata(slateID, slate, metadataHash, incumbent, req
       category,
       epochNumber: slate.epochNumber.toNumber(),
       incumbent,
-      description: description || slateMetadata.summary,
+      description,
       metadataHash,
       organization,
       // either first + last name or just first name
@@ -204,8 +204,6 @@ async function normalizeMetadata(slateMetadata, resource) {
 
   // is governance v1 - has `resource` and `requestIDs` keys (and summary instead of description)
   if (slateMetadata.resource != null && requestIDs != null) {
-    // console.log('REQUESTS', requestIDs);
-
     // get the associated proposals from the database
     const rawProposals = await getProposalsForRequests(resource, requestIDs);
     const multihashes = rawProposals.map(p => toUtf8String(p.metadataHash));

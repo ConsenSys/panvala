@@ -59,25 +59,28 @@ export const unstakedSlate: ISlate = {
 
 export const governanceProposals: IGovernanceProposal[] = [
   {
-    key: 'slateStakeAmount',
-    oldValue: '50000000000000000000000',
-    newValue: '45000000000000000000000',
-    type: 'uint256',
-    metadataHash: 'QmQVxAnYdA3n7sCSkyGNrX3JK4pF5ewsnoym3NFDZ8PrzV',
+    parameterChanges: {
+      key: 'slateStakeAmount',
+      oldValue: '50000000000000000000000',
+      newValue: '45000000000000000000000',
+      type: 'uint256',
+    }
   },
   {
-    key: 'gatekeeperAddress',
-    oldValue: '0xd115bffabbdd893a6f7cea402e7338643ced44a6',
-    newValue: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-    type: 'address',
-    metadataHash: 'QmQVxAnYdA3n7sCSkyGNrX3JK4pF5ewsnoym3NFDZ8PrzV',
+    parameterChanges: {
+      key: 'gatekeeperAddress',
+      oldValue: '0xd115bffabbdd893a6f7cea402e7338643ced44a6',
+      newValue: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      type: 'address',
+    }
   },
   {
-    key: 'stakeDonationAddress',
-    oldValue: '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
-    newValue: '0xffffffffffffffffffffffffffffffffffffffff',
-    type: 'address',
-    metadataHash: 'QmQVxAnYdA3n7sCSkyGNrX3JK4pF5ewsnoym3NFDZ8PrzV',
+    parameterChanges: {
+      key: 'stakeDonationAddress',
+      oldValue: '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+      newValue: '0xffffffffffffffffffffffffffffffffffffffff',
+      type: 'address',
+    }
   }
 ];
 

@@ -7,7 +7,7 @@ import { MainContext, IMainContext } from '../../components/MainProvider';
 import RouterLink from '../../components/RouterLink';
 import RouteTitle from '../../components/RouteTitle';
 import SectionLabel from '../../components/SectionLabel';
-import { StatelessPage, ISlate, IProposal, IGovernanceProposal, IParameterChangesObject } from '../../interfaces';
+import { StatelessPage, ISlate, IProposal, IGovernanceProposal } from '../../interfaces';
 import { PROPOSAL } from '../../utils/constants';
 import SlateHeader from '../../components/SlateHeader';
 import SlateSidebar from '../../components/SlateSidebar';
@@ -77,11 +77,27 @@ const GrantSlateDetail = ({ slate }) => {
   );
 };
 
-const GovernanceSlateDetail = ({ slate }) => {
+interface IGovProps {
+  slate: ISlate,
+}
+
+interface IChange {
+  oldValue: any;
+  newValue: any;
+  type: any;
+  key: any;
+}
+
+const GovernanceSlateDetail = ({ slate }: IGovProps ) => {
   const hasProposals = slate.proposals && slate.proposals.length > 0;
 
   // We expect a key `parameterChanges on each proposal
-  const changes: IParameterChangesObject[] = slate.proposals.map(p => p.parameterChanges);
+  // HACK, coerce to governance proposal until we work out an ISlate that encompasses all types of
+  // proposals
+  const proposals = (slate.proposals as unknown);
+  const changes: IChange[] = (proposals as IGovernanceProposal[]).map(
+    (p: IGovernanceProposal) => p.parameterChanges
+  );
 
   return (
     <>
@@ -100,7 +116,7 @@ const GovernanceSlateDetail = ({ slate }) => {
             </Flex>
           </Flex>
 
-          {changes.map((proposal: IParameterChangesObject) => (
+          {changes.map((proposal: IChange) => (
             <Flex
               p={3}
               justifyBetween
