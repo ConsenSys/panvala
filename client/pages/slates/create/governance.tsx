@@ -23,9 +23,8 @@ import { ErrorMessage } from '../../../components/FormError';
 import Modal, { ModalTitle, ModalDescription } from '../../../components/Modal';
 import { Separator } from '../../../components/Separator';
 import SectionLabel from '../../../components/SectionLabel';
-import { convertedToBaseUnits, formatPanvalaUnits } from '../../../utils/format';
-import { ipfsAddObject } from '../../../utils/ipfs';
-import { postSlate } from '../../../utils/api';
+import { convertedToBaseUnits, formatPanvalaUnits, getAddress } from '../../../utils/format';
+import { postSlate, saveToIpfs } from '../../../utils/api';
 import { handleGenericError, ETHEREUM_NOT_AVAILABLE } from '../../../utils/errors';
 import {
   ISaveSlate,
@@ -65,6 +64,10 @@ interface IGovernanceSlateMetadataV1 {
   resource: string;
 }
 
+
+// Match the general slate metadata format
+interface IGovernanceSlateMetadataV2 extends ISlateMetadata {}
+
 const CreateGovernanceSlate: StatelessPage<any> = () => {
   // modal opener
   const [isOpen, setOpenModal] = React.useState(false);
@@ -82,6 +85,24 @@ const CreateGovernanceSlate: StatelessPage<any> = () => {
   const [pendingText, setPendingText] = React.useState('');
   const [pageStatus, setPageStatus] = React.useState(PageStatus.Loading);
   const [deadline, setDeadline] = React.useState(0);
+
+  // parameters
+  const initialParameters = {
+    slateStakeAmount: {
+      parameterName: 'Slate Stake Amount',
+      oldValue: slateStakeAmount.toString(),
+      newValue: '',
+      type: 'uint256',
+      key: 'slateStakeAmount',
+    },
+    gatekeeperAddress: {
+      parameterName: 'Gatekeeper Address',
+      oldValue: contracts.gatekeeper.address,
+      newValue: '',
+      type: 'address',
+      key: 'gatekeeperAddress',
+    },
+  };
 
   // Update page status when ballot info changes
   React.useEffect(() => {
@@ -130,18 +151,26 @@ const CreateGovernanceSlate: StatelessPage<any> = () => {
   ): IParameterChangesObject {
     return Object.keys(formParameters).reduce((acc, paramKey) => {
       let value = clone(formParameters[paramKey]);
-      if (!!value.newValue && value.newValue !== value.oldValue) {
+      if (!!value.newValue) {
+        // Convert values if necessary first before checking equality
         if (paramKey === 'slateStakeAmount') {
+          // Convert token amount
           value.newValue = convertedToBaseUnits(value.newValue, 18);
-        } else if (paramKey === 'gatekeeperAddress') {
-          // Lower-case so that `isAddress()` can handle it
-          value.newValue = value.newValue.toLowerCase();
+        } else if (value.type === 'address') {
+          // Normalize address
+          value.oldValue = getAddress(value.oldValue);
+          value.newValue = getAddress(value.newValue.toLowerCase());
         }
-        return {
-          ...acc,
-          [paramKey]: value,
-        };
+
+        // if something has changed, add it
+        if (value.newValue !== value.oldValue) {
+          return {
+            ...acc,
+            [paramKey]: value,
+          };
+        }
       }
+
       return acc;
     }, {});
   }
@@ -166,22 +195,27 @@ const CreateGovernanceSlate: StatelessPage<any> = () => {
 
       const paramKeys = Object.keys(parameterChanges);
 
-      const proposalMetadatas: IGovernanceProposalMetadata[] = paramKeys.map((param: string) => {
+      const proposalMetadatas: IGovernanceProposalMetadata[] = paramKeys.map((param: string): IGovernanceProposalMetadata => {
+        const { oldValue, newValue, type, key } = parameterChanges[param];
+
         return {
-          id: Object.keys(parameterChanges).length,
           firstName: values.firstName,
           lastName: values.lastName,
           summary: values.summary,
           organization: values.organization,
           parameterChanges: {
-            ...parameterChanges[param],
+            key,
+            oldValue,
+            newValue,
+            type,
           },
         };
       });
+
       const proposalMultihashes: Buffer[] = await Promise.all(
         proposalMetadatas.map(async (metadata: IGovernanceProposalMetadata) => {
           try {
-            const multihash: string = await ipfsAddObject(metadata);
+            const multihash: string = await saveToIpfs(metadata);
             // we need a buffer of the multihash for the transaction
             return Buffer.from(multihash);
           } catch (error) {
@@ -211,21 +245,20 @@ const CreateGovernanceSlate: StatelessPage<any> = () => {
       setPendingText('Adding slate to IPFS...');
       const resource = contracts.parameterStore.address;
 
-      // TODO: change the metadata format to include resource (but maybe include a human-readable resourceType)
-      const slateMetadata: IGovernanceSlateMetadataV1 = {
+      const slateMetadata: IGovernanceSlateMetadataV2 = {
         firstName: values.firstName,
         lastName: values.lastName,
-        summary: values.summary,
+        description: values.summary,
         organization: values.organization,
-        requestIDs,
-        resource: contracts.parameterStore.address,
+        proposalMultihashes: proposalMultihashes.map(md => md.toString()),
+        proposals: proposalMetadatas,
       };
 
       console.log('slateMetadata:', slateMetadata);
 
       errorMessage = 'error saving slate metadata.';
       console.log('saving slate metadata...');
-      const slateMetadataHash: string = await ipfsAddObject(slateMetadata);
+      const slateMetadataHash: string = await saveToIpfs(slateMetadata);
 
       setPendingText('Creating governance slate (check MetaMask)...');
       // Submit the slate info to the contract
@@ -311,20 +344,7 @@ const CreateGovernanceSlate: StatelessPage<any> = () => {
                   lastName: 'Last',
                   organization: 'Ethereum',
                   summary: 'fdsfdsfasdfadsfsad',
-                  parameters: {
-                    slateStakeAmount: {
-                      oldValue: '',
-                      newValue: '',
-                      type: 'uint256',
-                      key: 'slateStakeAmount',
-                    },
-                    gatekeeperAddress: {
-                      oldValue: '',
-                      newValue: '',
-                      type: 'address',
-                      key: 'gatekeeperAddress',
-                    },
-                  },
+                  parameters: initialParameters,
                   recommendation: 'governance',
                   stake: 'no',
                 }
@@ -334,20 +354,7 @@ const CreateGovernanceSlate: StatelessPage<any> = () => {
                   lastName: '',
                   organization: '',
                   summary: '',
-                  parameters: {
-                    slateStakeAmount: {
-                      oldValue: '',
-                      newValue: '',
-                      type: 'uint256',
-                      key: 'slateStakeAmount',
-                    },
-                    gatekeeperAddress: {
-                      oldValue: '',
-                      newValue: '',
-                      type: 'address',
-                      key: 'gatekeeperAddress',
-                    },
-                  },
+                  parameters: initialParameters,
                   recommendation: 'governance',
                   stake: 'no',
                 }
@@ -364,11 +371,20 @@ const CreateGovernanceSlate: StatelessPage<any> = () => {
               const noChanges: IParameterChangesObject = {};
               await handleSubmitSlate(values, noChanges);
             } else {
-              const changes: IParameterChangesObject = filterParameterChanges(values.parameters);
-              if (Object.keys(changes).length === 0) {
-                setFieldError('parametersForm', 'You must enter some parameters to change');
-              } else {
-                await handleSubmitSlate(values, changes);
+              try {
+                const changes: IParameterChangesObject = filterParameterChanges(values.parameters);
+                if (Object.keys(changes).length === 0) {
+                  setFieldError('parametersForm', 'You must enter some parameter values different from the old ones');
+                } else {
+                  await handleSubmitSlate(values, changes);
+                }
+              } catch (error) {
+                // some issue with filtering the changes - should never get here
+                const errorType = handleGenericError(error, toast);
+                if (errorType) {
+                  toast.error(`Problem submitting slate: ${error.message}`);
+                }
+                console.error(error);
               }
             }
 
@@ -443,8 +459,7 @@ const CreateGovernanceSlate: StatelessPage<any> = () => {
                       <SectionLabel>{'PARAMETERS'}</SectionLabel>
                       <ParametersForm
                         onChange={setFieldValue}
-                        newSlateStakeAmount={values.parameters.slateStakeAmount.newValue}
-                        newGatekeeperAddress={values.parameters.gatekeeperAddress.newValue}
+                        parameters={values.parameters}
                         errors={errors}
                       />
                     </>

@@ -61,3 +61,5 @@ export const formatParameter = (value: any, type: ParameterFormat): string => {
     return value;
   }
 }
+
+export const { getAddress } = utils;

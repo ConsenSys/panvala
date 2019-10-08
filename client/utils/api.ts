@@ -154,3 +154,28 @@ export async function getNotificationsByAddress(address: string): Promise<any | 
     throw error;
   }
 }
+
+export async function saveToIpfs(data: object) {
+  try {
+    const response = await axios({
+      method: 'post',
+      url: `${apiHost}/api/ipfs`,
+      data,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        ...corsHeaders,
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error(response.data);
+
+      throw new Error(response.data);
+    }
+  } catch (error) {
+    throw handleApiError(error);
+  }
+}

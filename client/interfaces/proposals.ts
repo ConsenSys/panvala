@@ -62,8 +62,8 @@ export interface IGovernanceProposal {
   metadataHash: string;
 }
 
+// Saved to IPFS
 export interface IGovernanceProposalMetadata {
-  id: number;
   firstName: string;
   lastName?: string;
   summary: string;

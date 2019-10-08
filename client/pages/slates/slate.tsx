@@ -7,7 +7,7 @@ import { MainContext, IMainContext } from '../../components/MainProvider';
 import RouterLink from '../../components/RouterLink';
 import RouteTitle from '../../components/RouteTitle';
 import SectionLabel from '../../components/SectionLabel';
-import { StatelessPage, ISlate, IProposal, IGovernanceProposal } from '../../interfaces';
+import { StatelessPage, ISlate, IProposal, IGovernanceProposal, IParameterChangesObject } from '../../interfaces';
 import { PROPOSAL } from '../../utils/constants';
 import SlateHeader from '../../components/SlateHeader';
 import SlateSidebar from '../../components/SlateSidebar';
@@ -79,6 +79,10 @@ const GrantSlateDetail = ({ slate }) => {
 
 const GovernanceSlateDetail = ({ slate }) => {
   const hasProposals = slate.proposals && slate.proposals.length > 0;
+
+  // We expect a key `parameterChanges on each proposal
+  const changes: IParameterChangesObject[] = slate.proposals.map(p => p.parameterChanges);
+
   return (
     <>
       <SectionLabel>{'PARAMETER CHANGES'}</SectionLabel>
@@ -96,7 +100,7 @@ const GovernanceSlateDetail = ({ slate }) => {
             </Flex>
           </Flex>
 
-          {slate.proposals.map((proposal: IGovernanceProposal) => (
+          {changes.map((proposal: IParameterChangesObject) => (
             <Flex
               p={3}
               justifyBetween

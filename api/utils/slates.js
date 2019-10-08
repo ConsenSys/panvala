@@ -214,11 +214,11 @@ async function normalizeMetadata(slateMetadata, resource) {
     const proposals = await Promise.all(
       rawProposals.map(p => {
         const { metadataHash } = p;
+        // TODO: handle empty oldValue
         return ipfs.findOrSaveIpfsMetadata(metadataHash).then(metadata => {
           const { parameterChanges } = metadata.data;
           return {
-            ...parameterChanges,
-            metadataHash: toUtf8String(metadataHash),
+            parameterChanges,
           };
         });
       })

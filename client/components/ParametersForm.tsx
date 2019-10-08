@@ -2,7 +2,6 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import Flex, { BreakableFlex } from './system/Flex';
-import { EthereumContext } from './EthereumProvider';
 import { formatPanvalaUnits } from '../utils/format';
 import FieldInput from '../components/FieldInput';
 
@@ -13,8 +12,17 @@ const CustomErrorMessage = styled.span`
   color: red;
 `;
 
+export interface IParameterFormProps {
+  parameterName: string;
+  name: string;
+  displayValue: string;
+  oldValue: string;
+  newValue: string;
+  type: string;
+}
+
 const ParameterRow: React.SFC<any> = props => {
-  const { onChange, parameterName, name, oldValue, newValue, type: parameterType } = props;
+  const { onChange, parameterName, name, displayValue, type: parameterType } = props;
 
   return (
     <Flex
@@ -30,7 +38,7 @@ const ParameterRow: React.SFC<any> = props => {
         {parameterName}
       </Flex>
       <BreakableFlex justifyStart width="35%" fontSize={1}>
-        {oldValue}
+        {displayValue}
       </BreakableFlex>
       <BreakableFlex justifyStart width="35%" fontSize={1}>
         <FieldInput
@@ -38,7 +46,7 @@ const ParameterRow: React.SFC<any> = props => {
           fontFamily="Fira Code"
           name={name}
           onChange={onChange}
-          value={newValue}
+          value={displayValue}
           placeholder={parameterType}
           type={parameterType === 'Number' ? 'number' : 'text'}
         />
@@ -47,30 +55,23 @@ const ParameterRow: React.SFC<any> = props => {
   );
 };
 
+
 const ParametersForm: React.SFC<any> = props => {
-  const { errors } = props;
+  const { errors, parameters } = props;
 
-  const {
-    contracts: { gatekeeper },
-    slateStakeAmount,
-  } = React.useContext(EthereumContext);
+  // Transform the parameter data into the right shape for the form
+  const rowData: IParameterFormProps[] = Object.keys(parameters).map(k => {
+    const { parameterName, key, newValue, oldValue, type } = parameters[k];
+    return {
+      parameterName,
+      name: `parameters.${key}.newValue`,
+      displayValue: type === 'uint256' ? formatPanvalaUnits(oldValue) : oldValue,
+      oldValue,
+      newValue,
+      type: type === 'uint256' ? 'Number' : 'Address',
+    }
+  });
 
-  const parameters = [
-    {
-      parameterName: 'Slate Stake Amount',
-      name: 'parameters.slateStakeAmount.newValue',
-      value: formatPanvalaUnits(slateStakeAmount),
-      newValue: props.newSlateStakeAmount,
-      type: 'Number',
-    },
-    {
-      parameterName: 'Gatekeeper Address',
-      name: 'parameters.gatekeeperAddress.newValue',
-      value: gatekeeper.address,
-      newValue: props.newGatekeeperAddress,
-      type: 'Address',
-    },
-  ];
   return (
     <>
       <Flex column>
@@ -85,12 +86,12 @@ const ParametersForm: React.SFC<any> = props => {
             Propose New Value
           </Flex>
         </Flex>
-        {parameters.map(p => (
+        {rowData.map(p => (
           <ParameterRow
             key={p.name}
             parameterName={p.parameterName}
             name={p.name}
-            oldValue={p.value}
+            displayValue={p.displayValue}
             newValue={p.newValue}
             type={p.type}
             onChange={props.onChange}
