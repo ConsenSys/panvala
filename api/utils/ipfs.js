@@ -109,15 +109,19 @@ async function calculateMultihash(obj) {
   const CID = await new Promise((resolve, reject) => {
     const data = Buffer.from(JSON.stringify(obj));
 
-    ipfs.add(data, { 'only-hash': true }, (err, result) => {
-      if (err) reject(new Error(err));
-
-      if (!result) {
-        reject(new Error('Ipfs.get returned undefined.'));
+    return ipfs.add(data, { 'only-hash': true }, (err, result) => {
+      if (err) {
+        const msg = `IPFS add: ${err.message}`;
+        reject(new Error(msg));
       }
-      // Returns an array of objects (for each file added) with keys hash, path, size
-      const { hash } = result[0];
-      resolve(hash);
+
+      try {
+        // Returns an array of objects (for each file added) with keys hash, path, size
+        const { hash } = result[0];
+        resolve(hash);
+      } catch (error) {
+        reject(new Error(`IPFS add: ${error.message}`));
+      }
     });
   });
   return CID;
