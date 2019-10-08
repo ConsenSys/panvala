@@ -1,5 +1,5 @@
-[build]
-  base    = "gatsby-site/"
+[build]	
+  base    = "gatsby-site/"	
   command = "gatsby build"
-  publish = "public/"
+  publish = "public/"	
   ignore  = "git diff HEAD^ HEAD gatsby-site/"

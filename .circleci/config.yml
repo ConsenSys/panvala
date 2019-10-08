@@ -47,6 +47,119 @@ install-iam-authenticator: &install-iam-authenticator
         sudo mv ./aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
 
 jobs:
+  build-gatsby-site:
+    <<: *defaults
+    working_directory: ~/repo/gatsby-site
+    steps:
+      - checkout:
+          path: ~/repo
+      - restore_cache:
+          keys:
+            - gatsby-dependencies-{{ checksum "yarn.lock" }}
+            - gatsby-dependencies-
+      - run:
+          name: Install Dependencies
+          command: yarn install
+      - save_cache:
+          key: gatsby-dependencies-{{ checksum "yarn.lock" }}
+          paths:
+            - node_modules
+      - restore_cache:
+          keys:
+            - gatsby-public-cache-{{ .Branch }}
+      - run:
+          name: Gatsby Build
+          command: yarn build
+      - save_cache:
+          key: gatsby-public-cache-{{ .Branch }}
+          paths:
+            - public
+
+  staging-deploy-gatsby-site:
+    <<: *defaults
+    working_directory: ~/repo/gatsby-site
+    steps:
+      - checkout:
+          path: ~/repo
+      - restore_cache:
+          keys:
+            - gatsby-dependencies-{{ checksum "yarn.lock" }}
+            - gatsby-dependencies-
+      - run:
+          name: Install Dependencies
+          command: yarn install
+      - save_cache:
+          key: gatsby-dependencies-{{ checksum "yarn.lock" }}
+          paths:
+            - node_modules
+      - restore_cache:
+          keys:
+            - gatsby-public-cache-{{ .Branch }}
+      - run:
+          name: Gatsby Build
+          command: yarn build
+      - save_cache:
+          key: gatsby-public-cache-{{ .Branch }}
+          paths:
+            - public
+      - run:
+          name: Netlify Deploy Staging
+          command: yarn run deploy:staging
+
+  prod-deploy-gatsby-site:
+    <<: *defaults
+    working_directory: ~/repo/gatsby-site
+    steps:
+      - checkout:
+          path: ~/repo
+      - restore_cache:
+          keys:
+            - gatsby-dependencies-{{ checksum "yarn.lock" }}
+            - gatsby-dependencies-
+      - run:
+          name: Install Dependencies
+          command: yarn install
+      - save_cache:
+          key: gatsby-dependencies-{{ checksum "yarn.lock" }}
+          paths:
+            - node_modules
+      - restore_cache:
+          keys:
+            - gatsby-public-cache-{{ .Branch }}
+      - run:
+          name: Gatsby Build
+          command: yarn build
+      - save_cache:
+          key: gatsby-public-cache-{{ .Branch }}
+          paths:
+            - public
+      - run:
+          name: Netlify Deploy Production
+          command: yarn run deploy:prod
+
+  # run gatsby-site tests
+  gatsby-site:
+    <<: *defaults
+    working_directory: ~/repo/gatsby-site
+    steps:
+      - checkout:
+          path: ~/repo
+      - restore_cache:
+          keys:
+            - gatsby-dependencies-{{ checksum "yarn.lock" }}
+            - gatsby-dependencies-
+      - run:
+          name: Install Dependencies
+          command: yarn install
+      - save_cache:
+          key: gatsby-dependencies-{{ checksum "yarn.lock" }}
+          paths:
+            - node_modules
+      # run tests!
+      - run:
+          name: Run tests
+          command: yarn test
+
   build-api-image:
     <<: *defaults
     docker:
@@ -432,6 +545,7 @@ workflows:
   # test on every commit
   test:
     jobs:
+      - gatsby-site
       - api
       - frontend
       - restricted-token
@@ -442,6 +556,12 @@ workflows:
   # master --> production
   build-and-deploy:
     jobs:
+      - build-gatsby-site:
+          filters:
+            branches:
+              only:
+                - develop
+                - master
       - build-api-image:
           filters:
             branches:
@@ -471,6 +591,13 @@ workflows:
           requires:
             - build-frontend-image
 
+      - staging-deploy-gatsby-site:
+          requires:
+            - build-gatsby-site
+          filters:
+            branches:
+              only:
+                - develop
       # deploy to staging on push to develop
       - staging-deploy-api:
           requires:
@@ -486,6 +613,13 @@ workflows:
             branches:
               only:
                 - develop
+      - prod-deploy-gatsby-site:
+          requires:
+            - build-gatsby-site
+          filters:
+            branches:
+              only:
+                - master
       # deploy to live on push to master
     #   - approve:
     #       type: approval

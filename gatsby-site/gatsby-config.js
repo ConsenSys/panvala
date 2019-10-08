@@ -1,10 +1,3 @@
-let activeEnv = process.env.GATSBY_ACTIVE_ENV || process.env.NODE_ENV || 'development';
-console.log(`Using environment config: '${activeEnv}'`);
-
-require('dotenv').config({
-  path: `.env.${activeEnv}`,
-});
-
 module.exports = {
   siteMetadata: {
     title: `Panvala`,
@@ -32,15 +25,6 @@ module.exports = {
         theme_color: `#663399`,
         display: `minimal-ui`,
         icon: `src/images/favicon.ico`, // This path is relative to the root of the site.
-      },
-    },
-    {
-      resolve: `gatsby-plugin-s3`,
-      options: {
-        bucketName: process.env.AWS_BUCKET_NAME,
-        protocol: 'https',
-        hostname: process.env.AWS_HOST_NAME,
-        acl: null,
       },
     },
     'gatsby-plugin-netlify',
