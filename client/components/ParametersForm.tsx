@@ -98,7 +98,7 @@ const ParametersForm: React.SFC<any> = props => {
           />
         ))}
         {/* display errors global to the parameters form */}
-        {errors.parametersForm ? (
+        {errors && errors.parametersForm ? (
           <CustomErrorMessage>{errors.parametersForm}</CustomErrorMessage>
         ) : null}
       </Flex>
