@@ -42,13 +42,12 @@ import {
   sendCreateManyProposalsTransaction,
   sendStakeTokensTransaction,
 } from '../../../utils/transaction';
-import { ipfsAddObject } from '../../../utils/ipfs';
 import {
   convertedToBaseUnits,
   formatPanvalaUnits,
   baseToConvertedUnits,
 } from '../../../utils/format';
-import { postSlate } from '../../../utils/api';
+import { postSlate, saveToIpfs } from '../../../utils/api';
 import { PROPOSAL } from '../../../utils/constants';
 import Flex from '../../../components/system/Flex';
 import BackButton from '../../../components/BackButton';
@@ -308,7 +307,7 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query }) => {
       const proposalMultihashes: Buffer[] = await Promise.all(
         selectedProposals.map(async (metadata: IGrantProposalMetadata) => {
           try {
-            const multihash: string = await ipfsAddObject(metadata);
+            const multihash: string = await saveToIpfs(metadata);
             // we need a buffer of the multihash for the transaction
             return Buffer.from(multihash);
           } catch (error) {
@@ -369,7 +368,7 @@ const CreateGrantSlate: StatelessPage<IProps> = ({ query }) => {
 
       console.log('saving slate metadata...');
       errorMessagePrefix = 'error saving slate metadata';
-      const slateMetadataHash: string = await ipfsAddObject(slateMetadata);
+      const slateMetadataHash: string = await saveToIpfs(slateMetadata);
 
       // Submit the slate info to the contract
       errorMessagePrefix = 'error submitting slate';
