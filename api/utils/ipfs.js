@@ -49,6 +49,7 @@ async function add(obj) {
       if (err) {
         const msg = `IPFS add: ${err.message}`;
         reject(new Error(msg));
+        return;
       }
 
       try {
@@ -113,6 +114,7 @@ async function calculateMultihash(obj) {
       if (err) {
         const msg = `IPFS add: ${err.message}`;
         reject(new Error(msg));
+        return;
       }
 
       try {

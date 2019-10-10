@@ -19,6 +19,7 @@ export async function ipfsGetData(multihash: string) {
       return ipfs.cat(multihash, (err: any, result: string) => {
         if (err) {
           reject(new Error(`IPFS get: ${err.message}`));
+          return;
         }
 
         try {
@@ -43,6 +44,7 @@ export async function ipfsAddObject(obj: any): Promise<string> {
       if (err) {
         const msg = `IPFS add: ${err.message}`;
         reject(new Error(msg));
+        return;
       }
 
       try {
