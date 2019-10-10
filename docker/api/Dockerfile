@@ -33,6 +33,8 @@ RUN yarn
 # copy our code to the server
 COPY ./api .
 
+# run the build
+RUN yarn build
 
 EXPOSE 5000
 

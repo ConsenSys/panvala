@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "outDir": "./dist",
+    "target": "esnext",
+    "module": "commonjs",
+    "esModuleInterop": false,
+    "resolveJsonModule": true,
+    "lib": ["es2017", "dom"],
+    "noImplicitAny": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": false,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+  },
+  "include": ["./src/**/*"],
+  "exclude": ["test"]
+}

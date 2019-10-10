@@ -1,5 +1,5 @@
 const ethers = require('ethers');
-const { voting } = require('../../packages/panvala-utils');
+const { voting } = require('../utils');
 const { ContestStatus } = voting;
 const { getContracts } = require('../utils/eth');
 const mnemonic = process.env.MNEMONIC;
