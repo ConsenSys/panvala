@@ -29,7 +29,12 @@ module.exports = {
       pledgeTerm,
     } = req.body;
 
-    const list_id = 'contactlist_dd543c0a-1c80-40d4-a386-9616fd433ec4';
+    let list_id;
+    if (process.env.NODE_ENV === 'production') {
+      list_id = 'contactlist_dd543c0a-1c80-40d4-a386-9616fd433ec4';
+    } else {
+      list_id = 'contactlist_a4e5fd5f-50bd-4894-8f5e-85b7cfb61f5c';
+    }
     const url = `${endpoint}/v1/contact`;
 
     const postData = {
