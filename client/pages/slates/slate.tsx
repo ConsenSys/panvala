@@ -12,7 +12,11 @@ import { PROPOSAL } from '../../utils/constants';
 import SlateHeader from '../../components/SlateHeader';
 import SlateSidebar from '../../components/SlateSidebar';
 import Flex, { BreakableFlex } from '../../components/system/Flex';
-import { splitAddressHumanReadable, formatParameter } from '../../utils/format';
+import {
+  splitAddressHumanReadable,
+  formatParameter,
+  parameterDisplayName,
+} from '../../utils/format';
 
 const Incumbent = styled.div`
   color: ${colors.blue};
@@ -78,7 +82,7 @@ const GrantSlateDetail = ({ slate }) => {
 };
 
 interface IGovProps {
-  slate: ISlate,
+  slate: ISlate;
 }
 
 interface IChange {
@@ -88,13 +92,13 @@ interface IChange {
   key: any;
 }
 
-const GovernanceSlateDetail = ({ slate }: IGovProps ) => {
+const GovernanceSlateDetail = ({ slate }: IGovProps) => {
   const hasProposals = slate.proposals && slate.proposals.length > 0;
 
   // We expect a key `parameterChanges on each proposal
   // HACK, coerce to governance proposal until we work out an ISlate that encompasses all types of
   // proposals
-  const proposals = (slate.proposals as unknown);
+  const proposals = slate.proposals as unknown;
   const changes: IChange[] = (proposals as IGovernanceProposal[]).map(
     (p: IGovernanceProposal) => p.parameterChanges
   );
@@ -128,7 +132,7 @@ const GovernanceSlateDetail = ({ slate }: IGovProps ) => {
               key={proposal.key}
             >
               <Flex width="50%" fontSize={1}>
-                {proposal.key}
+                {parameterDisplayName(proposal.key)}
               </Flex>
               <BreakableFlex width="50%" fontSize={1}>
                 {formatParameter(proposal.oldValue, proposal.type)}

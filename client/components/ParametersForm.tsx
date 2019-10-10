@@ -2,7 +2,7 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import Flex, { BreakableFlex } from './system/Flex';
-import { formatPanvalaUnits } from '../utils/format';
+import { formatPanvalaUnits, parameterDisplayName } from '../utils/format';
 import FieldInput from '../components/FieldInput';
 
 const CustomErrorMessage = styled.span`
@@ -12,7 +12,7 @@ const CustomErrorMessage = styled.span`
   color: red;
 `;
 
-export interface IParameterFormProps {
+export interface IParameterRowProps {
   parameterName: string;
   name: string;
   displayValue: string;
@@ -55,21 +55,20 @@ const ParameterRow: React.SFC<any> = props => {
   );
 };
 
-
 const ParametersForm: React.SFC<any> = props => {
   const { errors, parameters } = props;
 
   // Transform the parameter data into the right shape for the form
-  const rowData: IParameterFormProps[] = Object.keys(parameters).map(k => {
-    const { parameterName, key, newValue, oldValue, type } = parameters[k];
+  const rowData: IParameterRowProps[] = Object.keys(parameters).map(k => {
+    const { key, newValue, oldValue, type } = parameters[k];
     return {
-      parameterName,
+      parameterName: parameterDisplayName(key),
       name: `parameters.${key}.newValue`,
       displayValue: type === 'uint256' ? formatPanvalaUnits(oldValue) : oldValue,
       oldValue,
       newValue,
       type: type === 'uint256' ? 'Number' : 'Address',
-    }
+    };
   });
 
   return (

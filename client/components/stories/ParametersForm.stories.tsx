@@ -7,14 +7,12 @@ import { StoryWrapper } from './utils.stories';
 
 const parameters = {
   slateStakeAmount: {
-    parameterName: 'Slate Stake Amount',
     oldValue: '5000000000000000000000',
     newValue: '',
     type: 'uint256',
     key: 'slateStakeAmount',
   },
   gatekeeperAddress: {
-    parameterName: 'Gatekeeper Address',
     oldValue: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
     newValue: '',
     type: 'address',

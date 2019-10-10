@@ -64,7 +64,6 @@ interface IGovernanceSlateMetadataV1 {
   resource: string;
 }
 
-
 // Match the general slate metadata format
 interface IGovernanceSlateMetadataV2 extends ISlateMetadata {}
 
@@ -89,14 +88,12 @@ const CreateGovernanceSlate: StatelessPage<any> = () => {
   // parameters
   const initialParameters = {
     slateStakeAmount: {
-      parameterName: 'Slate Stake Amount',
       oldValue: slateStakeAmount.toString(),
       newValue: '',
       type: 'uint256',
       key: 'slateStakeAmount',
     },
     gatekeeperAddress: {
-      parameterName: 'Gatekeeper Address',
       oldValue: contracts.gatekeeper.address,
       newValue: '',
       type: 'address',
@@ -195,22 +192,24 @@ const CreateGovernanceSlate: StatelessPage<any> = () => {
 
       const paramKeys = Object.keys(parameterChanges);
 
-      const proposalMetadatas: IGovernanceProposalMetadata[] = paramKeys.map((param: string): IGovernanceProposalMetadata => {
-        const { oldValue, newValue, type, key } = parameterChanges[param];
+      const proposalMetadatas: IGovernanceProposalMetadata[] = paramKeys.map(
+        (param: string): IGovernanceProposalMetadata => {
+          const { oldValue, newValue, type, key } = parameterChanges[param];
 
-        return {
-          firstName: values.firstName,
-          lastName: values.lastName,
-          summary: values.summary,
-          organization: values.organization,
-          parameterChanges: {
-            key,
-            oldValue,
-            newValue,
-            type,
-          },
-        };
-      });
+          return {
+            firstName: values.firstName,
+            lastName: values.lastName,
+            summary: values.summary,
+            organization: values.organization,
+            parameterChanges: {
+              key,
+              oldValue,
+              newValue,
+              type,
+            },
+          };
+        }
+      );
 
       const proposalMultihashes: Buffer[] = await Promise.all(
         proposalMetadatas.map(async (metadata: IGovernanceProposalMetadata) => {
@@ -374,7 +373,10 @@ const CreateGovernanceSlate: StatelessPage<any> = () => {
               try {
                 const changes: IParameterChangesObject = filterParameterChanges(values.parameters);
                 if (Object.keys(changes).length === 0) {
-                  setFieldError('parametersForm', 'You must enter some parameter values different from the old ones');
+                  setFieldError(
+                    'parametersForm',
+                    'You must enter some parameter values different from the old ones'
+                  );
                 } else {
                   await handleSubmitSlate(values, changes);
                 }

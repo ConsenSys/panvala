@@ -5,7 +5,7 @@ import Button from '../components/Button';
 import RouterLink from '../components/RouterLink';
 import Text from '../components/system/Text';
 import { EthereumContext } from '../components/EthereumProvider';
-import { formatPanvalaUnits } from '../utils/format';
+import { formatPanvalaUnits, parameterDisplayName } from '../utils/format';
 
 const ParameterRow: React.SFC<any> = props => {
   return (
@@ -36,11 +36,13 @@ const Parameters: React.FC = () => {
 
   const parameters = [
     {
-      name: 'Slate Stake Amount',
+      key: 'slateStakeAmount',
+      name: parameterDisplayName('slateStakeAmount'),
       value: formatPanvalaUnits(slateStakeAmount),
     },
     {
-      name: 'Gatekeeper Address',
+      key: 'gatekeeperAddress',
+      name: parameterDisplayName('gatekeeperAddress'),
       value: gatekeeper.address,
     },
   ];
@@ -70,7 +72,7 @@ const Parameters: React.FC = () => {
           </Flex>
         </Flex>
         {parameters.map(p => (
-          <ParameterRow key={p.name} parameterName="Required Stake" name={p.name} value={p.value} />
+          <ParameterRow key={p.key} name={p.name} value={p.value} />
         ))}
       </Flex>
     </>

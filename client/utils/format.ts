@@ -60,6 +60,15 @@ export const formatParameter = (value: any, type: ParameterFormat): string => {
   } else {
     return value;
   }
-}
+};
 
 export const { getAddress } = utils;
+
+const parameterDisplayNames = {
+  slateStakeAmount: 'Slate Stake Amount',
+  gatekeeperAddress: 'Gatekeeper Address',
+};
+
+export function parameterDisplayName(key: string): string {
+  return parameterDisplayNames[key] || key;
+}
