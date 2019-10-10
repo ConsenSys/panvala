@@ -67,6 +67,7 @@ export const { getAddress } = utils;
 const parameterDisplayNames = {
   slateStakeAmount: 'Slate Stake Amount',
   gatekeeperAddress: 'Gatekeeper Address',
+  stakeDonationAddress: 'Losing Stake Donation Address',
 };
 
 export function parameterDisplayName(key: string): string {
