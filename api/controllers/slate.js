@@ -1,6 +1,5 @@
 const { validationResult } = require('express-validator');
 const { utils } = require('ethers');
-const ipfs = require('../utils/ipfs');
 const { getAllSlates } = require('../utils/slates');
 const { IpfsMetadata, Slate } = require('../models');
 
@@ -67,23 +66,6 @@ module.exports = {
           }
         })
       );
-    }
-
-    if (process.env.NODE_ENV !== 'test') {
-      // this could be problematic
-      // maybe we should move all `ipfs.add` logic to the api (for adding slate metadata, that would be here)
-      const slateMetadata = await ipfs.get(multihash, { json: true });
-
-      // write slate metadata to db, but don't duplicate
-      await IpfsMetadata.findOrCreate({
-        where: {
-          multihash,
-        },
-        defaults: {
-          multihash,
-          data: slateMetadata,
-        },
-      });
     }
 
     Slate.create({
