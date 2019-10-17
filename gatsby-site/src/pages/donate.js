@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 import home1p1 from '../img/home-1.1.png';
 import home1p2 from '../img/home-1.2.png';
@@ -13,6 +13,7 @@ import Layout from '../components/Layout';
 import SEO from '../components/seo';
 import Donation from '../components/Donation';
 import Nav from '../components/Nav';
+import { fetchEthPrice } from '../utils/donate';
 
 const names = [
   'Simon de la Rouviere',
@@ -114,6 +115,7 @@ const names = [
 const Donate = () => {
   const donateNowRef = useRef(null);
   const [pledgeTeam, setPledgeTeam] = useState('');
+  const [eps, setEthPrices] = useState({});
 
   function onDonateNowClick() {
     donateNowRef.current.scrollIntoView({
@@ -125,6 +127,30 @@ const Donate = () => {
     console.log('e.target.value:', e.target.value);
     setPledgeTeam(e.target.value);
   }
+
+  useEffect(() => {
+    function trimPrice(tier, price) {
+      return (tier / price).toString().slice(0, 5);
+    }
+
+    fetchEthPrice()
+      .then(ethPrice => {
+        const price = parseInt(ethPrice);
+        const prices = {
+          stud: trimPrice(5, price),
+          gold: trimPrice(15, price),
+          plat: trimPrice(50, price),
+          diam: trimPrice(150, price),
+          ethe: trimPrice(500, price),
+          elit: trimPrice(1500, price),
+        };
+        setEthPrices(prices);
+      })
+      .catch(error => {
+        console.error(`ERROR fetching eth price: ${error.message}`);
+        alert('Failed to fetch current ether price. Please reload your browser in a few moments.');
+      });
+  }, []);
 
   return (
     <Layout>
@@ -315,12 +341,12 @@ const Donate = () => {
                 <option disabled="" defaultValue="0" value="0">
                   Select your pledge tier
                 </option>
-                <option value="5">Student — $5/month</option>
-                <option value="15">Gold — $15/month</option>
-                <option value="50">Platinum — $50/month</option>
-                <option value="150">Diamond — $150/month</option>
-                <option value="500">Ether Advisor — $500/month</option>
-                <option value="1500">Elite Advisor — $1500/month</option>
+                <option value="5">{`Student — $5/month (${eps.stud} ETH)`}</option>
+                <option value="15">{`Gold — $15/month (${eps.gold} ETH)`}</option>
+                <option value="50">{`Platinum — $50/month (${eps.plat} ETH)`}</option>
+                <option value="150">{`Diamond — $150/month (${eps.diam} ETH)`}</option>
+                <option value="500">{`Ether Advisor — $500/month (${eps.ethe} ETH)`}</option>
+                <option value="1500">{`Elite Advisor — $1500/month (${eps.elit} ETH)`}</option>
               </select>
               <img src={arrowSvg} className="fr mr2 o-50" style={{ marginTop: '-35px' }} />
               <div className="tl mt4">
