@@ -1,10 +1,20 @@
-const { voting } = require('../../packages/panvala-utils');
-const ethers = require('ethers');
+const { voting } = require('panvala-utils');
+import * as ethers from 'ethers';
 const sortBy = require('lodash/sortBy');
-const { SubmittedBallot, VoteChoice } = require('../models');
-const { getContracts } = require('../utils/eth');
+
+const { SubmittedBallot, VoteChoice } = require('../src/models');
+const { getContracts } = require('../src/utils/eth');
 
 const mnemonic = process.env.MNEMONIC;
+
+// TODO: create real interfaces for the models and import them here
+interface IBallot {
+  didCommit: boolean;
+  didReveal: boolean;
+  voterAddress: string;
+  salt: string;
+  VoteChoices: any;
+}
 
 /**
  * @param {string} epochNumber
@@ -34,6 +44,7 @@ function encode(choices) {
   return voting.encodeBallot(resources, firstChoices, secondChoices);
 }
 
+/*
 async function revealSingle(gatekeeper, ballot) {
   const { voterAddress, salt, VoteChoices, epochNumber } = ballot;
   try {
@@ -52,6 +63,7 @@ async function revealSingle(gatekeeper, ballot) {
     console.error(error);
   }
 }
+*/
 
 function parseArgs() {
   // node reveal-ballots.js
@@ -94,7 +106,7 @@ async function run() {
     });
   });
 
-  const enriched = await Promise.all(ballotPromises);
+  const enriched: IBallot[] = await Promise.all(ballotPromises);
   console.log('ENRICHED', enriched);
 
   const notCommitted = enriched.filter(e => e.didCommit === false);

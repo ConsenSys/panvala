@@ -1,4 +1,4 @@
-const { syncEvents, listenAndSyncContractEvents } = require('../utils/events');
+const { syncEvents, listenAndSyncContractEvents } = require('../src/utils/events');
 
 function usage() {
   console.log('Usage: node sync-contract-events.js [--listen]');

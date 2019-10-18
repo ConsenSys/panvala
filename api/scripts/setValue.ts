@@ -1,7 +1,7 @@
-const ethers = require('ethers');
+import * as ethers from 'ethers';
 
-const { getContracts } = require('../utils/eth');
-const { Request } = require('../models');
+const { getContracts } = require('../src/utils/eth');
+const { Request } = require('../src/models');
 
 const mnemonic = process.env.MNEMONIC;
 

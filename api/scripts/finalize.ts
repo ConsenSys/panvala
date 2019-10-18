@@ -1,7 +1,8 @@
-const ethers = require('ethers');
-const { voting } = require('../utils');
+import * as ethers from 'ethers';
+
+const { voting } = require('../src/utils');
 const { ContestStatus } = voting;
-const { getContracts } = require('../utils/eth');
+const { getContracts } = require('../src/utils/eth');
 const mnemonic = process.env.MNEMONIC;
 
 const categoryName = {

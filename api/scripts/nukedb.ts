@@ -1,5 +1,5 @@
-const readline = require('readline');
-const { SubmittedBallot, Slate, IpfsMetadata, Request } = require('../models');
+import * as readline from 'readline';
+const { SubmittedBallot, Slate, IpfsMetadata, Request } = require('../src/models');
 
 const rl = readline.createInterface({
   input: process.stdin,
