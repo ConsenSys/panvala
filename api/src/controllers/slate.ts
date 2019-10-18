@@ -1,9 +1,8 @@
 import { validationResult } from 'express-validator';
 import { utils } from 'ethers';
 import { getAllSlates } from '../utils/slates';
-import * as models from '../models';
 
-const { IpfsMetadata, Slate } = models;
+const { IpfsMetadata, Slate } = require('../models');
 
 /**
  * Get the list of slates

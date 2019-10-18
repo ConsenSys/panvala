@@ -1,7 +1,6 @@
-import * as models from '../models';
 import { getAllSlates } from './slates';
 
-const { Request, Sequelize } = models;
+const { Request, Sequelize } = require('../models');
 const { in: opIn } = Sequelize.Op;
 
 // workaround for now. we should really be caching events and getting them from the db

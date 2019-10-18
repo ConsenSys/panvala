@@ -1,8 +1,7 @@
 import * as IPFS from 'ipfs-http-client';
 import { utils } from 'ethers';
-import * as models from '../models';
 
-const { IpfsMetadata } = models;
+const { IpfsMetadata } = require('../models');
 
 const ipfsHost = process.env.IPFS_HOST || 'ipfs.infura.io';
 const ipfsPort = process.env.IPFS_PORT || 5001;

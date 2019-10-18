@@ -3,9 +3,7 @@ import { utils } from 'ethers';
 import { voting } from '../utils';
 import { validateBallot } from '../utils/validation';
 import { getContracts } from '../utils/eth';
-import * as models from '../models';
-
-const { SubmittedBallot, VoteChoice } = models;
+const { SubmittedBallot, VoteChoice } = require('../models');
 
 /**
  * Create a new ballot

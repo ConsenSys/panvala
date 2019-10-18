@@ -1,4 +1,4 @@
-import { sequelize } from './models';
+const { sequelize } = require('./models');
 import { checkSchema } from 'express-validator';
 
 // Validation

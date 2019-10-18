@@ -1,9 +1,8 @@
 import * as request from 'supertest';
 import app from '../index';
-import * as models from '../models';
 import { migrate } from '../migrate';
 
-const { sequelize, Slate } = models;
+const { sequelize, Slate } = require('../models');
 
 // run migrations
 beforeAll(() => {

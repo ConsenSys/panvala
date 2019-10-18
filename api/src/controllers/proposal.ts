@@ -1,7 +1,6 @@
 import { validationResult } from 'express-validator';
-import * as models from '../models';
 
-const { Proposal } = models;
+const { Proposal } = require('../models');
 
 /**
  * Get the list of proposals

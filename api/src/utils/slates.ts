@@ -4,13 +4,12 @@ import { range } from 'lodash';
 import * as Bluebird from 'bluebird';
 import { Schema } from 'express-validator';
 
-import * as models from '../models';
 import { getContracts } from './eth';
 import * as config from './config';
 import { nonEmptyString } from './validation';
 import { getProposalsForRequests } from './requests';
 
-const { IpfsMetadata, Slate } = models;
+const { IpfsMetadata, Slate } = require('../models');
 const { toUtf8String, bigNumberify: BN, getAddress } = ethers.utils;
 const { tokenCapacitorAddress } = config.contracts;
 
