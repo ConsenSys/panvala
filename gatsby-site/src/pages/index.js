@@ -95,7 +95,7 @@ const IndexPage = () => {
       {/* <!-- Comparison Section --> */}
       <section
         id="home-comparison"
-        className="bg-white w-70-l w-80-m w-90 center br4 shadow relative z-1 top-0-ns top-12 pa5-ns pa4"
+        className="bg-white w-70-l w-80-m w-90 center br4 shadow relative z-1 top-0-ns top-14 pa5-ns pa4"
         style={{ marginTop: '-550px' }}
       >
         <h2 className="f2-5 ma0 tc">Sustainable Funding</h2>
