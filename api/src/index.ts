@@ -3,8 +3,7 @@ import * as cors from 'cors';
 import * as morgan from 'morgan';
 
 import { setupRoutes } from './routes';
-
-// import { listenAndSyncContractEvents } from './utils/events';
+import { listenAndSyncContractEvents } from './utils/events';
 
 const app = express();
 
@@ -24,8 +23,7 @@ setupRoutes(app);
 // Start server:
 if (process.env.NODE_ENV !== 'test') {
   // Continuously listen for contract events
-  // TODO: enable this when ready
-  // listenAndSyncContractEvents();
+  listenAndSyncContractEvents();
 
   app.listen(port, () => console.log(`Starting server on port ${port}...`));
 }
