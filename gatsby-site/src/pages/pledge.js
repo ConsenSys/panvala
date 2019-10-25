@@ -127,7 +127,6 @@ const Donate = () => {
     const fn = document.getElementById('pledge-first-name');
     const em = document.getElementById('pledge-email');
     const ti = document.getElementById('pledge-tier-select');
-    const te = document.getElementById('pledge-team-select');
     if (fn.value === '') {
       alert('You must enter a first name.');
       return;
@@ -138,10 +137,6 @@ const Donate = () => {
     }
     if (ti.value === '0') {
       alert('You must select a pledge tier.');
-      return;
-    }
-    if (te.value === '0') {
-      alert('You must select a team or select "No".');
       return;
     }
 
@@ -363,29 +358,6 @@ const Donate = () => {
                 <option value="1500">Elite Advisor — $1500/month</option>
               </select>
               <img src={arrowSvg} className="fr mr2 o-50" style={{ marginTop: '-35px' }} />
-
-              <div className="tl mt4">
-                <label className="ma0 f6 mb3 black-40">
-                Are you pledging on behalf of a team?
-                  <b className="red f7"> *</b>
-                </label>
-              </div>
-              <select
-                name="pledge-team-selection"
-                required
-                className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2 bg-white black-50"
-                id="pledge-team-select"
-              >
-                <option disabled="" defaultValue="0" value="0">
-                  Select the team you would like to pledge on behalf of
-                </option>
-                <option value="no-team">No</option>
-                <option value="meta-cartel">Team MetaCartel: Increase Dapp Usage</option>
-                <option value="libre-fund">Team Libre-Fund: Put Users in Control</option>
-                <option value="donor-dao">Team Donor DAO: Earn Votes in a Nested DAO</option>
-              </select>
-              <img src={arrowSvg} className="fr mr2 o-50" style={{ marginTop: '-35px' }} />
-
 
               <DonateButton handleClick={handleSubmit} text="Pledge" />
 

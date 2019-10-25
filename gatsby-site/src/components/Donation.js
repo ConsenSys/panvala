@@ -190,7 +190,7 @@ class Donation extends Component {
     }
 
     let correctChainId = window.location.href.includes('panvala.com/donate') ? 1 : 4;
-    if (window.location.href.includes('gatsby.panvala.com/donate')) {
+    if (window.location.href.includes('develop.panvala.com/donate')) {
       correctChainId = 4;
     }
     const network = await this.provider.getNetwork();
@@ -248,7 +248,6 @@ class Donation extends Component {
     const pledgeEmail = document.getElementById('pledge-email');
     const pledgeMonthlySelect = document.getElementById('pledge-tier-select');
     const pledgeTermSelect = document.getElementById('pledge-duration-select');
-    const pledgeTeamSelect = document.getElementById('pledge-team-select');
 
     if (pledgeFirstName.value === '') {
       alert('You must enter a first name.');
@@ -264,10 +263,6 @@ class Donation extends Component {
     }
     if (pledgeTermSelect.value === '0') {
       alert('You must select a pledge duration.');
-      return;
-    }
-    if (pledgeTeamSelect.value === '0') {
-      alert('You must select a team or select "No".');
       return;
     }
 
@@ -358,7 +353,6 @@ class Donation extends Component {
           pledgeEmail.value = '';
           pledgeMonthlySelect.value = '0';
           pledgeTermSelect.value = '0';
-          pledgeTeamSelect.value = '0';
         }
       }
     } catch (error) {
@@ -447,20 +441,7 @@ class Donation extends Component {
       });
       const gasPrice = await getGasPrice();
       try {
-        let donor = this.state.selectedAccount;
-        switch (this.props.team) {
-          case 'meta-cartel':
-            donor = '0x235A3296C6F3F5497DB4a45d5f14cC46ee91DF1a';
-            break;
-          case 'libre-fund':
-            donor = '0x80844909e7c57219eCB989F7Bb41a632A2D79b86';
-            break;
-          case 'donor-dao':
-            donor = '0x92745743ba7D71256902CC94C066e8E1e33BC8Ae';
-            break;
-          default:
-            break;
-        }
+        const donor = this.state.selectedAccount;
         // Donate PAN to token capacitor
         const donateTx = await this.tokenCapacitor.functions.donate(
           donor,
