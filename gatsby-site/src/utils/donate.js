@@ -25,7 +25,7 @@ export function quoteUsdToEth(pledgeTotalUSD, ethPrice) {
 export function getEndpointAndHeaders() {
   const urlRoute = window.location.href;
   const endpoint =
-    urlRoute.includes('staging/donate') || urlRoute.includes('gatsby.panvala')
+    urlRoute.includes('staging/donate') || urlRoute.includes('develop.panvala')
       ? 'https://staging-api.panvala.com'
       : urlRoute.includes('localhost')
       ? 'http://localhost:5001'
