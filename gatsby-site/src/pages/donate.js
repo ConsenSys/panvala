@@ -114,18 +114,12 @@ const names = [
 
 const Donate = () => {
   const donateNowRef = useRef(null);
-  const [pledgeTeam, setPledgeTeam] = useState('');
   const [eps, setEthPrices] = useState({});
 
   function onDonateNowClick() {
     donateNowRef.current.scrollIntoView({
       behavior: 'smooth',
     });
-  }
-
-  function handleChangeTeam(e) {
-    console.log('e.target.value:', e.target.value);
-    setPledgeTeam(e.target.value);
   }
 
   useEffect(() => {

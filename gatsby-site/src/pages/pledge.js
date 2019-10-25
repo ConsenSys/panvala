@@ -150,12 +150,10 @@ const Donate = () => {
     const ln = document.getElementById('pledge-last-name');
     const em = document.getElementById('pledge-email');
     const ti = document.getElementById('pledge-tier-select');
-    const te = document.getElementById('pledge-team-select');
     fn.value = '';
     ln.value = '';
     em.value = '';
     ti.value = '0';
-    te.value = '0';
   }
 
   return (
