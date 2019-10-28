@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 
 import Layout from '../components/Layout';
 import SEO from '../components/seo';
@@ -44,6 +44,14 @@ const categories = [
 ];
 
 const Poll = () => {
+  const pollFormRef = useRef(null);
+
+  function handleViewPollClick() {
+    pollFormRef.current.scrollIntoView({
+      behavior: 'smooth',
+    });
+  }
+
   return (
     <Layout>
       <SEO title="Poll" />
@@ -64,11 +72,12 @@ const Poll = () => {
               </p>
             </div>
             <div className="mv3 b">
-              <a href="#poll-form">
-                <button className="f6 link dim bn br-pill white bg-teal fw7 pointer pv3 ph4">
-                  View Poll
-                </button>
-              </a>
+              <button
+                className="f6 link dim bn br-pill white bg-teal fw7 pointer pv3 ph4"
+                onClick={handleViewPollClick}
+              >
+                View Poll
+              </button>
             </div>
           </div>
 
@@ -90,7 +99,7 @@ const Poll = () => {
       </section>
 
       {/* Ballot */}
-      <section id="poll-form" className="pv6 mb4 bg-gray full-clip-down-lg">
+      <section id="poll-form" ref={pollFormRef} className="pv6 mb4 bg-gray full-clip-down-lg">
         <div className="w-100 w-60-ns center">
           <div className="tc pv4">
             <h2>Category Ballot</h2>
