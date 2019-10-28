@@ -52,6 +52,16 @@ const Poll = () => {
     });
   }
 
+  function handleChange(event) {
+    const { value, name } = event.target;
+    console.log(value, name);
+  }
+
+  function handleFormSubmit(event) {
+    event.preventDefault();
+    console.log('submit', event);
+  }
+
   return (
     <Layout>
       <SEO title="Poll" />
@@ -109,24 +119,90 @@ const Poll = () => {
           </div>
           <div className="bg-white shadow lh-copy black">
             <form>
-              {categories.map(category => {
+              {categories.map((category, index) => {
                 const { description, title, previous } = category;
+                const identifier = `poll-points-category-${index}`;
 
                 return (
-                  <div className="cf pa3 bb bw-2 b--black-10">
+                  <div key={index} className="cf pa3 bb bw-2 b--black-10">
                     <div className="fl w-80 pa2 pr4">
                       <div className="f4 b">{title}</div>
                       <p>{description}</p>
                     </div>
                     <div className="fl w-20 pa2 f5 tr">
                       <div className="b ttu f6 o-50">previous batch</div>
-                      <div className="pb3 b">{previous}%</div>
-                      {/* <div className="b ttu f6 o-50">Batch five</div>
-                    <div>percent</div> */}
+                      <div className="pb3">{previous}%</div>
+                      <div className="b ttu f6 o-50">
+                        <label className="ma0 mb3">Batch five</label>
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          name={identifier}
+                          id={identifier}
+                          required
+                          placeholder="%"
+                          onChange={handleChange}
+                          className="f6 input-reset b--black-10 pv3 ph2 db w-100 br3 mt2 tr"
+                        />
+                      </div>
                     </div>
                   </div>
                 );
               })}
+
+              {/* <-- name and email --> */}
+              <div className="pa4 bb bw-2 b--black-10 black-60">
+                <div className="cf pv2">
+                  <div className="fl w-50 pr3">
+                    <label>First Name (Optional)</label>
+                    <input
+                      type="text"
+                      id="poll-first-name"
+                      placeholder="Enter your first name"
+                      className="w-100 pa2"
+                    ></input>
+                  </div>
+                  <div className="fl w-50">
+                    <label>Last Name (Optional)</label>
+                    <input
+                      type="text"
+                      id="poll-last-name"
+                      placeholder="Enter your last name"
+                      className="w-100 pa2"
+                    ></input>
+                  </div>
+                </div>
+                <div className="pv2">
+                  <label>Email (Optional)</label>
+                  <input
+                    type="text"
+                    id="poll-email"
+                    placeholder="Enter your email"
+                    className="w-100 pa2"
+                  ></input>
+                </div>
+              </div>
+
+              <div className="cf pa4">
+                <div className="fr w-100 w-70-l flex-column items-end">
+                  <div className="flex justify-end">
+                    <input
+                      type="submit"
+                      name="submit"
+                      onClick={handleFormSubmit}
+                      className="f6 link dim bn br-pill pv3 ph4 bg-teal white fw7"
+                      value="Submit Vote"
+                    />
+                  </div>
+
+                  <div className="f7 tr pt3 o-50">
+                    The final poll results will be calculated using the minimum number of PAN tokens
+                    in your account from November 16-22, the week after the poll concludes. Selling
+                    or transferring tokens during this period will reduce the weight of your vote.
+                  </div>
+                </div>
+              </div>
             </form>
           </div>
         </div>
