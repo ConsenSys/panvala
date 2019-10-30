@@ -1,6 +1,11 @@
 ```ts
 type IResourceTypes = 'GRANT' | 'GOVERNANCE';
 
+interface SlateStatus {
+  asNumber: 0 | 1 | 2 | 3;
+  asString: 'Unstaked' | 'Staked' | 'Rejected' | 'Accepted';
+}
+
 interface IContext {
   currentEpoch: string;
   now: number;
@@ -18,47 +23,42 @@ interface IContext {
       [type: IResourceTypes]: string;
     };
   };
-  epochs: {
-    byID: {
-      [id: string]: {
-        id: string;
-        startTime: number;
-        votingOpenDate: number;
-        votingCloseDate: number;
-        committed: boolean;
-        revealed: boolean;
-        contests: {
-          [resource: IResourceTypes]: {
-            slateSubmissionDeadline: number;
-            slates: number[];
-            stakedSlates: number[];
-            winner: number;
-            status: {
-              asNumber: 0 | 1 | 2 | 3;
-              asString: 'Unstaked' | 'Staked' | 'Rejected' | 'Accepted';
-            };
-          };
+  epochs: [
+    {
+      id: string;
+      startTime: number;
+      votingOpenDate: number;
+      votingCloseDate: number;
+      committed: boolean;
+      revealed: boolean;
+      contests: {
+        [resource: IResourceTypes]: {
+          slateSubmissionDeadline: number;
+          slates: number[];
+          stakedSlates: number[];
+          winner?: number;
+          status: ContestStatus;
         };
-        slates: {
-          byID: {
-            [id: string]: {
-              id: number;
-              category: IResourceTypes;
-              status: SlateStatus;
-              owner: string;
-              description: string;
-              incumbent: true;
-              proposals: IProposal[];
-            };
-          };
-          allIDs: string[];
-        };
-        grantProposals: IGrantProposal[];
-        governanceProposals: IGovernanceProposal[];
       };
-    };
-    allIDs: string[];
-  };
+      slates: {
+        byID: {
+          [id: string]: {
+            id: number;
+            category: IResourceTypes;
+            status: SlateStatus;
+            owner: string;
+            description: string;
+            incumbent: true;
+            proposals: IProposal[];
+          };
+        };
+        allIDs: string[];
+      };
+      grantProposals: IGrantProposal[];
+      governanceProposals: IGovernanceProposal[];
+    },
+    // ...
+  ];
   ballot: {
     voter: string;
     committer: string;
