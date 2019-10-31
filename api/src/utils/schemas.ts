@@ -12,5 +12,6 @@ function loadSchema(filepath) {
 const ballotSchema = loadSchema('schemas/ballot.json');
 const proposalSchema = loadSchema('schemas/proposal.json');
 const slateSchema = loadSchema('schemas/slate.json');
+export const pollResponseSchema = loadSchema('schemas/categoryPollResponse.json');
 
 export { ballotSchema, proposalSchema, slateSchema };

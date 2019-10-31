@@ -1,0 +1,330 @@
+import * as request from 'supertest';
+import app from '../index';
+
+import { migrate } from '../migrate';
+import {
+  getCategories,
+  createCategory,
+  createEmptyPoll,
+  addPollOption,
+  getCategoryByName,
+  createPoll,
+  addPollResponse,
+  IPollData,
+  responseCount,
+  ICategoryAllocation,
+  IPollResponse,
+} from '../utils/polls';
+import { someAddress } from './utils';
+
+const { sequelize, FundingCategory, CategoryPoll } = require('../models');
+
+const categoryNames = [
+  'Ethereum 2.0',
+  'Layer 2 Scaling',
+  'Security',
+  'Developer Tools and Growth',
+  'Dapps and Usability',
+  'Panvala',
+];
+
+beforeAll(() => {
+  sequelize.options.logging = false;
+
+  return migrate().then(() => {
+    const q = sequelize.getQueryInterface();
+
+    // initialize categories
+    return q.bulkInsert(
+      FundingCategory.tableName,
+      categoryNames.map(name => {
+        return {
+          displayName: name,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+      }),
+      {}
+    );
+  });
+});
+
+afterAll(() => {
+  const q = sequelize.getQueryInterface();
+  return q.dropAllTables().then(() => sequelize.close());
+});
+
+beforeEach(async () => {
+  // console.log('===== truncate polls table =====');
+  return CategoryPoll.truncate();
+});
+
+const allocations: ICategoryAllocation[] = [
+  { categoryID: 1, points: 34 },
+  { categoryID: 2, points: 5 },
+  { categoryID: 3, points: 16 },
+  { categoryID: 4, points: 4 },
+  { categoryID: 5, points: 4 },
+  { categoryID: 6, points: 37 },
+];
+
+describe('API endpoints', () => {
+  // GET polls/:pollID
+  // GET polls/:pollID/voted/:account
+  describe('POST /api/polls/:pollID', () => {
+    const baseRoute = '/api/polls';
+    let pollID: number;
+    let route: string;
+    let data: IPollData;
+    const account = someAddress;
+    const signature = `0x${'a'.repeat(130)}`;
+
+    beforeEach(async () => {
+      const poll = await createPoll('Awesome poll', categoryNames);
+      pollID = poll.id;
+      route = `${baseRoute}/${pollID}`;
+
+      data = {
+        signature,
+        response: {
+          account,
+          pollID,
+          allocations,
+        },
+      };
+    });
+
+    test('should create a poll response', async () => {
+      const result = await request(app)
+        .post(route)
+        .send(data);
+
+      // console.log('RESULT', result.body);
+      expect(result.ok).toBe(true);
+
+      const created = result.body;
+      expect(created).toHaveProperty('createdAt');
+      expect(created).toHaveProperty('updatedAt');
+
+      ['pollID', 'account', 'allocations'].forEach(property => {
+        expect(created).toHaveProperty(property);
+      });
+
+      const numResponses = await responseCount(pollID);
+      expect(numResponses).toBe(1);
+    });
+
+    // invalid shape
+    describe('invalid shape', () => {
+      const requiredFields = ['signature', 'response'];
+
+      test.each(requiredFields)('it should return a 400 if `%s` is missing', async field => {
+        data[field] = undefined;
+
+        const result = await request(app)
+          .post(route)
+          .send(data);
+        expect(result.status).toBe(400);
+      });
+    });
+
+    // invalid inputs
+    test.todo('should reject the response if the signature does not match the data');
+
+    test('should reject the response if it allocates to invalid categories', async () => {
+      data.response.allocations = [
+        { categoryID: 1, points: 34 },
+        { categoryID: 2, points: 5 },
+        { categoryID: 3, points: 16 },
+        { categoryID: 4, points: 4 },
+        { categoryID: 5, points: 4 },
+        { categoryID: 7, points: 37 },
+      ];
+
+      const result = await request(app)
+        .post(route)
+        .send(data);
+
+      expect(result.status).toBe(400);
+      expect(result.body.msg).toEqual(expect.stringContaining('must match poll options'));
+    });
+
+    test('should reject the response if it has the wrong number of allocations', async () => {
+      data.response.allocations = [{ categoryID: 1, points: 50 }, { categoryID: 2, points: 50 }];
+
+      const result = await request(app)
+        .post(route)
+        .send(data);
+
+      expect(result.status).toBe(400);
+      expect(result.body.msg).toEqual(expect.stringContaining('must match number of poll options'));
+    });
+
+    test('should reject the response if the points do not add up to 100', async () => {
+      data.response.allocations = [
+        { categoryID: 1, points: 20 },
+        { categoryID: 2, points: 5 },
+        { categoryID: 3, points: 16 },
+        { categoryID: 4, points: 4 },
+        { categoryID: 5, points: 4 },
+        { categoryID: 6, points: 37 },
+      ];
+
+      const result = await request(app)
+        .post(route)
+        .send(data);
+
+      expect(result.status).toBe(400);
+      expect(result.body.msg).toEqual(expect.stringContaining('add up to 100'));
+    });
+  });
+
+  describe('GET /api/polls/:pollID/status/:account', () => {
+    test.todo('should return the status for an account');
+  });
+});
+
+// test utilities
+describe('poll utilities', () => {
+  let categoriesAdded = 0;
+
+  test('it should list categories', async () => {
+    const cats = await getCategories();
+    // console.log(cats);
+    expect(cats.length).toBe(categoryNames.length);
+    expect(cats.map(c => c.displayName)).toEqual(categoryNames);
+  });
+
+  test('it should add a new category', async () => {
+    const name = 'Breakfast foods';
+    await createCategory(name);
+    categoriesAdded += 1;
+
+    const cats = await getCategories();
+    expect(cats.length).toBe(categoryNames.length + categoriesAdded);
+  });
+
+  // disallow duplicates
+
+  test('it should add a new category poll', async () => {
+    const poll = await createEmptyPoll('My Poll');
+    expect(poll.name).toBe('My Poll');
+
+    const options = await poll.getOptions();
+    expect(options.length).toBe(0);
+
+    const pollCount = await CategoryPoll.count();
+    expect(pollCount).toBe(1);
+  });
+
+  describe('draft poll', () => {
+    let pollID: number;
+
+    beforeEach(async () => {
+      const poll = await createEmptyPoll('Empty poll');
+      pollID = poll.id;
+    });
+
+    test('it should allow adding options to the poll', async () => {
+      const poll = await addPollOption(pollID, 'Ethereum 2.0');
+
+      expect(poll.options.length).toBe(1);
+      const [option] = poll.options;
+
+      expect(option.categoryID).toBe(1);
+      expect(option.pollID).toBe(pollID);
+    });
+
+    test('it should fail if the poll does not exist', async () => {
+      const badPollID = 10000;
+      await expect(addPollOption(badPollID, 'Ethereum 2.0')).rejects.toThrow();
+    });
+
+    test('it should add the category if it does not exist', async () => {
+      const category = 'Pets';
+      const origCategory = await getCategoryByName(category);
+      expect(origCategory).toBe(null);
+
+      await addPollOption(pollID, category);
+      const newCategory = await getCategoryByName(category);
+      expect(newCategory.displayName).toBe(category);
+
+      const cats = await getCategories();
+
+      categoriesAdded += 1;
+      expect(cats.length).toBe(categoryNames.length + categoriesAdded);
+    });
+
+    test('it should allow creating a poll with options', async () => {
+      const poll = await createPoll('Poll', categoryNames);
+      // console.log(poll.get({ plain: true }));
+
+      expect(poll.options.length).toBe(categoryNames.length);
+    });
+
+    test.todo('it should fail if the option already exists on the poll');
+    test.todo('it should not allow adding responses');
+  });
+
+  describe('active poll', () => {
+    let pollID: number;
+    let poll;
+    let response: IPollResponse;
+
+    beforeEach(async () => {
+      poll = await createPoll('Poll', categoryNames);
+      pollID = poll.id;
+
+      response = {
+        account: someAddress,
+        pollID,
+        allocations: [
+          { categoryID: 1, points: 34 },
+          { categoryID: 2, points: 5 },
+          { categoryID: 3, points: 16 },
+          { categoryID: 4, points: 4 },
+          { categoryID: 5, points: 4 },
+          { categoryID: 6, points: 37 },
+        ],
+      };
+    });
+
+    test('it should be able to add responses', async () => {
+      const storedResponse = await addPollResponse(response);
+
+      const numResponses = await responseCount(pollID);
+      expect(numResponses).toBe(1);
+      expect(storedResponse.allocations.length).toBe(response.allocations.length);
+    });
+
+    test.todo('it should not be able to add more options');
+
+    test('it should fail if the number of allocations does not match the number of options', async () => {
+      response.allocations = [
+        { categoryID: 1, points: 34 },
+        { categoryID: 2, points: 5 },
+        { categoryID: 3, points: 16 },
+        { categoryID: 4, points: 4 },
+        { categoryID: 5, points: 4 },
+      ];
+
+      await expect(addPollResponse(response)).rejects.toThrow();
+    });
+
+    test('it should fail if `account` is an empty string', async () => {
+      response.account = '';
+
+      await expect(addPollResponse(response)).rejects.toThrow();
+    });
+
+    test.todo('it should not allow multiple allocations to the same option');
+    test.todo('it should not allow multiple responses from the same account');
+
+    // publish an empty poll
+  });
+});
+
+// add a category
+// add a poll
+// publish a poll
+// add some responses

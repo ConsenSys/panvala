@@ -16,6 +16,7 @@ import * as parameter from './controllers/parameter';
 import * as ipfs from './controllers/ipfs';
 import * as website from './controllers/website';
 import * as token from './controllers/token';
+import * as poll from './controllers/poll';
 
 // Routes
 export const setupRoutes = app => {
@@ -81,4 +82,7 @@ export const setupRoutes = app => {
 
   // Token
   app.get('/api/token/circulating-supply', token.circulatingSupply);
+
+  // Polls
+  app.post('/api/polls/:pollID', poll.saveResponse);
 };

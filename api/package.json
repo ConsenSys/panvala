@@ -38,7 +38,7 @@
     "panvala-utils": "file:../packages/panvala-utils",
     "pg": "^7.8.0",
     "pg-hstore": "^2.3.2",
-    "sequelize": "5.18.1",
+    "sequelize": "5.21.2",
     "sequelize-cli": "^5.4.0"
   },
   "devDependencies": {
@@ -50,6 +50,7 @@
     "@types/node": "^12.7.11",
     "@types/sequelize": "^4.28.6",
     "@types/supertest": "^2.0.8",
+    "@types/umzug": "^2.2.2",
     "gulp": "^4.0.2",
     "gulp-typescript": "^5.0.1",
     "husky": "^2.4.0",

@@ -1,6 +1,6 @@
 import * as Ajv from 'ajv';
 import * as ethers from 'ethers';
-import { ballotSchema } from './schemas';
+import { ballotSchema, pollResponseSchema } from './schemas';
 import { ParamSchema } from 'express-validator';
 
 const { isHexString, hexDataLength, bigNumberify } = ethers.utils;
@@ -28,7 +28,33 @@ ajv.addKeyword('bigNumber', {
   },
 });
 
+// Add special keyword for interpreting fields as Ethereum addresses
+ajv.addKeyword('address', {
+  type: 'string',
+  validate: function(schema, data: string) {
+    if (!schema) {
+      return true;
+    }
+
+    try {
+      ethers.utils.getAddress(data.toLowerCase());
+      return true;
+    } catch (error) {
+      return false;
+    }
+  },
+});
+
+ajv.addKeyword('signature', {
+  type: 'string',
+  validate: function(schema, data: string) {
+    // console.log('sig', data);
+    return hexDataLength(data) === 65;
+  },
+});
+
 const validateBallot = ajv.compile(ballotSchema);
+export const validatePollResponseStructure = ajv.compile(pollResponseSchema);
 
 /**
  * Throw if the value is not a '0x'-prefixed, 20-byte hex string.

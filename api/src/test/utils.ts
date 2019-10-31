@@ -53,4 +53,6 @@ function initProposals() {
   );
 }
 
+export const someAddress = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+
 export { initProposals };
