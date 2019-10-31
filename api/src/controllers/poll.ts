@@ -1,5 +1,5 @@
 import { validatePollResponseStructure } from '../utils/validation';
-import { addPollResponse } from '../utils/polls';
+import { addPollResponse, verifyPollSignature } from '../utils/polls';
 
 // Return the newly created response
 export async function saveResponse(req, res) {
@@ -18,7 +18,13 @@ export async function saveResponse(req, res) {
     });
   }
 
-  // TODO: validate signature
+  // Validate signature
+  const validSignature = await verifyPollSignature(req.body);
+  if (!validSignature) {
+    return res.status(403).json({
+      msg: 'Signature does not match account',
+    });
+  }
 
   return addPollResponse(response)
     .then(savedResponse => {

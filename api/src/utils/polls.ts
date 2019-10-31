@@ -1,3 +1,6 @@
+import { Wallet } from 'ethers';
+import { verifyMessage, getAddress } from 'ethers/utils';
+
 import { Sequelize } from '../models';
 import { hasDuplicates } from '.';
 const {
@@ -146,6 +149,40 @@ export async function responseCount(pollID: number): Promise<number> {
   return CategoryPollResponse.count({ where: { pollID } });
 }
 
-// - calculations
-// sign poll response
-// validate poll response
+// ===== Calculations
+function ensureChecksumAddress(address: string): string {
+  return getAddress(address.toLowerCase());
+}
+
+function generateMessage(response: IPollResponse): string {
+  // Always use checksum address in the message
+  const account = ensureChecksumAddress(response.account);
+  return `Response from ${account} for poll ID ${response.pollID}`;
+}
+
+export async function verifyPollSignature(data: IPollData) {
+  const { signature, response } = data;
+  const { account } = response;
+
+  const message = generateMessage(response);
+  const recoveredAddress = verifyMessage(message, signature);
+  console.log('recovered:', recoveredAddress);
+
+  return ensureChecksumAddress(recoveredAddress) === ensureChecksumAddress(account);
+}
+
+export async function signResponse(wallet: Wallet, response: IPollResponse): Promise<string> {
+  const message = generateMessage(response);
+  // console.log(`signing message '${message}'`);
+  return wallet.signMessage(message);
+}
+
+export async function createSignedResponse(
+  wallet: Wallet,
+  response: IPollResponse
+): Promise<IPollData> {
+  return signResponse(wallet, response).then(signature => {
+    // console.log('signed', signature);
+    return { response, signature };
+  });
+}

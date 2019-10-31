@@ -14,8 +14,9 @@ import {
   responseCount,
   ICategoryAllocation,
   IPollResponse,
+  createSignedResponse,
 } from '../utils/polls';
-import { someAddress } from './utils';
+import { someAddress, getWallet } from './utils';
 
 const { sequelize, FundingCategory, CategoryPoll } = require('../models');
 
@@ -76,22 +77,23 @@ describe('API endpoints', () => {
     let pollID: number;
     let route: string;
     let data: IPollData;
-    const account = someAddress;
-    const signature = `0x${'a'.repeat(130)}`;
+    let response: IPollResponse;
+    let wallet;
 
     beforeEach(async () => {
+      wallet = getWallet();
+
       const poll = await createPoll('Awesome poll', categoryNames);
       pollID = poll.id;
       route = `${baseRoute}/${pollID}`;
 
-      data = {
-        signature,
-        response: {
-          account,
-          pollID,
-          allocations,
-        },
+      response = {
+        account: wallet.address,
+        pollID,
+        allocations,
       };
+
+      data = await createSignedResponse(wallet, response);
     });
 
     test('should create a poll response', async () => {
@@ -129,7 +131,19 @@ describe('API endpoints', () => {
     });
 
     // invalid inputs
-    test.todo('should reject the response if the signature does not match the data');
+    test('should reject the response if the signature does not match the data', async () => {
+      const badSignature = `0x${'a'.repeat(130)}`;
+      expect(badSignature).not.toBe(data.signature);
+
+      data.signature = badSignature;
+
+      const result = await request(app)
+        .post(route)
+        .send(data);
+
+      expect(result.status).toBe(403);
+      expect(result.body.msg).toEqual(expect.stringContaining('Signature does not match'));
+    });
 
     test('should reject the response if it allocates to invalid categories', async () => {
       data.response.allocations = [
