@@ -140,13 +140,25 @@ export interface ICategoryAllocation {
  * @returns newly created response
  */
 export async function addPollResponse(response: IPollResponse) {
-  return CategoryPollResponse.create(response, {
+  const sanitizedResponse: IPollResponse = response;
+  sanitizedResponse.account = ensureChecksumAddress(response.account);
+
+  return CategoryPollResponse.create(sanitizedResponse, {
     include: [{ model: CategoryPollAllocation, as: 'allocations' }],
   });
 }
 
 export async function responseCount(pollID: number): Promise<number> {
   return CategoryPollResponse.count({ where: { pollID } });
+}
+
+export async function hasAccountRespondedToPoll(pollID: number, account: string) {
+  return CategoryPollResponse.findOne({
+    where: { pollID, account: ensureChecksumAddress(account) },
+  }).then(response => {
+    // console.log(response);
+    return response != null;
+  });
 }
 
 // ===== Calculations

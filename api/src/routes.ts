@@ -85,4 +85,5 @@ export const setupRoutes = app => {
 
   // Polls
   app.post('/api/polls/:pollID', poll.saveResponse);
+  app.get('/api/polls/:pollID/status/:account', poll.getUserStatus);
 };

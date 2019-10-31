@@ -15,6 +15,7 @@ import {
   ICategoryAllocation,
   IPollResponse,
   createSignedResponse,
+  hasAccountRespondedToPoll,
 } from '../utils/polls';
 import { someAddress, getWallet } from './utils';
 
@@ -194,7 +195,56 @@ describe('API endpoints', () => {
   });
 
   describe('GET /api/polls/:pollID/status/:account', () => {
-    test.todo('should return the status for an account');
+    const baseRoute = '/api/polls';
+    let pollID: number;
+    let route: string;
+    let data: IPollData;
+    let response: IPollResponse;
+    let wallet;
+
+    beforeEach(async () => {
+      wallet = getWallet();
+
+      const poll = await createPoll('Awesome poll', categoryNames);
+      pollID = poll.id;
+
+      const account = wallet.address;
+      route = `${baseRoute}/${pollID}/status/${account}`;
+
+      response = {
+        account,
+        pollID,
+        allocations,
+      };
+
+      data = await createSignedResponse(wallet, response);
+    });
+
+    test('should return the status for an account', async () => {
+      const result = await request(app)
+        .get(route)
+        .send(data);
+
+      expect(result.ok).toBe(true);
+
+      const status = result.body;
+      expect(status.responded).toBe(false);
+    });
+
+    test('should return the status for an account that has responded', async () => {
+      // respond
+      await addPollResponse(response);
+
+      // check status
+      const result = await request(app)
+        .get(route)
+        .send(data);
+
+      expect(result.ok).toBe(true);
+
+      const status = result.body;
+      expect(status.responded).toBe(true);
+    });
   });
 });
 
@@ -333,6 +383,19 @@ describe('poll utilities', () => {
 
     test.todo('it should not allow multiple allocations to the same option');
     test.todo('it should not allow multiple responses from the same account');
+
+    describe('hasAccountRespondedToPoll', () => {
+      test('it should return true if the account has responded', async () => {
+        await addPollResponse(response);
+        const responded = await hasAccountRespondedToPoll(pollID, response.account);
+        expect(responded).toBe(true);
+      });
+
+      test('it should return false if the account has not responded', async () => {
+        const responded = await hasAccountRespondedToPoll(pollID, response.account);
+        expect(responded).toBe(false);
+      });
+    });
 
     // publish an empty poll
   });

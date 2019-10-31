@@ -1,5 +1,5 @@
 import { validatePollResponseStructure } from '../utils/validation';
-import { addPollResponse, verifyPollSignature } from '../utils/polls';
+import { addPollResponse, verifyPollSignature, hasAccountRespondedToPoll } from '../utils/polls';
 
 // Return the newly created response
 export async function saveResponse(req, res) {
@@ -35,4 +35,14 @@ export async function saveResponse(req, res) {
         msg: error.message,
       });
     });
+}
+
+export async function getUserStatus(req, res) {
+  const { pollID, account } = req.params;
+  const responded = await hasAccountRespondedToPoll(pollID, account);
+
+  const status = {
+    responded,
+  };
+  return res.json(status);
 }
