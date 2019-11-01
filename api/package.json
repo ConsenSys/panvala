@@ -18,6 +18,8 @@
     "migrate": "sequelize db:migrate",
     "migrate:undo": "sequelize db:migrate:undo",
     "create-migration": "sequelize migration:generate --name",
+    "seed": "sequelize db:seed:all",
+    "poll:create": "ts-node scripts/createPoll.ts",
     "sync-events": "ts-node scripts/sync-contract-events.ts",
     "test": "jest"
   },
@@ -47,7 +49,7 @@
     "@types/express": "^4.17.1",
     "@types/jest": "^24.0.18",
     "@types/morgan": "^1.7.37",
-    "@types/node": "^12.7.11",
+    "@types/node": "^12.12.4",
     "@types/sequelize": "^4.28.6",
     "@types/supertest": "^2.0.8",
     "@types/umzug": "^2.2.2",

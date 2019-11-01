@@ -1,5 +1,12 @@
 import * as readline from 'readline';
-const { SubmittedBallot, Slate, IpfsMetadata, Request } = require('../src/models');
+const {
+  SubmittedBallot,
+  Slate,
+  IpfsMetadata,
+  Request,
+  CategoryPoll,
+  FundingCategory,
+} = require('../src/models');
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -11,6 +18,8 @@ const tables = {
   SubmittedBallot: SubmittedBallot,
   IpfsMetadata: IpfsMetadata,
   Request: Request,
+  CategoryPoll: CategoryPoll,
+  FundingCategory: FundingCategory,
 };
 
 (async function nukedb() {
