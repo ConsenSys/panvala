@@ -165,7 +165,7 @@ export async function hasAccountRespondedToPoll(pollID: number, account: string)
 }
 
 // ===== Calculations
-function ensureChecksumAddress(address: string): string {
+export function ensureChecksumAddress(address: string): string {
   return getAddress(address.toLowerCase());
 }
 

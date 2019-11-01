@@ -245,6 +245,21 @@ describe('API endpoints', () => {
       const status = result.body;
       expect(status.responded).toBe(true);
     });
+
+    test('it should return 400 if the account is invalid', async () => {
+      await addPollResponse(response);
+
+      const badAccount = '0xabc';
+      route = `${baseRoute}/${pollID}/status/${badAccount}`;
+
+      // check status
+      const result = await request(app)
+        .get(route)
+        .send(data);
+
+      expect(result.status).toBe(400);
+      expect(result.body.msg).toEqual(expect.stringContaining('Invalid Ethereum address'));
+    });
   });
 });
 

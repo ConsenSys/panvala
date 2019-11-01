@@ -5,6 +5,7 @@ import {
   hasAccountRespondedToPoll,
   IPollData,
   IDBPollResponse,
+  ensureChecksumAddress,
 } from '../utils/polls';
 
 // Return the newly created response
@@ -44,6 +45,7 @@ export async function saveResponse(req, res) {
       return res.json(savedResponse);
     })
     .catch(error => {
+      console.error(error);
       return res.status(400).json({
         msg: error.message,
       });
@@ -51,11 +53,29 @@ export async function saveResponse(req, res) {
 }
 
 export async function getUserStatus(req, res) {
-  const { pollID, account } = req.params;
-  const responded = await hasAccountRespondedToPoll(pollID, account);
+  const { pollID } = req.params;
+  let { account } = req.params;
 
-  const status = {
-    responded,
-  };
-  return res.json(status);
+  try {
+    account = ensureChecksumAddress(account);
+  } catch (error) {
+    console.error(error);
+    return res.status(400).json({
+      msg: `Invalid Ethereum address '${account}'`,
+    });
+  }
+
+  return hasAccountRespondedToPoll(pollID, account)
+    .then(responded => {
+      const status = {
+        responded,
+      };
+      return res.json(status);
+    })
+    .catch(error => {
+      console.error(error);
+      return res.status(500).json({
+        msg: error.message,
+      });
+    });
 }
