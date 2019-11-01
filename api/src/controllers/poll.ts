@@ -1,10 +1,14 @@
 import { validatePollResponseStructure } from '../utils/validation';
-import { addPollResponse, verifyPollSignature, hasAccountRespondedToPoll } from '../utils/polls';
+import {
+  addPollResponse,
+  verifyPollSignature,
+  hasAccountRespondedToPoll,
+  IPollData,
+  IDBPollResponse,
+} from '../utils/polls';
 
 // Return the newly created response
 export async function saveResponse(req, res) {
-  //
-  const { response } = req.body;
   const valid = validatePollResponseStructure(req.body);
 
   if (!valid) {
@@ -18,15 +22,24 @@ export async function saveResponse(req, res) {
     });
   }
 
+  const data: IPollData = req.body;
+  const { response, signature } = data;
+  const { pollID } = req.params;
+
+  const responseToSave: IDBPollResponse = {
+    ...response,
+    pollID,
+  };
+
   // Validate signature
-  const validSignature = await verifyPollSignature(req.body);
+  const validSignature = await verifyPollSignature(signature, responseToSave);
   if (!validSignature) {
     return res.status(403).json({
       msg: 'Signature does not match account',
     });
   }
 
-  return addPollResponse(response)
+  return addPollResponse(responseToSave)
     .then(savedResponse => {
       return res.json(savedResponse);
     })

@@ -13,11 +13,6 @@
     "response": {
       "type": "object",
       "properties": {
-        "pollID": {
-          "type": "number",
-          "$comment": "Non-zero integer",
-          "pattern": "^[1-9]+"
-        },
         "account": {
           "type": "string",
           "address": true
@@ -38,7 +33,8 @@
           }
         }
       },
-      "required": ["account", "pollID", "allocations"]
+      "additionalProperties": false,
+      "required": ["account", "allocations"]
     },
     "signature": {
       "type": "string",

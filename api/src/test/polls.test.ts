@@ -14,6 +14,7 @@ import {
   responseCount,
   ICategoryAllocation,
   IPollResponse,
+  IDBPollResponse,
   createSignedResponse,
   hasAccountRespondedToPoll,
 } from '../utils/polls';
@@ -90,11 +91,10 @@ describe('API endpoints', () => {
 
       response = {
         account: wallet.address,
-        pollID,
         allocations,
       };
 
-      data = await createSignedResponse(wallet, response);
+      data = await createSignedResponse(wallet, { ...response, pollID });
     });
 
     test('should create a poll response', async () => {
@@ -199,7 +199,7 @@ describe('API endpoints', () => {
     let pollID: number;
     let route: string;
     let data: IPollData;
-    let response: IPollResponse;
+    let response: IDBPollResponse;
     let wallet;
 
     beforeEach(async () => {
@@ -333,7 +333,7 @@ describe('poll utilities', () => {
   describe('active poll', () => {
     let pollID: number;
     let poll;
-    let response: IPollResponse;
+    let response: IDBPollResponse;
 
     beforeEach(async () => {
       poll = await createPoll('Poll', categoryNames);

@@ -124,7 +124,6 @@ export interface IPollData {
 
 export interface IPollResponse {
   account: string;
-  pollID: number;
   allocations: ICategoryAllocation[];
 }
 
@@ -133,14 +132,18 @@ export interface ICategoryAllocation {
   points: number;
 }
 
+export interface IDBPollResponse extends IPollResponse {
+  pollID: number;
+}
+
 /**
  * Add a response to an existing poll
  * allocations must match the poll options
  * @param response
  * @returns newly created response
  */
-export async function addPollResponse(response: IPollResponse) {
-  const sanitizedResponse: IPollResponse = response;
+export async function addPollResponse(response: IDBPollResponse) {
+  const sanitizedResponse: IDBPollResponse = response;
   sanitizedResponse.account = ensureChecksumAddress(response.account);
 
   return CategoryPollResponse.create(sanitizedResponse, {
@@ -166,14 +169,13 @@ function ensureChecksumAddress(address: string): string {
   return getAddress(address.toLowerCase());
 }
 
-function generateMessage(response: IPollResponse): string {
+function generateMessage(response: IDBPollResponse): string {
   // Always use checksum address in the message
   const account = ensureChecksumAddress(response.account);
   return `Response from ${account} for poll ID ${response.pollID}`;
 }
 
-export async function verifyPollSignature(data: IPollData) {
-  const { signature, response } = data;
+export async function verifyPollSignature(signature: string, response: IDBPollResponse) {
   const { account } = response;
 
   const message = generateMessage(response);
@@ -183,7 +185,7 @@ export async function verifyPollSignature(data: IPollData) {
   return ensureChecksumAddress(recoveredAddress) === ensureChecksumAddress(account);
 }
 
-export async function signResponse(wallet: Wallet, response: IPollResponse): Promise<string> {
+export async function signResponse(wallet: Wallet, response: IDBPollResponse): Promise<string> {
   const message = generateMessage(response);
   // console.log(`signing message '${message}'`);
   return wallet.signMessage(message);
@@ -191,10 +193,11 @@ export async function signResponse(wallet: Wallet, response: IPollResponse): Pro
 
 export async function createSignedResponse(
   wallet: Wallet,
-  response: IPollResponse
+  response: IDBPollResponse
 ): Promise<IPollData> {
   return signResponse(wallet, response).then(signature => {
     // console.log('signed', signature);
-    return { response, signature };
+    const { account, allocations } = response;
+    return { response: { account, allocations }, signature };
   });
 }
