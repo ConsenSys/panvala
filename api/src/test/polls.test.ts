@@ -117,6 +117,29 @@ describe('API endpoints', () => {
       expect(numResponses).toBe(1);
     });
 
+    test('it should return 404 if the poll does not exist', async () => {
+      const badPollID = 9999;
+      route = `${baseRoute}/${badPollID}`;
+
+      // check status
+      const result = await request(app)
+        .post(route)
+        .send(data);
+
+      expect(result.status).toBe(404);
+    });
+
+    test('it should return 404 if the poll ID is invalid', async () => {
+      const badPollID = 'x';
+      route = `${baseRoute}/${badPollID}`;
+
+      const result = await request(app)
+        .post(route)
+        .send(data);
+
+      expect(result.status).toBe(404);
+    });
+
     // invalid shape
     describe('invalid shape', () => {
       const requiredFields = ['signature', 'response'];
@@ -192,6 +215,61 @@ describe('API endpoints', () => {
       expect(result.status).toBe(400);
       expect(result.body.msg).toEqual(expect.stringContaining('add up to 100'));
     });
+
+    const categoryIDTests = [
+      ['are not numbers', 'x'],
+      ['are not integers', 1.1],
+      ['are less than 1', 0],
+      ['are negative integers', -20],
+    ];
+
+    test.each(categoryIDTests)(
+      'should reject the response if any of the category IDs %s',
+      async (_, badValue: number) => {
+        data.response.allocations = [
+          { categoryID: badValue, points: 34 },
+          { categoryID: 2, points: 5 },
+          { categoryID: 3, points: 16 },
+          { categoryID: 4, points: 4 },
+          { categoryID: 5, points: 4 },
+          { categoryID: 6, points: 37 },
+        ];
+
+        const result = await request(app)
+          .post(route)
+          .send(data);
+
+        expect(result.status).toBe(400);
+      }
+    );
+
+    const pointsTests = [
+      ['are not numbers', 'x'],
+      ['are not integers', 1.1],
+      ['are negative integers', -20],
+      ['are greater than 100', 101],
+    ];
+
+    test.each(pointsTests)(
+      'should reject the response if any of the points %s',
+      async (_, badValue: number) => {
+        data.response.allocations = [
+          { categoryID: 1, points: badValue },
+          { categoryID: 2, points: 5 },
+          { categoryID: 3, points: 16 },
+          { categoryID: 4, points: 4 },
+          { categoryID: 5, points: 4 },
+          { categoryID: 6, points: 37 },
+        ];
+
+        const result = await request(app)
+          .post(route)
+          .send(data);
+
+        expect(result.status).toBe(400);
+        expect(result.body.msg).toEqual(expect.stringContaining('Invalid poll response'));
+      }
+    );
   });
 
   describe('GET /api/polls/:pollID/status/:account', () => {
@@ -220,7 +298,7 @@ describe('API endpoints', () => {
       data = await createSignedResponse(wallet, response);
     });
 
-    test('should return the status for an account', async () => {
+    test('should return the status for an account that has not responded', async () => {
       const result = await request(app)
         .get(route)
         .send(data);
@@ -246,7 +324,7 @@ describe('API endpoints', () => {
       expect(status.responded).toBe(true);
     });
 
-    test('it should return 400 if the account is invalid', async () => {
+    test('it should return 404 if the account is invalid', async () => {
       await addPollResponse(response);
 
       const badAccount = '0xabc';
@@ -257,8 +335,19 @@ describe('API endpoints', () => {
         .get(route)
         .send(data);
 
-      expect(result.status).toBe(400);
-      expect(result.body.msg).toEqual(expect.stringContaining('Invalid Ethereum address'));
+      expect(result.status).toBe(404);
+    });
+
+    test('it should return 404 if the poll does not exist', async () => {
+      const badPollID = 9999;
+      route = `${baseRoute}/${badPollID}/status/${wallet.address}`;
+
+      // check status
+      const result = await request(app)
+        .get(route)
+        .send(data);
+
+      expect(result.status).toBe(404);
     });
   });
 });
