@@ -6,9 +6,13 @@ module.exports = (sequelize, DataTypes) => {
   const CategoryPollResponse = sequelize.define(
     'CategoryPollResponse',
     {
-      pollID: DataTypes.INTEGER,
+      pollID: {
+        type: DataTypes.INTEGER,
+        unique: 'singlePollResponsePerAccount',
+      },
       account: {
         type: DataTypes.STRING,
+        unique: 'singlePollResponsePerAccount',
         validate: {
           notEmpty: true,
         },

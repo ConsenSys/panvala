@@ -42,10 +42,6 @@
     "signature": {
       "type": "string",
       "signature": true
-    },
-    "commitHash": {
-      "type": "string",
-      "pattern": "^0x[a-fA-F0-9]+$"
     }
   },
   "required": ["response", "signature"]

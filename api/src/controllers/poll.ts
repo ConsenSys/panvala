@@ -55,6 +55,13 @@ export async function saveResponse(req, res) {
     })
     .catch(error => {
       console.error(error);
+
+      if (error.name === 'SequelizeUniqueConstraintError') {
+        return res.status(403).json({
+          msg: error.message,
+        });
+      }
+
       return res.status(400).json({
         msg: error.message,
       });

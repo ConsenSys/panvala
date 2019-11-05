@@ -140,6 +140,17 @@ describe('API endpoints', () => {
       expect(result.status).toBe(404);
     });
 
+    test('it should return 403 if the account has already responded to the poll', async () => {
+      await addPollResponse({ ...data.response, pollID });
+
+      const result = await request(app)
+        .post(route)
+        .send(data);
+
+      console.log(result.body);
+      expect(result.status).toBe(403);
+    });
+
     // invalid shape
     describe('invalid shape', () => {
       const requiredFields = ['signature', 'response'];
@@ -486,7 +497,12 @@ describe('poll utilities', () => {
     });
 
     test.todo('it should not allow multiple allocations to the same option');
-    test.todo('it should not allow multiple responses from the same account');
+
+    test('it should not allow multiple responses from the same account', async () => {
+      await addPollResponse(response);
+
+      await expect(addPollResponse(response)).rejects.toThrow();
+    });
 
     describe('hasAccountRespondedToPoll', () => {
       test('it should return true if the account has responded', async () => {
