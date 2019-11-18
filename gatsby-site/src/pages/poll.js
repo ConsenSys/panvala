@@ -467,22 +467,25 @@ const Poll = () => {
       </section>
 
       {/* Fund work that matters */}
-      <section className="cf w-100 ph6 bottom-clip-down bg-white flex justify-between items-center">
-        <div className="w-100 w-25-ns pa2 dib">
-          <img src={pollTwo} className="center" />
-        </div>
-        <div className="w-100 w-50-ns pa2 dib">
-          <h2>Fund work that matters</h2>
-          <p className="lh-copy">
-            PAN tokens have been granted to teams that the whole Ethereum community depends on. The
-            more tokens you acquire to vote, the more work those teams can fund with their tokens.
-          </p>
-          <Button
-            handleClick={connectWallet}
-            bg={account ? '#2138B7' : '#46B0AA'}
-            text={account ? 'Wallet connected!' : 'Connect your wallet'}
-          />
-        </div>
+      <section className="cf w-100 bottom-clip-down bg-white flex justify-between items-center">
+        <Box p={['3rem', '2rem']} mb={['1rem', '0']} flex alignItems="center" justifyContent="space-around">
+          <div className="w-100 w-25-ns dn dib-ns">
+            <img src={pollTwo} className="center" />
+          </div>
+          <div className="w-100 w-50-ns dib">
+            <h2>Fund work that matters</h2>
+            <p className="lh-copy">
+              PAN tokens have been granted to teams that the whole Ethereum community depends on.
+              The more tokens you acquire to vote, the more work those teams can fund with their
+              tokens.
+            </p>
+            <Button
+              handleClick={connectWallet}
+              bg={account ? '#2138B7' : '#46B0AA'}
+              text={account ? 'Wallet connected!' : 'Connect your wallet'}
+            />
+          </div>
+        </Box>
       </section>
 
       {/* Ballot */}
@@ -573,7 +576,7 @@ const Poll = () => {
                 </Box>
               </div>
 
-              <Box flex justifyContent="center" my={3}>
+              <Box flex justifyContent="center" my={3} p={3}>
                 Please distribute 100 percentage points between the following categories:
               </Box>
 
