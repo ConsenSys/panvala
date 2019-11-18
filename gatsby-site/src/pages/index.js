@@ -111,7 +111,7 @@ const IndexPage = () => {
             <img src={sustFund2} className="center w-75-ns" />
             <h3 className="f4 ma0 mt5-ns mt3 mb2">The new way</h3>
             <p className="ma0 f6 lh-text">
-              Fund work with grants of pan, the token of Panvala. Since donations are made in pan as
+              Fund work with grants of PAN, the token of Panvala. Since donations are made in PAN as
               well, we all have an incentive to recruit more donors!
             </p>
           </div>

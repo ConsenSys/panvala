@@ -63,7 +63,7 @@ const Grants = () => {
         {/* <!-- Hero --> */}
         <div className="w-70-l w-80-m w-90 center tc pv5">
           <h1 className="white f1-5 b ma0 mb3 w-50-l w-100 center">
-            We are funding Ethereum’s future.
+            Make Ethereum sustainable.
           </h1>
           <p className="white-60 f5 fw4 lh-copy ma0 mb4 w-50-l w-100 center">
             Every 3 months, Panvala Token Grants are awarded to teams doing the work the Ethereum
@@ -80,7 +80,7 @@ const Grants = () => {
       </section>
 
       {/* <!-- Batch 4 --> */}
-      <div className="mv5 relative">
+      {/* <div className="mv5 relative">
         <img src={grantsShapes} className="absolute z-0 nt6-l nt0-m mt4-m db-ns dn" />
         <section className="w-70-l w-80-m w-90 center tc relative z-1 pt5">
           <h2 className="f2-5 ma0 mb3">
@@ -99,7 +99,7 @@ const Grants = () => {
             </button>
           </a>
         </section>
-      </div>
+      </div> */}
 
       {/* <!-- Batch 3 --> */}
       <section className="w-70-l w-80-m w-90 center tc mv6">
@@ -487,7 +487,7 @@ const Grants = () => {
                     <h4 className="f6 fw7 ma0">Batch 2 Grant Recommendations</h4>
                     <h5 className="f7 fw7 blue ma0 mt3">84,798 PAN</h5>
                     <p className="ma0 f7 lh-text mt3">
-                      A proposal to make Ethereum safer by recommending token grantapplications.
+                      A proposal to make Ethereum safer by recommending token grant applications.
                     </p>
                   </div>
                   <div>
@@ -731,10 +731,35 @@ const Grants = () => {
               </div>
               <div className="pa4 flex flex-column justify-between h6 bg-white">
                 <div>
-                  <h4 className="f6 fw7 ma0">Batch 2 Grant Recommendations</h4>
-                  <h5 className="f7 fw7 blue ma0 mt3">100,000 PAN</h5>
+                  <h4 className="f6 fw7 ma0">Batch One Grant Recommendations</h4>
+                  <h5 className="f7 fw7 blue ma0 mt3">75,000 PAN</h5>
                   <p className="ma0 f7 lh-text mt3">
-                    A proposal to make Ethereum safer by recommending token grantapplications.
+                    A proposal to make Ethereum safer by recommending token grant applications.
+                  </p>
+                </div>
+                <div>
+                  <a
+                    href="https://medium.com/@Panvala/twelve-grants-awarded-in-batch-one-of-panvala-token-grants-59b8df7422fe"
+                    target="_blank"
+                    className="link dim blue f7 fw7"
+                  >
+                    View website
+                  </a>
+                </div>
+              </div>
+            </div>
+          </section>
+          <section className="w-33-l w-50-m w-100 pa3">
+            <div className="shadow-card br3 tl overflow-hidden">
+              <div className="h4 w-100 tc v-mid dtc bg-white">
+                <img src={teamPanvala} className="w-100 center" />
+              </div>
+              <div className="pa4 flex flex-column justify-between h6 bg-white">
+                <div>
+                  <h4 className="f6 fw7 ma0">Panvala Mark Recommendation</h4>
+                  <h5 className="f7 fw7 blue ma0 mt3">75,000 PAN</h5>
+                  <p className="ma0 f7 lh-text mt3">
+                    A proposal to make Ethereum safer by recommending Panvala Mark applications
                   </p>
                 </div>
                 <div>

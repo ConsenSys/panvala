@@ -246,8 +246,8 @@ const Donate = () => {
             <h2 className="f2-5 ma0 mv3 lh-copy">Patron Tiers</h2>
             <p className="ma0 f6 lh-text mb3">
               Becoming a Panvala Patron helps sustain the work the Ethereum ecosystem depends on.
-              When you become a patron, we'll add your name to the growing list of patrons on
-              Panvala.com. We believe that everyone who does their part to fulfill the Ethereum
+              When you become a patron, your name will be added to the growing list of patrons on
+              Panvala.com. Everyone who does their part to fulfill the Ethereum
               vision should be recognized for it.
             </p>
           </div>
