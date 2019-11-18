@@ -178,6 +178,12 @@ const Poll = () => {
     if (typeof window !== 'undefined' && typeof window.ethereum !== 'undefined') {
       if (typeof provider === 'undefined') {
         const p = new providers.Web3Provider(window.ethereum);
+        const network = await p.getNetwork();
+        if (network.chainId !== 1) {
+          alert('Please connect to the Main Network to continue.');
+          return;
+        }
+
         setProvider(p);
         const acct = (await p.listAccounts())[0];
         return acct;
@@ -587,7 +593,7 @@ const Poll = () => {
                       <div key={identifier} className="cf pa3 bb bw-2 b--black-10">
                         <div className="fl w-80 pa2 pr4">
                           <div className="f4 b">{title}</div>
-                          <p dangerouslySetInnerHTML={{__html: description}}></p>
+                          <p dangerouslySetInnerHTML={{ __html: description }}></p>
                         </div>
                         <div className="fl w-20 pa2 f5 tr">
                           <div className="b ttu f6 o-50">previous batch</div>
