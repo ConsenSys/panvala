@@ -13,9 +13,9 @@ import home4p1 from '../img/home-4.1.png';
 import whitepaper from '../img/docs/Panvala Whitepaper (September 16).pdf';
 
 const Resources = () => {
-  const whitepaperRef = useRef(null)
-  const blogRef = useRef(null)
-  const faqRef = useRef(null)
+  const whitepaperRef = useRef(null);
+  const blogRef = useRef(null);
+  const faqRef = useRef(null);
 
   useEffect(() => {
     if (whitepaperRef.current != null && window.location.href.includes('#resources-whitepaper')) {
@@ -27,7 +27,7 @@ const Resources = () => {
     if (faqRef.current != null && window.location.href.includes('#resources-faq')) {
       faqRef.current.scrollIntoView();
     }
-  }, [whitepaperRef.current, blogRef.current, faqRef.current]);
+  }, []);
 
   return (
     <Layout>
@@ -46,16 +46,12 @@ const Resources = () => {
       </section>
 
       {/* <!-- Whitepaper --> */}
-      <section
-        id="resources-whitepaper"
-        ref={whitepaperRef}
-        className="center tc mv6-ns mv4"
-      >
+      <section id="resources-whitepaper" ref={whitepaperRef} className="center tc mv6-ns mv4">
         <div className="dt w-70-l w-80-m w-90 center">
           <div className="dtc-ns w-50-ns v-mid">
-            <img src={home4p1} className="absolute w-30-ns w-75 nt5-ns nt3 nl4-ns nl5" />
-            <img src={resources1} className="full-clip-up-sm relative z-1" />
-            <img src={home1p1} className="absolute w-auto-ns w-10-ns db nr5-ns nt6 z-2" />
+            <img alt="" src={home4p1} className="absolute w-30-ns w-75 nt5-ns nt3 nl4-ns nl5" />
+            <img alt="" src={resources1} className="full-clip-up-sm relative z-1" />
+            <img alt="" src={home1p1} className="absolute w-auto-ns w-10-ns db nr5-ns nt6 z-2" />
           </div>
           <div className="dtc-ns w-50-ns v-mid tl pl4-ns mt0-ns mt4">
             <h2 className="f2-5 ma0 mv3 lh-copy">Want to learn more about our vision?</h2>
@@ -69,7 +65,7 @@ const Resources = () => {
               patron, but we encourage you to read our whitepaper if you'd like to understand the
               system better.
             </p>
-            <a href={whitepaper} target="_blank" download>
+            <a href={whitepaper} target="_blank" download rel="noopener noreferrer">
               <button className="f6 link dim bn br-pill pv3 ph4 white bg-teal fw7 mt4 pointer">
                 Read the whitepaper
               </button>
@@ -88,7 +84,12 @@ const Resources = () => {
               funding for Ethereum projects. Here are some articles we wrote to better understand
               our progress and vision.
             </p>
-            <a href="https://medium.com/@panvala" target="_blank" className="link dim blue f6 fw7">
+            <a
+              href="https://medium.com/@panvala"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="link dim blue f6 fw7"
+            >
               Visit our blog
             </a>
           </div>
@@ -96,7 +97,7 @@ const Resources = () => {
             <section className="dtc-ns pa3-ns pv3 w-33-ns w-100">
               <div className="shadow-card br3 tl overflow-hidden">
                 <div className="h4 w-100 tc v-mid dtc bg-white">
-                  <img src={resourcesBlog1} className="w-100 center h4" />
+                  <img alt="" src={resourcesBlog1} className="w-100 center h4" />
                 </div>
                 <div className="pa4 flex flex-column justify-between h6 bg-white">
                   <div>
@@ -110,6 +111,7 @@ const Resources = () => {
                     <a
                       href="https://medium.com/@Panvala/blockchain-lean-startup-the-critical-formula-292dd1b8a90d"
                       target="_blank"
+                      rel="noopener noreferrer"
                       className="link dim blue f7 fw7"
                     >
                       Read now
@@ -121,7 +123,7 @@ const Resources = () => {
             <section className="dtc-ns pa3-ns pv3 w-33-ns w-100">
               <div className="shadow-card br3 tl overflow-hidden">
                 <div className="h4 w-100 tc v-mid dtc bg-white">
-                  <img src={resourcesBlog2} className="w-100 center h4" />
+                  <img alt="" src={resourcesBlog2} className="w-100 center h4" />
                 </div>
                 <div className="pa4 flex flex-column justify-between h6 bg-white">
                   <div>
@@ -135,6 +137,7 @@ const Resources = () => {
                     <a
                       href="https://medium.com/@Panvala/radicalxchange-and-rent-conscious-organizing-3da3837e34c1"
                       target="_blank"
+                      rel="noopener noreferrer"
                       className="link dim blue f7 fw7"
                     >
                       Read now
@@ -146,7 +149,7 @@ const Resources = () => {
             <section className="dtc-ns pa3-ns pv3 w-33-ns w-100">
               <div className="shadow-card br3 tl overflow-hidden">
                 <div className="h4 w-100 tc v-mid dtc bg-white">
-                  <img src={resourcesBlog3} className="w-100 center h4" />
+                  <img alt="" src={resourcesBlog3} className="w-100 center h4" />
                 </div>
                 <div className="pa4 flex flex-column justify-between h6 bg-white">
                   <div>
@@ -160,6 +163,7 @@ const Resources = () => {
                     <a
                       href="https://medium.com/@Panvala/niran-babalola-making-progress-the-status-quo-1d92af12b352"
                       target="_blank"
+                      rel="noopener noreferrer"
                       className="link dim blue f7 fw7"
                     >
                       Read now
@@ -346,6 +350,7 @@ const Resources = () => {
                   <a
                     href="https://github.com/ConsenSys/panvala"
                     target="_blank"
+                    rel="noopener noreferrer"
                     className="blue dim link"
                   >
                     {' GitHub repository '}
@@ -389,6 +394,7 @@ const Resources = () => {
                   <a
                     href="https://disputes.panvala.com/slates"
                     target="_blank"
+                    rel="noopener noreferrer"
                     className="blue dim link"
                   >
                     {' Disputes App '}
@@ -397,6 +403,7 @@ const Resources = () => {
                   <a
                     href="https://github.com/ConsenSys/panvala"
                     target="_blank"
+                    rel="noopener noreferrer"
                     className="blue dim link"
                   >
                     {' open-sourced '}

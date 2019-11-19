@@ -16,7 +16,7 @@ export default function Nav({ account, balance, handleClick }) {
           href="/"
           title="Home"
         >
-          <img src={logoTeal} className="dib w-60-l w-100-m w-60" />
+          <img alt="" src={logoTeal} className="dib w-60-l w-100-m w-60" />
         </a>
         <div className="dtc-ns db v-mid tc center w-50-ns w-100">
           <a href="/grants" className="link dim white-60 f6 fw6 dib mr3">
@@ -31,6 +31,7 @@ export default function Nav({ account, balance, handleClick }) {
           <a
             href="https://forum.panvala.com"
             target="_blank"
+            rel="noopener noreferrer"
             className="link dim white-60 f6 fw6 dib mr3"
           >
             Forum
@@ -47,6 +48,7 @@ export default function Nav({ account, balance, handleClick }) {
                   <a
                     href={`https://etherscan.io/token/0xd56dac73a4d6766464b38ec6d91eb45ce7457c44?a=${account}`}
                     target="_blank"
+                    rel="noopener noreferrer"
                     className="link"
                   >
                     <Box color="white" fontWeight="bold">
@@ -56,6 +58,7 @@ export default function Nav({ account, balance, handleClick }) {
                   <a
                     href={`https://etherscan.io/address/${account}`}
                     target="_blank"
+                    rel="noopener noreferrer"
                     className="link"
                   >
                     <Box color="#dadada">{account.slice(0, 8) + '...'}</Box>
@@ -65,6 +68,7 @@ export default function Nav({ account, balance, handleClick }) {
                   <a
                     href={`https://etherscan.io/address/${account}`}
                     target="_blank"
+                    rel="noopener noreferrer"
                     className="link"
                   >
                     <Identicon address={account} diameter={28} />

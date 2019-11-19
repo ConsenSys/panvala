@@ -176,10 +176,10 @@ const Donate = () => {
       <section className="center tc">
         <div className="dt mt5 w-70-l w-80-m w-90 center">
           <div className="dn-ns">
-            <img src={home1p2} className="absolute nt5" />
-            <img src={home3p1} className="absolute" />
-            <img src={home1p1} className="absolute nt5" />
-            <img src={donate1} className="full-clip-up-sm relative z-1" />
+            <img alt="" src={home1p2} className="absolute nt5" />
+            <img alt="" src={home3p1} className="absolute" />
+            <img alt="" src={home1p1} className="absolute nt5" />
+            <img alt="" src={donate1} className="full-clip-up-sm relative z-1" />
           </div>
           <div className="dtc-ns w-50-ns v-mid tl-ns tc pr4-ns mt0-ns mt4">
             <h2 className="f2-5 ma0 mv3 lh-copy">
@@ -195,16 +195,20 @@ const Donate = () => {
             </a>
           </div>
           <div className="dtc-ns dn w-50 v-mid">
-            <img src={home1p2} className="absolute mt2 ml6-l w-auto-ns w-30-l db-l dn-m db" />
-            <img src={donate1} className="full-clip-up-sm relative z-1" />
+            <img
+              alt=""
+              src={home1p2}
+              className="absolute mt2 ml6-l w-auto-ns w-30-l db-l dn-m db"
+            />
+            <img alt="" src={donate1} className="full-clip-up-sm relative z-1" />
           </div>
-          <img src={home3p1} className="absolute nl6 nt5-l nt0-m mt5 w-auto-ns w-10" />
-          <img src={home1p1} className="absolute nl6 nt5-l nt0-m mt5 w-auto-ns w-10" />
+          <img alt="" src={home3p1} className="absolute nl6 nt5-l nt0-m mt5 w-auto-ns w-10" />
+          <img alt="" src={home1p1} className="absolute nl6 nt5-l nt0-m mt5 w-auto-ns w-10" />
         </div>
       </section>
 
       {/* <!-- Our Patrons --> */}
-      <img src={donateShapes} className="absolute z-0 mt6 ml6-l" />
+      <img alt="" src={donateShapes} className="absolute z-0 mt6 ml6-l" />
       <section className="bg-white w-70-l w-80-m w-90 center tc br4 pa5 shadow mt6 db-ns dn relative z-1">
         <h2 className="f2-5 ma0 tc w-50-l center">Our Founding Patrons support Ethereum</h2>
         <div className="flex flex-wrap center mt4">
@@ -240,7 +244,7 @@ const Donate = () => {
       <section className="center tc">
         <div className="dt mt6-ns mt5 w-70-l w-80-m w-90 center">
           <div className="dn-ns db">
-            <img src={patronTiers} />
+            <img alt="" src={patronTiers} />
           </div>
           <div className="dtc-ns w-50-ns v-mid tl pr4-ns mt0-ns mt3">
             <h2 className="f2-5 ma0 mv3 lh-copy">Patron Tiers</h2>
@@ -252,12 +256,12 @@ const Donate = () => {
             </p>
           </div>
           <div className="dtc-ns dn w-50 v-mid tr">
-            <img src={patronTiers} className="w-70-l" />
+            <img alt="" src={patronTiers} className="w-70-l" />
           </div>
         </div>
         <div className="dt mt6 w-70-l w-80-m w-90 center">
           <div className="dtc-ns w-50-ns v-mid tl-ns">
-            <img src={advisorTiers} className="w-70-l" />
+            <img alt="" src={advisorTiers} className="w-70-l" />
           </div>
           <div className="dtc-ns w-50-ns v-mid tl pl4-ns mt0-ns mt3">
             <h2 className="f2-5 ma0 mv3 lh-copy">Advisor Patrons</h2>
@@ -342,7 +346,7 @@ const Donate = () => {
                 <option value="500">{`Ether Advisor — $500/month (${eps.ethe} ETH)`}</option>
                 <option value="1500">{`Elite Advisor — $1500/month (${eps.elit} ETH)`}</option>
               </select>
-              <img src={arrowSvg} className="fr mr2 o-50" style={{ marginTop: '-35px' }} />
+              <img alt="" src={arrowSvg} className="fr mr2 o-50" style={{ marginTop: '-35px' }} />
               <div className="tl mt4">
                 <label className="ma0 f6 mb3 black-40">
                   How many months of your pledge will you prepay today?
@@ -363,7 +367,7 @@ const Donate = () => {
                 <option value="6">6 months</option>
                 <option value="12">12 months</option>
               </select>
-              <img src={arrowSvg} className="fr mr2 o-50" style={{ marginTop: '-35px' }} />
+              <img alt="" src={arrowSvg} className="fr mr2 o-50" style={{ marginTop: '-35px' }} />
 
               <Donation />
             </form>

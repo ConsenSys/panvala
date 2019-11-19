@@ -79,7 +79,7 @@ const Grants = () => {
 
       {/* <!-- Batch 4 --> */}
       {/* <div className="mv5 relative">
-        <img src={grantsShapes} className="absolute z-0 nt6-l nt0-m mt4-m db-ns dn" />
+        <img alt="" src={grantsShapes} className="absolute z-0 nt6-l nt0-m mt4-m db-ns dn" />
         <section className="w-70-l w-80-m w-90 center tc relative z-1 pt5">
           <h2 className="f2-5 ma0 mb3">
             Batch Four
@@ -91,7 +91,7 @@ const Grants = () => {
             Grants. Using our beta, the entire Ethereum community can vote on which projects should
             receive a PAN token grant. The list of grant proposals is available to the public.
           </p>
-          <a href="https://disputes.panvala.com/slates" target="_blank">
+          <a href="https://disputes.panvala.com/slates" target="_blank" rel="noopener noreferrer">
             <button className="f6 link dim bn br-pill pv3 ph4 white bg-teal fw7 pointer">
               Explore the App
             </button>
@@ -115,7 +115,7 @@ const Grants = () => {
           <section className="w-33-l w-50-m w-100 pa3">
             <div className="shadow-card br3 tl overflow-hidden">
               <div className="bg-gray h4 w-100 tc v-mid dtc">
-                <img src={teamGitcoin} className="w-75 center" />
+                <img alt="" src={teamGitcoin} className="w-75 center" />
               </div>
               <div className="pa4 flex flex-column justify-between h6 bg-white">
                 <div>
@@ -126,7 +126,12 @@ const Grants = () => {
                   </p>
                 </div>
                 <div>
-                  <a href="https://gitcoin.co/" target="_blank" className="link dim blue f7 fw7">
+                  <a
+                    href="https://gitcoin.co/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="link dim blue f7 fw7"
+                  >
                     View website
                   </a>
                 </div>
@@ -136,7 +141,7 @@ const Grants = () => {
           <section className="w-33-l w-50-m w-100 pa3">
             <div className="shadow-card br3 tl overflow-hidden">
               <div className="bg-gray h4 w-100 tc v-mid dtc">
-                <img src={teamPlasmaGroup} className="w-100 center" />
+                <img alt="" src={teamPlasmaGroup} className="w-100 center" />
               </div>
               <div className="pa4 flex flex-column justify-between h6 bg-white">
                 <div>
@@ -148,7 +153,12 @@ const Grants = () => {
                   </p>
                 </div>
                 <div>
-                  <a href="https://plasma.group/" target="_blank" className="link dim blue f7 fw7">
+                  <a
+                    href="https://plasma.group/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="link dim blue f7 fw7"
+                  >
                     View website
                   </a>
                 </div>
@@ -158,7 +168,7 @@ const Grants = () => {
           <section className="w-33-l w-50-m w-100 pa3">
             <div className="shadow-card br3 tl overflow-hidden">
               <div className="h4 w-100 tc v-mid dtc bg-white">
-                <img src={teamNimbus} className="w-100 center" />
+                <img alt="" src={teamNimbus} className="w-100 center" />
               </div>
               <div className="pa4 flex flex-column justify-between h6 bg-white">
                 <div>
@@ -173,6 +183,7 @@ const Grants = () => {
                   <a
                     href="https://our.status.im/tag/nimbus/"
                     target="_blank"
+                    rel="noopener noreferrer"
                     className="link dim blue f7 fw7"
                   >
                     View website
@@ -184,7 +195,7 @@ const Grants = () => {
           <section className="w-33-l w-50-m w-100 pa3">
             <div className="shadow-card br3 tl overflow-hidden">
               <div className="h4 w-100 tc v-mid dtc bg-white">
-                <img src={teamRuntime} className="w-100 center" />
+                <img alt="" src={teamRuntime} className="w-100 center" />
               </div>
               <div className="pa4 flex flex-column justify-between h6 bg-white">
                 <div>
@@ -199,6 +210,7 @@ const Grants = () => {
                   <a
                     href="https://runtimeverification.com/"
                     target="_blank"
+                    rel="noopener noreferrer"
                     className="link dim blue f7 fw7"
                   >
                     View website
@@ -210,7 +222,7 @@ const Grants = () => {
           <section className="w-33-l w-50-m w-100 pa3">
             <div className="shadow-card br3 tl overflow-hidden">
               <div className="h4 w-100 tc v-mid dtc bg-white">
-                <img src={teamTenderly} className="w-100 center" />
+                <img alt="" src={teamTenderly} className="w-100 center" />
               </div>
               <div className="pa4 flex flex-column justify-between h6 bg-white">
                 <div>
@@ -222,7 +234,12 @@ const Grants = () => {
                   </p>
                 </div>
                 <div>
-                  <a href="https://tenderly.dev/" target="_blank" className="link dim blue f7 fw7">
+                  <a
+                    href="https://tenderly.dev/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="link dim blue f7 fw7"
+                  >
                     View website
                   </a>
                 </div>
@@ -232,7 +249,7 @@ const Grants = () => {
           <section className="w-33-l w-50-m w-100 pa3">
             <div className="shadow-card br3 tl overflow-hidden">
               <div className="h4 w-100 tc v-mid dtc bg-white">
-                <img src={teamBrightId} className="w-100 center" />
+                <img alt="" src={teamBrightId} className="w-100 center" />
               </div>
               <div className="pa4 flex flex-column justify-between h6 bg-white">
                 <div>
@@ -247,6 +264,7 @@ const Grants = () => {
                   <a
                     href="https://www.brightid.org/"
                     target="_blank"
+                    rel="noopener noreferrer"
                     className="link dim blue f7 fw7"
                   >
                     View website
@@ -258,7 +276,7 @@ const Grants = () => {
           <section className="w-33-l w-50-m w-100 pa3">
             <div className="shadow-card br3 tl overflow-hidden">
               <div className="h4 w-100 tc v-mid dtc bg-white">
-                <img src={teamUpala} className="w-100 center" />
+                <img alt="" src={teamUpala} className="w-100 center" />
               </div>
               <div className="pa4 flex flex-column justify-between h6 bg-white">
                 <div>
@@ -273,6 +291,7 @@ const Grants = () => {
                   <a
                     href="https://github.com/porobov/upala-docs/"
                     target="_blank"
+                    rel="noopener noreferrer"
                     className="link dim blue f7 fw7"
                   >
                     View website
@@ -284,7 +303,7 @@ const Grants = () => {
           <section className="w-33-l w-50-m w-100 pa3">
             <div className="shadow-card br3 tl overflow-hidden">
               <div className="h4 w-100 tc v-mid dtc bg-white">
-                <img src={teamPanvala} className="w-100 center" />
+                <img alt="" src={teamPanvala} className="w-100 center" />
               </div>
               <div className="pa4 flex flex-column justify-between h6 bg-white">
                 <div>
@@ -299,6 +318,7 @@ const Grants = () => {
                   <a
                     href="https://medium.com/@Panvala"
                     target="_blank"
+                    rel="noopener noreferrer"
                     className="link dim blue f7 fw7"
                   >
                     View website
@@ -327,7 +347,7 @@ const Grants = () => {
             <section className="w-33-l w-50-m w-100 pa3">
               <div className="shadow-card br3 tl overflow-hidden">
                 <div className="h4 w-100 tc v-mid dtc bg-white">
-                  <img src={teamSigma} className="w-100 center" />
+                  <img alt="" src={teamSigma} className="w-100 center" />
                 </div>
                 <div className="pa4 flex flex-column justify-between h6 bg-white">
                   <div>
@@ -342,6 +362,7 @@ const Grants = () => {
                     <a
                       href="https://sigmaprime.io/"
                       target="_blank"
+                      rel="noopener noreferrer"
                       className="link dim blue f7 fw7"
                     >
                       View website
@@ -353,7 +374,7 @@ const Grants = () => {
             <section className="w-33-l w-50-m w-100 pa3">
               <div className="shadow-card br3 tl overflow-hidden">
                 <div className="h4 w-100 tc v-mid dtc bg-white">
-                  <img src={teamPrysmatic} className="w-100 center" />
+                  <img alt="" src={teamPrysmatic} className="w-100 center" />
                 </div>
                 <div className="pa4 flex flex-column justify-between h6 bg-white">
                   <div>
@@ -368,6 +389,7 @@ const Grants = () => {
                     <a
                       href="https://prysmaticlabs.com/"
                       target="_blank"
+                      rel="noopener noreferrer"
                       className="link dim blue f7 fw7"
                     >
                       View website
@@ -379,7 +401,7 @@ const Grants = () => {
             <section className="w-33-l w-50-m w-100 pa3">
               <div className="shadow-card br3 tl overflow-hidden">
                 <div className="h4 w-100 tc v-mid dtc bg-white">
-                  <img src={teamPrototypal} className="w-100 center" />
+                  <img alt="" src={teamPrototypal} className="w-100 center" />
                 </div>
                 <div className="pa4 flex flex-column justify-between h6 bg-white">
                   <div>
@@ -391,7 +413,12 @@ const Grants = () => {
                     </p>
                   </div>
                   <div>
-                    <a href="https://l4.ventures/" target="_blank" className="link dim blue f7 fw7">
+                    <a
+                      href="https://l4.ventures/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="link dim blue f7 fw7"
+                    >
                       View website
                     </a>
                   </div>
@@ -401,7 +428,7 @@ const Grants = () => {
             <section className="w-33-l w-50-m w-100 pa3">
               <div className="shadow-card br3 tl overflow-hidden">
                 <div className="h4 w-100 tc v-mid dtc bg-white">
-                  <img src={teamConnext} className="w-100 center" />
+                  <img alt="" src={teamConnext} className="w-100 center" />
                 </div>
                 <div className="pa4 flex flex-column justify-between h6 bg-white">
                   <div>
@@ -416,6 +443,7 @@ const Grants = () => {
                     <a
                       href="https://connext.network/"
                       target="_blank"
+                      rel="noopener noreferrer"
                       className="link dim blue f7 fw7"
                     >
                       View website
@@ -427,7 +455,7 @@ const Grants = () => {
             <section className="w-33-l w-50-m w-100 pa3">
               <div className="shadow-card br3 tl overflow-hidden">
                 <div className="h4 w-100 tc v-mid dtc bg-white">
-                  <img src={teamEthers} className="w-100 center" />
+                  <img alt="" src={teamEthers} className="w-100 center" />
                 </div>
                 <div className="pa4 flex flex-column justify-between h6 bg-white">
                   <div>
@@ -441,6 +469,7 @@ const Grants = () => {
                     <a
                       href="https://docs.ethers.io/ethers.js/html/"
                       target="_blank"
+                      rel="noopener noreferrer"
                       className="link dim blue f7 fw7"
                     >
                       View website
@@ -452,7 +481,7 @@ const Grants = () => {
             <section className="w-33-l w-50-m w-100 pa3">
               <div className="shadow-card br3 tl overflow-hidden">
                 <div className="h4 w-100 tc v-mid dtc bg-white">
-                  <img src={teamL4} className="w-100 center" />
+                  <img alt="" src={teamL4} className="w-100 center" />
                 </div>
                 <div className="pa4 flex flex-column justify-between h6 bg-white">
                   <div>
@@ -467,6 +496,7 @@ const Grants = () => {
                     <a
                       href="https://www.counterfactual.com/"
                       target="_blank"
+                      rel="noopener noreferrer"
                       className="link dim blue f7 fw7"
                     >
                       View website
@@ -478,7 +508,7 @@ const Grants = () => {
             <section className="w-33-l w-50-m w-100 pa3">
               <div className="shadow-card br3 tl overflow-hidden">
                 <div className="h4 w-100 tc v-mid dtc bg-white">
-                  <img src={teamPanvala} className="w-100 center" />
+                  <img alt="" src={teamPanvala} className="w-100 center" />
                 </div>
                 <div className="pa4 flex flex-column justify-between h6 bg-white">
                   <div>
@@ -492,6 +522,7 @@ const Grants = () => {
                     <a
                       href="https://medium.com/@Panvala/seven-grants-awarded-for-ethereum-2-0-and-scaling-teams-in-panvalas-second-batch-626f74f0a3bb"
                       target="_blank"
+                      rel="noopener noreferrer"
                       className="link dim blue f7 fw7"
                     >
                       View website
@@ -520,7 +551,7 @@ const Grants = () => {
           <section className="w-33-l w-50-m w-100 pa3">
             <div className="shadow-card br3 tl overflow-hidden">
               <div className="h4 w-100 tc v-mid dtc bg-white">
-                <img src={teamGnosis} className="w-100 center" />
+                <img alt="" src={teamGnosis} className="w-100 center" />
               </div>
               <div className="pa4 flex flex-column justify-between h6 bg-white">
                 <div>
@@ -532,7 +563,12 @@ const Grants = () => {
                   </p>
                 </div>
                 <div>
-                  <a href="https://gnosis.io/" target="_blank" className="link dim blue f7 fw7">
+                  <a
+                    href="https://gnosis.io/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="link dim blue f7 fw7"
+                  >
                     View website
                   </a>
                 </div>
@@ -542,7 +578,7 @@ const Grants = () => {
           <section className="w-33-l w-50-m w-100 pa3">
             <div className="shadow-card br3 tl overflow-hidden">
               <div className="h4 w-100 tc v-mid dtc bg-white">
-                <img src={teamAragon} className="w-100 center" />
+                <img alt="" src={teamAragon} className="w-100 center" />
               </div>
               <div className="pa4 flex flex-column justify-between h6 bg-white">
                 <div>
@@ -554,7 +590,12 @@ const Grants = () => {
                   </p>
                 </div>
                 <div>
-                  <a href="https://aragon.one/" target="_blank" className="link dim blue f7 fw7">
+                  <a
+                    href="https://aragon.one/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="link dim blue f7 fw7"
+                  >
                     View website
                   </a>
                 </div>
@@ -564,7 +605,7 @@ const Grants = () => {
           <section className="w-33-l w-50-m w-100 pa3">
             <div className="shadow-card br3 tl overflow-hidden">
               <div className="h4 w-100 tc v-mid dtc bg-white">
-                <img src={teamBounties} className="w-100 center" />
+                <img alt="" src={teamBounties} className="w-100 center" />
               </div>
               <div className="pa4 flex flex-column justify-between h6 bg-white">
                 <div>
@@ -579,6 +620,7 @@ const Grants = () => {
                   <a
                     href="https://bounties.network/"
                     target="_blank"
+                    rel="noopener noreferrer"
                     className="link dim blue f7 fw7"
                   >
                     View website
@@ -590,7 +632,7 @@ const Grants = () => {
           <section className="w-33-l w-50-m w-100 pa3">
             <div className="shadow-card br3 tl overflow-hidden">
               <div className="h4 w-100 tc v-mid dtc bg-white">
-                <img src={teamStatus} className="w-100 center" />
+                <img alt="" src={teamStatus} className="w-100 center" />
               </div>
               <div className="pa4 flex flex-column justify-between h6 bg-white">
                 <div>
@@ -602,7 +644,12 @@ const Grants = () => {
                   </p>
                 </div>
                 <div>
-                  <a href="https://status.im/" target="_blank" className="link dim blue f7 fw7">
+                  <a
+                    href="https://status.im/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="link dim blue f7 fw7"
+                  >
                     View website
                   </a>
                 </div>
@@ -612,7 +659,7 @@ const Grants = () => {
           <section className="w-33-l w-50-m w-100 pa3">
             <div className="shadow-card br3 tl overflow-hidden">
               <div className="h4 w-100 tc v-mid dtc bg-white">
-                <img src={teamLevelK} className="w-100 center" />
+                <img alt="" src={teamLevelK} className="w-100 center" />
               </div>
               <div className="pa4 flex flex-column justify-between h6 bg-white">
                 <div>
@@ -623,7 +670,12 @@ const Grants = () => {
                   </p>
                 </div>
                 <div>
-                  <a href="https://www.levelk.io/" target="_blank" className="link dim blue f7 fw7">
+                  <a
+                    href="https://www.levelk.io/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="link dim blue f7 fw7"
+                  >
                     View website
                   </a>
                 </div>
@@ -633,7 +685,7 @@ const Grants = () => {
           <section className="w-33-l w-50-m w-100 pa3">
             <div className="shadow-card br3 tl overflow-hidden">
               <div className="h4 w-100 tc v-mid dtc bg-white">
-                <img src={teamMaker} className="w-100 center" />
+                <img alt="" src={teamMaker} className="w-100 center" />
               </div>
               <div className="pa4 flex flex-column justify-between h6 bg-white">
                 <div>
@@ -645,7 +697,12 @@ const Grants = () => {
                   </p>
                 </div>
                 <div>
-                  <a href="https://dapphub.com" target="_blank" className="link dim blue f7 fw7">
+                  <a
+                    href="https://dapphub.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="link dim blue f7 fw7"
+                  >
                     View website
                   </a>
                 </div>
@@ -655,7 +712,7 @@ const Grants = () => {
           <section className="w-33-l w-50-m w-100 pa3">
             <div className="shadow-card br3 tl overflow-hidden">
               <div className="h4 w-100 tc v-mid dtc bg-white">
-                <img src={teamLevelK} className="w-100 center" />
+                <img alt="" src={teamLevelK} className="w-100 center" />
               </div>
               <div className="pa4 flex flex-column justify-between h6 bg-white">
                 <div>
@@ -667,7 +724,12 @@ const Grants = () => {
                   </p>
                 </div>
                 <div>
-                  <a href="https://www.levelk.io/" target="_blank" className="link dim blue f7 fw7">
+                  <a
+                    href="https://www.levelk.io/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="link dim blue f7 fw7"
+                  >
                     View website
                   </a>
                 </div>
@@ -677,7 +739,7 @@ const Grants = () => {
           <section className="w-33-l w-50-m w-100 pa3">
             <div className="shadow-card br3 tl overflow-hidden">
               <div className="h4 w-100 tc v-mid dtc bg-white">
-                <img src={teamMaker} className="w-100 center" />
+                <img alt="" src={teamMaker} className="w-100 center" />
               </div>
               <div className="pa4 flex flex-column justify-between h6 bg-white">
                 <div>
@@ -689,7 +751,12 @@ const Grants = () => {
                   </p>
                 </div>
                 <div>
-                  <a href="https://dapphub.com" target="_blank" className="link dim blue f7 fw7">
+                  <a
+                    href="https://dapphub.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="link dim blue f7 fw7"
+                  >
                     View website
                   </a>
                 </div>
@@ -699,7 +766,7 @@ const Grants = () => {
           <section className="w-33-l w-50-m w-100 pa3">
             <div className="shadow-card br3 tl overflow-hidden">
               <div className="h4 w-100 tc v-mid dtc bg-white">
-                <img src={teamHash} className="w-100 center" />
+                <img alt="" src={teamHash} className="w-100 center" />
               </div>
               <div className="pa4 flex flex-column justify-between h6 bg-white">
                 <div>
@@ -714,6 +781,7 @@ const Grants = () => {
                   <a
                     href="https://twitter.com/hashingitoutpod?lang=en"
                     target="_blank"
+                    rel="noopener noreferrer"
                     className="link dim blue f7 fw7"
                   >
                     View website
@@ -725,7 +793,7 @@ const Grants = () => {
           <section className="w-33-l w-50-m w-100 pa3">
             <div className="shadow-card br3 tl overflow-hidden">
               <div className="h4 w-100 tc v-mid dtc bg-white">
-                <img src={teamPanvala} className="w-100 center" />
+                <img alt="" src={teamPanvala} className="w-100 center" />
               </div>
               <div className="pa4 flex flex-column justify-between h6 bg-white">
                 <div>
@@ -764,6 +832,7 @@ const Grants = () => {
                   <a
                     href="https://medium.com/@Panvala/twelve-grants-awarded-in-batch-one-of-panvala-token-grants-59b8df7422fe"
                     target="_blank"
+                    rel="noopener noreferrer"
                     className="link dim blue f7 fw7"
                   >
                     View website
@@ -775,7 +844,7 @@ const Grants = () => {
           <section className="w-33-l w-50-m w-100 pa3">
             <div className="shadow-card br3 tl overflow-hidden">
               <div className="h4 w-100 tc v-mid dtc bg-white">
-                <img src={teamAsseth} className="w-100 center" />
+                <img alt="" src={teamAsseth} className="w-100 center" />
               </div>
               <div className="pa4 flex flex-column justify-between h6 bg-white">
                 <div>
@@ -790,6 +859,7 @@ const Grants = () => {
                   <a
                     href="https://www.asseth.fr/en/home/"
                     target="_blank"
+                    rel="noopener noreferrer"
                     className="link dim blue f7 fw7"
                   >
                     View website

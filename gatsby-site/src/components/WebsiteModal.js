@@ -206,6 +206,7 @@ const Tweet = () => {
       href="https://twitter.com/intent/tweet?text=I%20just%20made%20a%20donation%20to%20Panvala%20to%20support%20the%20Ethereum%20open%20source%20ecosystem.%20Please%20join%20me%20by%20contributing%20at%20panvala.com&hashtags=panvala,ethereum"
       data-size="large"
       target="_blank"
+      rel="noopener noreferrer"
     >
       <div
         className="twitter-share-button"
@@ -248,7 +249,7 @@ const StepThree = ({ message, handleClose }) => {
     <>
       <div style={styles.title}>Thank you for donating!</div>
       <div style={styles.image}>
-        <img src={imgSrc} />
+        <img alt="" src={imgSrc} />
       </div>
       <div style={styles.patron}>
         You are now a{tier[0] === 'e' && 'n'} <strong>{message} Patron</strong>

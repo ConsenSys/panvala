@@ -69,7 +69,7 @@ const IndexPage = () => {
             </p>
             <div className="">
               <div className="dib v-top mr3-ns mr2 mv2">
-                <a href="https://forum.panvala.com" target="_blank">
+                <a href="https://forum.panvala.com" target="_blank" rel="noopener noreferrer">
                   <button className="f6 link dim ba b--white br-pill white bg-transparent fw7 pointer pv3 ph4">
                     Visit the Forum
                   </button>
@@ -85,10 +85,10 @@ const IndexPage = () => {
             </div>
           </div>
           <div className="dtc-l dn w-50 v-mid mt0-ns mt4">
-            <img src={home1p2} className="absolute db-ns dn o-30 w-30 nl4 mt5" />
-            <img src={home1} className="full-clip-up-sm relative z-1" />
+            <img alt="" src={home1p2} className="absolute db-ns dn o-30 w-30 nl4 mt5" />
+            <img alt="" src={home1} className="full-clip-up-sm relative z-1" />
           </div>
-          <img src={home1p1} className="absolute db-l dn z-2 nl6 mt4" />
+          <img alt="" src={home1p1} className="absolute db-l dn z-2 nl6 mt4" />
         </div>
       </section>
 
@@ -101,14 +101,14 @@ const IndexPage = () => {
         <h2 className="f2-5 ma0 tc">Sustainable Funding</h2>
         <div className="dt mt5-ns mt4">
           <div className="dtc-ns db tc w-50-ns w-100 v-top pr4-ns pr0">
-            <img src={sustFund1} className="center w-75-ns" />
+            <img alt="" src={sustFund1} className="center w-75-ns" />
             <h3 className="f4 ma0 mt5-ns mt3 mb2">The old way</h3>
             <p className="ma0 f6 lh-text">
               Raise money with an ICO, then spend it until one day, it all runs out. Oops!
             </p>
           </div>
           <div className="dtc-ns db tc w-50-ns w-100 v-top pl4-ns pl0 mt0-ns mt4">
-            <img src={sustFund2} className="center w-75-ns" />
+            <img alt="" src={sustFund2} className="center w-75-ns" />
             <h3 className="f4 ma0 mt5-ns mt3 mb2">The new way</h3>
             <p className="ma0 f6 lh-text">
               Fund work with grants of PAN, the token of Panvala. Since donations are made in PAN as
@@ -120,7 +120,7 @@ const IndexPage = () => {
 
       {/* <!-- Donation CTA --> */}
       <div className="mv6-ns mv5 pv6-ns pv4 relative" style={{ top: '100px' }}>
-        <img src={donateShapes} className="absolute z-0 nt5-l nt0-m mt4-m db-ns dn" />
+        <img alt="" src={donateShapes} className="absolute z-0 nt5-l nt0-m mt4-m db-ns dn" />
         <section className="w-70-l w-80-m w-90 center tc relative z-1">
           <h2 className="f2-5 ma0 mb3 mt0-ns mt6 pt6-ns pt5">Donate to support Ethereum</h2>
           <p className="ma0 f6 lh-text w-50-ns w-100 center mb4">
@@ -139,11 +139,31 @@ const IndexPage = () => {
       <section className="w-70-l w-80-m w-90 center tc mv6-ns mb5 mt6">
         <h2 className="f2-5 ma0 mb3-ns mb0">Our launch partners</h2>
         <div className="flex flex-wrap items-center justify-center tc center w-100">
-          <img src={teamGnosis} className="w-20-l w-30 dib v-mid grayscale o-40 animate pa4" />
-          <img src={teamStatus} className="w-20-l w-30 dib v-mid grayscale o-20 animate pa4" />
-          <img src={teamLevelK} className="w-20-l w-30 dib v-mid grayscale o-50 animate pa4" />
-          <img src={teamSigma} className="w-20-l w-30 dib v-mid grayscale o-20 animate pa4" />
-          <img src={teamTenderly} className="w-20-l w-30 dib v-mid grayscale o-20 animate pa4" />
+          <img
+            alt=""
+            src={teamGnosis}
+            className="w-20-l w-30 dib v-mid grayscale o-40 animate pa4"
+          />
+          <img
+            alt=""
+            src={teamStatus}
+            className="w-20-l w-30 dib v-mid grayscale o-20 animate pa4"
+          />
+          <img
+            alt=""
+            src={teamLevelK}
+            className="w-20-l w-30 dib v-mid grayscale o-50 animate pa4"
+          />
+          <img
+            alt=""
+            src={teamSigma}
+            className="w-20-l w-30 dib v-mid grayscale o-20 animate pa4"
+          />
+          <img
+            alt=""
+            src={teamTenderly}
+            className="w-20-l w-30 dib v-mid grayscale o-20 animate pa4"
+          />
         </div>
       </section>
 
@@ -152,9 +172,9 @@ const IndexPage = () => {
         <h2 className="f2-5 ma0 w-70-l w-80-m w-90 center">Why contribute to Panvala</h2>
         <div className="dt mt6-ns mt5 w-70-l w-80-m w-90 center">
           <div className="dn-ns">
-            <img src={home2p2} className="absolute z-2 ml5 mt5 pt4 w-75" />
-            <img src={home2p1} className="absolute nt4" />
-            <img src={home2} className="full-clip-up-sm relative z-1" />
+            <img alt="" src={home2p2} className="absolute z-2 ml5 mt5 pt4 w-75" />
+            <img alt="" src={home2p1} className="absolute nt4" />
+            <img alt="" src={home2} className="full-clip-up-sm relative z-1" />
           </div>
           <div className="dtc-ns db w-50-ns w-100 v-mid tl pr4-ns pr0 mt0-ns mt4">
             <h2 className="f2-5 ma0 mv3 lh-copy">The Ethereum community succeeds together</h2>
@@ -168,20 +188,29 @@ const IndexPage = () => {
             </a>
           </div>
           <div className="dtc-ns dn w-50 v-mid">
-            <img src={home2p2} className="absolute w-25-l w-40 z-2 nl4 mt6-l mt5 pt5-l pt5" />
-            <img src={home2} className="full-clip-up-sm relative z-1" />
+            <img
+              alt=""
+              src={home2p2}
+              className="absolute w-25-l w-40 z-2 nl4 mt6-l mt5 pt5-l pt5"
+            />
+            <img alt="" src={home2} className="full-clip-up-sm relative z-1" />
           </div>
-          <img src={home2p1} className="absolute nl6 nt5-l nt0-m mt5 w-auto-ns w-10 db-ns dn" />
+          <img
+            alt=""
+            src={home2p1}
+            className="absolute nl6 nt5-l nt0-m mt5 w-auto-ns w-10 db-ns dn"
+          />
         </div>
         <div className="bg-gray pv6 full-clip-up mv6-ns mv4">
           <div className="dt w-70-l w-80-m w-90 center">
-            <img src={home3p1} className="absolute w-auto-ns w-10-ns db nl5-ns mt6-ns" />
+            <img alt="" src={home3p1} className="absolute w-auto-ns w-10-ns db nl5-ns mt6-ns" />
             <div className="dtc-ns w-50-ns v-mid">
               <img
+                alt=""
                 src={home3p2}
                 className="absolute w-20-ns w-75 z-2 mt6-ns mt3 pt4-ns ml5-ns ml5 pl5-ns"
               />
-              <img src={home3} className="full-clip-up-sm relative z-1" />
+              <img alt="" src={home3} className="full-clip-up-sm relative z-1" />
             </div>
             <div className="dtc-ns w-50-ns v-mid tl pl4-ns pl0 mt0-ns mt4">
               <h2 className="f2-5 ma0 mv3 lh-copy">Support the most important work</h2>
@@ -193,6 +222,7 @@ const IndexPage = () => {
               <a
                 href="https://medium.com/@Panvala/niran-babalola-making-progress-the-status-quo-1d92af12b352"
                 target="_blank"
+                rel="noopener noreferrer"
                 className="link dim blue f6 fw7"
               >
                 Learn about slate governance
@@ -202,9 +232,9 @@ const IndexPage = () => {
         </div>
         <div className="dt mt6-ns mt4 w-70-l w-80-m w-90 center">
           <div className="dn-ns">
-            <img src={home4p2} className="absolute w-75 z-2 mt5 ml5" />
-            <img src={home4p1} className="absolute ml2 nt4 w-75 left-0" />
-            <img src={home4} className="full-clip-up-sm relative z-1" />
+            <img alt="" src={home4p2} className="absolute w-75 z-2 mt5 ml5" />
+            <img alt="" src={home4p1} className="absolute ml2 nt4 w-75 left-0" />
+            <img alt="" src={home4} className="full-clip-up-sm relative z-1" />
           </div>
           <div className="dtc-ns db w-50-ns w-100 v-mid tl pr4-ns pr0 mt0-ns mt4">
             <h2 className="f2-5 ma0 mv3 lh-copy">Respect among blockchain innovators</h2>
@@ -217,10 +247,10 @@ const IndexPage = () => {
               Learn about how to donate
             </a>
           </div>
-          <img src={home4p1} className="absolute ml4 mt3 w-auto-l w-40 db-ns dn" />
+          <img alt="" src={home4p1} className="absolute ml4 mt3 w-auto-l w-40 db-ns dn" />
           <div className="dtc-ns dn w-50 v-mid">
-            <img src={home4p2} className="absolute w-20 z-2 mt6 pt5 nl4" />
-            <img src={home4} className="full-clip-up-sm relative z-1" />
+            <img alt="" src={home4p2} className="absolute w-20 z-2 mt6 pt5 nl4" />
+            <img alt="" src={home4} className="full-clip-up-sm relative z-1" />
           </div>
         </div>
       </section>
@@ -238,7 +268,11 @@ const IndexPage = () => {
             </p>
           </div>
           <div className="dtc-ns db w-50-ns w-100 v-btm tr-ns tl pb0-ns pb5 pt0-ns pt3">
-            <img src={simon} className="relative br-top shadow bottom-clip-down w-90-ns w-100" />
+            <img
+              alt=""
+              src={simon}
+              className="relative br-top shadow bottom-clip-down w-90-ns w-100"
+            />
             <h3 className="f4 ma0 mt5-ns mt0 mb2 white">Simon de la Rouviere</h3>
             <p className="ma0 f6 lh-text white-60">Token Engineering Pioneer</p>
           </div>
@@ -304,12 +338,12 @@ const IndexPage = () => {
             </div>
             <div className="dtc-l db-m dn v-top absolute-l nt5-l w-40-l mt5-m">
               <div className="dt pv3">
-                <img src={extLevelK} className="o-30 dib w-33 v-mid pr5" />
-                <img src={extPlasmaGroup} className="o-30 dib w-33 v-mid" />
+                <img alt="" src={extLevelK} className="o-30 dib w-33 v-mid pr5" />
+                <img alt="" src={extPlasmaGroup} className="o-30 dib w-33 v-mid" />
               </div>
               <div className="dt pv3">
-                <img src={extPrysmatic} className="o-30 dib w-33 v-mid pr5" />
-                <img src={extConnext} className="o-30 dib w-33 v-mid" />
+                <img alt="" src={extPrysmatic} className="o-30 dib w-33 v-mid pr5" />
+                <img alt="" src={extConnext} className="o-30 dib w-33 v-mid" />
               </div>
             </div>
           </div>
@@ -320,13 +354,18 @@ const IndexPage = () => {
       <div className="dt w-80-ns w-100 center-ns mb5">
         <section className="w-40-ns w-90 dtc-ns relative center">
           <section className="bg-transparent ph5-ns ph0 pv6-ns pt5 pb3">
-            <img src={extConsensys} className="w-60" />
+            <img alt="" src={extConsensys} className="w-60" />
             <p className="ma0 f6 lh-text mb3 mt4">
               ConsenSys is the home of the Panvala Launch Team. ConsenSys is a global blockchain
               technology company building the infrastructure, applications, and practices that
               enable a decentralized world.
             </p>
-            <a href="https://consensys.net/" target="_blank" className="link dim blue f6 fw7">
+            <a
+              href="https://consensys.net/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="link dim blue f6 fw7"
+            >
               Learn about ConsenSys
             </a>
           </section>

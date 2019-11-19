@@ -29,7 +29,7 @@ const Team = () => {
     if (contactRef.current != null && window.location.href.includes('#team-contact')) {
       contactRef.current.scrollIntoView();
     }
-  }, [aboutRef.current, contributeRef.current, contactRef.current]);
+  }, []);
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -91,12 +91,17 @@ const Team = () => {
             <a
               href="https://media.consensys.net/the-panvala-token-capacitor-b9efac0a6699"
               target="_blank"
+              rel="noopener noreferrer"
               className="link dim blue f6 fw7"
             >
               Read the entire story
             </a>
           </div>
-          <img src={teamShapes} className="absolute z-0 db-ns dn right-0 nt6-l w-40-l w-60" />
+          <img
+            src={teamShapes}
+            className="absolute z-0 db-ns dn right-0 nt6-l w-40-l w-60"
+            alt="team background"
+          />
           <div className="dtc-l db w-50-l w-100 v-mid mt0-l mt5">
             <section className="bg-gradient center ph4 pv5 tl full-clip-up-sm">
               <p className="ma0 f4 white-60 lh-text w-80-l w-90-m w-100 center">
@@ -177,7 +182,7 @@ const Team = () => {
           Our codebase is open-source and transparent. If you want to poke around and take a look,
           you can. We would really appreciate another set of eyes.
         </p>
-        <a href="https://github.com/ConsenSys/panvala" target="_blank">
+        <a href="https://github.com/ConsenSys/panvala" target="_blank" rel="noopener noreferrer">
           <button className="f6 link dim bn br-pill pv3 ph4 white bg-teal fw7 pointer">
             Visit our Github
           </button>
