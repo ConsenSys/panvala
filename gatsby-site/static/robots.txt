@@ -1,1 +1,2 @@
 Disallow: /pledge/
+Disallow: /sponsor/
