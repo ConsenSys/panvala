@@ -180,7 +180,7 @@ const Poll = () => {
         const p = new providers.Web3Provider(window.ethereum);
         const network = await p.getNetwork();
         if (network.chainId !== 1) {
-          alert('Please connect to the Main Network to continue.');
+          alert('Please connect to the Main Ethereum Network to continue.');
           return;
         }
 
