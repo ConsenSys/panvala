@@ -4,6 +4,7 @@ import logoWhite from '../img/logo-white.png';
 import logoTwitter from '../img/twitter.png';
 import logoTelegram from '../img/telegram.png';
 import logoGithub from '../img/github.png';
+import privacyPolicy from '../img/docs/panvala-privacy-policy.pdf';
 
 export default () => (
   <>
@@ -91,7 +92,12 @@ export default () => (
         </div>
       </nav>
       <hr className="hr-white" />
-      <p className="ma0 f7 lh-text tc white-60 pb3">2019 © PANVALA | Privacy Policy</p>
+      <p class="ma0 f7 lh-text tc white-60 pb3">
+        2019 © PANVALA |{' '}
+        <a href={privacyPolicy} target="_blank" className="link dim white-60">
+          Privacy Policy
+        </a>
+      </p>
     </section>
   </>
 );
