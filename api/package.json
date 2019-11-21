@@ -20,6 +20,7 @@
     "create-migration": "sequelize migration:generate --name",
     "seed": "sequelize db:seed:all",
     "poll:create": "ts-node scripts/createPoll.ts",
+    "poll:tally": "ts-node scripts/tally-poll.ts",
     "sync-events": "ts-node scripts/sync-contract-events.ts",
     "test": "jest"
   },
