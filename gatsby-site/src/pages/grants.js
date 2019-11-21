@@ -586,8 +586,7 @@ const Grants = () => {
                   <h4 className="f6 fw7 ma0">Batch 3 Grant Recommendations</h4>
                   <h5 className="f7 fw7 blue ma0 mt3">43,899 PAN</h5>
                   <p className="ma0 f7 lh-text mt3">
-                    Sigma Prime is launching a single-client testnet that allows the public to run a
-                    set of validators on a Beacon Chain test network of Lighthouse clients.
+                    A proposal to make Ethereum safer by recommending token grant applications.
                   </p>
                 </div>
                 <div>
