@@ -240,62 +240,24 @@ const Sponsor = () => {
         </section>
       </section>
 
-      {/* <!-- Patron Tiers --> */}
-      <section className="center tc">
-        <div className="dt mt6-ns mt5 w-70-l w-80-m w-90 center">
-          <div className="dn-ns db">
-            <img alt="" src={patronTiers} />
-          </div>
-          <div className="dtc-ns w-50-ns v-mid tl pr4-ns mt0-ns mt3">
-            <h2 className="f2-5 ma0 mv3 lh-copy">Patron Tiers</h2>
-            <p className="ma0 f6 lh-text mb3">
-              Becoming a Panvala Patron helps sustain the work the Ethereum ecosystem depends on.
-              When you become a patron, your name will be added to the growing list of patrons on
-              Panvala.com. Everyone who does their part to fulfill the Ethereum
-              vision should be recognized for it.
-            </p>
-          </div>
-          <div className="dtc-ns dn w-50 v-mid tr">
-            <img alt="" src={patronTiers} className="w-70-l" />
-          </div>
-        </div>
-        <div className="dt mt6 w-70-l w-80-m w-90 center">
-          <div className="dtc-ns w-50-ns v-mid tl-ns">
-            <img alt="" src={advisorTiers} className="w-70-l" />
-          </div>
-          <div className="dtc-ns w-50-ns v-mid tl pl4-ns mt0-ns mt3">
-            <h2 className="f2-5 ma0 mv3 lh-copy">Advisor Patrons</h2>
-            <p className="ma0 f6 lh-text mb3">
-              Looking to give a bit more? Advisor Patrons make large contributions and gain more
-              respect within the Panvala community. Grant reviewers reach out to Advisor Patrons to
-              give them a direct way to make their voice heard.
-            </p>
-          </div>
-        </div>
-      </section>
-
       {/* <!-- Donation Inputs --> */}
       <div className="relative">
         <section id="donate-section" className="bg-gray top-clip-up pv6 mt6 workaround-clip">
           <div ref={donateNowRef} className="w-50-l w-70-m w-90 center tc">
-            <h2 className="f2-5 ma0 mv3 lh-copy">Become a Panvala Patron today</h2>
+            <h2 className="f2-5 ma0 mv3 lh-copy">Become a Panvala Sponsor today</h2>
             <p className="ma0 f6 lh-text mb3">
-              Choose your patron tier to prepay for this month using ETH. When it's time to renew
-              your pledge, we'll send you a reminder email so you can come back and prepay your next
-              donation.
+              Let us know how much you're donating to the Ethereum ecosystem today. When it is time
+              for your next donation, we'll send you a reminder email so you can come back and pay
+              the next donation.
             </p>
             <form className="w-80-l w-90-m w-100 center" name="donation-pledge">
               <div className="tl mt4">
-                <label className="ma0 f6 mb3 black-40">
-                  First Name
-                  <b className="red f7"> *</b>
-                </label>
+                <label className="ma0 f6 mb3 black-40">First Name</label>
               </div>
               <input
                 type="text"
                 name="first-name"
                 id="pledge-first-name"
-                required
                 placeholder="Enter your first name"
                 className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2"
               />
@@ -326,27 +288,18 @@ const Sponsor = () => {
               />
               <div className="tl mt4">
                 <label className="ma0 f6 mb3 black-40">
-                  Pledge Tier
+                  Pledge Amount ($USD)
                   <b className="red f7"> *</b>
                 </label>
               </div>
-              <select
-                name="pledge-tier-selection"
+              <input
+                type="number"
+                name="pledge-amount"
+                id="pledge-amount"
                 required
-                className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2 bg-white black-50"
-                id="pledge-tier-select"
-              >
-                <option disabled="" defaultValue="0" value="0">
-                  Select your pledge tier
-                </option>
-                <option value="5">{`Student — $5/month (${eps.stud} ETH)`}</option>
-                <option value="15">{`Gold — $15/month (${eps.gold} ETH)`}</option>
-                <option value="50">{`Platinum — $50/month (${eps.plat} ETH)`}</option>
-                <option value="150">{`Diamond — $150/month (${eps.diam} ETH)`}</option>
-                <option value="500">{`Ether Advisor — $500/month (${eps.ethe} ETH)`}</option>
-                <option value="1500">{`Elite Advisor — $1500/month (${eps.elit} ETH)`}</option>
-              </select>
-              <img alt="" src={arrowSvg} className="fr mr2 o-50" style={{ marginTop: '-35px' }} />
+                placeholder="Enter your pledge amount"
+                className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2"
+              />
               <div className="tl mt4">
                 <label className="ma0 f6 mb3 black-40">
                   How many months of your pledge will you prepay today?
