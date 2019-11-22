@@ -11,9 +11,10 @@ import {
   shadow,
   position,
 } from 'styled-system';
+import { Field } from 'formik';
 
-// TODO: after adding formik, replace this with styled(FormikField)
-const StyledInput = styled.input`
+
+const StyledInput = styled(Field)`
   box-sizing: border-box;
   display: block;
   width: 100%;

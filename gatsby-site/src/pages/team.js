@@ -1,4 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { Formik } from 'formik';
+import * as yup from 'yup';
 
 import teamShapes from '../img/team-shapes.svg';
 import teamNiran from '../img/team/team-niran.png';
@@ -12,6 +14,7 @@ import SEO from '../components/seo';
 import Nav from '../components/Nav';
 import Layout from '../components/Layout';
 import Modal from '../components/Modal';
+import FieldText from '../components/FieldText';
 
 const Team = () => {
   const aboutRef = useRef(null);
@@ -31,21 +34,35 @@ const Team = () => {
     }
   }, []);
 
-  function handleSubmit(e) {
-    e.preventDefault();
+  function handleSubmit(values, actions) {
+    // console.log('submit', values);
     setModalOpen(true);
+    actions.setSubmitting(false);
+
+    actions.resetForm();
   }
 
   function handleClose(e) {
     e.preventDefault();
     setModalOpen(false);
-    const fn = document.getElementById('contact-full-name');
-    const em = document.getElementById('contact-email');
-    const msg = document.getElementById('contact-message');
-    fn.value = '';
-    em.value = '';
-    msg.value = '';
   }
+
+  const ContactFormSchema = yup.object({
+    fullName: yup
+      .string()
+      .trim()
+      .required('Please enter your full name'),
+    email: yup
+      .string()
+      .trim()
+      .email()
+      .required('Please enter your email'),
+    message: yup
+      .string()
+      .trim()
+      .required('Please include a message')
+      .min(10, 'Your message must be at least 10 characters'),
+  });
 
   return (
     <Layout>
@@ -197,61 +214,59 @@ const Team = () => {
             <p className="ma0 f6 lh-text mb3">
               We'd love to hear from you. Send us a message and we'll respond as soon as possible.
             </p>
-            <form
-              className="w-70-l w-90-m w-100 center"
-              name="team-contact"
+            <Formik
+              initialValues={{ fullName: '', email: '', message: '' }}
               onSubmit={handleSubmit}
+              validationSchema={ContactFormSchema}
             >
-              <div className="tl mt4">
-                <label className="ma0 f6 mb3 black-40">
-                  Full Name
-                  <b className="red f7"> *</b>
-                </label>
-              </div>
-              <input
-                type="text"
-                id="contact-full-name"
-                name="full-name"
-                required
-                placeholder="Enter your full name"
-                className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2"
-              />
-              <div className="tl mt4">
-                <label className="ma0 f6 mb3 black-40">
-                  Email
-                  <b className="red f7"> *</b>
-                </label>
-              </div>
-              <input
-                type="email"
-                id="contact-email"
-                name="email"
-                required
-                placeholder="Enter your email address"
-                className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2"
-              />
-              <div className="tl mt4">
-                <label className="ma0 f6 mb3 black-40">
-                  Message
-                  <b className="red f7"> *</b>
-                </label>
-              </div>
-              <textarea
-                name="message"
-                id="contact-message"
-                rows="5"
-                required
-                placeholder="Let us know what you would like to chat about"
-                className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2"
-              ></textarea>
-              <input
-                id="team-contact-button"
-                type="submit"
-                name="submit"
-                className="f6 link dim bn br-pill pv3 ph4 white bg-teal fw7 mt4 tj"
-                value="Get in touch"
-              />
-            </form>
+              {props => (
+                <form
+                  className="w-70-l w-90-m w-100 center"
+                  name="team-contact"
+                  onSubmit={props.handleSubmit}
+                >
+                  <FieldText
+                    type="text"
+                    id="contact-full-name"
+                    name="fullName"
+                    label="Full Name"
+                    placeholder="Enter your full name"
+                    onChange={props.handleChange}
+                    required
+                  />
+
+                  <FieldText
+                    type="email"
+                    id="contact-email"
+                    name="email"
+                    label="Email"
+                    placeholder="Enter your email address"
+                    onChange={props.handleChange}
+                    required
+                  />
+
+                  <FieldText
+                    component="textarea"
+                    name="message"
+                    id="contact-message"
+                    label="Message"
+                    rows="5"
+                    placeholder="Let us know what you would like to chat about"
+                    onChange={props.handleChange}
+                    required
+                  />
+
+                  <input
+                    id="team-contact-button"
+                    type="submit"
+                    name="submit"
+                    className="f6 link dim bn br-pill pv3 ph4 white bg-teal fw7 mt4 tj"
+                    value="Get in touch"
+                    disabled={props.isSubmitting}
+                  />
+                </form>
+              )}
+            </Formik>
           </div>
         </section>
 

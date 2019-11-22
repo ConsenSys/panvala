@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { graphql } from 'gatsby';
+import { Formik, Field } from 'formik';
+import * as yup from 'yup';
 
 import home1 from '../img/home-1.jpg';
 import home1p1 from '../img/home-1.1.png';
@@ -34,16 +36,27 @@ import Layout from '../components/Layout';
 import SEO from '../components/seo';
 import Nav from '../components/Nav';
 import Modal from '../components/Modal';
+import { FormError } from '../components/Form/FormError';
 import { getEpochDates } from '../utils/api';
-import TopBar from '../components/TopBar';
+
+const NewsletterFormSchema = yup.object({
+  email: yup
+    .string()
+    .email('Please enter a valid email')
+    .required('Please enter your email'),
+});
 
 const IndexPage = () => {
   const [isOpen, setModalOpen] = useState(false);
   const [epochDates, setEpochDates] = useState({});
 
-  function handleSubmit(e) {
-    e.preventDefault();
+  function handleSubmit(values, actions) {
+    // console.log('submit', values);
+
+    actions.setSubmitting(false);
     setModalOpen(true);
+
+    actions.resetForm();
   }
 
   function handleClose(e) {
@@ -315,27 +328,44 @@ const IndexPage = () => {
 
       <div className="relative">
         {/* <!-- Newsletter CTA --> */}
-        <form
-          className="w-70-l w-80-m w-90 center tc mv5 pv5"
-          name="email-subscribe"
+        <Formik
+          initialValues={{ email: '' }}
           onSubmit={handleSubmit}
+          validationSchema={NewsletterFormSchema}
         >
-          <h2 className="f2-5 ma0 mb4">Don’t miss out on all the upcoming news</h2>
-          <input
-            type="email"
-            name="email"
-            id="email-subscribe-input"
-            placeholder="Enter your email address"
-            className="f5 dib input-reset border-input bb b--black-20 pa2 mr3 w-50 v-mid dib"
-          />
-          <input
-            type="submit"
-            name="submit"
-            value="Sign Up"
-            className="f6 link dim bn br-pill pv3 ph4 white bg-teal fw7 dib v-mid"
-            id="email-subscribe-button"
-          />
-        </form>
+          {props => (
+            <form
+              className="w-70-l w-80-m w-90 center tc mv5 pv5"
+              name="email-subscribe"
+              onSubmit={props.handleSubmit}
+            >
+              <h2 className="f2-5 ma0 mb4">Don’t miss out on all the upcoming news</h2>
+              <div className="cf ph5">
+                <div className="fl w-70 pa2 mr3">
+                  <Field
+                    name="email"
+                    id="email-subscribe-input"
+                    placeholder="Enter your email address"
+                    className="f5 dib input-reset border-input bb b--black-20 pv2 pl2 w-100 v-mid bg-pink-20"
+                    onChange={props.handleChange}
+                    value={props.values.email}
+                  />
+                  <FormError name="email" />
+                </div>
+
+                {/* TODO: use the Button component */}
+                <input
+                  type="submit"
+                  name="submit"
+                  value="Sign Up"
+                  className="fl w-20 f6 link dim bn br-pill pv3 ph4 white bg-teal fw7 dib v-mid h-50"
+                  id="email-subscribe-button"
+                  disabled={props.isSubmitting}
+                />
+              </div>
+            </form>
+          )}
+        </Formik>
 
         {/* <!-- Modal --> */}
         <Modal

@@ -1,4 +1,6 @@
 import React, { useRef, useState } from 'react';
+import { Formik } from 'formik';
+import * as yup from 'yup';
 
 import Layout from '../components/Layout';
 import SEO from '../components/seo';
@@ -34,7 +36,7 @@ import teamGraham from '../img/grant-teams/graham.png';
 import teamBlockRocket from '../img/grant-teams/blockrocket.png';
 import teamAstrotrope from '../img/grant-teams/astrotrope.png';
 import teamAsseth from '../img/grant-teams/asseth.png';
-import grantsShapes from '../img/grants-shapes.svg';
+import FieldText from '../components/FieldText';
 
 const Grants = () => {
   const applyRef = useRef(null);
@@ -46,19 +48,29 @@ const Grants = () => {
     });
   }
 
-  function handleSubmit(e) {
-    e.preventDefault();
+  function handleSubmit(values, actions) {
+    // console.log('submit', values);
     setModalOpen(true);
+
+    actions.setSubmitting(false);
+    actions.resetForm();
   }
 
   function handleClose(e) {
     e.preventDefault();
     setModalOpen(false);
-    const fn = document.getElementById('grants-full-name');
-    const em = document.getElementById('grants-email');
-    fn.value = '';
-    em.value = '';
   }
+
+  const GrantFormSchema = yup.object({
+    fullName: yup
+      .string()
+      .trim()
+      .required('Please enter your name'),
+    email: yup
+      .string()
+      .email()
+      .required('Please enter your email'),
+  });
 
   return (
     <Layout>
@@ -107,7 +119,8 @@ const Grants = () => {
           November 1, 2019
         </h2>
         <p className="ma0 f6 lh-text w-50 center mb4">
-          In Batch 4 of Panvala Token Grants, 9 teams were awarded a total of 1,910,663 PAN for the work they do to move Ethereum forward.
+          In Batch 4 of Panvala Token Grants, 9 teams were awarded a total of 1,910,663 PAN for the
+          work they do to move Ethereum forward.
         </p>
         {/* <!-- List of Grants --> */}
         <section className="flex flex-wrap">
@@ -142,7 +155,9 @@ const Grants = () => {
                   <h4 className="f6 fw7 ma0">Panvala Staking</h4>
                   <h5 className="f7 fw7 blue ma0 mt3">350,000 PAN</h5>
                   <p className="ma0 f7 lh-text mt3">
-                    A proposal to allow Panvala to issue enforceable certifications, and to delegate responsibilities to community members whose stake can be slashed if they don’t meet their commitments.
+                    A proposal to allow Panvala to issue enforceable certifications, and to delegate
+                    responsibilities to community members whose stake can be slashed if they don’t
+                    meet their commitments.
                   </p>
                 </div>
                 <div>
@@ -163,13 +178,12 @@ const Grants = () => {
                   <h4 className="f6 fw7 ma0">LibP2P Testing 0</h4>
                   <h5 className="f7 fw7 blue ma0 mt3">300,000 PAN</h5>
                   <p className="ma0 f7 lh-text mt3">
-                    A proposal to focus the development team’s effort towards benchmarking LibP2P’s implementation of gossipsub.
+                    A proposal to focus the development team’s effort towards benchmarking LibP2P’s
+                    implementation of gossipsub.
                   </p>
                 </div>
                 <div>
-                  <a href="https://whiteblock.io/"
-                    target="_blank"
-                    className="link dim blue f7 fw7">
+                  <a href="https://whiteblock.io/" target="_blank" className="link dim blue f7 fw7">
                     View website
                   </a>
                 </div>
@@ -186,13 +200,12 @@ const Grants = () => {
                   <h4 className="f6 fw7 ma0">Panvala Marketing</h4>
                   <h5 className="f7 fw7 blue ma0 mt3">300,000 PAN</h5>
                   <p className="ma0 f7 lh-text mt3">
-                    A proposal to sponsor local Ethereum meetups and represent Panvala abroad to support the community while spreading the word about Panvala.
+                    A proposal to sponsor local Ethereum meetups and represent Panvala abroad to
+                    support the community while spreading the word about Panvala.
                   </p>
                 </div>
                 <div>
-                  <a href="https://panvala.com/"
-                    target="_blank"
-                    className="link dim blue f7 fw7">
+                  <a href="https://panvala.com/" target="_blank" className="link dim blue f7 fw7">
                     View website
                   </a>
                 </div>
@@ -209,13 +222,16 @@ const Grants = () => {
                   <h4 className="f6 fw7 ma0">Vyper Security Audit</h4>
                   <h5 className="f7 fw7 blue ma0 mt3">200,000 PAN</h5>
                   <p className="ma0 f7 lh-text mt3">
-                    A proposal to make Ethereum safer by completing Vyper audit which is necessary to ensure that contracts behave as expected
+                    A proposal to make Ethereum safer by completing Vyper audit which is necessary
+                    to ensure that contracts behave as expected
                   </p>
                 </div>
                 <div>
-                  <a href="https://diligence.consensys.net/"
+                  <a
+                    href="https://diligence.consensys.net/"
                     target="_blank"
-                    className="link dim blue f7 fw7">
+                    className="link dim blue f7 fw7"
+                  >
                     View website
                   </a>
                 </div>
@@ -232,7 +248,8 @@ const Grants = () => {
                   <h4 className="f6 fw7 ma0">Conditional Token Framework Security Audit</h4>
                   <h5 className="f7 fw7 blue ma0 mt3">100,000 PAN</h5>
                   <p className="ma0 f7 lh-text mt3">
-                    A proposal to allow developers to easily combine token transfers with any number of conditions.
+                    A proposal to allow developers to easily combine token transfers with any number
+                    of conditions.
                   </p>
                 </div>
                 <div>
@@ -254,10 +271,15 @@ const Grants = () => {
               </div>
               <div className="pa4 flex flex-column justify-between h6 bg-white">
                 <div>
-                  <h4 className="f6 fw7 ma0">Enterprise State Channel Application Programming Environment (ESCAPE)</h4>
+                  <h4 className="f6 fw7 ma0">
+                    Enterprise State Channel Application Programming Environment (ESCAPE)
+                  </h4>
                   <h5 className="f7 fw7 blue ma0 mt3">100,000 PAN</h5>
                   <p className="ma0 f7 lh-text mt3">
-                    A proposal to work on a platform that simplifies the design of state channels, aids with deployment and management of the infrastructure components, allows the end user administration and device provisioning to facilitate off-chain interactions securely in the state channel context.
+                    A proposal to work on a platform that simplifies the design of state channels,
+                    aids with deployment and management of the infrastructure components, allows the
+                    end user administration and device provisioning to facilitate off-chain
+                    interactions securely in the state channel context.
                   </p>
                 </div>
                 <div>
@@ -282,7 +304,8 @@ const Grants = () => {
                   <h4 className="f6 fw7 ma0">Ethereum Plugins for No-Code Development Platforms</h4>
                   <h5 className="f7 fw7 blue ma0 mt3">75,000 PAN</h5>
                   <p className="ma0 f7 lh-text mt3">
-                    A proposal to develop plugins that will let anyone build Ethereum Apps without needing to know how to code.
+                    A proposal to develop plugins that will let anyone build Ethereum Apps without
+                    needing to know how to code.
                   </p>
                 </div>
                 <div>
@@ -304,10 +327,14 @@ const Grants = () => {
               </div>
               <div className="pa4 flex flex-column justify-between h6 bg-white">
                 <div>
-                  <h4 className="f6 fw7 ma0">Interest-Funded Transaction Relayer (PleaseRelayMe)</h4>
+                  <h4 className="f6 fw7 ma0">
+                    Interest-Funded Transaction Relayer (PleaseRelayMe)
+                  </h4>
                   <h5 className="f7 fw7 blue ma0 mt3">75,000 PAN</h5>
                   <p className="ma0 f7 lh-text mt3">
-                    PleaseRelayMe is a free to use transaction relayer that harnesses the Gas Station Network. It creates a non-profit, self funding transaction relayer which can be used by all with a fair usage policy.
+                    PleaseRelayMe is a free to use transaction relayer that harnesses the Gas
+                    Station Network. It creates a non-profit, self funding transaction relayer which
+                    can be used by all with a fair usage policy.
                   </p>
                 </div>
                 <div>
@@ -1130,47 +1157,50 @@ const Grants = () => {
               We'd love to help you prepare a proposal for a Panvala token grant. Send us your email
               and we'll be in contact soon.
             </p>
-            <form
-              className="w-70-l w-90-m w-100 center"
-              name="grant-application"
+            <Formik
+              initialValues={{ fullName: '', email: '' }}
               onSubmit={handleSubmit}
+              validationSchema={GrantFormSchema}
             >
-              <div className="tl mt4">
-                <label className="ma0 f6 mb3 black-40">
-                  Full Name
-                  <b className="red f7"> *</b>
-                </label>
-              </div>
-              <input
-                type="text"
-                id="grants-full-name"
-                name="full-name"
-                required
-                placeholder="Enter your full name"
-                className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2"
-              />
-              <div className="tl mt4">
-                <label className="ma0 f6 mb3 black-40">
-                  Email
-                  <b className="red f7"> *</b>
-                </label>
-              </div>
-              <input
-                type="email"
-                id="grants-email"
-                name="email"
-                required
-                placeholder="Enter your email address"
-                className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2"
-              />
-              <input
-                type="submit"
-                id="grants-application-button"
-                name="submit"
-                value="Get in touch"
-                className="f6 link dim bn br-pill pv3 ph4 white bg-teal fw7 mt4"
-              />
-            </form>
+              {props => (
+                <form
+                  className="w-70-l w-90-m w-100 center"
+                  name="grant-application"
+                  onSubmit={props.handleSubmit}
+                >
+                  <FieldText
+                    type="text"
+                    id="grants-full-name"
+                    name="fullName"
+                    label="Full Name"
+                    required
+                    placeholder="Enter your full name"
+                    value={props.values.fullName}
+                    onChange={props.handleChange}
+                  />
+
+                  <FieldText
+                    type="email"
+                    id="grants-email"
+                    name="email"
+                    label="Email"
+                    required
+                    placeholder="Enter your email address"
+                    value={props.values.email}
+                    onChange={props.handleChange}
+                  />
+
+                  <input
+                    type="submit"
+                    id="grants-application-button"
+                    name="submit"
+                    value="Get in touch"
+                    className="f6 link dim bn br-pill pv3 ph4 white bg-teal fw7 mt4"
+                    disabled={props.isSubmitting}
+                  />
+                </form>
+              )}
+            </Formik>
           </div>
         </section>
 

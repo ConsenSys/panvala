@@ -10,7 +10,6 @@ import Layout from '../components/Layout';
 import SEO from '../components/seo';
 import Sponsorship from '../components/Sponsorship';
 import Nav from '../components/Nav';
-import { fetchEthPrice } from '../utils/donate';
 import FieldText from '../components/FieldText';
 import Label from '../components/Label';
 import DownArrow from '../components/Form/DownArrow';

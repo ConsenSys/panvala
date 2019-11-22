@@ -1,4 +1,6 @@
 import React, { useState, useRef } from 'react';
+import { Formik, Field } from 'formik';
+import * as yup from 'yup';
 
 import home1p1 from '../img/home-1.1.png';
 import home1p2 from '../img/home-1.2.png';
@@ -14,6 +16,9 @@ import SEO from '../components/seo';
 import Modal from '../components/Modal';
 import Nav from '../components/Nav';
 import DonateButton from '../components/DonateButton';
+import { FormError } from '../components/Form/FormError';
+import FieldText from '../components/FieldText';
+import Label from '../components/Label';
 
 const names = [
   'Simon de la Rouviere',
@@ -122,38 +127,36 @@ const Donate = () => {
     });
   }
 
-  function handleSubmit(e) {
-    e.preventDefault();
-    const fn = document.getElementById('pledge-first-name');
-    const em = document.getElementById('pledge-email');
-    const ti = document.getElementById('pledge-tier-select');
-    if (fn.value === '') {
-      alert('You must enter a first name.');
-      return;
-    }
-    if (em.value === '') {
-      alert('You must enter an email address.');
-      return;
-    }
-    if (ti.value === '0') {
-      alert('You must select a pledge tier.');
-      return;
-    }
+  function handleSubmit(values, actions) {
+    console.log('submit', values);
 
     setModalOpen(true);
+    actions.setSubmitting(false);
+
+    // if we got this far, we can clear the form
+    actions.resetForm();
   }
+
+  const PledgeFormSchema = yup.object({
+    firstName: yup
+      .string()
+      .trim()
+      .required('You must enter a first name'),
+    lastName: yup.string().trim(),
+    email: yup
+      .string()
+      .email('Please enter a valid email address')
+      .required('You must enter an email address'),
+    pledgeTier: yup
+      .number()
+      .integer()
+      .moreThan(0, 'You must select a pledge tier')
+      .required('You must select a pledge tier'),
+  });
 
   function handleClose(e) {
     e.preventDefault();
     setModalOpen(false);
-    const fn = document.getElementById('pledge-first-name');
-    const ln = document.getElementById('pledge-last-name');
-    const em = document.getElementById('pledge-email');
-    const ti = document.getElementById('pledge-tier-select');
-    fn.value = '';
-    ln.value = '';
-    em.value = '';
-    ti.value = '0';
   }
 
   return (
@@ -293,83 +296,95 @@ const Donate = () => {
               We only need your contact information in order for you to make a pledge at this time.
               We'll reach out to you in the future to help you fulfill your pledge.
             </p>
-            <form
-              className="w-80-l w-90-m w-100 center"
-              name="donation-pledge"
+            <Formik
+              initialValues={{
+                firstName: '',
+                lastName: '',
+                email: '',
+              }}
+              validationSchema={PledgeFormSchema}
               onSubmit={handleSubmit}
             >
-              <div className="tl mt4">
-                <label className="ma0 f6 mb3 black-40">
-                  First Name
-                  <b className="red f7"> *</b>
-                </label>
-              </div>
-              <input
-                type="text"
-                name="first-name"
-                id="pledge-first-name"
-                required
-                placeholder="Enter your first name"
-                className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2"
-              />
-              <div className="tl mt4">
-                <label className="ma0 f6 mb3 black-40">Last Name</label>
-              </div>
-              <input
-                type="text"
-                name="last-name"
-                id="pledge-last-name"
-                required
-                placeholder="Enter your last name"
-                className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2"
-              />
-              <div className="tl mt4">
-                <label className="ma0 f6 mb3 black-40">
-                  Email
-                  <b className="red f7"> *</b>
-                </label>
-              </div>
-              <input
-                type="email"
-                name="email"
-                id="pledge-email"
-                required
-                placeholder="Enter your email address"
-                className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2"
-              />
-              <div className="tl mt4">
-                <label className="ma0 f6 mb3 black-40">
-                  Pledge Tier
-                  <b className="red f7"> *</b>
-                </label>
-              </div>
-              <select
-                name="pledge-tier-selection"
-                required
-                className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2 bg-white black-50"
-                id="pledge-tier-select"
-              >
-                <option disabled="" defaultValue="0" value="0">
-                  Select your pledge tier
-                </option>
-                <option value="5">Student — $5/month</option>
-                <option value="15">Gold — $15/month</option>
-                <option value="50">Platinum — $50/month</option>
-                <option value="150">Diamond — $150/month</option>
-                <option value="500">Ether Advisor — $500/month</option>
-                <option value="1500">Elite Advisor — $1500/month</option>
-              </select>
-              <img alt="" src={arrowSvg} className="fr mr2 o-50" style={{ marginTop: '-35px' }} />
+              {props => (
+                <form
+                  className="w-80-l w-90-m w-100 center"
+                  name="donation-pledge"
+                  onSubmit={props.handleSubmit}
+                >
+                  <FieldText
+                    type="text"
+                    name="firstName"
+                    id="pledge-first-name"
+                    label="First Name"
+                    placeholder="Enter your first name"
+                    value={props.values.firstName}
+                    onChange={props.handleChange}
+                    className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2"
+                    required
+                  />
 
-              <DonateButton handleClick={handleSubmit} text="Pledge" />
+                  <FieldText
+                    type="text"
+                    name="lastName"
+                    id="pledge-last-name"
+                    label="Last Name"
+                    placeholder="Enter your last name"
+                    value={props.values.lastName}
+                    onChange={props.handleChange}
+                    className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2"
+                  />
 
-              <Modal
-                isOpen={isOpen}
-                handleClose={handleClose}
-                title="Form Submitted"
-                copy="Thank you. We'll be in touch!"
-              />
-            </form>
+                  <FieldText
+                    type="text"
+                    name="email"
+                    id="pledge-email"
+                    label="Email"
+                    placeholder="Enter your email address"
+                    onChange={props.handleChange}
+                    value={props.values.email}
+                    className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2"
+                    required
+                  />
+
+                  <Label type="text" required>
+                    Pledge Tier
+                  </Label>
+                  <Field
+                    as="select"
+                    name="pledgeTier"
+                    onChange={props.handleChange}
+                    className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2 bg-white black-50"
+                    id="pledge-tier-select"
+                  >
+                    <option disabled="" defaultValue="0" value="0">
+                      Select your pledge tier
+                    </option>
+                    <option value="5">Student — $5/month</option>
+                    <option value="15">Gold — $15/month</option>
+                    <option value="50">Platinum — $50/month</option>
+                    <option value="150">Diamond — $150/month</option>
+                    <option value="500">Ether Advisor — $500/month</option>
+                    <option value="1500">Elite Advisor — $1500/month</option>
+                  </Field>
+                  <img
+                    alt=""
+                    src={arrowSvg}
+                    className="fr mr2 o-50"
+                    style={{ marginTop: '-35px' }}
+                  />
+                  <FormError name="pledgeTier" />
+
+                  <DonateButton text="Pledge" disabled={props.isSubmitting} />
+
+                  <Modal
+                    isOpen={isOpen}
+                    handleClose={handleClose}
+                    title="Form Submitted"
+                    copy="Thank you. We'll be in touch!"
+                  />
+                </form>
+              )}
+            </Formik>
           </div>
         </section>
       </div>
