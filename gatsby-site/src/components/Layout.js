@@ -1,4 +1,5 @@
 import React from 'react';
+import { ThemeProvider } from 'styled-components';
 
 // Global styles
 import '../css/open-sans.css';
@@ -8,15 +9,18 @@ import '../css/colors.css';
 import '../css/clip-path.css';
 
 import Footer from './Footer';
+import { theme } from '../utils/theme';
 
 const Layout = ({ children }) => {
   return (
     <>
       {/* <Header siteTitle={data.site.siteMetadata.title} /> */}
-      <div className="overflow-x-hidden">
-        <main>{children}</main>
-        <Footer />
-      </div>
+      <ThemeProvider theme={theme}>
+        <div className="overflow-x-hidden">
+          <main>{children}</main>
+          <Footer />
+        </div>
+      </ThemeProvider>
     </>
   );
 };

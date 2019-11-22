@@ -22,6 +22,10 @@ export function quoteUsdToEth(pledgeTotalUSD, ethPrice) {
   return parseInt(pledgeTotalUSD, 10) / parseInt(ethPrice, 10);
 }
 
+export function trimUsdToEthPrice(tier, price) {
+  return (tier / price).toString().slice(0, 5);
+}
+
 export function getEndpointAndHeaders() {
   const urlRoute = window.location.href;
   const endpoint =

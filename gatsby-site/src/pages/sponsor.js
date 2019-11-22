@@ -5,14 +5,13 @@ import home1p2 from '../img/home-1.2.png';
 import home3p1 from '../img/home-3.1.png';
 import donate1 from '../img/donate-1.jpg';
 import donateShapes from '../img/donatepage-shapes.svg';
-import patronTiers from '../img/patron-tiers.png';
-import advisorTiers from '../img/advisor-tiers.png';
 import arrowSvg from '../img/arrow.svg';
 
 import Layout from '../components/Layout';
 import SEO from '../components/seo';
 import Donation from '../components/Donation';
 import Nav from '../components/Nav';
+import Input from '../components/Input';
 import { fetchEthPrice } from '../utils/donate';
 
 const names = [
@@ -123,27 +122,23 @@ const Sponsor = () => {
   }
 
   useEffect(() => {
-    function trimPrice(tier, price) {
-      return (tier / price).toString().slice(0, 5);
-    }
-
-    fetchEthPrice()
-      .then(ethPrice => {
-        const price = parseInt(ethPrice);
-        const prices = {
-          stud: trimPrice(5, price),
-          gold: trimPrice(15, price),
-          plat: trimPrice(50, price),
-          diam: trimPrice(150, price),
-          ethe: trimPrice(500, price),
-          elit: trimPrice(1500, price),
-        };
-        setEthPrices(prices);
-      })
-      .catch(error => {
-        console.error(`ERROR fetching eth price: ${error.message}`);
-        alert('Failed to fetch current ether price. Please reload your browser in a few moments.');
-      });
+    // fetchEthPrice()
+    //   .then(ethPrice => {
+    //     const price = parseInt(ethPrice);
+    //     const prices = {
+    //       stud: trimUsdToEthPrice(5, price),
+    //       gold: trimUsdToEthPrice(15, price),
+    //       plat: trimUsdToEthPrice(50, price),
+    //       diam: trimUsdToEthPrice(150, price),
+    //       ethe: trimUsdToEthPrice(500, price),
+    //       elit: trimUsdToEthPrice(1500, price),
+    //     };
+    //     setEthPrices(prices);
+    //   })
+    //   .catch(error => {
+    //     console.error(`ERROR fetching eth price: ${error.message}`);
+    //     alert('Failed to fetch current ether price. Please reload your browser in a few moments.');
+    //   });
   }, []);
 
   return (
@@ -252,6 +247,23 @@ const Sponsor = () => {
             </p>
             <form className="w-80-l w-90-m w-100 center" name="donation-pledge">
               <div className="tl mt4">
+                <label className="ma0 f6 mb3 black-40">
+                  Company
+                  <b className="red f7"> *</b>
+                </label>
+              </div>
+              <input
+                type="text"
+                name="company"
+                id="pledge-company"
+                required
+                placeholder="Enter the name of your company"
+                className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2"
+              />
+
+              <Input name="test" />
+
+              <div className="tl mt4">
                 <label className="ma0 f6 mb3 black-40">First Name</label>
               </div>
               <input
@@ -268,7 +280,6 @@ const Sponsor = () => {
                 type="text"
                 name="last-name"
                 id="pledge-last-name"
-                required
                 placeholder="Enter your last name"
                 className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2"
               />
