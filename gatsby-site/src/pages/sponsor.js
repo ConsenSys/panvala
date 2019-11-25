@@ -5,14 +5,15 @@ import home1p2 from '../img/home-1.2.png';
 import home3p1 from '../img/home-3.1.png';
 import donate1 from '../img/donate-1.jpg';
 import donateShapes from '../img/donatepage-shapes.svg';
-import arrowSvg from '../img/arrow.svg';
 
 import Layout from '../components/Layout';
 import SEO from '../components/seo';
 import Donation from '../components/Donation';
 import Nav from '../components/Nav';
-import Input from '../components/Input';
 import { fetchEthPrice } from '../utils/donate';
+import FieldText from '../components/FieldText';
+import Label from '../components/Label';
+import DownArrow from '../components/Form/DownArrow';
 
 const names = [
   'Simon de la Rouviere',
@@ -246,77 +247,51 @@ const Sponsor = () => {
               the next donation.
             </p>
             <form className="w-80-l w-90-m w-100 center" name="donation-pledge">
-              <div className="tl mt4">
-                <label className="ma0 f6 mb3 black-40">
-                  Company
-                  <b className="red f7"> *</b>
-                </label>
-              </div>
-              <input
+              <FieldText
                 type="text"
                 name="company"
                 id="pledge-company"
-                required
+                label="Company"
                 placeholder="Enter the name of your company"
-                className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2"
+                required
               />
 
-              <Input name="test" />
-
-              <div className="tl mt4">
-                <label className="ma0 f6 mb3 black-40">First Name</label>
-              </div>
-              <input
+              <FieldText
                 type="text"
                 name="first-name"
                 id="pledge-first-name"
+                label="First Name"
                 placeholder="Enter your first name"
-                className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2"
               />
-              <div className="tl mt4">
-                <label className="ma0 f6 mb3 black-40">Last Name</label>
-              </div>
-              <input
+
+              <FieldText
                 type="text"
                 name="last-name"
                 id="pledge-last-name"
+                label="Last Name"
                 placeholder="Enter your last name"
-                className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2"
               />
-              <div className="tl mt4">
-                <label className="ma0 f6 mb3 black-40">
-                  Email
-                  <b className="red f7"> *</b>
-                </label>
-              </div>
-              <input
-                type="email"
+
+              <FieldText
+                type="text"
                 name="email"
                 id="pledge-email"
-                required
+                label="Email"
                 placeholder="Enter your email address"
-                className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2"
+                required
               />
-              <div className="tl mt4">
-                <label className="ma0 f6 mb3 black-40">
-                  Pledge Amount ($USD)
-                  <b className="red f7"> *</b>
-                </label>
-              </div>
-              <input
+
+              <FieldText
                 type="number"
                 name="pledge-amount"
                 id="pledge-amount"
-                required
+                label="Pledge Amount (USD)"
                 placeholder="Enter your pledge amount"
-                className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2"
+                required
               />
-              <div className="tl mt4">
-                <label className="ma0 f6 mb3 black-40">
-                  How many months of your pledge will you prepay today?
-                  <b className="red f7"> *</b>
-                </label>
-              </div>
+
+              <Label required>How many months of your pledge will you prepay today?</Label>
+
               <select
                 name="pledge-duration-selection"
                 required
@@ -331,7 +306,8 @@ const Sponsor = () => {
                 <option value="6">6 months</option>
                 <option value="12">12 months</option>
               </select>
-              <img alt="" src={arrowSvg} className="fr mr2 o-50" style={{ marginTop: '-35px' }} />
+
+              <DownArrow />
 
               <Donation />
             </form>
