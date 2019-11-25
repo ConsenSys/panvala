@@ -214,8 +214,8 @@ const Grants = () => {
                 </div>
                 <div>
                   <a href="https://diligence.consensys.net/"
-                    target="_blank" c
-                    lassName="link dim blue f7 fw7">
+                    target="_blank"
+                    className="link dim blue f7 fw7">
                     View website
                   </a>
                 </div>
@@ -263,31 +263,6 @@ const Grants = () => {
                 <div>
                   <a
                     href="https://github.com/loreum/ESCAPE"
-                    target="_blank"
-                    className="link dim blue f7 fw7"
-                  >
-                    View website
-                  </a>
-                </div>
-              </div>
-            </div>
-          </section>
-          <section className="w-33-l w-50-m w-100 pa3">
-            <div className="shadow-card br3 tl overflow-hidden">
-              <div className="h4 w-100 tc v-mid dtc bg-white">
-                <img src={teamGraham} className="w-100 center" />
-              </div>
-              <div className="pa4 flex flex-column justify-between h6 bg-white">
-                <div>
-                  <h4 className="f6 fw7 ma0">Ethereum Plugins for No-Code Development Platforms</h4>
-                  <h5 className="f7 fw7 blue ma0 mt3">75,000 PAN</h5>
-                  <p className="ma0 f7 lh-text mt3">
-                    A proposal to develop plugins that will let anyone build Ethereum Apps without needing to know how to code.
-                  </p>
-                </div>
-                <div>
-                  <a
-                    href="https://medium.com/@McBain/build-a-no-code-ethereum-app-in-under-2-minutes-e1834d131685"
                     target="_blank"
                     className="link dim blue f7 fw7"
                   >
