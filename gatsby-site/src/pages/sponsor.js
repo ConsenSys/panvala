@@ -8,7 +8,7 @@ import donateShapes from '../img/donatepage-shapes.svg';
 
 import Layout from '../components/Layout';
 import SEO from '../components/seo';
-import Donation from '../components/Donation';
+import Sponsorship from '../components/Sponsorship';
 import Nav from '../components/Nav';
 import { fetchEthPrice } from '../utils/donate';
 import FieldText from '../components/FieldText';
@@ -114,12 +114,29 @@ const names = [
 
 const Sponsor = () => {
   const donateNowRef = useRef(null);
-  const [eps, setEthPrices] = useState({});
+  const [pledgeAmount, setPledgeAmount] = useState('');
 
   function onDonateNowClick() {
     donateNowRef.current.scrollIntoView({
       behavior: 'smooth',
     });
+  }
+
+  function handleChangePledgeAmount(e) {
+    const value = e.target.value;
+
+    if (value.includes('.')) {
+      alert('Please make your pledge in integers');
+      return;
+    }
+
+    try {
+      const amt = parseInt(value);
+      setPledgeAmount(amt);
+    } catch (error) {
+      console.error(`ERROR : ${error.message}`);
+      throw error;
+    }
   }
 
   useEffect(() => {
@@ -288,6 +305,10 @@ const Sponsor = () => {
                 label="Pledge Amount (USD)"
                 placeholder="Enter your pledge amount"
                 required
+                value={pledgeAmount}
+                onChange={handleChangePledgeAmount}
+                min="0"
+                step="1"
               />
 
               <Label required>How many months of your pledge will you prepay today?</Label>
@@ -309,7 +330,7 @@ const Sponsor = () => {
 
               <DownArrow />
 
-              <Donation />
+              <Sponsorship pledgeAmount={pledgeAmount} />
             </form>
           </div>
         </section>

@@ -34,7 +34,7 @@ const StyledInput = styled.input`
 `;
 
 const Input = props => {
-  console.log('props:', props);
+  // console.log('props:', props);
   return <StyledInput className="input-reset b--black-10" {...props} />;
 };
 
