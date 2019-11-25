@@ -12,13 +12,15 @@ import {
   position,
 } from 'styled-system';
 
+// TODO: after adding formik, replace this with styled(FormikField)
 const StyledInput = styled.input`
   box-sizing: border-box;
+  display: block;
   width: 100%;
-  border-radius: 2px;
-  padding: 0.8rem;
-  font-size: 0.8rem;
-  margin: 1rem 0;
+  font-size: 0.875em;
+  margin-top: 8px;
+  padding: 16px 8px;
+  border-radius: 8px;
 
   ${space};
   ${color};
@@ -31,19 +33,9 @@ const StyledInput = styled.input`
   ${position};
 `;
 
-const ErrorMessage = styled.span`
-  color: red;
-  margin-left: 1rem;
-`;
-
 const Input = props => {
   console.log('props:', props);
-  return (
-    <>
-      <StyledInput borderColor="greys.border" color="greys.dark" bg="greys.veryLight" {...props} />
-      <ErrorMessage name={props.name} />
-    </>
-  );
+  return <StyledInput className="input-reset b--black-10" {...props} />;
 };
 
 export default Input;
