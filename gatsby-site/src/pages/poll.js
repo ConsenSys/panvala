@@ -228,6 +228,9 @@ const Poll = () => {
         return;
       }
     }
+    if (!account) {
+      await connectWallet();
+    }
 
     // Calculate the sum of the percentages
     const totalPercentage = calculateTotalPercentage(percentages);
