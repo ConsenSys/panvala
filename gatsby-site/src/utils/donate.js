@@ -83,7 +83,7 @@ export async function getGasPrice(speed = 'fast') {
   return gasPrice.toHexString();
 }
 
-export async function postAutopilot(email, firstName, lastName, txData) {
+export async function postAutopilot(email, firstName, lastName, txData, pledgeType = 'donation') {
   const postData = {
     email: email,
     firstName: firstName,
@@ -95,6 +95,7 @@ export async function postAutopilot(email, firstName, lastName, txData) {
     pledgeMonthlyUSD: txData.pledgeMonthlyUSD,
     pledgeTerm: txData.pledgeTerm,
     multihash: txData.multihash,
+    pledgeType
   };
   const { endpoint, headers } = getEndpointAndHeaders();
   const url = `${endpoint}/api/website`;

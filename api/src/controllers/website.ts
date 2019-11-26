@@ -26,13 +26,22 @@ export async function addContact(req, res) {
     ethValue,
     pledgeMonthlyUSD,
     pledgeTerm,
+    pledgeType,
   } = req.body;
 
   let list_id;
   if (process.env.NODE_ENV === 'production') {
-    list_id = 'contactlist_dd543c0a-1c80-40d4-a386-9616fd433ec4';
+    if (pledgeType === 'sponsorship') {
+      list_id = 'contactlist_d286ca3a-463a-43e2-a216-dabc3b89e3a5';
+    } else {
+      list_id = 'contactlist_dd543c0a-1c80-40d4-a386-9616fd433ec4';
+    }
   } else {
-    list_id = 'contactlist_a4e5fd5f-50bd-4894-8f5e-85b7cfb61f5c';
+    if (pledgeType === 'sponsorship') {
+      list_id = 'contactlist_49599a11-7d49-4108-9f70-9c4d2c124ca8';
+    } else {
+      list_id = 'contactlist_a4e5fd5f-50bd-4894-8f5e-85b7cfb61f5c';
+    }
   }
   const url = `${endpoint}/v1/contact`;
 

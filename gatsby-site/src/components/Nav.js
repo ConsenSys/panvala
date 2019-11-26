@@ -85,6 +85,7 @@ export default function Nav({ account, balance, handleClick }) {
             )
           ) : (
             typeof window !== 'undefined' &&
+            !window.location.href.includes('sponsor') &&
             !window.location.href.includes('donate') && (
               <a href="/donate">
                 <button className="f6 link dim bn br-pill white bg-teal fw7 pointer pv3 ph4">

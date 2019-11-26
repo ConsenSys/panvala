@@ -11,7 +11,6 @@ import {
   fetchEthPrice,
   quoteUsdToEth,
   getEndpointAndHeaders,
-  getTier,
   getGasPrice,
   postAutopilot,
 } from '../utils/donate';
@@ -309,7 +308,7 @@ class Sponsorship extends Component {
     // Build donation object
     const donation = {
       version: '1',
-      memo: '',
+      memo: pledgeCompany.value,
       usdValue: BN(pledgeTotal).toString(),
       ethValue: weiAmount.toString(),
       pledgeMonthlyUSD,
@@ -348,7 +347,7 @@ class Sponsorship extends Component {
             txHash,
             multihash,
           };
-          await postAutopilot(this.state.email, this.state.firstName, this.state.lastName, txData);
+          await postAutopilot(this.state.email, this.state.firstName, this.state.lastName, txData, 'sponsorship');
           pledgeFirstName.value = '';
           pledgeLastName.value = '';
           pledgeEmail.value = '';
