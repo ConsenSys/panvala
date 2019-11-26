@@ -302,7 +302,7 @@ const Sponsor = () => {
                 type="number"
                 name="pledge-amount"
                 id="pledge-amount"
-                label="Pledge Amount (USD)"
+                label="Monthly Pledge Amount (USD)"
                 placeholder="Enter your pledge amount"
                 required
                 value={pledgeAmount}
