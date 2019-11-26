@@ -180,7 +180,7 @@ const Sponsor = () => {
             id="donate-now-route-button"
             onClick={onDonateNowClick}
           >
-            Donate Now
+            Sponsor Now
           </button>
         </div>
       </section>
@@ -330,7 +330,7 @@ const Sponsor = () => {
 
               <DownArrow />
 
-              <Sponsorship pledgeAmount={pledgeAmount} />
+              <Sponsorship pledgeAmount={pledgeAmount} resetPledgeAmount={() => setPledgeAmount('')} />
             </form>
           </div>
         </section>

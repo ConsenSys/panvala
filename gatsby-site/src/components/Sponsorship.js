@@ -347,11 +347,18 @@ class Sponsorship extends Component {
             txHash,
             multihash,
           };
-          await postAutopilot(this.state.email, this.state.firstName, this.state.lastName, txData, 'sponsorship');
+          await postAutopilot(
+            this.state.email,
+            this.state.firstName,
+            this.state.lastName,
+            txData,
+            'sponsorship'
+          );
+          pledgeCompany.value = '';
           pledgeFirstName.value = '';
           pledgeLastName.value = '';
           pledgeEmail.value = '';
-          // pledgeAmount = '';
+          this.props.resetPledgeAmount()
           pledgeTermSelect.value = '0';
         }
       }
@@ -491,6 +498,7 @@ class Sponsorship extends Component {
           step={this.state.step}
           message={this.state.message}
           handleCancel={this.handleCancel}
+          pledgeType="sponsorship"
         />
       </>
     );
