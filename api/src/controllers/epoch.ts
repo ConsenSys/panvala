@@ -39,6 +39,8 @@ export async function getDates(req, res) {
     const timings: any = timing.getTimingsForEpoch(epochStart);
     // console.log('timings:', timings);
 
+    // prettier-ignore
+    const proposalSubmissionCloses = epochStart.add(timing.durations.ONE_WEEK * 3).toNumber()
     const slateCreationCloses = await gatekeeper.slateSubmissionDeadline(
       epochBN,
       tokenCapacitor.address
@@ -48,7 +50,7 @@ export async function getDates(req, res) {
       epochNumber: bigNumberify(epochNumber).toNumber(),
       epochStart: timings.epochStart,
       proposalSubmissionOpens: timings.slateSubmissionStart,
-      proposalSubmissionCloses: slateCreationCloses.sub(timing.durations.ONE_WEEK).toNumber(),
+      proposalSubmissionCloses,
       slateCreationOpens: timings.slateSubmissionStart,
       slateCreationCloses: slateCreationCloses.toNumber(),
       votingOpens: timings.votingStart,
