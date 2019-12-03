@@ -22,7 +22,8 @@
     "poll:create": "ts-node scripts/createPoll.ts",
     "poll:tally": "ts-node scripts/tally-poll.ts",
     "sync-events": "ts-node scripts/sync-contract-events.ts",
-    "test": "jest"
+    "test": "jest",
+    "update:contract-types": "typechain --target=ethers --outDir ./types '../packages/panvala-utils/abis/**/*.json'"
   },
   "author": "",
   "license": "ISC",
@@ -66,6 +67,8 @@
     "supertest": "^4.0.2",
     "ts-jest": "^24.1.0",
     "ts-node": "^8.4.1",
+    "typechain": "^1.0.3",
+    "typechain-target-ethers": "^1.0.3",
     "typescript": "^3.6.3",
     "umzug": "^2.2.0"
   },

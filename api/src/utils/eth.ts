@@ -1,6 +1,7 @@
 import * as ethers from 'ethers';
 import { contracts, rpcEndpoint } from './config';
 import { contractABIs } from '.';
+import { IGatekeeper, IParameterStore, ITokenCapacitor } from '../types';
 
 const { gatekeeperAddress, tokenCapacitorAddress } = contracts;
 const { Gatekeeper, TokenCapacitor, ParameterStore } = contractABIs;
@@ -24,11 +25,23 @@ const genBlocks = {
 async function getContracts() {
   const provider = new ethers.providers.JsonRpcProvider(rpcEndpoint);
   const network = await provider.getNetwork();
-  const gatekeeper = new ethers.Contract(gatekeeperAddress, Gatekeeper.abi, provider);
+  const gatekeeper: IGatekeeper = new ethers.Contract(
+    gatekeeperAddress,
+    Gatekeeper.abi,
+    provider
+  ) as IGatekeeper;
   const parameterStoreAddress = await gatekeeper.parameters();
-  const parameterStore = new ethers.Contract(parameterStoreAddress, ParameterStore.abi, provider);
-  const tokenCapacitor = new ethers.Contract(tokenCapacitorAddress, TokenCapacitor.abi, provider);
-  const genesisBlockNumber = genBlocks[network.chainId] || genBlocks.unknown;
+  const parameterStore: IParameterStore = new ethers.Contract(
+    parameterStoreAddress,
+    ParameterStore.abi,
+    provider
+  ) as IParameterStore;
+  const tokenCapacitor: ITokenCapacitor = new ethers.Contract(
+    tokenCapacitorAddress,
+    TokenCapacitor.abi,
+    provider
+  ) as ITokenCapacitor;
+  const genesisBlockNumber: number = genBlocks[network.chainId] || genBlocks.unknown;
 
   return {
     provider,
