@@ -3,6 +3,8 @@ import { providers, Contract, utils } from 'ethers';
 import styled from 'styled-components';
 import { layout, space } from 'styled-system';
 import panUtils from 'panvala-utils';
+import * as yup from 'yup';
+import { Formik } from 'formik';
 
 import Box from '../components/system/Box';
 import Layout from '../components/Layout';
@@ -21,6 +23,7 @@ import {
   ModalCopy,
   ModalSubTitle,
 } from '../components/WebsiteModal';
+import FieldText from '../components/FieldText';
 
 const categories = [
   {
@@ -88,11 +91,6 @@ const Poll = () => {
   const [ptsRemaining, setPtsRemaining] = useState(100);
   const [provider, setProvider] = useState();
   const [allocations, setAllocations] = useState([]);
-  const [fields, setFields] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-  });
   const [percentages, setPercentages] = useState({
     1: '',
     2: '',
@@ -196,32 +194,42 @@ const Poll = () => {
     }
   }
 
-  // User changes a poll value
-  function handleChange(value, categoryID) {
+  // Validate individual form field
+  function validatePercentage(value) {
+    let error;
+    if (value < 0 || value > 100) {
+      error = 'Invalid percentage';
+    }
+    return error;
+  }
+
+  // Validate the whole form
+  const PollFormSchema = yup.object({
+    categories: yup.object(),
+    firstName: yup.string().trim(),
+    lastName: yup.string().trim(),
+    email: yup.string().email(),
+  });
+
+  // User changes a poll value - update state
+  function updatePercentages(value, categoryID) {
     setPercentages({
       ...percentages,
       [categoryID]: value,
     });
   }
 
-  function handleChangeField(e) {
-    setFields({
-      ...fields,
-      [e.target.id]: e.target.value,
-    });
-  }
-
+  // Change the display amount of points remaining
   // Triggered by change in values
   useEffect(() => {
     const subtotal = calculateTotalPercentage(percentages);
-    // Change the display amount of points remaining
     setPtsRemaining(100 - subtotal);
   }, [percentages]);
 
   // User submits the poll
-  async function handleFormSubmit(event) {
-    event.preventDefault();
+  async function handleFormSubmit(values, actions) {
     setSubmitted(true);
+
     if (!provider) {
       const acct = await connectWallet();
       if (!acct) {
@@ -232,60 +240,41 @@ const Poll = () => {
       await connectWallet();
     }
 
-    // Calculate the sum of the percentages
-    const totalPercentage = calculateTotalPercentage(percentages);
-
-    if (totalPercentage < 100) {
-      alert(`Please allocate all 100 percentage points (current subtotal: ${totalPercentage})`);
-      return;
-    } else if (totalPercentage > 100) {
-      alert(`Please allocate just 100 percentage points (current subtotal: ${totalPercentage})`);
-      return;
-    }
-
-    const percentValues = Object.keys(percentages);
-
-    // Create a new array of invalid percentages (0 - 100)
-    const zeroToHundred = /^[0-9][0-9]?$|^100$/;
-    const invalidPercentages = percentValues.reduce((acc, val) => {
-      if (zeroToHundred.test(percentages[val]) || percentages[val] === '') {
-        return acc;
+    // transform the allocations for submission
+    // Format allocations
+    const chosenAllocations = categories.map(c => {
+      const cid = c.categoryID;
+      let points = percentages[cid];
+      if (points === '') {
+        points = 0;
       }
-      return [...acc, { [val]: percentages[val] }];
-    }, []);
-    console.log('invalidPercentages:', invalidPercentages);
+      return {
+        categoryID: cid,
+        points: parseInt(points),
+      };
+    });
 
-    // Valid percentages
-    if (invalidPercentages.length === 0 && totalPercentage === 100) {
-      // Format allocations
-      const allocations = categories.map(c => {
-        const cid = c.categoryID;
-        let points = percentages[cid];
-        if (points === '') {
-          points = 0;
-        }
-        return {
-          categoryID: cid,
-          points: parseInt(points),
-        };
-      });
+    // console.log('allocations:', allocations);
 
-      // console.log('allocations:', allocations);
-      setAllocations(allocations);
+    // Update allocations for display after voting
+    await setAllocations(chosenAllocations);
+
+    // post form
+    await sendPollData(chosenAllocations);
+
+    actions.setSubmitting(false);
+  }
+
+  function sendPollData(allocations) {
+    if (account && allocations.length > 0 && !alreadyVoted) {
+      return postPoll(allocations);
+    } else {
+      // Should never get here
+      alert('Problem submitting poll');
     }
   }
 
-  useEffect(() => {
-    if (account !== '') {
-      window.ethereum.on('accountsChanged', network => {
-        console.log('MetaMask account changed:', network);
-        window.location.reload();
-      });
-    }
-  }, [account]);
-
-  // Triggered by validation of form, formatting of allocations
-  useEffect(() => {
+  function updateVotingStatus() {
     if (account) {
       const { endpoint, headers } = getEndpoint('GET');
       console.log('endpoint:', endpoint);
@@ -308,15 +297,21 @@ const Poll = () => {
               alert('The connected account has already voted in this poll.');
             }
           }
-
-          if (!json.responded && allocations.length > 0 && !alreadyVoted && submitted) {
-            console.log('form valid');
-            return postPoll();
-          }
         });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [account, allocations, submitted]);
+  }
+
+  useEffect(() => {
+    // Do this every time the account changes
+    updateVotingStatus();
+
+    if (account !== '') {
+      window.ethereum.on('accountsChanged', network => {
+        console.log('MetaMask account changed:', network);
+        window.location.reload();
+      });
+    }
+  }, [account]);
 
   function getEndpoint(method) {
     const environment = getEnvironment();
@@ -342,7 +337,7 @@ const Poll = () => {
   }
 
   // Posts poll to database
-  async function postPoll() {
+  async function postPoll(allocations) {
     function generateMessage(account, pollID) {
       // Always use checksum address in the message
       return `Response from ${account} for poll ID ${pollID}`;
@@ -480,7 +475,13 @@ const Poll = () => {
 
       {/* Fund work that matters */}
       <section className="cf w-100 bottom-clip-down bg-white flex justify-between items-center">
-        <Box p={['3rem', '2rem']} mb={['1rem', '0']} flex alignItems="center" justifyContent="space-around">
+        <Box
+          p={['3rem', '2rem']}
+          mb={['1rem', '0']}
+          flex
+          alignItems="center"
+          justifyContent="space-around"
+        >
           <div className="w-100 w-25-ns dn dib-ns">
             <img alt="" src={pollTwo} className="center" />
           </div>
@@ -596,108 +597,153 @@ const Poll = () => {
               </Box>
 
               <div className="bg-white shadow lh-copy black">
-                <form>
-                  {categories.map((category, index) => {
-                    const { description, title, previous } = category;
-                    const identifier = `poll-points-category-${index}`;
+                <Formik
+                  initialValues={{
+                    categories: categories.reduce((prev, current) => {
+                      return { ...prev, [current.categoryID]: '' };
+                    }, {}),
+                    firstName: '',
+                    lastName: '',
+                    email: '',
+                  }}
+                  validate={values => {
+                    return PollFormSchema.validate(values).then(() => {
+                      // validate the sum of points
+                      const totalPercentage = calculateTotalPercentage(percentages);
+                      if (totalPercentage < 100) {
+                        return { poll: 'Please allocate all 100 points' };
+                      } else if (totalPercentage > 100) {
+                        return { poll: 'Please allocate no more than 100 points' };
+                      }
+                    });
+                  }}
+                  validateOnBlur={false}
+                  validateOnChange={false}
+                  onSubmit={handleFormSubmit}
+                >
+                  {props => (
+                    <form onSubmit={props.handleSubmit}>
+                      {categories.map((category, index) => {
+                        const { description, title, previous, categoryID } = category;
+                        const identifier = `poll-points-category-${categoryID}`;
 
-                    return (
-                      <div key={identifier} className="cf pa3 bb bw-2 b--black-10">
-                        <div className="fl w-80 pa2 pr4">
-                          <div className="f4 b">{title}</div>
-                          <p dangerouslySetInnerHTML={{ __html: description }}></p>
-                        </div>
-                        <div className="fl w-20 pa2 f5 tr">
-                          <div className="b ttu f6 o-50">previous batch</div>
-                          <div className="pb3">{previous}%</div>
-                          <div className="b ttu f6 o-50">
-                            <label className="ma0 mb3">Batch five</label>
+                        const name = `categories.${categoryID}`;
+
+                        return (
+                          <div key={identifier} className="cf pa3 bb bw-2 b--black-10">
+                            <div className="fl w-80 pa2 pr4">
+                              <div className="f4 b">{title}</div>
+                              <p dangerouslySetInnerHTML={{ __html: description }}></p>
+                            </div>
+                            <div className="fl w-20 pa2 f5 tr">
+                              <div className="b ttu f6 o-50">previous batch</div>
+                              <div className="pb3">{previous}%</div>
+                              <div className="b ttu f6 o-50">
+                                <label className="ma0 mb3">Batch five</label>
+                              </div>
+                              <div>
+                                <FieldText
+                                  type="number"
+                                  name={name}
+                                  id={identifier}
+                                  max="100"
+                                  min="0"
+                                  placeholder="%"
+                                  // validate the individual percentages on blur
+                                  onBlur={() => {
+                                    props.validateField(name);
+                                  }}
+                                  onChange={e => {
+                                    props.handleChange(e);
+                                    updatePercentages(e.target.value, category.categoryID);
+                                  }}
+                                  value={props.values.categories[categoryID]}
+                                  validate={validatePercentage}
+                                  className="f6 input-reset b--black-10 pv3 ph2 db w-100 br3 mt2 tr"
+                                />
+                              </div>
+                            </div>
                           </div>
-                          <div>
+                        );
+                      })}
+
+                      {/* <-- name and email --> */}
+                      <div className="pa4 bb bw-2 b--black-10 black-60">
+                        <Box color="black" display="flex" justifyContent="flex-end" mb={4}>
+                          Points Remaining:&nbsp;<b>{ptsRemaining}</b>
+                        </Box>
+                        <div className="cf pv2">
+                          <div className="fl w-50 pr3">
+                            <FieldText
+                              type="text"
+                              id="firstName"
+                              name="firstName"
+                              label="First name (Optional)"
+                              placeholder="Enter your first name"
+                              className="w-100 pa2"
+                              value={props.values.firstName}
+                              onChange={props.handleChange}
+                            />
+                          </div>
+                          <div className="fl w-50">
+                            <FieldText
+                              type="text"
+                              id="lastName"
+                              name="lastName"
+                              label="Last Name (Optional"
+                              placeholder="Enter your last name"
+                              className="w-100 pa2"
+                              value={props.values.lastName}
+                              onChange={props.handleChange}
+                            />
+                          </div>
+                        </div>
+                        <div className="pv2">
+                          <FieldText
+                            type="text"
+                            id="email"
+                            name="email"
+                            label="Email (Optional)"
+                            placeholder="Enter your email"
+                            className="w-100 pa2"
+                            value={props.values.email}
+                            onChange={props.handleChange}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="cf pa4">
+                        <div className="f5 tl pb3 lh-copy">
+                          The final poll results will be calculated using the balance of PAN tokens
+                          in your account on {pollDeadline}.
+                        </div>
+                        <div className="f5 tl pb4 lh-copy">
+                          <b>
+                            Reminder: You will not lose any tokens or ETH for participating in this
+                            poll.
+                          </b>
+                        </div>
+                        {/* Form-level error messages */}
+                        <div>
+                          {props.errors.poll ? (
+                            <div className="red pb2">{props.errors.poll}</div>
+                          ) : null}
+                        </div>
+                        <div className="fr w-100 w-70-l flex-column items-end">
+                          <div className="flex justify-end">
                             <input
-                              type="number"
-                              name={identifier}
-                              id={identifier}
-                              max="100"
-                              min="0"
-                              required
-                              placeholder="%"
-                              onChange={e => handleChange(e.target.value, category.categoryID)}
-                              value={percentages[category.categoryID]}
-                              className="f6 input-reset b--black-10 pv3 ph2 db w-100 br3 mt2 tr"
+                              type="submit"
+                              name="submit"
+                              className="f6 link dim bn br-pill pv3 ph4 bg-teal white fw7"
+                              value="Submit Vote"
+                              disabled={props.isSubmitting}
                             />
                           </div>
                         </div>
                       </div>
-                    );
-                  })}
-
-                  {/* <-- name and email --> */}
-                  <div className="pa4 bb bw-2 b--black-10 black-60">
-                    <Box color="black" display="flex" justifyContent="flex-end" mb={4}>
-                      Points Remaining:&nbsp;<b>{ptsRemaining}</b>
-                    </Box>
-                    <div className="cf pv2">
-                      <div className="fl w-50 pr3">
-                        <label>First Name (Optional)</label>
-                        <input
-                          type="text"
-                          id="firstName"
-                          placeholder="Enter your first name"
-                          className="w-100 pa2"
-                          value={fields.firstName}
-                          onChange={handleChangeField}
-                        ></input>
-                      </div>
-                      <div className="fl w-50">
-                        <label>Last Name (Optional)</label>
-                        <input
-                          type="text"
-                          id="lastName"
-                          placeholder="Enter your last name"
-                          className="w-100 pa2"
-                          value={fields.lastName}
-                          onChange={handleChangeField}
-                        ></input>
-                      </div>
-                    </div>
-                    <div className="pv2">
-                      <label>Email (Optional)</label>
-                      <input
-                        type="text"
-                        id="email"
-                        placeholder="Enter your email"
-                        className="w-100 pa2"
-                        value={fields.email}
-                        onChange={handleChangeField}
-                      ></input>
-                    </div>
-                  </div>
-
-                  <div className="cf pa4">
-                    <div className="f5 tl pb3 lh-copy">
-                      The final poll results will be calculated using the balance of PAN tokens in
-                      your account on {pollDeadline}.
-                    </div>
-                    <div className="f5 tl pb4 lh-copy">
-                      <b>
-                        Reminder: You will not lose any tokens or ETH for participating in this
-                        poll.
-                      </b>
-                    </div>
-                    <div className="fr w-100 w-70-l flex-column items-end">
-                      <div className="flex justify-end">
-                        <input
-                          type="submit"
-                          name="submit"
-                          onClick={handleFormSubmit}
-                          className="f6 link dim bn br-pill pv3 ph4 bg-teal white fw7"
-                          value="Submit Vote"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </form>
+                    </form>
+                  )}
+                </Formik>
               </div>
             </>
           )}
