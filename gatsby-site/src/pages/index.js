@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { graphql } from 'gatsby';
 
 import home1 from '../img/home-1.jpg';
@@ -34,9 +34,12 @@ import Layout from '../components/Layout';
 import SEO from '../components/seo';
 import Nav from '../components/Nav';
 import Modal from '../components/Modal';
+import { getEpochDates } from '../utils/api';
+import TopBar from '../components/TopBar';
 
 const IndexPage = () => {
   const [isOpen, setModalOpen] = useState(false);
+  const [epochDates, setEpochDates] = useState({});
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -50,6 +53,33 @@ const IndexPage = () => {
     em.value = '';
   }
 
+  useEffect(() => {
+    async function getData() {
+      const epochDates = await getEpochDates();
+      // console.log('epochDates:', epochDates);
+
+      // Transform into human readable dates
+      const dates = Object.keys(epochDates).reduce((acc, val) => {
+        const value =
+          val === 'epochNumber'
+            ? epochDates[val] // 4
+            : new Date(epochDates[val] * 1000).toLocaleString(); // 11/1/2019, 1:00:00 PM
+        return {
+          ...acc,
+          [val]: value,
+        };
+      }, {});
+      // console.log('dates:', dates);
+
+      // Set state
+      setEpochDates(dates);
+    }
+
+    getData();
+  }, []);
+
+  console.log('epochDates:', epochDates);
+
   return (
     <Layout>
       <SEO title="Home" />
@@ -58,6 +88,10 @@ const IndexPage = () => {
         className="bg-gradient bottom-clip-hero-main relative z-0 mb4-ns"
         style={{ height: '1000px' }}
       >
+        <TopBar>
+          <div>{epochDates.epochNumber}</div>
+          <div>{epochDates.epochStart}</div>
+        </TopBar>
         <Nav />
         {/* <!-- Hero --> */}
         <div className="w-70-l w-80-m w-90 dt center pv5-ns pv4">
