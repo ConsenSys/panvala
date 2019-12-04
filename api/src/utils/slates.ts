@@ -35,7 +35,7 @@ async function getAllSlates() {
   }
 
   // 0..slateCount
-  const slateIDs = range(0, slateCount);
+  const slateIDs = range(0, slateCount.toNumber());
   console.log('slateIDs', slateIDs);
 
   // TEMPORARY HACK
@@ -79,10 +79,10 @@ async function getAllSlates() {
         }
         // Staked
         if (slate.status === 1) {
-          const contest = await gatekeeper.contestStatus(slate.epochNumber, slate.resource);
+          const contestStatus = await gatekeeper.contestStatus(slate.epochNumber, slate.resource);
           const contestSlates = await gatekeeper.contestSlates(slate.epochNumber, slate.resource);
           // No contest || contest finalized
-          if (contest.status !== 2 && contestSlates.length > 1) {
+          if (contestStatus !== 2 && contestSlates.length > 1) {
             slate.status = 3;
           }
         }
