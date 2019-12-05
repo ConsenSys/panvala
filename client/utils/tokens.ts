@@ -21,8 +21,8 @@ export async function projectedAvailableTokens(
   let unredeemedTokens = '0';
   if (winningSlate && winningSlate.proposals.length) {
     // filter out all the proposals that have been withdrawn already
-    const unredeemedGrantsPromises = winningSlate.proposals.filter(async p => {
-      const proposal = await tokenCapacitor.functions.proposals(p.id);
+    const unredeemedGrantsPromises = winningSlate.proposals.filter(async (p: any) => {
+      const proposal = await tokenCapacitor.functions.proposals(p.proposalID);
       return !proposal.withdrawn;
     });
     const unredeemedGrants: IProposal[] = await Promise.all(unredeemedGrantsPromises);

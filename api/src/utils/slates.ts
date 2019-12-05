@@ -9,7 +9,7 @@ import * as config from './config';
 import { nonEmptyString } from './validation';
 import { getProposalsForRequests } from './requests';
 
-const { IpfsMetadata, Slate } = require('../models');
+const { IpfsMetadata, Slate, Request } = require('../models');
 const { toUtf8String, bigNumberify: BN, getAddress } = ethers.utils;
 const { tokenCapacitorAddress } = config.contracts;
 
@@ -156,6 +156,28 @@ async function getSlateWithMetadata(slateID, slate, metadataHash, incumbent, req
     // console.log('proposalMultihashes:', proposalMultihashes);
     // console.log('');
 
+    const proposalsWithIds = await Promise.all(
+      proposals.map(async (proposal, i) => {
+        const multihash = Buffer.from(proposalMultihashes[i]).toString('hex');
+        const request = await Request.findOne(
+          {
+            where: {
+              metadataHash: `0x${multihash}`,
+            },
+          },
+          { raw: true }
+        );
+        if (request == null) {
+          return proposal;
+        }
+        return {
+          ...proposal,
+          proposalID: request.proposalID,
+          requestID: request.requestID,
+        };
+      })
+    );
+
     // --------------------------
     // COMBINE/RETURN SLATE DATA
     // --------------------------
@@ -169,7 +191,7 @@ async function getSlateWithMetadata(slateID, slate, metadataHash, incumbent, req
       organization,
       // either first + last name or just first name
       owner: lastName ? `${firstName} ${lastName}` : firstName,
-      proposals,
+      proposals: proposalsWithIds,
       proposalMultihashes,
       recommender: slate.recommender,
       requiredStake,
