@@ -1,7 +1,7 @@
 import * as request from 'supertest';
 import app from '../index';
 
-describe('Epochs', () => {
+describe.skip('Epochs', () => {
   describe('GET /api/epochs/:epochNumber/dates', () => {
     const baseRoute = '/api/epochs';
     let epoch: string = 'current';
