@@ -2,7 +2,7 @@ import * as ethers from 'ethers';
 import axios from 'axios';
 import { getContracts, contractABIs } from './eth';
 import { timing } from '.';
-import { BigNumber, bigNumberify } from 'ethers/utils';
+import { bigNumberify, BigNumberish } from 'ethers/utils';
 import { IGatekeeper, ITokenCapacitor } from '../types';
 
 const { bigNumberify: BN, parseUnits } = ethers.utils;
@@ -84,13 +84,13 @@ export async function circulatingSupply() {
 export async function projectedAvailableTokens(
   tokenCapacitor: ITokenCapacitor,
   gatekeeper: IGatekeeper,
-  epochNumber: BigNumber,
+  epochNumber: BigNumberish,
   winningSlate?: any
 ) {
   // project the unlocked token balance at the start of the next epoch
   let pUnlockedBalance = bigNumberify('0');
   if (tokenCapacitor.functions.hasOwnProperty('projectedUnlockedBalance')) {
-    const nextEpochStart = await gatekeeper.functions.epochStart(epochNumber.add(1));
+    const nextEpochStart = await gatekeeper.functions.epochStart(bigNumberify(epochNumber).add(1));
     pUnlockedBalance = await tokenCapacitor.functions.projectedUnlockedBalance(nextEpochStart);
   }
   // console.log('projected unlocked balance:', pUnlockedBalance);
@@ -98,11 +98,16 @@ export async function projectedAvailableTokens(
   let unredeemedTokens = '0';
   if (winningSlate && winningSlate.proposals.length) {
     // filter out all the proposals that have been withdrawn already
-    const unredeemedGrantsPromises = winningSlate.proposals.filter(async p => {
+    const unredeemedGrantsPromises = winningSlate.proposals.map(async (p: any) => {
       const proposal = await tokenCapacitor.functions.proposals(p.proposalID);
-      return !proposal.withdrawn;
+      return {
+        ...p,
+        withdrawn: proposal.withdrawn,
+      };
     });
-    const unredeemedGrants: any[] = await Promise.all(unredeemedGrantsPromises);
+    const unredeemedGrants: any[] = (await Promise.all(unredeemedGrantsPromises)).filter(
+      (p: any) => !p.withdrawn
+    );
 
     // add up all the unredeemed tokens
     if (unredeemedGrants.length) {

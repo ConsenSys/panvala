@@ -55,6 +55,9 @@ export async function getBudget(req, res) {
       panPriceETH,
     });
   } catch (error) {
-    res.send(error);
+    res.status(400).send({
+      msg: 'Error getting budget',
+      errors: [error],
+    });
   }
 }
