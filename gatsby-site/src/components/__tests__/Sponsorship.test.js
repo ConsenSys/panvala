@@ -1,21 +1,12 @@
 import React from 'react';
-import Donation from '../Donation';
 import { create } from 'react-test-renderer';
-
-const ethPrices = {
-  student: 50,
-  gold: 150,
-  platinum: 500,
-  diamond: 1500,
-  ether: 5000,
-  elite: 15000,
-}
+import Sponsorship from '../Sponsorship';
 
 describe('Donation', () => {
   let component, instance;
 
   beforeEach(() => {
-    component = create(<Donation ethPrices={ethPrices} />);
+    component = create(<Sponsorship />);
     instance = component.getInstance();
   });
 
@@ -30,8 +21,6 @@ describe('Donation', () => {
       tier: '',
       panPurchased: 0,
     };
-
-    console.log("instance:", instance);
 
     expect(component.toJSON()).toMatchSnapshot();
     expect(instance.state).toEqual(initialState);

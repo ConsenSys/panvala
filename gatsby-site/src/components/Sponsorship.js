@@ -1,10 +1,9 @@
 import React, { Component } from 'react';
-import { providers, constants, Contract, utils } from 'ethers';
+import { providers, constants, utils } from 'ethers';
 
 import WebsiteModal from './WebsiteModal';
-import DonateButton from './DonateButton';
+import SponsorshipForm from './SponsorshipForm';
 
-import { tcAbi, tokenAbi, exchangeAbi } from '../utils/abis';
 import {
   BN,
   checkAllowance,
@@ -13,9 +12,11 @@ import {
   getEndpointAndHeaders,
   getGasPrice,
   postAutopilot,
+  quoteEthToPan,
 } from '../utils/donate';
+import { loadContracts } from '../utils/env';
 
-const { formatEther, parseEther, formatUnits, hexlify, getAddress } = utils;
+const { parseEther, hexlify, getAddress } = utils;
 
 class Sponsorship extends Component {
   constructor(props) {
@@ -30,7 +31,7 @@ class Sponsorship extends Component {
       tier: '',
       panPurchased: 0,
     };
-    this.handleClickDonate = this.handleClickDonate.bind(this);
+    this.handleDonation = this.handleDonation.bind(this);
     this.handleCancel = this.handleCancel.bind(this);
     this.provider = undefined;
     this.exchange = undefined;
@@ -85,37 +86,11 @@ class Sponsorship extends Component {
         console.error(`ERROR: ${error.message}`);
         throw error;
       }
-      const { chainId } = await this.provider.getNetwork();
-      const signer = this.provider.getSigner();
 
-      // Addresses
-      const tokenAddress =
-        chainId === 4
-          ? '0x4912d6aBc68e4F02d1FdD6B79ed045C0A0BAf772'
-          : chainId === 1 && '0xD56daC73A4d6766464b38ec6D91eB45Ce7457c44';
-      const tcAddress =
-        chainId === 4
-          ? '0xA062C59F42a45f228BEBB6e7234Ed1ea14398dE7'
-          : chainId === 1 && '0x9a7B675619d3633304134155c6c976E9b4c1cfB3';
-      const exchangeAddress =
-        chainId === 4
-          ? '0x25EAd1E8e3a9C38321488BC5417c999E622e36ea'
-          : chainId === 1 && '0xF53bBFBff01c50F2D42D542b09637DcA97935fF7';
-
-      // Get codes
-      const tokenCode = await this.provider.getCode(tokenAddress);
-      const tcCode = await this.provider.getCode(tcAddress);
-      const exchangeCode = await this.provider.getCode(exchangeAddress);
-
-      // prettier-ignore
-      if (!tokenAddress || !tcAddress || !exchangeAddress || !tokenCode || !tcCode || !exchangeCode) {
-        throw new Error('Invalid address or no code at address.')
-      }
-
-      // Init token, token capacitor, uniswap exchange contracts
-      this.token = new Contract(tokenAddress, tokenAbi, signer);
-      this.tokenCapacitor = new Contract(tcAddress, tcAbi, signer);
-      this.exchange = new Contract(exchangeAddress, exchangeAbi, signer);
+      const { token, tokenCapacitor, exchange } = await loadContracts(this.provider);
+      this.token = token;
+      this.tokenCapacitor = tokenCapacitor;
+      this.exchange = exchange;
     } else {
       // No provider yet
       const account = await this.setSelectedAccount();
@@ -206,32 +181,8 @@ class Sponsorship extends Component {
     }
   }
 
-  // Sell order (exact input) -> calculates amount bought (output)
-  async quoteEthToPan(etherToSpend) {
-    console.log('');
-    // Sell ETH for PAN
-    const ethAmount = BN(etherToSpend);
-
-    // ETH reserve
-    const inputReserve = await this.provider.getBalance(this.exchange.address);
-    console.log(`ETH reserve: ${formatEther(inputReserve)}`);
-
-    // PAN reserve
-    const outputReserve = await this.token.balanceOf(this.exchange.address);
-    console.log(`PAN reserve: ${formatUnits(outputReserve, 18)}`);
-
-    const numerator = ethAmount.mul(outputReserve).mul(997);
-    const denominator = inputReserve.mul(1000).add(ethAmount.mul(997));
-    const panToReceive = numerator.div(denominator);
-
-    console.log(
-      `quote ${formatEther(ethAmount)} ETH : ${formatUnits(panToReceive.toString(), 18)} PAN`
-    );
-    // EQUIVALENT, DIRECT CHAIN CALL
-    // PAN bought w/ input ETH
-    // const panToReceive = await this.exchange.getEthToTokenInputPrice(ethAmount);
-    // console.log(`${formatEther(ethAmount)} ETH -> ${formatUnits(panToReceive, 18)} PAN`);
-    return panToReceive;
+  getQuote(value) {
+    return quoteEthToPan(value, this.provider, { token: this.token, exchange: this.exchange });
   }
 
   // ---------------------------------------------------------------------------
@@ -239,32 +190,10 @@ class Sponsorship extends Component {
   // ---------------------------------------------------------------------------
 
   // Click handler for donations
-  async handleClickDonate(e) {
-    e.preventDefault();
+  async handleDonation(values, actions) {
+    console.log('Sponsorship:', 'handleDonation', values);
 
-    const pledgeCompany = document.getElementById('pledge-company');
-    const pledgeFirstName = document.getElementById('pledge-first-name');
-    const pledgeLastName = document.getElementById('pledge-last-name');
-    const pledgeEmail = document.getElementById('pledge-email');
-    const pledgeAmount = this.props.pledgeAmount;
-    const pledgeTermSelect = document.getElementById('pledge-duration-select');
-
-    if (pledgeCompany.value === '') {
-      alert('You must enter a company name.');
-      return;
-    }
-    if (pledgeEmail.value === '') {
-      alert('You must enter an email address.');
-      return;
-    }
-    if (pledgeAmount === '') {
-      alert('You must enter a pledge amount.');
-      return;
-    }
-    if (pledgeTermSelect.value === '0') {
-      alert('You must select a pledge duration.');
-      return;
-    }
+    const { company, firstName, lastName, email, pledgeAmount, pledgeDuration } = values;
 
     // Make sure ethereum is hooked up properly
     try {
@@ -279,16 +208,16 @@ class Sponsorship extends Component {
     const tier = 'Sponsor';
     this.setState({
       tier,
-      email: pledgeEmail.value,
-      firstName: pledgeFirstName.value,
-      lastName: pledgeLastName.value,
+      email,
+      firstName,
+      lastName,
       step: 1,
       message: 'Adding metadata to IPFS...',
     });
 
     // Calculate pledge total value (monthly * term)
     const pledgeMonthlyUSD = parseInt(pledgeAmount, 10);
-    const pledgeTerm = parseInt(pledgeTermSelect.value, 10);
+    const pledgeTerm = parseInt(pledgeDuration, 10);
     const pledgeTotal = BN(pledgeMonthlyUSD).mul(pledgeTerm);
 
     // Get USD price of 1 ETH
@@ -300,15 +229,15 @@ class Sponsorship extends Component {
 
     // Convert to wei, print
     const weiAmount = parseEther(ethAmount);
-    const panValue = await this.quoteEthToPan(weiAmount);
+    const panValue = await this.getQuote(weiAmount);
 
     // PAN bought w/ 1 ETH
-    await this.quoteEthToPan(parseEther('1'));
+    await this.getQuote(parseEther('1'));
 
     // Build donation object
     const donation = {
       version: '1',
-      memo: `Sponsorship: ${pledgeCompany.value}`,
+      memo: `Sponsorship: ${company.value}`,
       usdValue: BN(pledgeTotal).toString(),
       ethValue: weiAmount.toString(),
       pledgeMonthlyUSD,
@@ -354,12 +283,14 @@ class Sponsorship extends Component {
             txData,
             'sponsorship'
           );
-          pledgeCompany.value = '';
-          pledgeFirstName.value = '';
-          pledgeLastName.value = '';
-          pledgeEmail.value = '';
-          this.props.resetPledgeAmount()
-          pledgeTermSelect.value = '0';
+
+          actions.resetForm();
+          // pledgeCompany.value = '';
+          // pledgeFirstName.value = '';
+          // pledgeLastName.value = '';
+          // pledgeEmail.value = '';
+          // this.props.resetPledgeAmount()
+          // pledgeTermSelect.value = '0';
         }
       }
     } catch (error) {
@@ -409,8 +340,8 @@ class Sponsorship extends Component {
 
       // Get new quote
       console.log('NEW QUOTE');
-      await this.quoteEthToPan(donation.ethValue);
-      await this.quoteEthToPan(parseEther('1'));
+      await this.getQuote(donation.ethValue);
+      await this.getQuote(parseEther('1'));
       return panValue;
     } catch (error) {
       console.error(`ERROR: ${error.message}`);
@@ -492,7 +423,7 @@ class Sponsorship extends Component {
   render() {
     return (
       <>
-        <DonateButton handleClick={this.handleClickDonate} />
+        <SponsorshipForm onSubmit={this.handleDonation} />
         <WebsiteModal
           isOpen={true}
           step={this.state.step}

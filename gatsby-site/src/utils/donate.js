@@ -1,5 +1,6 @@
 import { utils } from 'ethers';
-const { bigNumberify, parseUnits } = utils;
+
+const { bigNumberify, parseUnits, formatEther, formatUnits } = utils;
 
 export function BN(small) {
   return bigNumberify(small);
@@ -107,4 +108,32 @@ export async function postAutopilot(email, firstName, lastName, txData, pledgeTy
   const json = await res.json();
   console.log('contact:', json);
   return true;
+}
+
+// Sell order (exact input) -> calculates amount bought (output)
+export async function quoteEthToPan(etherToSpend, provider, { token, exchange }) {
+    console.log('');
+    // Sell ETH for PAN
+    const ethAmount = BN(etherToSpend);
+
+    // ETH reserve
+    const inputReserve = await provider.getBalance(exchange.address);
+    console.log(`ETH reserve: ${formatEther(inputReserve)}`);
+
+    // PAN reserve
+    const outputReserve = await token.balanceOf(exchange.address);
+    console.log(`PAN reserve: ${formatUnits(outputReserve, 18)}`);
+
+    const numerator = ethAmount.mul(outputReserve).mul(997);
+    const denominator = inputReserve.mul(1000).add(ethAmount.mul(997));
+    const panToReceive = numerator.div(denominator);
+
+    console.log(
+      `quote ${formatEther(ethAmount)} ETH : ${formatUnits(panToReceive.toString(), 18)} PAN`
+    );
+    // EQUIVALENT, DIRECT CHAIN CALL
+    // PAN bought w/ input ETH
+    // const panToReceive = await this.exchange.getEthToTokenInputPrice(ethAmount);
+    // console.log(`${formatEther(ethAmount)} ETH -> ${formatUnits(panToReceive, 18)} PAN`);
+    return panToReceive;
 }

@@ -3,7 +3,7 @@
 exports[`Donation should render component and initialize with correct state 1`] = `
 <form
   className="w-80-l w-90-m w-100 center"
-  name="donation-pledge"
+  name="sponsorship-pledge"
   onSubmit={[Function]}
 >
   <div
@@ -13,7 +13,7 @@ exports[`Donation should render component and initialize with correct state 1`] 
       className="ma0 f6 mb3 black-40"
       required={true}
     >
-      First Name
+      Company
       <b
         className="red f7"
       >
@@ -25,14 +25,37 @@ exports[`Donation should render component and initialize with correct state 1`] 
     className="red tl pt2"
   />
   <input
-    className="sc-bdVaJa kGEDHa f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2"
+    className="sc-bdVaJa kGEDHa input-reset b--black-10"
+    id="pledge-company"
+    label="Company"
+    name="company"
+    onBlur={[Function]}
+    onChange={[Function]}
+    placeholder="Enter the name of your company"
+    required={true}
+    type="text"
+    value=""
+  />
+  <div
+    className="tl mt4"
+  >
+    <label
+      className="ma0 f6 mb3 black-40"
+    >
+      First Name
+    </label>
+  </div>
+  <div
+    className="red tl pt2"
+  />
+  <input
+    className="sc-bdVaJa kGEDHa input-reset b--black-10"
     id="pledge-first-name"
     label="First Name"
     name="firstName"
     onBlur={[Function]}
     onChange={[Function]}
     placeholder="Enter your first name"
-    required={true}
     type="text"
     value=""
   />
@@ -49,7 +72,7 @@ exports[`Donation should render component and initialize with correct state 1`] 
     className="red tl pt2"
   />
   <input
-    className="sc-bdVaJa kGEDHa f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2"
+    className="sc-bdVaJa kGEDHa input-reset b--black-10"
     id="pledge-last-name"
     label="Last Name"
     name="lastName"
@@ -78,7 +101,7 @@ exports[`Donation should render component and initialize with correct state 1`] 
     className="red tl pt2"
   />
   <input
-    className="sc-bdVaJa kGEDHa f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2"
+    className="sc-bdVaJa kGEDHa input-reset b--black-10"
     id="pledge-email"
     label="Email"
     name="email"
@@ -96,7 +119,7 @@ exports[`Donation should render component and initialize with correct state 1`] 
       className="ma0 f6 mb3 black-40"
       required={true}
     >
-      Pledge Tier
+      Monthly Pledge Amount (USD)
       <b
         className="red f7"
       >
@@ -107,62 +130,19 @@ exports[`Donation should render component and initialize with correct state 1`] 
   <div
     className="red tl pt2"
   />
-  <select
-    className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2 bg-white black-50"
-    id="pledge-tier-select"
-    name="monthlyPledge"
+  <input
+    className="sc-bdVaJa kGEDHa input-reset b--black-10"
+    id="pledge-amount"
+    label="Monthly Pledge Amount (USD)"
+    min="0"
+    name="pledgeAmount"
     onBlur={[Function]}
     onChange={[Function]}
+    placeholder="Enter your pledge amount"
     required={true}
-    value={0}
-  >
-    <option
-      defaultValue="0"
-      disabled=""
-      value="0"
-    >
-      Select your pledge tier
-    </option>
-    <option
-      value="5"
-    >
-      Student — $5/month (50 ETH)
-    </option>
-    <option
-      value="15"
-    >
-      Gold — $15/month (150 ETH)
-    </option>
-    <option
-      value="50"
-    >
-      Platinum — $50/month (500 ETH)
-    </option>
-    <option
-      value="150"
-    >
-      Diamond — $150/month (1500 ETH)
-    </option>
-    <option
-      value="500"
-    >
-      Ether Advisor — $500/month (5000 ETH)
-    </option>
-    <option
-      value="1500"
-    >
-      Elite Advisor — $1500/month (15000 ETH)
-    </option>
-  </select>
-  <img
-    alt=""
-    className="fr mr2 o-50"
-    src="test-file-stub"
-    style={
-      Object {
-        "marginTop": "-35px",
-      }
-    }
+    step="1"
+    type="number"
+    value=""
   />
   <div
     className="tl mt4"

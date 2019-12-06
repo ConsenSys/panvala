@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
 
 import home1p1 from '../img/home-1.1.png';
 import home1p2 from '../img/home-1.2.png';
@@ -10,9 +10,6 @@ import Layout from '../components/Layout';
 import SEO from '../components/seo';
 import Sponsorship from '../components/Sponsorship';
 import Nav from '../components/Nav';
-import FieldText from '../components/FieldText';
-import Label from '../components/Label';
-import DownArrow from '../components/Form/DownArrow';
 
 const names = [
   'Simon de la Rouviere',
@@ -113,50 +110,12 @@ const names = [
 
 const Sponsor = () => {
   const donateNowRef = useRef(null);
-  const [pledgeAmount, setPledgeAmount] = useState('');
 
   function onDonateNowClick() {
     donateNowRef.current.scrollIntoView({
       behavior: 'smooth',
     });
   }
-
-  function handleChangePledgeAmount(e) {
-    const value = e.target.value;
-
-    if (value.includes('.')) {
-      alert('Please make your pledge in integers');
-      return;
-    }
-
-    try {
-      const amt = parseInt(value);
-      setPledgeAmount(amt);
-    } catch (error) {
-      console.error(`ERROR : ${error.message}`);
-      throw error;
-    }
-  }
-
-  useEffect(() => {
-    // fetchEthPrice()
-    //   .then(ethPrice => {
-    //     const price = parseInt(ethPrice);
-    //     const prices = {
-    //       stud: trimUsdToEthPrice(5, price),
-    //       gold: trimUsdToEthPrice(15, price),
-    //       plat: trimUsdToEthPrice(50, price),
-    //       diam: trimUsdToEthPrice(150, price),
-    //       ethe: trimUsdToEthPrice(500, price),
-    //       elit: trimUsdToEthPrice(1500, price),
-    //     };
-    //     setEthPrices(prices);
-    //   })
-    //   .catch(error => {
-    //     console.error(`ERROR fetching eth price: ${error.message}`);
-    //     alert('Failed to fetch current ether price. Please reload your browser in a few moments.');
-    //   });
-  }, []);
 
   return (
     <Layout>
@@ -262,75 +221,7 @@ const Sponsor = () => {
               for your next donation, we'll send you a reminder email so you can come back and pay
               the next donation.
             </p>
-            <form className="w-80-l w-90-m w-100 center" name="donation-pledge">
-              <FieldText
-                type="text"
-                name="company"
-                id="pledge-company"
-                label="Company"
-                placeholder="Enter the name of your company"
-                required
-              />
-
-              <FieldText
-                type="text"
-                name="first-name"
-                id="pledge-first-name"
-                label="First Name"
-                placeholder="Enter your first name"
-              />
-
-              <FieldText
-                type="text"
-                name="last-name"
-                id="pledge-last-name"
-                label="Last Name"
-                placeholder="Enter your last name"
-              />
-
-              <FieldText
-                type="text"
-                name="email"
-                id="pledge-email"
-                label="Email"
-                placeholder="Enter your email address"
-                required
-              />
-
-              <FieldText
-                type="number"
-                name="pledge-amount"
-                id="pledge-amount"
-                label="Monthly Pledge Amount (USD)"
-                placeholder="Enter your pledge amount"
-                required
-                value={pledgeAmount}
-                onChange={handleChangePledgeAmount}
-                min="0"
-                step="1"
-              />
-
-              <Label required>How many months of your pledge will you prepay today?</Label>
-
-              <select
-                name="pledge-duration-selection"
-                required
-                className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2 bg-white black-50"
-                id="pledge-duration-select"
-              >
-                <option disabled="" defaultValue="0" value="0">
-                  Select the amount of months you would like to prepay for
-                </option>
-                <option value="1">1 month</option>
-                <option value="3">3 months</option>
-                <option value="6">6 months</option>
-                <option value="12">12 months</option>
-              </select>
-
-              <DownArrow />
-
-              <Sponsorship pledgeAmount={pledgeAmount} resetPledgeAmount={() => setPledgeAmount('')} />
-            </form>
+            <Sponsorship />
           </div>
         </section>
       </div>

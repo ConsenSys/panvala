@@ -7,7 +7,6 @@ import donate1 from '../img/donate-1.jpg';
 import donateShapes from '../img/donatepage-shapes.svg';
 import patronTiers from '../img/patron-tiers.png';
 import advisorTiers from '../img/advisor-tiers.png';
-import arrowSvg from '../img/arrow.svg';
 
 import Layout from '../components/Layout';
 import SEO from '../components/seo';
@@ -114,7 +113,7 @@ const names = [
 
 const Donate = () => {
   const donateNowRef = useRef(null);
-  const [eps, setEthPrices] = useState({});
+  const [ethPrices, setEthPrices] = useState({});
 
   function onDonateNowClick() {
     donateNowRef.current.scrollIntoView({
@@ -131,12 +130,12 @@ const Donate = () => {
       .then(ethPrice => {
         const price = parseInt(ethPrice);
         const prices = {
-          stud: trimPrice(5, price),
+          student: trimPrice(5, price),
           gold: trimPrice(15, price),
-          plat: trimPrice(50, price),
-          diam: trimPrice(150, price),
-          ethe: trimPrice(500, price),
-          elit: trimPrice(1500, price),
+          platinum: trimPrice(50, price),
+          diamond: trimPrice(150, price),
+          ether: trimPrice(500, price),
+          elite: trimPrice(1500, price),
         };
         setEthPrices(prices);
       })
@@ -251,8 +250,8 @@ const Donate = () => {
             <p className="ma0 f6 lh-text mb3">
               Becoming a Panvala Patron helps sustain the work the Ethereum ecosystem depends on.
               When you become a patron, your name will be added to the growing list of patrons on
-              Panvala.com. Everyone who does their part to fulfill the Ethereum
-              vision should be recognized for it.
+              Panvala.com. Everyone who does their part to fulfill the Ethereum vision should be
+              recognized for it.
             </p>
           </div>
           <div className="dtc-ns dn w-50 v-mid tr">
@@ -284,93 +283,7 @@ const Donate = () => {
               your pledge, we'll send you a reminder email so you can come back and prepay your next
               donation.
             </p>
-            <form className="w-80-l w-90-m w-100 center" name="donation-pledge">
-              <div className="tl mt4">
-                <label className="ma0 f6 mb3 black-40">
-                  First Name
-                  <b className="red f7"> *</b>
-                </label>
-              </div>
-              <input
-                type="text"
-                name="first-name"
-                id="pledge-first-name"
-                required
-                placeholder="Enter your first name"
-                className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2"
-              />
-              <div className="tl mt4">
-                <label className="ma0 f6 mb3 black-40">Last Name</label>
-              </div>
-              <input
-                type="text"
-                name="last-name"
-                id="pledge-last-name"
-                required
-                placeholder="Enter your last name"
-                className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2"
-              />
-              <div className="tl mt4">
-                <label className="ma0 f6 mb3 black-40">
-                  Email
-                  <b className="red f7"> *</b>
-                </label>
-              </div>
-              <input
-                type="email"
-                name="email"
-                id="pledge-email"
-                required
-                placeholder="Enter your email address"
-                className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2"
-              />
-              <div className="tl mt4">
-                <label className="ma0 f6 mb3 black-40">
-                  Pledge Tier
-                  <b className="red f7"> *</b>
-                </label>
-              </div>
-              <select
-                name="pledge-tier-selection"
-                required
-                className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2 bg-white black-50"
-                id="pledge-tier-select"
-              >
-                <option disabled="" defaultValue="0" value="0">
-                  Select your pledge tier
-                </option>
-                <option value="5">{`Student — $5/month (${eps.stud} ETH)`}</option>
-                <option value="15">{`Gold — $15/month (${eps.gold} ETH)`}</option>
-                <option value="50">{`Platinum — $50/month (${eps.plat} ETH)`}</option>
-                <option value="150">{`Diamond — $150/month (${eps.diam} ETH)`}</option>
-                <option value="500">{`Ether Advisor — $500/month (${eps.ethe} ETH)`}</option>
-                <option value="1500">{`Elite Advisor — $1500/month (${eps.elit} ETH)`}</option>
-              </select>
-              <img alt="" src={arrowSvg} className="fr mr2 o-50" style={{ marginTop: '-35px' }} />
-              <div className="tl mt4">
-                <label className="ma0 f6 mb3 black-40">
-                  How many months of your pledge will you prepay today?
-                  <b className="red f7"> *</b>
-                </label>
-              </div>
-              <select
-                name="pledge-duration-selection"
-                required
-                className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2 bg-white black-50"
-                id="pledge-duration-select"
-              >
-                <option disabled="" defaultValue="0" value="0">
-                  Select the amount of months you would like to prepay for
-                </option>
-                <option value="1">1 month</option>
-                <option value="3">3 months</option>
-                <option value="6">6 months</option>
-                <option value="12">12 months</option>
-              </select>
-              <img alt="" src={arrowSvg} className="fr mr2 o-50" style={{ marginTop: '-35px' }} />
-
-              <Donation />
-            </form>
+            <Donation ethPrices={ethPrices} />
           </div>
         </section>
       </div>
