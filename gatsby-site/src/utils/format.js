@@ -3,6 +3,9 @@ import orderBy from 'lodash/orderBy';
 
 export function sliceDecimals(floatingPt, decimalDigits = 3) {
   const point = floatingPt.indexOf('.');
+  if (point === -1) {
+    return floatingPt;
+  }
   const integer = floatingPt.slice(0, point);
   const fractional = floatingPt.slice(point, point + decimalDigits);
   return integer + fractional;
@@ -60,4 +63,8 @@ export function formatDates(epochDates) {
 
   // Order dates by chronology
   return orderBy(dates, 'date');
+}
+
+export function prettify(ugly) {
+  return utils.commify(sliceDecimals(ugly));
 }
