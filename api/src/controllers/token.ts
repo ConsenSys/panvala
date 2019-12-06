@@ -1,5 +1,10 @@
 import * as ethers from 'ethers';
-import { circulatingSupply as _circulatingSupply, projectedAvailableTokens } from '../utils/token';
+import { parseEther, bigNumberify } from 'ethers/utils';
+import {
+  circulatingSupply as _circulatingSupply,
+  projectedAvailableTokens,
+  getEthPrice,
+} from '../utils/token';
 import { getContracts } from '../utils/eth';
 import { getWinningSlate } from '../utils/slates';
 
@@ -18,20 +23,36 @@ export async function circulatingSupply(req, res) {
 
 export async function getBudget(req, res) {
   try {
-    const { gatekeeper, tokenCapacitor } = await getContracts();
+    const { gatekeeper, tokenCapacitor, exchange } = await getContracts();
     const currentEpoch = await gatekeeper.currentEpochNumber();
     const winningSlate = await getWinningSlate();
 
-    const epochTokens = await projectedAvailableTokens(
+    const epochTokensBase = await projectedAvailableTokens(
       tokenCapacitor,
       gatekeeper,
       currentEpoch,
       winningSlate
     );
 
+    // 1 ETH : 10861515630668542666008 attoPAN
+    const panPriceWei = await exchange.getEthToTokenInputPrice(parseEther('1'));
+    const panPriceETH = formatUnits(panPriceWei, 18);
+
+    // 1 ETH : 140.325 USD
+    const ethPriceUSD = await getEthPrice();
+
+    // 2,000,000 PAN : ??? USD
+    const epochBudgetUSD = epochTokensBase
+      .div(panPriceWei)
+      .mul(bigNumberify(parseInt(ethPriceUSD)))
+      .toString();
+
     res.json({
-      epochNumber: currentEpoch,
-      epochBudget: epochTokens.toString(),
+      epochNumber: currentEpoch.toNumber(),
+      epochBudgetPAN: formatUnits(epochTokensBase, 18),
+      epochBudgetUSD,
+      ethPriceUSD,
+      panPriceETH,
     });
   } catch (error) {
     res.send(error);

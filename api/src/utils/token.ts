@@ -1,4 +1,5 @@
 import * as ethers from 'ethers';
+import axios from 'axios';
 import { getContracts, contractABIs } from './eth';
 import { timing } from '.';
 import { BigNumber, bigNumberify } from 'ethers/utils';
@@ -16,6 +17,13 @@ export function linearDecay(total, start, end, x) {
   const num = BN(total).mul(_end.sub(_x));
   const den = _end.sub(BN(start));
   return num.div(den);
+}
+
+export async function getEthPrice() {
+  const result = await axios('https://api.coinbase.com/v2/prices/ETH-USD/spot?currency=USD');
+  console.log('data:', result.data);
+  const ethPrice = result.data.data.amount;
+  return ethPrice;
 }
 
 export function calculateCirculatingSupply(params) {
