@@ -1,6 +1,8 @@
 import * as ethers from 'ethers';
-import { getContracts, contractABIs } from './eth'
+import { getContracts, contractABIs } from './eth';
 import { timing } from '.';
+import { BigNumber, bigNumberify } from 'ethers/utils';
+import { IGatekeeper, ITokenCapacitor } from '../types';
 
 const { bigNumberify: BN, parseUnits } = ethers.utils;
 const { BasicToken: Token } = contractABIs;
@@ -58,7 +60,7 @@ export async function circulatingSupply() {
   const launchPartnerFundBalance = await token.balanceOf(launchPartnerFundAddress);
   const tokenCapacitorLockedBalance = await tokenCapacitor.lastLockedBalance();
 
-  const now = Math.floor((new Date()).getTime() / 1000);
+  const now = Math.floor(new Date().getTime() / 1000);
 
   return calculateCirculatingSupply({
     now,
@@ -69,4 +71,45 @@ export async function circulatingSupply() {
     tokenCapacitorLockedBalance,
     totalSupply,
   });
+}
+
+export async function projectedAvailableTokens(
+  tokenCapacitor: ITokenCapacitor,
+  gatekeeper: IGatekeeper,
+  epochNumber: BigNumber,
+  winningSlate?: any
+) {
+  // project the unlocked token balance at the start of the next epoch
+  let pUnlockedBalance = bigNumberify('0');
+  if (tokenCapacitor.functions.hasOwnProperty('projectedUnlockedBalance')) {
+    const nextEpochStart = await gatekeeper.functions.epochStart(epochNumber.add(1));
+    pUnlockedBalance = await tokenCapacitor.functions.projectedUnlockedBalance(nextEpochStart);
+  }
+  // console.log('projected unlocked balance:', pUnlockedBalance);
+
+  let unredeemedTokens = '0';
+  if (winningSlate && winningSlate.proposals.length) {
+    // filter out all the proposals that have been withdrawn already
+    const unredeemedGrantsPromises = winningSlate.proposals.filter(async p => {
+      const proposal = await tokenCapacitor.functions.proposals(p.proposalID);
+      return !proposal.withdrawn;
+    });
+    const unredeemedGrants: any[] = await Promise.all(unredeemedGrantsPromises);
+
+    // add up all the unredeemed tokens
+    if (unredeemedGrants.length) {
+      unredeemedTokens = unredeemedGrants.reduce((acc: string, p: any) => {
+        return bigNumberify(acc)
+          .add(parseUnits(p.tokensRequested))
+          .toString();
+      }, '0');
+    }
+  }
+  // console.log('unredeemed tokens:', baseToConvertedUnits(unredeemedTokens));
+
+  // subtract the unredeemed tokens from the projected
+  // total unlocked balance at the start of the next epoch
+  const projectedAvailableBalance = pUnlockedBalance.sub(unredeemedTokens);
+  // console.log('projected available balance:', baseToConvertedUnits(projectedAvailableBalance));
+  return projectedAvailableBalance;
 }

@@ -9,6 +9,7 @@ import * as config from './config';
 import { nonEmptyString } from './validation';
 import { getProposalsForRequests } from './requests';
 import { mapProposalsToRequests } from './proposals';
+import { BigNumberish, bigNumberify } from 'ethers/utils';
 
 const { IpfsMetadata, Slate } = require('../models');
 const { toUtf8String, bigNumberify: BN, getAddress } = ethers.utils;
@@ -246,6 +247,29 @@ async function normalizeMetadata(slateMetadata, resource) {
     proposals,
     proposalMultihashes,
   };
+}
+
+export async function getWinningSlate(slates?: any[], epochNumber?: BigNumberish) {
+  if (!slates) {
+    slates = await getAllSlates();
+  }
+  const { gatekeeper } = await getContracts();
+  if (!epochNumber) {
+    epochNumber = await gatekeeper.currentEpochNumber();
+  } else {
+    epochNumber = bigNumberify(epochNumber);
+  }
+
+  if (epochNumber.lt(1)) {
+    throw new Error('epoch number cannot be less than 1');
+  }
+  const lastEpochNumber = epochNumber.sub(1);
+  try {
+    const winningSlateID = await gatekeeper.getWinningSlate(lastEpochNumber, tokenCapacitorAddress);
+    return slates.find(slate => slate.id === winningSlateID.toNumber());
+  } catch (error) {
+    throw error;
+  }
 }
 
 /**

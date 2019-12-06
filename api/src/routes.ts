@@ -83,6 +83,7 @@ export const setupRoutes = app => {
 
   // Token
   app.get('/api/token/circulating-supply', token.circulatingSupply);
+  app.get('/api/token/budget', token.getBudget);
 
   // Polls
   app.post('/api/polls/:pollID', poll.saveResponse);
