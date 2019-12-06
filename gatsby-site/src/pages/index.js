@@ -88,10 +88,10 @@ const IndexPage = () => {
         className="bg-gradient bottom-clip-hero-main relative z-0 mb4-ns"
         style={{ height: '1000px' }}
       >
-        <TopBar>
+        {/* <TopBar>
           <div>{epochDates.epochNumber}</div>
           <div>{epochDates.epochStart}</div>
-        </TopBar>
+        </TopBar> */}
         <Nav />
         {/* <!-- Hero --> */}
         <div className="w-70-l w-80-m w-90 dt center pv5-ns pv4">
