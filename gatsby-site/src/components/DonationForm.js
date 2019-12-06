@@ -28,7 +28,7 @@ const DonationFormSchema = yup.object({
 
 const DonationForm = ({ onSubmit, ethPrices }) => {
   function handleDonate(values, actions) {
-    console.log('DonationForm:', 'submit', values);
+    // console.log('DonationForm:', 'submit', values);
 
     onSubmit(values, actions);
     actions.setSubmitting(false);

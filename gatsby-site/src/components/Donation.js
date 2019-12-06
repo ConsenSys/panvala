@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { providers, constants, utils } from 'ethers';
 
 import WebsiteModal from './WebsiteModal';
-import DonationForm from '../components/DonationForm';
+import DonationForm from './DonationForm';
 
 import {
   BN,

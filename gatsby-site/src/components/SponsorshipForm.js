@@ -27,10 +27,9 @@ const SponsorFormSchema = yup.object({
   pledgeDuration: yup.number().moreThan(0, 'Please select a pledge duration'),
 });
 
-const SponsorshipForm = props => {
-  const { onSubmit } = props;
+const SponsorshipForm = ({ onSubmit }) => {
   function handleDonate(values, actions) {
-    console.log('submit', values);
+    // console.log('submit', values);
 
     // pass values to the callback
     onSubmit(values, actions);

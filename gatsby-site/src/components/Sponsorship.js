@@ -285,12 +285,6 @@ class Sponsorship extends Component {
           );
 
           actions.resetForm();
-          // pledgeCompany.value = '';
-          // pledgeFirstName.value = '';
-          // pledgeLastName.value = '';
-          // pledgeEmail.value = '';
-          // this.props.resetPledgeAmount()
-          // pledgeTermSelect.value = '0';
         }
       }
     } catch (error) {
