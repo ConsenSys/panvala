@@ -4,6 +4,7 @@ const Gatekeeper = require('./abis/Gatekeeper.json');
 const TokenCapacitor = require('./abis/TokenCapacitor.json');
 const ParameterStore = require('./abis/ParameterStore.json');
 const TimeTravelingGatekeeper = require('./abis/TimeTravelingGatekeeper.json');
+const UniswapExchange = require('./abis/UniswapExchange.json');
 
 module.exports = {
   voting,
@@ -14,5 +15,6 @@ module.exports = {
     TokenCapacitor,
     ParameterStore,
     TimeTravelingGatekeeper,
+    UniswapExchange,
   },
 };

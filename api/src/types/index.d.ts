@@ -25,3 +25,4 @@ export { Gatekeeper as IGatekeeper } from './Gatekeeper';
 export { TokenCapacitor as ITokenCapacitor } from './TokenCapacitor';
 export { ParameterStore as IParameterStore } from './ParameterStore';
 export { BasicToken as IToken } from './BasicToken';
+export { UniswapExchange as IUniswapExchange } from './UniswapExchange';

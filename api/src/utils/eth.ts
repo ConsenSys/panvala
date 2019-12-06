@@ -1,10 +1,11 @@
 import * as ethers from 'ethers';
 import { contracts, rpcEndpoint } from './config';
 import { contractABIs } from '.';
-import { IGatekeeper, IParameterStore, ITokenCapacitor } from '../types';
+import { IGatekeeper, IParameterStore, ITokenCapacitor, IUniswapExchange } from '../types';
 
 const { gatekeeperAddress, tokenCapacitorAddress } = contracts;
-const { Gatekeeper, TokenCapacitor, ParameterStore } = contractABIs;
+const { Gatekeeper, TokenCapacitor, ParameterStore, UniswapExchange } = contractABIs;
+const uniswapExchangeAddress = '0xF53bBFBff01c50F2D42D542b09637DcA97935fF7';
 
 /**
  * Check connection
@@ -41,6 +42,11 @@ async function getContracts() {
     TokenCapacitor.abi,
     provider
   ) as ITokenCapacitor;
+  const exchange: IUniswapExchange = new ethers.Contract(
+    uniswapExchangeAddress,
+    UniswapExchange.abi,
+    provider
+  ) as IUniswapExchange;
   const genesisBlockNumber: number = genBlocks[network.chainId] || genBlocks.unknown;
 
   return {
@@ -51,6 +57,7 @@ async function getContracts() {
     gatekeeper,
     tokenCapacitor,
     genesisBlockNumber,
+    exchange,
   };
 }
 
