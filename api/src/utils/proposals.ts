@@ -1,6 +1,31 @@
 import { utils } from 'ethers';
-import { Schema } from 'express-validator'
+import { Schema } from 'express-validator';
 import { nonEmptyString } from './validation';
+const { Request } = require('../models');
+
+export async function mapProposalsToRequests(proposals: any[], proposalMultihashes: string[]) {
+  return Promise.all(
+    proposals.map(async (proposal, i) => {
+      const multihash = Buffer.from(proposalMultihashes[i]).toString('hex');
+      const request = await Request.findOne(
+        {
+          where: {
+            metadataHash: `0x${multihash}`,
+          },
+        },
+        { raw: true }
+      );
+      if (request == null) {
+        return proposal;
+      }
+      return {
+        ...proposal,
+        proposalID: request.proposalID,
+        requestID: request.requestID,
+      };
+    })
+  );
+}
 
 export const proposalSchema: Schema = {
   title: {
