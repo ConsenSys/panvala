@@ -42,8 +42,9 @@ import Section from '../components/Section';
 import Box from '../components/system/Box';
 import EventCard from '../components/EventCard';
 import { FormError } from '../components/Form/FormError';
-import { getEpochDates } from '../utils/api';
+import { getEpochDates, getBudget } from '../utils/api';
 import { formatDates } from '../utils/format';
+import { prettify } from '../utils/format';
 
 const NewsletterFormSchema = yup.object({
   email: yup
