@@ -237,7 +237,7 @@ class Sponsorship extends Component {
     // Build donation object
     const donation = {
       version: '1',
-      memo: `Sponsorship: ${company.value}`,
+      memo: `Sponsorship: ${company}`,
       usdValue: BN(pledgeTotal).toString(),
       ethValue: weiAmount.toString(),
       pledgeMonthlyUSD,
