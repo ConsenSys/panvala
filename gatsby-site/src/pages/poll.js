@@ -208,7 +208,7 @@ const Poll = () => {
     categories: yup.object(),
     firstName: yup.string().trim(),
     lastName: yup.string().trim(),
-    email: yup.string().email(),
+    email: yup.string().email('Please enter a valid email address'),
   });
 
   // User changes a poll value - update state
@@ -615,9 +615,11 @@ const Poll = () => {
                       } else if (totalPercentage > 100) {
                         return { poll: 'Please allocate no more than 100 points' };
                       }
+                    }).catch(error => {
+                      return { [error.path]: error.message }
                     });
                   }}
-                  validateOnBlur={false}
+                  validateOnBlur={true}
                   validateOnChange={false}
                   onSubmit={handleFormSubmit}
                 >
