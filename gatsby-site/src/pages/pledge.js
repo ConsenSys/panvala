@@ -9,7 +9,6 @@ import donate1 from '../img/donate-1.jpg';
 import donateShapes from '../img/donatepage-shapes.svg';
 import patronTiers from '../img/patron-tiers.png';
 import advisorTiers from '../img/advisor-tiers.png';
-import arrowSvg from '../img/arrow.svg';
 
 import Layout from '../components/Layout';
 import SEO from '../components/seo';
@@ -19,6 +18,7 @@ import DonateButton from '../components/DonateButton';
 import { FormError } from '../components/Form/FormError';
 import FieldText from '../components/FieldText';
 import Label from '../components/Label';
+import DownArrow from '../components/Form/DownArrow';
 
 const names = [
   'Simon de la Rouviere',
@@ -301,6 +301,7 @@ const Donate = () => {
                 firstName: '',
                 lastName: '',
                 email: '',
+                pledgeTier: 0,
               }}
               validationSchema={PledgeFormSchema}
               onSubmit={handleSubmit}
@@ -349,9 +350,12 @@ const Donate = () => {
                   <Label type="text" required>
                     Pledge Tier
                   </Label>
+                  <FormError name="pledgeTier" className="pt2" />
                   <Field
                     as="select"
                     name="pledgeTier"
+                    required
+                    value={props.values.pledgeTier}
                     onChange={props.handleChange}
                     className="f6 input-reset b--black-10 pv3 ph2 db center w-100 br3 mt2 bg-white black-50"
                     id="pledge-tier-select"
@@ -366,13 +370,7 @@ const Donate = () => {
                     <option value="500">Ether Advisor — $500/month</option>
                     <option value="1500">Elite Advisor — $1500/month</option>
                   </Field>
-                  <img
-                    alt=""
-                    src={arrowSvg}
-                    className="fr mr2 o-50"
-                    style={{ marginTop: '-35px' }}
-                  />
-                  <FormError name="pledgeTier" />
+                  <DownArrow />
 
                   <DonateButton text="Pledge" disabled={props.isSubmitting} />
 
