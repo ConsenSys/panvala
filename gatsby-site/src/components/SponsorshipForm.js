@@ -126,7 +126,7 @@ const SponsorshipForm = ({ onSubmit }) => {
 
           <DownArrow />
 
-          <DonateButton disabled={isSubmitting} />
+          <DonateButton text="Sponsor" disabled={isSubmitting} />
         </form>
       )}
     </Formik>

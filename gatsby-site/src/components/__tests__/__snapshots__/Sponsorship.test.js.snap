@@ -215,7 +215,7 @@ exports[`Donation should render component and initialize with correct state 1`] 
       disabled={false}
       name="submit"
       type="submit"
-      value="Donate"
+      value="Sponsor"
     />
   </div>
 </form>
