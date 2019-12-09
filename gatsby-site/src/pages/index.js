@@ -31,11 +31,15 @@ import teamLevelK from '../img/external/team-levelk.png';
 import teamSigma from '../img/external/team-sigma.png';
 import teamTenderly from '../img/external/team-tenderly.png';
 import simon from '../img/simon.png';
+import eventsBg from '../img/events-bg.png';
 
 import Layout from '../components/Layout';
 import SEO from '../components/seo';
 import Nav from '../components/Nav';
 import Modal from '../components/Modal';
+import Section from '../components/Section';
+import Box from '../components/system/Box';
+import EventCard from '../components/EventCard';
 import { FormError } from '../components/Form/FormError';
 import { getEpochDates } from '../utils/api';
 
@@ -181,6 +185,27 @@ const IndexPage = () => {
           </a>
         </section>
       </div>
+
+      <Section>
+        <img src={eventsBg} className="absolute z-0 nt0-m db-ns dn" />
+        <Box flex justifyContent="space-around">
+          <Box flex column zIndex={40} color="white" alignSelf="center" mt={'-7rem'}>
+            <Box fontSize={5} bold>
+              Key dates
+            </Box>
+            <Box width="350px">
+              Keep up to date with what is happening within the system and beyond.
+            </Box>
+          </Box>
+
+          <Box flex column alignItems="flex-start">
+            <EventCard date={1555685692} expired />
+            <EventCard date={1574685692} nextEvent />
+            <EventCard date={1575625692} />
+            <EventCard date={1579984692} />
+          </Box>
+        </Box>
+      </Section>
 
       {/* <!-- Our Launch Partners--> */}
       <section className="w-70-l w-80-m w-90 center tc mv6-ns mb5 mt6">

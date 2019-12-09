@@ -28,6 +28,7 @@ export const colors = {
     dark: '#DE3333',
     light: 'rgba(255, 147, 147, 0.25)',
   },
+  teal: '#46B0AA',
 };
 
 export const theme = {
