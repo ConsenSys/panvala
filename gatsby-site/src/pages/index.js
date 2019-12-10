@@ -92,7 +92,7 @@ const IndexPage = () => {
       }
 
       // Set state
-      setEpochDates(dates.concat(nextDates).slice(0, 6));
+      setEpochDates(dates.concat(nextDates).slice(0, 5));
     }
 
     getData();
@@ -201,6 +201,7 @@ const IndexPage = () => {
                 key={`${epochDate.date}${epochDate.eventName}`}
                 date={epochDate.date}
                 eventName={epochDate.eventName}
+                eventDescription={epochDate.eventDescription}
                 expired={epochDate.expired}
                 nextEvent={epochDate.nextEvent}
               />

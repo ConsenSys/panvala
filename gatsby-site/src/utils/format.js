@@ -50,6 +50,7 @@ export function formatDates(epochDates) {
       {
         date: epochDates[val],
         eventName: mapDatesToText(val, epochDates.epochNumber),
+        eventDescription: '', // TODO: map events to descriptions
         nextEvent: false,
         expired: epochDates[val] < nowDate,
       },

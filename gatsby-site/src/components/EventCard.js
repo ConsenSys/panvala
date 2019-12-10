@@ -18,7 +18,7 @@ const Wrapper = styled(Box)`
 `;
 
 const EventCard = props => {
-  const { date, nextEvent, eventName, expired } = props;
+  const { date, nextEvent, eventName, eventDescription, expired } = props;
 
   const eventDate = new Date(date * 1000);
   const options = {
@@ -59,7 +59,7 @@ const EventCard = props => {
         <Box bold fontSize={3}>
           {eventName}
         </Box>
-        <Box>Some information</Box>
+        <Box>{eventDescription}</Box>
         <Box>{time}</Box>
       </Box>
     </Wrapper>

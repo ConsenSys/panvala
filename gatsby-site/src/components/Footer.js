@@ -112,7 +112,12 @@ export default () => (
       <hr className="hr-white" />
       <p className="ma0 f7 lh-text tc white-60 pb3">
         2019 © PANVALA |{' '}
-        <a href={privacyPolicy} target="_blank" className="link dim white-60">
+        <a
+          href={privacyPolicy}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="link dim white-60"
+        >
           Privacy Policy
         </a>
       </p>
