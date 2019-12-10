@@ -1,11 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useContext } from 'react';
 import { Formik } from 'formik';
 import * as yup from 'yup';
-
-import Layout from '../components/Layout';
-import SEO from '../components/seo';
-import Nav from '../components/Nav';
-import Modal from '../components/Modal';
 
 import teamGitcoin from '../img/grant-teams/gitcoin.png';
 import teamPlasmaGroup from '../img/grant-teams/plasma-group.png';
@@ -36,9 +31,17 @@ import teamGraham from '../img/grant-teams/graham.png';
 import teamBlockRocket from '../img/grant-teams/blockrocket.png';
 import teamAstrotrope from '../img/grant-teams/astrotrope.png';
 import teamAsseth from '../img/grant-teams/asseth.png';
+
+import Layout from '../components/Layout';
+import SEO from '../components/seo';
+import Nav from '../components/Nav';
+import Modal from '../components/Modal';
+import { BudgetContext } from '../components/BudgetProvider';
+import BudgetBar from '../components/BudgetBar';
 import FieldText from '../components/FieldText';
 
 const Grants = () => {
+  const { budgets } = useContext(BudgetContext);
   const applyRef = useRef(null);
   const [isOpen, setModalOpen] = useState(false);
 
@@ -95,6 +98,12 @@ const Grants = () => {
           {/* </a> */}
         </div>
       </section>
+
+      <BudgetBar
+        budgetText="Current quarterly grant budget:"
+        panValue={budgets.epochPAN}
+        usdValue={budgets.epochUSD}
+      />
 
       {/* <!-- Batch 5 --> */}
       {/* <div className="mv5 relative">

@@ -4,15 +4,15 @@ export async function getEpochDates() {
   const { endpoint, headers } = getEndpointAndHeaders();
   const route = `${endpoint}/api/epochs/current/dates`;
   const result = await getData(route, headers);
-  console.log('result:', result);
+  console.log('epoch dates result:', result);
   return result;
 }
 
-export async function getBudget() {
+export async function getBudgets() {
   const { endpoint, headers } = getEndpointAndHeaders();
   const route = `${endpoint}/api/token/budget`;
   const result = await getData(route, headers);
-  console.log('result:', result);
+  console.log('budgets result:', result);
   return result;
 }
 
