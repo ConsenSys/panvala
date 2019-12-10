@@ -14,7 +14,6 @@ import { theme } from '../utils/theme';
 const Layout = ({ children }) => {
   return (
     <>
-      {/* <Header siteTitle={data.site.siteMetadata.title} /> */}
       <ThemeProvider theme={theme}>
         <div className="overflow-x-hidden">
           <main>{children}</main>

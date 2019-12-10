@@ -5,7 +5,7 @@ const Label = props => {
   if (props.required) {
     return (
       <div className="tl mt4">
-        <label className="ma0 f6 mb3 black-40" {...props}>
+        <label htmlFor={props.id} className="ma0 f6 mb3 black-40" {...props}>
           {props.children}
           <Required />
         </label>
@@ -15,7 +15,7 @@ const Label = props => {
 
   return (
     <div className="tl mt4">
-      <label className="ma0 f6 mb3 black-40" {...props} />
+      <label htmlFor={props.id} className="ma0 f6 mb3 black-40" {...props} />
     </div>
   );
 };

@@ -1,9 +1,14 @@
 import React from 'react';
 import styled from 'styled-components';
-import { background } from 'styled-system';
+import { background, space, shadow, border, position, color } from 'styled-system';
 
 const StyledSection = styled.section`
   box-sizing: 'border-box';
+  ${position};
+  ${color};
+  ${border};
+  ${shadow};
+  ${space};
   ${background};
 `;
 

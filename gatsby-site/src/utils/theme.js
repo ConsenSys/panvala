@@ -13,7 +13,9 @@ export const colors = {
   blue: '#489FCC',
   blues: {
     dark: '#1872A0',
-    light: '#DEF0FA',
+    medium: '#2138B7',
+    light: '#5251ff',
+    veryLight: '#DEF0FA',
   },
   yellow: '#C6B72C',
   yellows: {
