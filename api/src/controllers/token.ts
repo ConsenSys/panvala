@@ -34,6 +34,13 @@ export async function getBudget(req, res) {
       winningSlate
     );
 
+    const annualTokensBase = await projectedAvailableTokens(
+      tokenCapacitor,
+      gatekeeper,
+      currentEpoch.add(4),
+      winningSlate
+    );
+
     // 1 ETH : 10861515630668542666008 attoPAN
     const panPriceWei = await exchange.getEthToTokenInputPrice(parseEther('1'));
     const panPriceETH = formatUnits(panPriceWei, 18);
@@ -47,10 +54,17 @@ export async function getBudget(req, res) {
       .mul(bigNumberify(parseInt(ethPriceUSD)))
       .toString();
 
+    const annualBudgetUSD = annualTokensBase
+      .div(panPriceWei)
+      .mul(bigNumberify(parseInt(ethPriceUSD)))
+      .toString();
+
     res.json({
       epochNumber: currentEpoch.toNumber(),
       epochBudgetPAN: formatUnits(epochTokensBase, 18),
+      annualBudgetPAN: formatUnits(annualTokensBase, 18),
       epochBudgetUSD,
+      annualBudgetUSD,
       ethPriceUSD,
       panPriceETH,
     });
