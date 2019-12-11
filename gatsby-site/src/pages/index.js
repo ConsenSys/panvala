@@ -183,32 +183,34 @@ const IndexPage = () => {
         </section>
       </div>
 
-      <Section>
-        <img src={eventsBg} className="absolute z-0 nt0-m db-ns dn" />
-        <Box flex justifyContent="space-around" flexWrap="wrap">
-          <Box flex column zIndex={40} color="white" my={['4rem', '7rem', '180px']}>
-            <Box fontSize={5} bold>
-              Key dates
+      {epochDates.length > 0 && (
+        <Section>
+          <img src={eventsBg} className="absolute z-0 nt0-m db-ns dn" />
+          <Box flex justifyContent="space-around" flexWrap="wrap">
+            <Box flex column zIndex={40} color="white" my={['4rem', '7rem', '180px']}>
+              <Box fontSize={5} bold>
+                Key dates
+              </Box>
+              <Box width="350px">
+                Keep up to date with what is happening within the system and beyond.
+              </Box>
             </Box>
-            <Box width="350px">
-              Keep up to date with what is happening within the system and beyond.
-            </Box>
-          </Box>
 
-          <Box flex column alignItems="flex-start">
-            {epochDates.map(epochDate => (
-              <EventCard
-                key={`${epochDate.date}${epochDate.eventName}`}
-                date={epochDate.date}
-                eventName={epochDate.eventName}
-                eventDescription={epochDate.eventDescription}
-                expired={epochDate.expired}
-                nextEvent={epochDate.nextEvent}
-              />
-            ))}
+            <Box flex column alignItems="flex-start">
+              {epochDates.map(epochDate => (
+                <EventCard
+                  key={`${epochDate.date}${epochDate.eventName}`}
+                  date={epochDate.date}
+                  eventName={epochDate.eventName}
+                  eventDescription={epochDate.eventDescription}
+                  expired={epochDate.expired}
+                  nextEvent={epochDate.nextEvent}
+                />
+              ))}
+            </Box>
           </Box>
-        </Box>
-      </Section>
+        </Section>
+      )}
 
       {/* <!-- Our Launch Partners--> */}
       <section className="w-70-l w-80-m w-90 center tc mv6-ns mb5 mt6">
