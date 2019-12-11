@@ -182,9 +182,9 @@ const Team = () => {
               <h5 className="f6 fw3 blue ma0 mt1">Engineering</h5>
             </section>
             <section className="dib pa2-l pa1 w-33-l w-40-m w-100 tl-ns tc">
-              <img src={teamJoshua} className="w5 full-clip-down-sm" alt="isaac" />
-              <h4 className="f4-l f5 fw3 ma0 nt3-ns nt1">Joshua Lapidus</h4>
-              <h5 className="f6 fw3 blue ma0 mt1">Business Development Lead</h5>
+              <img src={teamJoshua} className="w5 full-clip-up-sm" alt="joshua" />
+              <h4 className="f4-l f5 fw3 ma0 mt2">Joshua Lapidus</h4>
+              <h5 className="f6 fw3 blue ma0 mt1">Business Development</h5>
             </section>
           </div>
         </div>
