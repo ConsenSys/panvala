@@ -1,6 +1,6 @@
 'use strict';
 
-import { BigNumberish, BigNumber, bigNumberify } from 'ethers/utils';
+import { BigNumber, BigNumberish } from 'ethers/utils';
 import { utils } from 'ethers';
 import { IGatekeeper } from '../types';
 
@@ -112,7 +112,7 @@ export async function getEpochDetails(
   const slateCreationCloses = await gatekeeper.slateSubmissionDeadline(epochNumber, resource);
 
   const epochDetails: EpochDetails = {
-    epochNumber: bigNumberify(epochNumber).toNumber(),
+    epochNumber: utils.bigNumberify(epochNumber).toNumber(),
     epochStart: timings.epochStart,
     proposalSubmissionOpens: timings.slateSubmissionStart,
     proposalSubmissionCloses,

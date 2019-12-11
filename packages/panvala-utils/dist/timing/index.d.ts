@@ -1,4 +1,4 @@
-import { BigNumberish, BigNumber } from 'ethers/utils';
+import { BigNumber, BigNumberish } from 'ethers/utils';
 import { IGatekeeper } from '../types';
 export interface EpochDates {
     epochStart: number;

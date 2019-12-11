@@ -8,7 +8,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const utils_1 = require("ethers/utils");
 const ethers_1 = require("ethers");
 const ONE_DAY = 86400;
 const ONE_WEEK = ONE_DAY * 7;
@@ -84,7 +83,7 @@ function getEpochDetails(epochNumber, gatekeeper, resource) {
         const proposalSubmissionCloses = epochStart.add(exports.durations.ONE_WEEK * 3).toNumber();
         const slateCreationCloses = yield gatekeeper.slateSubmissionDeadline(epochNumber, resource);
         const epochDetails = {
-            epochNumber: utils_1.bigNumberify(epochNumber).toNumber(),
+            epochNumber: ethers_1.utils.bigNumberify(epochNumber).toNumber(),
             epochStart: timings.epochStart,
             proposalSubmissionOpens: timings.slateSubmissionStart,
             proposalSubmissionCloses,
