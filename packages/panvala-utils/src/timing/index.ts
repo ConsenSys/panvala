@@ -1,7 +1,8 @@
 'use strict';
 
-import { BigNumberish } from 'ethers/utils';
+import { BigNumberish, BigNumber, bigNumberify } from 'ethers/utils';
 import { utils } from 'ethers';
+import { IGatekeeper } from '../types';
 
 const ONE_DAY: number = 86400;
 const ONE_WEEK: number = ONE_DAY * 7;
@@ -13,6 +14,19 @@ export interface EpochDates {
   votingStart: number;
   votingEnd: number;
   epochEnd: number;
+}
+
+export interface EpochDetails {
+  epochNumber: number;
+  epochStart: number;
+  proposalSubmissionOpens: number;
+  proposalSubmissionCloses: number;
+  slateCreationOpens: number;
+  slateCreationCloses: number;
+  votingOpens: number;
+  votingCloses: number;
+  votingConcludes: number;
+  nextEpochStart: number;
 }
 
 export const durations = {
@@ -82,4 +96,33 @@ export function nextEpochStage(currStage: number): number {
     : currStage === EpochStages.RevealVoting
     ? EpochStages.SlateSubmission
     : currStage + 1;
+}
+
+export async function getEpochDetails(
+  epochNumber: BigNumber,
+  gatekeeper: IGatekeeper,
+  resource: string
+) {
+  const epochStart: BigNumber = await gatekeeper.epochStart(epochNumber);
+  const timings: any = getTimingsForEpoch(epochStart);
+  // console.log('timings:', timings);
+
+  // prettier-ignore
+  const proposalSubmissionCloses = epochStart.add(durations.ONE_WEEK * 3).toNumber()
+  const slateCreationCloses = await gatekeeper.slateSubmissionDeadline(epochNumber, resource);
+
+  const epochDetails: EpochDetails = {
+    epochNumber: bigNumberify(epochNumber).toNumber(),
+    epochStart: timings.epochStart,
+    proposalSubmissionOpens: timings.slateSubmissionStart,
+    proposalSubmissionCloses,
+    slateCreationOpens: timings.slateSubmissionStart,
+    slateCreationCloses: slateCreationCloses.toNumber(),
+    votingOpens: timings.votingStart,
+    votingCloses: timings.votingEnd,
+    votingConcludes: timings.epochEnd,
+    nextEpochStart: timings.epochEnd + 1,
+  };
+
+  return epochDetails;
 }

@@ -23,7 +23,7 @@
     "poll:tally": "ts-node scripts/tally-poll.ts",
     "sync-events": "ts-node scripts/sync-contract-events.ts",
     "test": "jest",
-    "update:contract-types": "typechain --target=ethers --outDir ./types '../packages/panvala-utils/abis/**/*.json'"
+    "update:contract-types": "typechain --target=ethers --outDir ./src/types '../packages/panvala-utils/abis/**/*.json'"
   },
   "author": "",
   "license": "ISC",

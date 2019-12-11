@@ -1,5 +1,14 @@
 'use strict';
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", { value: true });
+const utils_1 = require("ethers/utils");
 const ethers_1 = require("ethers");
 const ONE_DAY = 86400;
 const ONE_WEEK = ONE_DAY * 7;
@@ -66,4 +75,28 @@ function nextEpochStage(currStage) {
             : currStage + 1;
 }
 exports.nextEpochStage = nextEpochStage;
+function getEpochDetails(epochNumber, gatekeeper, resource) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const epochStart = yield gatekeeper.epochStart(epochNumber);
+        const timings = getTimingsForEpoch(epochStart);
+        // console.log('timings:', timings);
+        // prettier-ignore
+        const proposalSubmissionCloses = epochStart.add(exports.durations.ONE_WEEK * 3).toNumber();
+        const slateCreationCloses = yield gatekeeper.slateSubmissionDeadline(epochNumber, resource);
+        const epochDetails = {
+            epochNumber: utils_1.bigNumberify(epochNumber).toNumber(),
+            epochStart: timings.epochStart,
+            proposalSubmissionOpens: timings.slateSubmissionStart,
+            proposalSubmissionCloses,
+            slateCreationOpens: timings.slateSubmissionStart,
+            slateCreationCloses: slateCreationCloses.toNumber(),
+            votingOpens: timings.votingStart,
+            votingCloses: timings.votingEnd,
+            votingConcludes: timings.epochEnd,
+            nextEpochStart: timings.epochEnd + 1,
+        };
+        return epochDetails;
+    });
+}
+exports.getEpochDetails = getEpochDetails;
 //# sourceMappingURL=index.js.map

@@ -1,4 +1,5 @@
-import { BigNumberish } from 'ethers/utils';
+import { BigNumberish, BigNumber } from 'ethers/utils';
+import { IGatekeeper } from '../types';
 export interface EpochDates {
     epochStart: number;
     slateSubmissionStart: number;
@@ -6,6 +7,18 @@ export interface EpochDates {
     votingStart: number;
     votingEnd: number;
     epochEnd: number;
+}
+export interface EpochDetails {
+    epochNumber: number;
+    epochStart: number;
+    proposalSubmissionOpens: number;
+    proposalSubmissionCloses: number;
+    slateCreationOpens: number;
+    slateCreationCloses: number;
+    votingOpens: number;
+    votingCloses: number;
+    votingConcludes: number;
+    nextEpochStart: number;
 }
 export declare const durations: {
     ONE_DAY: number;
@@ -30,3 +43,4 @@ export declare enum EpochStages {
 export declare function getTimingsForEpoch(epochStart: BigNumberish): EpochDates;
 export declare function calculateEpochStage(epochDates: EpochDates, timestamp: number): number;
 export declare function nextEpochStage(currStage: number): number;
+export declare function getEpochDetails(epochNumber: BigNumber, gatekeeper: IGatekeeper, resource: string): Promise<EpochDetails>;

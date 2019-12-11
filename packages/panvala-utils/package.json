@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "tsc && jest"
+    "test": "tsc && jest",
+    "update:contract-types": "typechain --target=ethers --outDir ./src/types './abis/**/*.json'"
   },
   "author": "",
   "dependencies": {
@@ -19,6 +20,8 @@
     "jest": "^24.5.0",
     "lint-staged": "^8.1.5",
     "prettier": "^1.16.4",
+    "typechain": "^1.0.3",
+    "typechain-target-ethers": "^1.0.3",
     "typescript": "^3.5.3"
   },
   "husky": {

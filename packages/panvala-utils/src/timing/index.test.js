@@ -95,3 +95,22 @@ describe('calculateEpochStage', () => {
     }).toThrow();
   });
 });
+
+const testEpochStart = 1572714000; // Nov 2 2018, 1pm EST
+const testGatekeeper = {
+  epochStart(epochNumber) {
+    const diff = utils.bigNumberify(epochNumber).mul(durations.EPOCH_LENGTH);
+    return utils.bigNumberify(testEpochStart).add(diff);
+  },
+  slateSubmissionDeadline(epochNumber, resource) {
+    return testGatekeeper.epochStart(epochNumber).add(durations.SLATE_SUBMISSION_DEADLINE);
+  },
+};
+
+describe('getEpochDetails', () => {
+  test("nextEpochStart of an epoch should equal the subsequent epoch's epochStart", async () => {
+    const epochDates0 = await timing.getEpochDetails(0, testGatekeeper, 'resource');
+    const epochDates1 = await timing.getEpochDetails(1, testGatekeeper, 'resource');
+    expect(epochDates1.epochStart).toBe(epochDates0.nextEpochStart);
+  });
+});

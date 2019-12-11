@@ -1,20 +1,6 @@
 import { getContracts } from '../utils/eth';
 import { bigNumberify, BigNumber } from 'ethers/utils';
 import { timing } from 'panvala-utils';
-import { IGatekeeper } from '../types';
-
-interface EpochDates {
-  epochNumber: number;
-  epochStart: number;
-  proposalSubmissionOpens: number;
-  proposalSubmissionCloses: number;
-  slateCreationOpens: number;
-  slateCreationCloses: number;
-  votingOpens: number;
-  votingCloses: number;
-  votingConcludes: number;
-  nextEpochStart: number;
-}
 
 export async function getDates(req, res) {
   let { epochNumber }: { epochNumber: string } = req.params;
@@ -37,8 +23,12 @@ export async function getDates(req, res) {
       });
     }
 
-    const epochDates = await getEpochDates(epochBN, gatekeeper, tokenCapacitor.address);
-    const nextEpochDates = await getEpochDates(epochBN.add(1), gatekeeper, tokenCapacitor.address);
+    const epochDates = await timing.getEpochDetails(epochBN, gatekeeper, tokenCapacitor.address);
+    const nextEpochDates = await timing.getEpochDetails(
+      epochBN.add(1),
+      gatekeeper,
+      tokenCapacitor.address
+    );
 
     res.json({
       epochDates,
@@ -50,36 +40,4 @@ export async function getDates(req, res) {
       errors: [error],
     });
   }
-}
-
-async function getEpochDates(
-  epochNumber: BigNumber,
-  gatekeeper: IGatekeeper,
-  tokenCapacitorAddress: string
-) {
-  const epochStart: BigNumber = await gatekeeper.epochStart(epochNumber);
-  const timings: any = timing.getTimingsForEpoch(epochStart);
-  // console.log('timings:', timings);
-
-  // prettier-ignore
-  const proposalSubmissionCloses = epochStart.add(timing.durations.ONE_WEEK * 3).toNumber()
-  const slateCreationCloses = await gatekeeper.slateSubmissionDeadline(
-    epochNumber,
-    tokenCapacitorAddress
-  );
-
-  const epochDates: EpochDates = {
-    epochNumber: bigNumberify(epochNumber).toNumber(),
-    epochStart: timings.epochStart,
-    proposalSubmissionOpens: timings.slateSubmissionStart,
-    proposalSubmissionCloses,
-    slateCreationOpens: timings.slateSubmissionStart,
-    slateCreationCloses: slateCreationCloses.toNumber(),
-    votingOpens: timings.votingStart,
-    votingCloses: timings.votingEnd,
-    votingConcludes: timings.epochEnd,
-    nextEpochStart: timings.epochEnd + 1,
-  };
-
-  return epochDates;
 }
