@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import moment from 'moment';
 import Box from './system/Box';
 
 const Wrapper = styled(Box)`
@@ -20,18 +21,10 @@ const Wrapper = styled(Box)`
 const EventCard = props => {
   const { date, nextEvent, eventName, eventDescription, expired } = props;
 
-  const eventDate = new Date(date * 1000);
-  const options = {
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
-  };
-  const dateStr = eventDate.toLocaleDateString(undefined, options);
-  const month = dateStr.slice(0, 3);
-  const day = dateStr.slice(4, 6);
-  const time = dateStr.slice(8);
+  const md = moment(date * 1000)
+  const shortMonth = md.format('MMM')
+  const day = md.format('DD');
+  const time = md.format('LT [GMT]ZZ')
 
   return (
     <Wrapper {...props}>
@@ -48,7 +41,7 @@ const EventCard = props => {
         opacity={expired ? '0.2' : '1'}
       >
         <Box fontSize={3} letterSpacing={6}>
-          {month.toUpperCase()}
+          {shortMonth.toUpperCase()}
         </Box>
         <Box fontSize={6} bold>
           {day}
