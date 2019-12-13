@@ -5,7 +5,6 @@ import { IGatekeeper, IParameterStore, ITokenCapacitor, IUniswapExchange } from 
 
 const { gatekeeperAddress, tokenCapacitorAddress } = contracts;
 const { Gatekeeper, TokenCapacitor, ParameterStore, UniswapExchange } = contractABIs;
-const uniswapExchangeAddress = '0xF53bBFBff01c50F2D42D542b09637DcA97935fF7';
 
 /**
  * Check connection
@@ -42,11 +41,23 @@ async function getContracts() {
     TokenCapacitor.abi,
     provider
   ) as ITokenCapacitor;
-  const exchange: IUniswapExchange = new ethers.Contract(
-    uniswapExchangeAddress,
-    UniswapExchange.abi,
-    provider
-  ) as IUniswapExchange;
+
+  const uniswapExchangeAddress =
+    network.chainId === 4
+      ? '0xA062C59F42a45f228BEBB6e7234Ed1ea14398dE7' // rinkeby
+      : network.chainId === 1
+      ? '0xF53bBFBff01c50F2D42D542b09637DcA97935fF7' // mainnet
+      : '';
+
+  let exchange: IUniswapExchange | undefined;
+  if (uniswapExchangeAddress) {
+    exchange = new ethers.Contract(
+      uniswapExchangeAddress,
+      UniswapExchange.abi,
+      provider
+    ) as IUniswapExchange;
+  }
+
   const genesisBlockNumber: number = genBlocks[network.chainId] || genBlocks.unknown;
 
   return {

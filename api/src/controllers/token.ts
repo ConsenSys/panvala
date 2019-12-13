@@ -23,7 +23,17 @@ export async function circulatingSupply(req, res) {
 
 export async function getBudget(req, res) {
   try {
-    const { gatekeeper, tokenCapacitor, exchange } = await getContracts();
+    const { gatekeeper, tokenCapacitor, exchange, network } = await getContracts();
+
+    // Exit early if there's no exchange (happens on local rpc)
+    if (!exchange) {
+      throw new Error(
+        `Uniswap exchange contract is undefined. You must be on rinkeby or mainnet. Current network: ${
+          network.chainId
+        }`
+      );
+    }
+
     const currentEpoch = await gatekeeper.currentEpochNumber();
     const winningSlate = await getWinningSlate();
 
