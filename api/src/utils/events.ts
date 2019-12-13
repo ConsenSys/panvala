@@ -215,8 +215,6 @@ async function doSync(blockNumber) {
   return syncEvents(blockNumber).catch(error => console.error(`Problem syncing events: ${error}`));
 }
 
-let counter = 0;
-
 // Continuously track blocks and save event data into the database
 async function listenAndSyncContractEvents() {
   try {
@@ -241,15 +239,10 @@ async function listenAndSyncContractEvents() {
       }
     });
   } catch (error) {
-    // If it fails 5 times, exit
-    if (counter === 5) {
-      throw error;
-    }
     // If anything goes wrong, log the error and try again
     console.error('Error while listening for contract events:', error);
     console.log('Restarting tracker...');
 
-    counter += 1;
     listenAndSyncContractEvents();
   }
 }
