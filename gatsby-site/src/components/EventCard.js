@@ -21,10 +21,11 @@ const Wrapper = styled(Box)`
 const EventCard = props => {
   const { date, nextEvent, eventName, eventDescription, expired } = props;
 
-  const md = moment(date * 1000)
-  const shortMonth = md.format('MMM')
+  const md = moment(date * 1000);
+  const shortMonth = md.format('MMM');
   const day = md.format('DD');
-  const time = md.format('LT [GMT]ZZ')
+  const time12Hr = md.format('LT');
+  const time = `${time12Hr} [${md.format('[GMT]ZZ')}]`; // 12:00 PM [GMT-0500]
 
   return (
     <Wrapper {...props}>
