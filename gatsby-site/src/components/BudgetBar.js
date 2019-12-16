@@ -22,7 +22,7 @@ const BudgetBar = ({ budgetText, panValue, usdValue }) => {
           <Box textAlign="right" fontSize={['1rem', '1.1rem', '1.3rem']} bold color="blues.medium">
             {panValue || 'Loading...'}
           </Box>
-          <Box textAlign="right" color="blues.light">
+          <Box textAlign="right" color="blues.light" fontSize="1.1rem">
             {usdValue}
           </Box>
         </Box>

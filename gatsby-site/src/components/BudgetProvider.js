@@ -4,7 +4,7 @@ import { prettify } from '../utils/format';
 
 // const initialState = {};
 const initialState = {
-  budgets: { epochPAN: '', epochUSD: '', annualPAN: '', annualUSD: '' },
+  budgets: { epochPAN: '', epochUSD: '', annualPAN: '', annualUSD: '', epochNumber: undefined },
 };
 export const BudgetContext = React.createContext(initialState);
 
@@ -17,9 +17,10 @@ const BudgetProvider = ({ children }) => {
 
       const formatted = {
         epochPAN: `${prettify(budgets.epochBudgetPAN)} PAN`,
-        epochUSD: `${prettify(budgets.epochBudgetUSD)} USD`,
+        epochUSD: `($${prettify(budgets.epochBudgetUSD)} USD)`,
         annualPAN: `${prettify(budgets.annualBudgetPAN)} PAN`,
-        annualUSD: `${prettify(budgets.annualBudgetUSD)} USD`,
+        annualUSD: `($${prettify(budgets.annualBudgetUSD)} USD)`,
+        epochNumber: budgets.epochNumber,
       };
 
       setBudgets(formatted);

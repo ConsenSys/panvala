@@ -99,11 +99,13 @@ const Grants = () => {
         </div>
       </section>
 
-      <BudgetBar
-        budgetText="Current quarterly grant budget:"
-        panValue={budgets.epochPAN}
-        usdValue={budgets.epochUSD}
-      />
+      {!!budgets.epochNumber && (
+        <BudgetBar
+          budgetText={`Batch ${budgets.epochNumber + 1} grants budget:`}
+          panValue={budgets.epochPAN}
+          usdValue={budgets.epochUSD}
+        />
+      )}
 
       {/* <!-- Batch 5 --> */}
       {/* <div className="mv5 relative">
