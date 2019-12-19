@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "proposals-csv": "node pan/proposals-csv.js"
+  },
   "dependencies": {
     "csv": "^5.1.2",
     "ethers": "^4.0.30",
