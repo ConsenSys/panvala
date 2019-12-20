@@ -70,7 +70,7 @@ async function getAllEvents(fromBlock) {
 
     return events;
   } catch (error) {
-    console.log('error:', error);
+    console.log('eth-events error:', error);
     return [];
   }
 }

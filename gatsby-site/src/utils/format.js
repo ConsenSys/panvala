@@ -66,5 +66,9 @@ export function formatDates(epochDates) {
 }
 
 export function prettify(ugly) {
-  return utils.commify(sliceDecimals(ugly));
+  // TEMPORARY until typescript refactor
+  if (typeof ugly === 'string') {
+    return utils.commify(sliceDecimals(ugly));
+  }
+  return ugly;
 }

@@ -1,5 +1,5 @@
 import * as ethers from 'ethers';
-import { parseEther, bigNumberify } from 'ethers/utils';
+import { parseEther, bigNumberify, BigNumber } from 'ethers/utils';
 import {
   circulatingSupply as _circulatingSupply,
   projectedAvailableTokens,
@@ -35,21 +35,26 @@ export async function getBudget(req, res) {
     }
 
     const currentEpoch = await gatekeeper.currentEpochNumber();
-    const winningSlate = await getWinningSlate();
+    let winningSlate: number | undefined;
+    try {
+      winningSlate = await getWinningSlate();
+    } catch (error) {
+      // ignore / just log errors. winningSlate can be left undefined
+      console.log('getWinningSlate error:', error);
+    }
 
-    const epochTokensBase = await projectedAvailableTokens(
-      tokenCapacitor,
-      gatekeeper,
-      currentEpoch,
-      winningSlate
-    );
-
-    const annualTokensBase = await projectedAvailableTokens(
-      tokenCapacitor,
-      gatekeeper,
-      currentEpoch.add(4),
-      winningSlate
-    );
+    let epochTokensBase, annualTokensBase: BigNumber | undefined;
+    try {
+      [epochTokensBase, annualTokensBase] = await Promise.all([
+        projectedAvailableTokens(tokenCapacitor, gatekeeper, currentEpoch, winningSlate),
+        projectedAvailableTokens(tokenCapacitor, gatekeeper, currentEpoch.add(4), winningSlate),
+      ]);
+    } catch (error) {
+      return res.status(409).json({
+        msg: 'Problem calculating available tokens',
+        errors: [error],
+      });
+    }
 
     // 1 ETH : 10861515630668542666008 attoPAN
     const panPriceWei = await exchange.getEthToTokenInputPrice(parseEther('1'));

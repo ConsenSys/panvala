@@ -15,17 +15,18 @@ const BudgetProvider = ({ children }) => {
     async function getData() {
       const budgets = await getBudgets();
 
-      const formatted = {
-        epochPAN: `${prettify(budgets.epochBudgetPAN)} PAN`,
-        epochUSD: `($${prettify(budgets.epochBudgetUSD)} USD)`,
-        annualPAN: `${prettify(budgets.annualBudgetPAN)} PAN`,
-        annualUSD: `($${prettify(budgets.annualBudgetUSD)} USD)`,
-        epochNumber: budgets.epochNumber,
-      };
+      if (!budgets.errors) {
+        const formatted = {
+          epochPAN: `${prettify(budgets.epochBudgetPAN)} PAN`,
+          epochUSD: `($${prettify(budgets.epochBudgetUSD)} USD)`,
+          annualPAN: `${prettify(budgets.annualBudgetPAN)} PAN`,
+          annualUSD: `($${prettify(budgets.annualBudgetUSD)} USD)`,
+          epochNumber: budgets.epochNumber,
+        };
+        console.log('formatted:', formatted);
 
-      setBudgets(formatted);
-
-      console.log('formatted:', formatted);
+        setBudgets(formatted);
+      }
     }
 
     getData();

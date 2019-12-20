@@ -30,10 +30,15 @@ async function getAllSlates() {
   console.log(`fetching ${slateCount} slates`);
   const currentEpoch = await gatekeeper.functions.currentEpochNumber();
   console.log('currentEpoch:', currentEpoch);
-  let grantsIncumbent, governanceIncumbent;
+
+  let grantsIncumbent, governanceIncumbent: string | undefined;
   if (gatekeeper.functions.hasOwnProperty('incumbent')) {
-    grantsIncumbent = await gatekeeper.functions.incumbent(tokenCapacitorAddress);
-    governanceIncumbent = await gatekeeper.functions.incumbent(parameterStore.address);
+    try {
+      grantsIncumbent = await gatekeeper.functions.incumbent(tokenCapacitorAddress);
+      governanceIncumbent = await gatekeeper.functions.incumbent(parameterStore.address);
+    } catch (error) {
+      // ignore errors. incumbents left undefined
+    }
   }
 
   // 0..slateCount
@@ -268,6 +273,7 @@ export async function getWinningSlate(slates?: any[], epochNumber?: BigNumberish
     const winningSlateID = await gatekeeper.getWinningSlate(lastEpochNumber, tokenCapacitorAddress);
     return slates.find(slate => slate.id === winningSlateID.toNumber());
   } catch (error) {
+    console.log('Error getting winning slate:', error);
     throw error;
   }
 }
