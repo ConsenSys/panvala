@@ -44,7 +44,7 @@ async function getContracts() {
 
   const uniswapExchangeAddress =
     network.chainId === 4
-      ? '0xA062C59F42a45f228BEBB6e7234Ed1ea14398dE7' // rinkeby
+      ? '0x25EAd1E8e3a9C38321488BC5417c999E622e36ea' // rinkeby
       : network.chainId === 1
       ? '0xF53bBFBff01c50F2D42D542b09637DcA97935fF7' // mainnet
       : '';

@@ -33,12 +33,10 @@ async function getAllSlates() {
 
   let grantsIncumbent, governanceIncumbent: string | undefined;
   if (gatekeeper.functions.hasOwnProperty('incumbent')) {
-    try {
-      grantsIncumbent = await gatekeeper.functions.incumbent(tokenCapacitorAddress);
-      governanceIncumbent = await gatekeeper.functions.incumbent(parameterStore.address);
-    } catch (error) {
-      // ignore errors. incumbents left undefined
-    }
+    [grantsIncumbent, governanceIncumbent] = await Promise.all([
+      gatekeeper.functions.incumbent(tokenCapacitorAddress),
+      gatekeeper.functions.incumbent(parameterStore.address),
+    ]);
   }
 
   // 0..slateCount
