@@ -211,7 +211,8 @@ export async function postDonation(donationData: IAPIDonation) {
 export function formatDonation(
   txInfo: IDonationTx,
   ipfsMetadata: IMetadata,
-  userInfo
+  userInfo,
+  extraData,
 ): IAPIDonation {
   const pledgeMonthlyUSD = parseInt(toUSDCents(ipfsMetadata.pledgeMonthlyUSD.toString()));
   const { tokens } = txInfo;
@@ -222,6 +223,7 @@ export function formatDonation(
   const donationData = {
     ...txInfo,
     ...userInfo,
+    ...extraData,
     tokens: tokens.toString(),
     metadataVersion: version,
     memo,

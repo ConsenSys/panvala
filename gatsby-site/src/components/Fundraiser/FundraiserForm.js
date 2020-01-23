@@ -61,8 +61,9 @@ export const FundraiserForm = ({ onSubmit }) => {
             <ErrorMessage name="pledgeAmount" component="span" />
           </div>
           <Box flex justifyContent={['space-around', 'space-between']} wrap>
-            {['10', '25', '50', '100'].map(amount => (
+            {['10', '25', '50', '100'].map((amount, i) => (
               <PledgeAmount
+                key={i}
                 text={`$${amount}/mo`}
                 handleClick={e => {
                   e.preventDefault();

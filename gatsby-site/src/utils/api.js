@@ -19,3 +19,11 @@ export async function getBudgets() {
 export async function getData(endpoint, headers) {
   return fetch(endpoint, { headers }).then(res => res.json());
 }
+
+export async function getFundraiserDonations(fundraiser) {
+  const { endpoint, headers } = getEndpointAndHeaders();
+  const route = `${endpoint}/api/fundraisers/${fundraiser}/donations/quarter`;
+  const result = await getData(route, headers);
+  console.log('fundraiser donations result', result);
+  return result;
+}

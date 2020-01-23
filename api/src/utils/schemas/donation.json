@@ -59,6 +59,12 @@
     },
     "company": {
       "type": "string"
+    },
+    "fundraiser": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
     }
   },
   "additionalProperties": false,

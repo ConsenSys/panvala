@@ -5,9 +5,9 @@ import {
   hasAccountRespondedToPoll,
   IPollData,
   IDBPollResponse,
-  ensureChecksumAddress,
   getPollByID,
 } from '../utils/polls';
+import { ensureChecksumAddress } from '../utils/format';
 
 // Return the newly created response
 export async function saveResponse(req, res) {

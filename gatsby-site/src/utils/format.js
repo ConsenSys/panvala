@@ -66,6 +66,8 @@ export function formatDates(epochDates) {
 }
 
 export function toUSDCents(dollars) {
+  if (dollars == null) return dollars;
+
   if (dollars.includes('.')) {
     throw new Error('Dollar value must be an integer');
   }

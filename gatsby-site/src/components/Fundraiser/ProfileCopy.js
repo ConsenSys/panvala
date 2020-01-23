@@ -1,7 +1,7 @@
 import React from 'react';
 import Box from '../system/Box';
 
-export function ProfileCopy({ firstName, lastName, story, teamInfo, team }) {
+export function ProfileCopy({ firstName, lastName, story, team }) {
   const teamDescription = `${firstName} is fundraising for the ${team.name} team. ${team.description}`;
 
   return (

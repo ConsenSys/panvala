@@ -5,3 +5,4 @@ export { FunderBoard } from './FunderBoard';
 export { FundraiserOverview } from './FundraiserOverview';
 export { ProfileCopy } from './ProfileCopy';
 export { ProfileLink } from './ProfileLink';
+export { DonorList } from './DonorList';

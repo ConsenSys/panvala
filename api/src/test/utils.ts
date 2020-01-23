@@ -1,7 +1,9 @@
 import { Wallet } from 'ethers';
 
 import * as models from '../models';
-import { parseUnits } from 'ethers/utils';
+import { parseUnits, hashMessage } from 'ethers/utils';
+import { IDonation } from '../utils/donations';
+
 const { Proposal } = models;
 
 export function initProposals() {
@@ -57,6 +59,7 @@ export function initProposals() {
 }
 
 export const someAddress = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+export const addressB = someAddress.replace('a', 'b');
 export const someTxHash = `0x${'b'.repeat(64)}`;
 export const someCID = 'Qmbvjad1niHUjhWUrqkYUgXxgyvGbg3rFDGfZBUVx4gyJX';
 
@@ -65,16 +68,27 @@ export function getWallet() {
   return Wallet.fromMnemonic(mnemonic);
 }
 
+// Does case-insensitive comparison for strings, but regular strict
+// equality for other types
+function lenientValueCheck(actual: any, expected: any) {
+  const isString = typeof actual === 'string';
+  if (isString) {
+    expect(actual.toLowerCase()).toBe(expected.toLowerCase());
+  } else {
+    expect(actual).toBe(expected);
+  }
+}
+
 // Check that all expected fields are there
 export function expectFields(actual: object, expected: object) {
   Object.keys(expected).forEach(key => {
-    expect(actual[key]).toBe(expected[key]);
+    lenientValueCheck(actual[key], expected[key]);
   });
 }
 
 export function expectFieldsWithTypes(actual: object, expected: object) {
   Object.keys(expected).forEach(key => {
-    expect(actual[key]).toBe(expected[key]);
+    lenientValueCheck(actual[key], expected[key]);
     expect(typeof actual[key]).toBe(typeof expected[key]);
   });
 }
@@ -82,3 +96,80 @@ export function expectFieldsWithTypes(actual: object, expected: object) {
 export function toBaseTokens(amount: number, decimals: number = 18): string {
   return parseUnits(amount.toString(), decimals).toString();
 }
+
+const fundraiser = 'fundraiser-1';
+const metadataHash = someCID;
+export const testFundraiserDonations: IDonation[] = [
+  {
+    txHash: hashMessage('Mary'),
+    metadataHash,
+    sender: someAddress,
+    donor: someAddress,
+    firstName: 'Mary',
+    lastName: 'Eckert',
+    tokens: '200',
+    usdValueCents: '2000',
+    fundraiser,
+  },
+  {
+    txHash: hashMessage('Nicky'),
+    metadataHash,
+    sender: someAddress,
+    donor: someAddress,
+    firstName: 'Nicky',
+    lastName: 'Stevens',
+    tokens: '100',
+    usdValueCents: '1000',
+    fundraiser,
+  },
+  {
+    txHash: hashMessage('David'),
+    metadataHash,
+    sender: someAddress,
+    donor: someAddress,
+    firstName: 'David',
+    lastName: 'West',
+    tokens: '25',
+    usdValueCents: '2500',
+    fundraiser,
+  },
+  {
+    txHash: hashMessage('nobody'),
+    metadataHash,
+    sender: someAddress,
+    donor: someAddress,
+    tokens: '25',
+    usdValueCents: '2500',
+    fundraiser,
+  },
+  {
+    txHash: hashMessage('anonymous'),
+    metadataHash,
+    sender: someAddress,
+    donor: someAddress,
+    tokens: '50',
+    usdValueCents: '5000',
+    fundraiser,
+  },
+  {
+    txHash: hashMessage('first'),
+    metadataHash,
+    sender: someAddress,
+    donor: someAddress,
+    tokens: '25',
+    usdValueCents: '2500',
+    firstName: 'John',
+    fundraiser,
+  },
+  {
+    txHash: hashMessage('David 2'),
+    metadataHash,
+    sender: someAddress,
+    donor: someAddress,
+    firstName: 'David',
+    lastName: 'West',
+    tokens: '25',
+    usdValueCents: '2500',
+    fundraiser,
+  },
+];

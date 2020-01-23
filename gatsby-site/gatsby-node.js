@@ -50,6 +50,7 @@ exports.createPages = async ({ graphql, actions: { createPage }, reporter }) => 
         story: node.story,
         team: node.team,
         goal: node.goal,
+        slug: node.slug,
       },
     });
   });

@@ -1,4 +1,9 @@
-import { addDonation, getPublicDonations } from '../utils/donations';
+import {
+  addDonation,
+  getPublicDonations,
+  getDonationsForFundraiser,
+  getQuarterlyDonationStats,
+} from '../utils/donations';
 import { validateDonation } from '../utils/validation';
 
 export function create(req, res) {
@@ -38,5 +43,45 @@ export function list(req, res) {
         msg: error.message,
         errors: error.errors,
       });
+    });
+}
+
+const invalidString = (value) => {
+  return value == null || typeof value !== 'string' || value.length === 0;
+}
+
+export function getByFundraiser(req, res) {
+  const { fundraiser } = req.params;
+
+  // fundraiser must be a non-empty string
+  if (invalidString(fundraiser)) {
+    return res.status(404);
+  }
+
+  return getDonationsForFundraiser(fundraiser)
+    .then(donations => {
+      return res.json(donations);
+    })
+    .catch(error => {
+      const msg = `Error getting donations: ${error}`;
+      console.error(msg);
+      return res.status(500).send(msg);
+    });
+}
+
+export function getStatsByFundraiser(req, res) {
+  const { fundraiser } = req.params;
+
+  // fundraiser must be a non-empty string
+  if (invalidString(fundraiser)) {
+    return res.status(404);
+  }
+
+  return getQuarterlyDonationStats(fundraiser)
+    .then(stats => res.json(stats))
+    .catch(error => {
+      const msg = `Error getting donation stats: ${error}`;
+      console.error(msg);
+      return res.status(500).send(msg);
     });
 }

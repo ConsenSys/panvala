@@ -1,8 +1,9 @@
 import { Wallet } from 'ethers';
-import { verifyMessage, getAddress } from 'ethers/utils';
+import { verifyMessage } from 'ethers/utils';
 
 import { Sequelize } from '../models';
 import { hasDuplicates } from '.';
+import { ensureChecksumAddress } from './format';
 const {
   FundingCategory,
   CategoryPoll,
@@ -165,9 +166,6 @@ export async function hasAccountRespondedToPoll(pollID: number, account: string)
 }
 
 // ===== Calculations
-export function ensureChecksumAddress(address: string): string {
-  return getAddress(address.toLowerCase());
-}
 
 function generateMessage(response: IDBPollResponse): string {
   // Always use checksum address in the message

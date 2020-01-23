@@ -96,4 +96,8 @@ export const setupRoutes = app => {
   // Donations
   app.get('/api/donations', donation.list);
   app.post('/api/donations', donation.create);
+
+  // Fundraisers
+  app.get('/api/fundraisers/:fundraiser/donations', donation.getByFundraiser);
+  app.get('/api/fundraisers/:fundraiser/donations/quarter', donation.getStatsByFundraiser);
 };

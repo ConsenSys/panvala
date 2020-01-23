@@ -4,7 +4,7 @@ import WebsiteModal from './WebsiteModal';
 import SponsorshipForm from './SponsorshipForm';
 import Box from './system/Box';
 
-import { withDonationFlow } from './donationFlow';
+import { withDonationFlow, IDonationFlowData } from './donationFlow';
 
 interface Props {
   ethPrices: any;
@@ -22,7 +22,7 @@ const Sponsorship = (props: Props) => {
     const { company, firstName, lastName, email, pledgeAmount, pledgeDuration } = values;
 
     // Data needed for the donation flow
-    const data = {
+    const data: IDonationFlowData = {
       userData: { firstName, lastName, email, company },
       donationMetadata: {
         monthlyPledge: pledgeAmount,

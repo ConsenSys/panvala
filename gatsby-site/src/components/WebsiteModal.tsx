@@ -252,7 +252,7 @@ const StepThree = ({ message, handleClose, pledgeType }) => {
       imgSrc = student;
   }
 
-  const patronMessage = pledgeType === 'sponsorship' ? 'Sponsor' : `${message} Patron`;
+  const patronMessage = pledgeType === 'sponsorship' ? 'Sponsor' : `${message} Patron`.trim();
   const tyMessage =
     pledgeType === 'sponsorship'
       ? 'Thank you for sponsoring Panvala. Panvala Sponsors play a key role in moving Ethereum forward. You can share your support on Twitter!'

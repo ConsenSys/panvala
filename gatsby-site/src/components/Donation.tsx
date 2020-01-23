@@ -5,7 +5,7 @@ import DonationForm from './DonationForm';
 import Box from './system/Box';
 
 import { getTier } from '../utils/donate';
-import { withDonationFlow } from './donationFlow';
+import { withDonationFlow, IDonationFlowData } from './donationFlow';
 
 interface Props {
   ethPrices: any;
@@ -23,7 +23,7 @@ const Donation = (props: Props) => {
     const { firstName, lastName, email, monthlyPledge, pledgeDuration } = values;
 
     // Data needed for the donation flow
-    const data = {
+    const data: IDonationFlowData = {
       userData: { firstName, lastName, email },
       donationMetadata: { monthlyPledge, pledgeDuration, memo: '' },
       pledgeType: 'donation',

@@ -7,6 +7,7 @@ import {
   ProfileLink,
   FundraiserOverview,
   FunderBoard,
+  DonorList,
 } from '../components/Fundraiser';
 import Fundraiser from '../templates/Fundraiser';
 import { ReasonToContribute } from '../components/Fundraiser/FundraiserOverview';
@@ -22,16 +23,47 @@ const profileProps = {
   lastName: 'Last',
   story:
     'Fundraiser story Fundraiser story Fundraiser story Fundraiser story Fundraiser story Fundraiser story Fundraiser story Fundraiser story ',
-  teamInfo:
-    'Team information Team information Team information Team information Team information Team information Team information Team information',
+  goal: 1000,
+  team: {
+    name: 'Team',
+    description: 'Team information Team information Team information Team information Team information Team information Team information Team information',
+  },
+  slug: 'first-last',
+  image: { publicURL: 'https://example.com/image.png' }
 };
+
+const link = 'https://example.com/link';
+const location = { href: link };
+
+const donationStats = {
+  totalUsdCents: '45000',
+  donors: {
+    'Mary Eckert': [{ usdValueCents: '20000', timestamp: '2020-01-08T20:44:30.354Z' }],
+    'Nicky Stevens': [{ usdValueCents: '10000', timestamp: '2020-01-08T20:44:30.355Z' }],
+    'David West': [
+      { usdValueCents: '2500', timestamp: '2020-01-08T20:44:30.356Z' },
+      { usdValueCents: '2500', timestamp: '2020-01-08T20:44:30.358Z' },
+    ],
+    Anonymous: [
+      { usdValueCents: '2500', timestamp: '2020-01-08T20:44:30.356Z' },
+      { usdValueCents: '5000', timestamp: '2020-01-08T20:44:30.357Z' },
+    ],
+    John: [{ usdValueCents: '2500', timestamp: '2020-01-08T20:44:30.357Z' }],
+  },
+};
+
+const emptyDonationStats = { totalUsdCents: '0', donors: {} };
 
 export const header = () => <FundraiserHeader />;
 
 export const profileCopy = () => <ProfileCopy {...profileProps} />;
 export const profile = () => <FundraiserProfile {...profileProps} />;
-export const funderBoard = () => <FunderBoard />;
-export const profileLink = () => <ProfileLink />;
+export const donorList = () => <DonorList  donors={donationStats.donors} />;
+export const funderBoard = () => <FunderBoard profileLink={link} {...profileProps} donations={donationStats}/>;
+export const emptyFunderBoard = () => (
+  <FunderBoard profileLink={link} {...profileProps} donations={emptyDonationStats} />
+);
+export const profileLink = () => <ProfileLink href={link} />;
 
 export const reasonToContribute = () => (
   <ReasonToContribute iconSrc={flag} title="Prioritized Grants">
@@ -43,8 +75,21 @@ export const reasonToContribute = () => (
 export const overview = () => <FundraiserOverview {...profileProps} />;
 export const form = () => (
   <Layout>
-    <FundraiserForm />
+    <FundraiserForm onSubmit={() => {
+      console.log('submit');
+    }} />
   </Layout>
 );
 
-export const fullPage = () => <Fundraiser pageContext={profileProps} />;
+const pageProps = {
+  pageContext: profileProps,
+  location,
+  fetchDonations: () => {
+    console.log('story: fetching data for', profileProps.slug);
+    return donationStats;
+  }
+}
+export const fullPage = () => <Fundraiser {...pageProps} />;
+export const fullPageNoDonations = () => (
+  <Fundraiser {...pageProps} fetchDonations={() => emptyDonationStats} />
+);
